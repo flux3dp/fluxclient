@@ -10,15 +10,17 @@ import json
 logger = logging.getLogger(__name__)
 
 
-from fluxmonitor.watcher.flux_upnp import CODE_DISCOVER, \
-    CODE_RESPONSE_DISCOVER, DEFAULT_PORT
+CODE_DISCOVER = 0x00
+CODE_RESPONSE_DISCOVER = 0x01
+
+DEFAULT_PORT = 3310
 
 
 """Discover Flux 3D Printer
 
 Here is a simple example:
 
-from fluxmonitor.misc.upnp_discover import UpnpDiscover
+from fluxclient.upnp_discover import UpnpDiscover
 
 def my_callback(discover, model, id, ipaddss):
     print("Find Printer at: " + ipaddrs)
@@ -76,7 +78,7 @@ class UpnpDiscover(object):
         now = time()
 
         if now - self._last_sent > 0.1:
-            payload = struct.pack('<4s16sh', "FLUX",
+            payload = struct.pack('<4s16sh', b"FLUX",
                                   self.serial.bytes,
                                   CODE_DISCOVER)
 
@@ -89,7 +91,7 @@ class UpnpDiscover(object):
                 return
 
             buf, remote = sock.recvfrom(4096)
-            payload = json.loads(buf[:-1])
+            payload = json.loads(buf[:-1].decode("utf8"))
 
             code, serial = payload.get("code"), payload.get("serial")
 

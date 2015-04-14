@@ -26,14 +26,14 @@ GLOBAL_SERIAL = _uuid.UUID(int=0)
 HEXMAP = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
-def uuid_to_short(uuid_hex, length=25, mapping=HEXMAP):
+def uuid_to_short(uuid_hex, mapping=HEXMAP):
     u = _uuid.UUID(uuid_hex)
     l = len(mapping)
     n = u.int
     a_short = []
     while n > 0:
         c = mapping[n % l]
-        n = n / l
+        n = n // l
         a_short.append(c)
 
     while len(a_short) < 25:

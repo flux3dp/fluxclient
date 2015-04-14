@@ -18,13 +18,15 @@ def get_or_create_keyobj(path=None):
 
     if os.path.exists(path):
         try:
-            with open(path, "r") as f:
-                return RSA.importKey(f)
+            with open(path, "rb") as f:
+                buf = f.read()
+                return RSA.importKey(buf)
         except Exception:
+            raise
             os.unlink(path)
 
-    keyobj = RSA.generate(4096)
-    with open(path, "w") as f:
+    keyobj = RSA.generate(1024)
+    with open(path, "wb") as f:
         f.write(keyobj.exportKey("PEM"))
     return keyobj
 

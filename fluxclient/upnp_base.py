@@ -83,7 +83,7 @@ class UpnpBase(object):
         if message and encrypt:
             message = encryptor.encrypt(self.remote_keyobj, message)
 
-        payload = struct.pack('<4s16sh', "FLUX", self.serial.bytes,
+        payload = struct.pack('<4s16sh', b"FLUX", self.serial.bytes,
                               req_code) + message
 
         self.sock.sendto(payload, (self.remote_addr, self.port))
@@ -100,8 +100,8 @@ class UpnpBase(object):
         return header + signature + message
 
     def _parse_response(self, buf, resp_code):
-        payload, signature = buf.split("\x00", 1)
-        resp = json.loads(payload)
+        payload, signature = buf.split(b"\x00", 1)
+        resp = json.loads(payload.decode("utf8"))
 
         if resp.get("code") == resp_code:
             if resp_code == misc.CODE_RESPONSE_RSA_KEY:
