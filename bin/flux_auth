@@ -26,14 +26,12 @@ Remote Addr: %s
 
 
 def auth_nopasswd(task, timegap=1.0):
-    last_resp_time = time()
     last_status = None
     while True:
         stemp = time()
 
         resp = task.auth_without_password()
         if resp:
-            last_resp_time = time()
             status = resp.get("status")
             if status == "padding" and not last_status:
                 sys.stdout.write(
@@ -74,4 +72,3 @@ options = parser.parse_args()
 
 result = main(options.serial)
 sys.exit(0 if result else 1)
-

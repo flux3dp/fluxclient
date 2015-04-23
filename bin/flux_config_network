@@ -21,7 +21,7 @@ def main(opt):
 
     c = parse_network(method=method, ipaddr=opt.ipaddr, mask=opt.mask,
                       route=opt.route, ns=opt.ns,
-                      ssid=opt.ssid, security=opt.security, 
+                      ssid=opt.ssid, security=opt.security,
                       wepkey=opt.wepkey, psk=opt.psk)
 
     for i in range(3):
