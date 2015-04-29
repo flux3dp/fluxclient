@@ -12,11 +12,11 @@ CODE_RESPONSE_NOPWD_ACCESS = 0x05
 CODE_PWD_ACCESS = 0x06
 CODE_RESPONSE_PWD_ACCESS = 0x07
 
-CODE_CHANGE_PWD = 0x08
-CODE_RESPONSE_CHANGE_PWD = 0x09
+CODE_CHANGE_PWD = 0xa0
+CODE_RESPONSE_CHANGE_PWD = 0xa1
 
-CODE_SET_NETWORK = 0x0a
-CODE_RESPONSE_SET_NETWORK = 0x0b
+CODE_SET_NETWORK = 0xa2
+CODE_RESPONSE_SET_NETWORK = 0xa3
 
 
 class UpnpTask(UpnpBase):
@@ -38,7 +38,7 @@ class UpnpTask(UpnpBase):
         resp_code = CODE_RESPONSE_CHANGE_PWD
 
         message = "\x00".join((password, old_password))
-        request = self.sign_request(message)
+        request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)
 

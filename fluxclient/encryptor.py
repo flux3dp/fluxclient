@@ -1,5 +1,6 @@
 
 from io import BytesIO
+from hashlib import sha1
 import os
 
 from Crypto.Signature import PKCS1_v1_5
@@ -33,7 +34,7 @@ def get_or_create_keyobj(path=None):
 
 def encrypt(keyobj, message):
     chip = PKCS1_OAEP.new(keyobj)
-    size = ((keyobj.size() + 1) / 8) - 42
+    size = ((keyobj.size() + 1) // 8) - 42
     in_buf = BytesIO(message)
     out_buf = BytesIO()
 
@@ -57,3 +58,14 @@ def sign(keyobj, message):
 def validate_signature(keyobj, message, signature):
     chip = PKCS1_v1_5.new(keyobj)
     return chip.verify(CryptoSHA.new(message), signature)
+
+
+def get_access_id(keyobj, binary=False):
+    pem = keyobj.publickey().exportKey("PEM")
+    if pem[-1] != 10:
+        pem += b'\n'
+
+    if binary:
+        return sha1(pem).digest()
+    else:
+        return sha1(pem).hexdigest()

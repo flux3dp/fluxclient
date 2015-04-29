@@ -71,7 +71,7 @@ class UpnpBase(object):
         resp = self.make_request(misc.CODE_RSA_KEY,
                                  misc.CODE_RESPONSE_RSA_KEY, b"")
         if resp:
-            return resp["pubkey"]
+            return resp
         else:
             if retry > 0:
                 return self.fetch_publickey(retry - 1)
@@ -83,7 +83,7 @@ class UpnpBase(object):
         if message and encrypt:
             message = encryptor.encrypt(self.remote_keyobj, message)
 
-        payload = struct.pack('<4s16sh', b"FLUX", self.serial.bytes,
+        payload = struct.pack('<4s16sB', b"FLUX", self.serial.bytes,
                               req_code) + message
 
         self.sock.sendto(payload, (self.remote_addr, self.port))
@@ -94,24 +94,32 @@ class UpnpBase(object):
                 return resp
 
     def sign_request(self, message):
-        signature = encryptor.sign(self.keyobj, message)
-        header = struct.pack("<20sHd", self.access_id, len(signature), time())
+        t = time()
+        packed_message = struct.pack("<d", t) + message
+        signature = encryptor.sign(self.keyobj, packed_message)
+        header = struct.pack("<20s", self.access_id)
 
-        return header + signature + message
+        return header + signature + packed_message
 
     def _parse_response(self, buf, resp_code):
-        payload, signature = buf.split(b"\x00", 1)
-        resp = json.loads(payload.decode("utf8"))
+        payload, signature = buf[2:].split(b"\x00", 1)
 
-        if resp.get("code") == resp_code:
-            if resp_code == misc.CODE_RESPONSE_RSA_KEY:
-                remote_keyobj = encryptor.load_keyobj(resp["pubkey"])
-                if encryptor.validate_signature(remote_keyobj, payload,
-                                                signature):
-                    return resp
-                else:
-                    print("DIE")
+        code, status = struct.unpack("<BB", buf[:2])
+        if code != resp_code:
+            return
+
+        if status != 0:
+            raise RuntimeError(payload[2:].decode("utf8"))
+
+        resp = json.loads(payload.decode("utf8"))
+        if resp_code == misc.CODE_RESPONSE_RSA_KEY:
+            remote_keyobj = encryptor.load_keyobj(resp)
+            if encryptor.validate_signature(remote_keyobj, payload,
+                                            signature):
+                return resp
             else:
-                if encryptor.validate_signature(self.remote_keyobj, payload,
-                                                signature):
-                    return resp
+                print("DIE")
+        else:
+            if encryptor.validate_signature(self.remote_keyobj, payload,
+                                            signature):
+                return resp

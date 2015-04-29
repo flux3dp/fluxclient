@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 CODE_DISCOVER = 0x00
-CODE_RESPONSE_DISCOVER = 0x01
+CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 
 DEFAULT_PORT = 3310
 
@@ -78,7 +78,7 @@ class UpnpDiscover(object):
         now = time()
 
         if now - self._last_sent > 0.1:
-            payload = struct.pack('<4s16sh', b"FLUX",
+            payload = struct.pack('<4s16sB', b"FLUX",
                                   self.serial.bytes,
                                   CODE_DISCOVER)
 
@@ -91,13 +91,14 @@ class UpnpDiscover(object):
                 return
 
             buf, remote = sock.recvfrom(4096)
-            payload = json.loads(buf[:-1].decode("utf8"))
+            resp_code, status = struct.unpack("<BB", buf[:2])
 
-            code, serial = payload.get("code"), payload.get("serial")
-
-            if code != CODE_RESPONSE_DISCOVER:
+            if resp_code != CODE_RESPONSE_DISCOVER:
                 continue
 
+            payload = json.loads(buf[2:-1].decode("utf8"))
+
+            serial = payload.get("serial")
             version = payload.get("ver")
             model_id = payload.get("model")
             timestemp = payload.get("time")
