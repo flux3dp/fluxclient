@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+
+import threading
+import argparse
+import sys
+import re
+
+def is_serial(target):
+    return True if re.match("[0-9A-Z]{25}", target) else False
+
+
+def parse_ipaddr(target):
+    if ":" in target:
+        addr, port = target.split(":")
+        return (addr, int(port))
+    else:
+        return (target, 23811)
+
+
+def robot_shell_reciver(robot_client, console):
+    while True:
+        buf = robot_client.sock.recv(4096)
+        if buf:
+            console.append_log(buf.decode("utf-8"))
+        else:
+            console.append_log("Disconnected!!")
+            return
+
+def python_shell_reciver(robot_client):
+    while True:
+        buf = robot_client.sock.recv(4096)
+        if buf:
+            print(buf.decode("utf-8"))
+        else:
+            print("Disconnected!!")
+            return
+
+
+def robot_shell(ipaddr):
+    from fluxclient.console import Console
+    from fluxclient.robot import RobotClient
+
+    with Console() as console:
+        console.setup()
+        robot_client = RobotClient(ipaddr=ipaddr, stdout=console.append_log)
+
+        t = threading.Thread(target=robot_shell_reciver,
+                             args=(robot_client, console))
+        t.setDaemon(True)
+        t.start()
+
+        while True:
+            cmd = console.read_cmd()
+            robot_client.sock.send(cmd.encode())
+
+
+def python_shell(ipaddr):
+    from fluxclient.robot import RobotClient
+    import IPython
+
+    robot_client = RobotClient(ipaddr=ipaddr, stdout=print)
+
+    t = threading.Thread(target=python_shell_reciver, args=(robot_client, ))
+    t.setDaemon(True)
+    t.start()
+
+    print(">> robot_client")
+    IPython.embed()
+
+def main():
+    parser = argparse.ArgumentParser(description='flux robot')
+
+    parser.add_argument(dest='target', type=str,
+                        help="Printer connect with. It can be printer serial "
+                             "or IP address like 192.168.1.1 or "
+                             "192.168.1.1:23811")
+    parser.add_argument('--ipython', dest='ipython', action='store_const',
+                        const=True, default=False, help='Use python shell')
+    options = parser.parse_args()
+
+    if is_serial(options.target):
+        raise RuntimeError("Not support yet")
+    else:
+        ipaddr = parse_ipaddr(options.target)
+
+    if options.ipython:
+        python_shell(ipaddr=ipaddr)
+    else:
+        robot_shell(ipaddr=ipaddr)
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
