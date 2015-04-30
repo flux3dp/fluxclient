@@ -18,6 +18,8 @@ CODE_RESPONSE_CHANGE_PWD = 0xa1
 CODE_SET_NETWORK = 0xa2
 CODE_RESPONSE_SET_NETWORK = 0xa3
 
+CODE_REQUEST_ROBOT = 0x84
+CODE_RESPONSE_REQUEST_ROBOT = 0x85
 
 class UpnpTask(UpnpBase):
     def auth_without_password(self, timeout=1.2):
@@ -47,8 +49,15 @@ class UpnpTask(UpnpBase):
         resp_code = CODE_RESPONSE_SET_NETWORK
 
         message = "\x00".join(("%s=%s" % i for i in options.items()))
-        request = self.sign_request(message)
+        request = self.sign_request(message.encode())
 
+        return self.make_request(req_code, resp_code, request)
+
+    def require_robot(self):
+        req_code = CODE_REQUEST_ROBOT
+        resp_code = CODE_RESPONSE_REQUEST_ROBOT
+
+        request = self.sign_request(b"")
         return self.make_request(req_code, resp_code, request)
 
     def require_auth(self, timeout=3):

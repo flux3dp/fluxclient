@@ -17,6 +17,38 @@ def parse_ipaddr(target):
         return (target, 23811)
 
 
+def select_ipaddr(remote_addrs):
+    return (remote_addrs[0][0], 23811)
+
+
+def parse_target(options, output):
+    from fluxclient.upnp_task import UpnpTask
+    from time import sleep
+
+    if is_serial(options.target):
+        task = UpnpTask(options.target)
+        ipaddr = select_ipaddr(task.remote_addrs)
+        output("Serial: %s\nModel: %s\nIP Addr: %s" %
+               (task.serial.hex, task.model_id, ipaddr[0]))
+
+        auth_result = task.auth_without_password()
+        if auth_result and auth_result.get("status") != "ok":
+            raise RuntimeError("Can not access device")
+
+        try:
+            resp = task.require_robot()
+            if resp != None:
+                output("Robot launching...")
+                sleep(0.5)
+        except RuntimeError as e:
+            if e.args[0] == "ALREADY_RUNNING":
+                output("Robot already running")
+
+        return ipaddr, task.remote_keyobj
+    else:
+        return parse_ipaddr(options.target), None
+
+
 def robot_shell_reciver(robot_client, console):
     while True:
         buf = robot_client.sock.recv(4096)
@@ -36,29 +68,46 @@ def python_shell_reciver(robot_client):
             return
 
 
-def robot_shell(ipaddr):
+def robot_shell(options):
     from fluxclient.console import Console
     from fluxclient.robot import RobotClient
 
     with Console() as console:
         console.setup()
-        robot_client = RobotClient(ipaddr=ipaddr, stdout=console.append_log)
 
-        t = threading.Thread(target=robot_shell_reciver,
-                             args=(robot_client, console))
-        t.setDaemon(True)
-        t.start()
+        try:
+            ipaddr, keyobj = parse_target(options, output=console.append_log)
+            robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj,
+                                       stdout=console.append_log)
 
-        while True:
+            t = threading.Thread(target=robot_shell_reciver,
+                                 args=(robot_client, console))
+            t.setDaemon(True)
+            t.start()
+
+            while True:
+                cmd = console.read_cmd()
+                robot_client.sock.send(cmd.encode())
+        except Exception as e:
+            from io import StringIO
+            import traceback
+
+            f = StringIO()
+            errargs = sys.exc_info()
+
+            traceback.print_exception(*errargs, file=f)
+            console.append_log(f.getvalue())
+            console.append_log("Press enter quit")
             cmd = console.read_cmd()
-            robot_client.sock.send(cmd.encode())
+            return
 
 
-def python_shell(ipaddr):
+def python_shell(options):
     from fluxclient.robot import RobotClient
     import IPython
 
-    robot_client = RobotClient(ipaddr=ipaddr, stdout=print)
+    ipaddr, keyobj = parse_target(options, output=print)
+    robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj, stdout=print)
 
     t = threading.Thread(target=python_shell_reciver, args=(robot_client, ))
     t.setDaemon(True)
@@ -66,6 +115,7 @@ def python_shell(ipaddr):
 
     print(">> robot_client")
     IPython.embed()
+
 
 def main():
     parser = argparse.ArgumentParser(description='flux robot')
@@ -78,15 +128,10 @@ def main():
                         const=True, default=False, help='Use python shell')
     options = parser.parse_args()
 
-    if is_serial(options.target):
-        raise RuntimeError("Not support yet")
-    else:
-        ipaddr = parse_ipaddr(options.target)
-
     if options.ipython:
-        python_shell(ipaddr=ipaddr)
+        python_shell(options)
     else:
-        robot_shell(ipaddr=ipaddr)
+        robot_shell(options)
 
     return 0
 
