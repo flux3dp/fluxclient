@@ -109,7 +109,7 @@ class UpnpBase(object):
             return
 
         if status != 0:
-            raise RuntimeError(payload[2:].decode("utf8"))
+            raise RuntimeError(payload.decode("utf8"))
 
         resp = json.loads(payload.decode("utf8"))
         if resp_code == misc.CODE_RESPONSE_RSA_KEY:
