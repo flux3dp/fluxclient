@@ -2,6 +2,7 @@
 from time import time
 import binascii
 import struct
+import json
 
 from fluxclient.upnp_base import UpnpBase
 
@@ -18,10 +19,30 @@ CODE_RESPONSE_CHANGE_PWD = 0xa1
 CODE_SET_NETWORK = 0xa2
 CODE_RESPONSE_SET_NETWORK = 0xa3
 
+CODE_CONTROL_STATUS = 0x80
+CODE_RESPONSE_CONTROL_STATUS = 0x81
+
+CODE_RESET_CONTROL = 0x82
+CODE_RESPONSE_RESET_CONTROL = 0x83
+
 CODE_REQUEST_ROBOT = 0x84
 CODE_RESPONSE_REQUEST_ROBOT = 0x85
 
 class UpnpTask(UpnpBase):
+    def auth_with_password(self, passwd, timeout=1.2):
+        der = self.publickey_der
+
+        req_code = CODE_PWD_ACCESS
+        resp_code = CODE_RESPONSE_PWD_ACCESS
+
+        buf = b"\x00".join([
+            str(self.create_timestemp()).encode(),
+            passwd.encode(),
+            der
+        ])
+        resp = self.make_request(req_code, resp_code, buf, encrypt=True)
+        return resp
+
     def auth_without_password(self, timeout=1.2):
         der = self.publickey_der
 
@@ -49,6 +70,15 @@ class UpnpTask(UpnpBase):
         resp_code = CODE_RESPONSE_SET_NETWORK
 
         message = "\x00".join(("%s=%s" % i for i in options.items()))
+        request = self.sign_request(message.encode())
+
+        return self.make_request(req_code, resp_code, request)
+
+    def kill_control(self):
+        req_code = CODE_CONTROL_STATUS
+        resp_code = CODE_RESPONSE_CONTROL_STATUS
+
+        message = b""
         request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)

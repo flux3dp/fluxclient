@@ -117,6 +117,21 @@ def python_shell(options):
     IPython.embed()
 
 
+def do_kill(options):
+    ipaddr, keyobj = parse_target(options, output=print)
+    if is_serial(options.target):
+        from fluxclient.upnp_task import UpnpTask
+
+        task = UpnpTask(options.target)
+        ipaddr = select_ipaddr(task.remote_addrs)
+        output("Serial: %s\nModel: %s\nIP Addr: %s" %
+               (task.serial.hex, task.model_id, ipaddr[0]))
+
+        resp = task.require_robot()
+    else:
+        raise RuntimeError("Kill must give serial, not IP addr")
+
+
 def main():
     parser = argparse.ArgumentParser(description='flux robot')
 
@@ -124,10 +139,14 @@ def main():
                         help="Printer connect with. It can be printer serial "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
+    parser.add_argument('--kill', dest='do_kill', action='store_const',
+                        const=True, default=False, help='Use python shell')
     parser.add_argument('--ipython', dest='ipython', action='store_const',
                         const=True, default=False, help='Use python shell')
     options = parser.parse_args()
 
+    if options.do_kill:
+        do_kill(options)
     if options.ipython:
         python_shell(options)
     else:

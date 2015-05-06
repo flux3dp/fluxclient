@@ -3,6 +3,7 @@
 
 from time import time, sleep
 import argparse
+import getpass
 import sys
 
 from fluxclient.upnp_task import UpnpTask
@@ -20,9 +21,14 @@ Remote Addr: %s
     sys.stdout.flush()
 
     if task.has_password:
-        pass
+        return auth_passwd(task)
     else:
         return auth_nopasswd(task)
+
+
+def auth_passwd(task):
+    passwd = getpass.getpass()
+    print(task.auth_with_password(passwd))
 
 
 def auth_nopasswd(task, timegap=1.0):
