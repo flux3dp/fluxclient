@@ -24,6 +24,6 @@ setup(
     packages=find_packages(),
     test_suite="tests.main.everything",
     scripts=["bin/flux_discover", "bin/flux_auth", "bin/flux_passwd",
-             "bin/flux_config_network"],
+             "bin/flux_config_network", "bin/flux_robot"],
     install_requires=install_requires,
 )

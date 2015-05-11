@@ -51,7 +51,7 @@ def parse_target(options, output):
 
 def robot_shell_reciver(robot_client, console):
     while True:
-        buf = robot_client.sock.recv(4096)
+        buf = robot_client.recv(4096)
         if buf:
             console.append_log(buf.decode("utf-8"))
         else:
@@ -60,7 +60,7 @@ def robot_shell_reciver(robot_client, console):
 
 def python_shell_reciver(robot_client):
     while True:
-        buf = robot_client.sock.recv(4096)
+        buf = robot_client.recv(4096)
         if buf:
             print(buf.decode("utf-8"))
         else:
@@ -87,7 +87,8 @@ def robot_shell(options):
 
             while True:
                 cmd = console.read_cmd()
-                robot_client.sock.send(cmd.encode())
+                robot_client.send(cmd.encode())
+
         except Exception as e:
             from io import StringIO
             import traceback
