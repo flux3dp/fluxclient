@@ -77,7 +77,7 @@ class UpnpDiscover(object):
     def _send_request(self, sock):
         now = time()
 
-        if now - self._last_sent > 0.1:
+        if now - self._last_sent > 0.3:
             payload = struct.pack('<4s16sB', b"FLUX",
                                   self.serial.bytes,
                                   CODE_DISCOVER)

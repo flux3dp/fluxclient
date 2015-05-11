@@ -1,6 +1,7 @@
 
 import socket
 import curses
+import os
 
 from fluxclient import encryptor as E
 
@@ -46,6 +47,31 @@ class RobotClient(object):
     def send_cmd(self, buf):
         if buf == b"raw":
             self.mode = "raw"
+        elif buf.startswith(b"upload "):
+            filename = buf.split(b" ", 1)[-1].decode("utf-8")
+            with open(filename, "rb") as f:
+                self.output("FILE OPENED")
+                size = os.fstat(f.fileno()).st_size
+                buf = ("upload %i" % size).encode()
+                self.sock.send(buf)
+
+                sent = 0
+
+                self.output("%s %s" % (sent, size))
+                while sent < size:
+                    buf = f.read(4096)
+                    l = len(buf)
+
+                    if l == 0:
+                        raise RuntimeError("File size error")
+                    sent += l
+
+                    self.sock.send(buf)
+                    self.output("UPLOADING: %.3f %i / %i" %
+                                (sent / size, sent, size))
+
+            self.output("UPLOAD COMPLETE")
+            return
 
         self.sock.send(buf)
 

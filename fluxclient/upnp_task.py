@@ -90,9 +90,12 @@ class UpnpTask(UpnpBase):
         request = self.sign_request(b"")
         return self.make_request(req_code, resp_code, request)
 
-    def require_auth(self, timeout=3):
+    def require_auth(self, timeout=6):
         start_at = time()
         while timeout >= (time() - start_at):
-            resp = self.auth_without_password()
-            if resp and resp.get("status") != "ok":
-                raise RuntimeError("Auth failed")
+            resp = self.auth_without_password(0.3)
+            if resp:
+                if resp.get("status") == "ok":
+                    break
+                else:
+                    raise RuntimeError("Auth failed")
