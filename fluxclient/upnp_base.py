@@ -1,5 +1,6 @@
 
 from select import select
+from random import randint
 from time import time
 import uuid as _uuid
 import struct
@@ -35,6 +36,9 @@ class UpnpBase(object):
                 d.ipaddr = ipaddr[0]
                 d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
+        if self.remote_version < "0.7a1":
+            raise RuntimeError("fluxmonitor version is too old")
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -50,11 +54,11 @@ class UpnpBase(object):
         return encryptor.get_public_key_der(self.keyobj)
 
     def _load_profile(self, discover_instance, serial, model_id, timestemp,
-                      protocol_version, has_password, ipaddrs):
+                      version, has_password, ipaddrs):
         if serial == self.serial.hex:
             self.model_id = model_id
             self.timedelta = timestemp - time()
-            self.protocol_version = protocol_version
+            self.remote_version = version
             self.has_password = has_password
             self.remote_addrs = ipaddrs
             self._inited = True
@@ -93,13 +97,14 @@ class UpnpBase(object):
             if resp:
                 return resp
 
-    def sign_request(self, message):
-        t = time()
-        packed_message = struct.pack("<d", t) + message
-        signature = encryptor.sign(self.keyobj, packed_message)
-        header = struct.pack("<20s", self.access_id)
+    def sign_request(self, body):
+        salt = ("%i" % randint(1000, 9999)).encode()
+        message = struct.pack("<20sf4s", self.access_id, time(), salt) + body
 
-        return header + signature + packed_message
+        signature = encryptor.sign(self.keyobj,
+                                   self.serial.bytes + message)
+
+        return message + signature
 
     def _parse_response(self, buf, resp_code):
         payload, signature = buf[2:].split(b"\x00", 1)
