@@ -58,7 +58,7 @@ def robot_shell_reciver(robot_client, console):
             console.append_log("Disconnected!!")
             return
 
-def python_shell_reciver(robot_client):
+def ipython_shell_reciver(robot_client):
     while True:
         buf = robot_client.recv(4096)
         if buf:
@@ -103,20 +103,35 @@ def robot_shell(options):
             return
 
 
-def python_shell(options):
+def ipython_shell(options):
     from fluxclient.robot import RobotClient
     import IPython
 
     ipaddr, keyobj = parse_target(options, output=print)
     robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj, stdout=print)
 
-    t = threading.Thread(target=python_shell_reciver, args=(robot_client, ))
+    t = threading.Thread(target=ipython_shell_reciver, args=(robot_client, ))
     t.setDaemon(True)
     t.start()
 
     print(">> robot_client")
     IPython.embed()
 
+def simple_shell(options):
+    from fluxclient.robot import RobotClient
+
+    ipaddr, keyobj = parse_target(options, output=print)
+    robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj, stdout=print)
+
+    t = threading.Thread(target=ipython_shell_reciver, args=(robot_client, ))
+    t.setDaemon(True)
+    t.start()
+
+    print("Console Ready")
+
+    while True:
+        r = sys.stdin.readline()
+        robot_client.send(r.encode())
 
 def do_kill(options):
     ipaddr, keyobj = parse_target(options, output=print)
@@ -144,12 +159,16 @@ def main():
                         const=True, default=False, help='Use python shell')
     parser.add_argument('--ipython', dest='ipython', action='store_const',
                         const=True, default=False, help='Use python shell')
+    parser.add_argument('--simple', dest='simple', action='store_const',
+                        const=True, default=False, help='Use python shell')
     options = parser.parse_args()
 
     if options.do_kill:
         do_kill(options)
     if options.ipython:
-        python_shell(options)
+        ipython_shell(options)
+    elif options.simple:
+        simple_shell(options)
     else:
         robot_shell(options)
 

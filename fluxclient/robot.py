@@ -1,6 +1,5 @@
 
 import socket
-import curses
 import os
 
 from fluxclient import encryptor as E
