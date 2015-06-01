@@ -83,19 +83,28 @@ class UpnpTask(UpnpBase):
 
         return self.make_request(req_code, resp_code, request)
 
-    def require_robot(self):
+    def require_robot(self, timeout=6):
         req_code = CODE_REQUEST_ROBOT
         resp_code = CODE_RESPONSE_REQUEST_ROBOT
+        start_at = time()
 
-        request = self.sign_request(b"")
-        return self.make_request(req_code, resp_code, request)
+        while timeout >= (time() - start_at):
+            request = self.sign_request(b"")
+            resp = self.make_request(req_code, resp_code, request)
+            if resp:
+                return resp
+
+        raise RuntimeError("Timeout")
+
 
     def require_auth(self, timeout=6):
         start_at = time()
         while timeout >= (time() - start_at):
-            resp = self.auth_without_password(0.3)
+            resp = self.auth_without_password()
             if resp:
                 if resp.get("status") == "ok":
-                    break
+                    return resp
                 else:
                     raise RuntimeError("Auth failed")
+
+        raise RuntimeError("Timeout")
