@@ -23,7 +23,14 @@ setup(
     license="?",
     packages=find_packages(),
     test_suite="tests.main.everything",
-    scripts=["bin/flux_discover", "bin/flux_auth", "bin/flux_passwd",
-             "bin/flux_config_network", "bin/flux_robot"],
+    entry_points={
+        "console_scripts": [
+            "flux_discover=fluxclient.commands.discover:main",
+            "flux_passwd=fluxclient.commands.passwd:main",
+            "flux_config_network=fluxclient.commands.config_network:main",
+            "flux_robot=fluxclient.commands.robot:main",
+            "flux_auth=fluxclient.commands.auth:main",
+        ],
+    },
     install_requires=install_requires,
 )

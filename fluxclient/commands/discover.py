@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from fluxclient import misc
 from fluxclient.upnp_discover import UpnpDiscover
@@ -21,7 +20,11 @@ def callback(discover_instance, serial, model_id, timestemp, protocol_version,
                                         protocol_version,
                                         ", ".join(ipaddrs_str)))
 
-print("%-25s %-10s %-8s %-8s %s" % ("Serial", "Model", "Password", "Version",
-                                    "IP Address"))
-print("=" * 79)
-discover.discover(callback)
+def main():
+    print("%-25s %-10s %-8s %-8s %s" % ("Serial", "Model", "Password", "Version",
+                                        "IP Address"))
+    print("=" * 79)
+    discover.discover(callback)
+
+if __name__ == "__main__":
+    sys.exit(main())

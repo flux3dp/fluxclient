@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from getpass import getpass
 import argparse
@@ -7,9 +6,15 @@ import sys
 from fluxclient.upnp_task import UpnpTask
 
 
-def main(serial):
+def main():
+    parser = argparse.ArgumentParser(description='flux printer config tool')
+    parser.add_argument(dest='serial', type=str, help='Printer Serial')
+
+    options = parser.parse_args()
+
     task = UpnpTask(serial)
 
+    serial = options.serial
     sys.stdout.write("""Serial: %s
 Model: %s
 Has Password: %s
@@ -34,19 +39,14 @@ Has Password: %s
         if resp:
             if resp.get("status") == "ok":
                 print("Password changed.")
-                return True
+                return 0
             else:
                 print("Password change failed: %s" % resp.get("message", ""))
-                return False
+                return 1
 
     print("Remote no response")
-    return False
+    return 2
 
 
-parser = argparse.ArgumentParser(description='flux printer config tool')
-parser.add_argument(dest='serial', type=str, help='Printer Serial')
-
-options = parser.parse_args()
-
-result = main(options.serial)
-sys.exit(0 if result else 1)
+if __name__ == "__main__":
+    sys.exit(main())

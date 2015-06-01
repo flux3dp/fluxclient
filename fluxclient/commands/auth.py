@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 
 from time import time, sleep
 import argparse
@@ -9,7 +7,13 @@ import sys
 from fluxclient.upnp_task import UpnpTask
 
 
-def main(serial):
+def main():
+    parser = argparse.ArgumentParser(description='flux printer config tool')
+    parser.add_argument(dest='serial', type=str, help='Printer Serial')
+
+    options = parser.parse_args()
+
+    serial = options.serial
     task = UpnpTask(serial)
 
     sys.stdout.write("""Serial: %s
@@ -71,10 +75,5 @@ def auth_nopasswd(task, timegap=1.0):
         sleep(max(timegap - time() + stemp, 0))
 
 
-parser = argparse.ArgumentParser(description='flux printer config tool')
-parser.add_argument(dest='serial', type=str, help='Printer Serial')
-
-options = parser.parse_args()
-
-result = main(options.serial)
-sys.exit(0 if result else 1)
+if __name__ == "__main__":
+    sys.exit(main())
