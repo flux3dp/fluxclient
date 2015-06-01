@@ -30,9 +30,7 @@ def parse_target(options, output):
         output("Serial: %s\nModel: %s\nIP Addr: %s" %
                (task.serial.hex, task.model_id, ipaddr[0]))
 
-        auth_result = task.require_auth()
-        if auth_result and auth_result.get("status") != "ok":
-            raise RuntimeError("Can not access device")
+        task.require_auth()
 
         try:
             resp = task.require_robot()
@@ -42,6 +40,8 @@ def parse_target(options, output):
         except RuntimeError as e:
             if e.args[0] == "ALREADY_RUNNING":
                 output("Robot already running")
+            else:
+                raise
 
         return ipaddr, task.remote_keyobj
     else:
