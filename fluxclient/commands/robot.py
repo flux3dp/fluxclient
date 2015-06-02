@@ -4,6 +4,7 @@ import argparse
 import sys
 import re
 
+
 def is_serial(target):
     return True if re.match("[0-9A-Z]{25}", target) else False
 
@@ -24,22 +25,27 @@ def parse_target(options, output):
     from fluxclient.upnp_task import UpnpTask
     from time import sleep
 
+    def lookup_callback(discover):
+        output(".")
+
     if is_serial(options.target):
-        task = UpnpTask(options.target)
+        output("Discover...")
+        task = UpnpTask(options.target, lookup_callback=lookup_callback)
         ipaddr = select_ipaddr(task.remote_addrs)
-        output("Serial: %s\nModel: %s\nIP Addr: %s" %
+        output(" OK\n")
+        output("Serial: %s\nModel: %s\nIP Addr: %s\n" %
                (task.serial.hex, task.model_id, ipaddr[0]))
 
         task.require_auth()
 
         try:
             resp = task.require_robot()
-            if resp != None:
-                output("Robot launching...")
+            if resp is not None:
+                output("Robot launching...\n")
                 sleep(0.5)
         except RuntimeError as e:
             if e.args[0] == "ALREADY_RUNNING":
-                output("Robot already running")
+                output("Robot already running\n")
             else:
                 raise
 
@@ -52,10 +58,11 @@ def robot_shell_reciver(robot_client, console):
     while True:
         buf = robot_client.recv(4096)
         if buf:
-            console.append_log(buf.decode("utf-8"))
+            console.append_log(buf.decode("utf-8", "ignore") + "\n")
         else:
-            console.append_log("Disconnected!!")
+            console.append_log("Disconnected!!\n")
             return
+
 
 def ipython_shell_reciver(robot_client):
     while True:
@@ -88,7 +95,7 @@ def robot_shell(options):
                 cmd = console.read_cmd()
                 robot_client.send(cmd.encode())
 
-        except Exception as e:
+        except Exception:
             from io import StringIO
             import traceback
 
@@ -116,6 +123,7 @@ def ipython_shell(options):
     print(">> robot_client")
     IPython.embed()
 
+
 def simple_shell(options):
     from fluxclient.robot import RobotClient
 
@@ -132,6 +140,7 @@ def simple_shell(options):
         r = sys.stdin.readline()
         robot_client.send(r.encode())
 
+
 def do_kill(options):
     ipaddr, keyobj = parse_target(options, output=print)
     if is_serial(options.target):
@@ -139,10 +148,10 @@ def do_kill(options):
 
         task = UpnpTask(options.target)
         ipaddr = select_ipaddr(task.remote_addrs)
-        output("Serial: %s\nModel: %s\nIP Addr: %s" %
-               (task.serial.hex, task.model_id, ipaddr[0]))
+        print("Serial: %s\nModel: %s\nIP Addr: %s\n" %
+              (task.serial.hex, task.model_id, ipaddr[0]))
 
-        resp = task.require_robot()
+        task.require_robot()
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
 

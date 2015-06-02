@@ -2,7 +2,6 @@
 from time import time
 import binascii
 import struct
-import json
 
 from fluxclient.upnp_base import UpnpBase
 
@@ -27,6 +26,7 @@ CODE_RESPONSE_RESET_CONTROL = 0x83
 
 CODE_REQUEST_ROBOT = 0x84
 CODE_RESPONSE_REQUEST_ROBOT = 0x85
+
 
 class UpnpTask(UpnpBase):
     def auth_with_password(self, passwd, timeout=1.2):
@@ -95,7 +95,6 @@ class UpnpTask(UpnpBase):
                 return resp
 
         raise RuntimeError("Timeout")
-
 
     def require_auth(self, timeout=6):
         start_at = time()

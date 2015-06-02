@@ -15,7 +15,8 @@ from fluxclient import misc
 class UpnpBase(object):
     remote_addr = "255.255.255.255"
 
-    def __init__(self, serial, port=misc.DEFAULT_PORT, forcus_broadcast=False):
+    def __init__(self, serial, lookup_callback=None,
+                 port=misc.DEFAULT_PORT, forcus_broadcast=False):
         self.port = port
 
         if len(serial) == 25:
@@ -27,7 +28,7 @@ class UpnpBase(object):
         self._inited = False
 
         d = UpnpDiscover(serial=self.serial)
-        d.discover(self._load_profile)
+        d.discover(self._load_profile, lookup_callback)
         if not self._inited:
             raise RuntimeError("Can not find device")
 

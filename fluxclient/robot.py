@@ -1,4 +1,5 @@
 
+from time import time, sleep
 import socket
 import os
 
@@ -9,29 +10,46 @@ class RobotClient(object):
     mode = "cmd"
 
     def __init__(self, ipaddr=None, server_key=None, stdout=None):
-        self.sock = s = socket.socket()
         self.output = stdout
 
-        s.connect(ipaddr)
+        self.output("Connecting..")
+        self.sock = s = self.connect(ipaddr)
+        self.output(" OK\n")
+        # self.sock = s = socket.socket()
+        # s.connect(ipaddr)
+
         buf = s.recv(4096)
 
         ver, sign, randbytes = buf[:8], buf[8:-128], buf[-128:]
 
         if server_key:
-            self.output("Warning: server key checking not implement!")
+            self.output("Warning: server key checking not implement!\n")
         else:
-            self.output("Warning: can not validate remote")
+            self.output("Warning: can not validate remote\n")
 
         rsakey = E.get_or_create_keyobj()
-        self.output("Access ID: %s" % E.get_access_id(rsakey))
+        self.output("Protocol: %s\n" % ver.decode("ascii", "ignore"))
+        self.output("Access ID: %s\n" % E.get_access_id(rsakey))
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         s.send(buf)
 
         status = s.recv(16).rstrip(b"\x00").decode()
-        self.output("Handshake: %s" % status)
+        self.output("Handshake: %s\n" % status)
 
         if status != "OK":
             raise RuntimeError("Handshake failed.")
+
+    def connect(self, ipaddr):
+        while True:
+            t = time()
+
+            try:
+                self.output(".")
+                s = socket.socket()
+                s.connect(ipaddr)
+                return s
+            except ConnectionRefusedError:
+                sleep(min(0.6 - time() + t, 0.6))
 
     def recv(self, l=4096):
         buf = self.sock.recv(4096)
@@ -80,4 +98,3 @@ class RobotClient(object):
             self.mode = "cmd"
         else:
             self.sock.send(buf + b"\r\n")
-

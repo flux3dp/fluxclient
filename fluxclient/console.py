@@ -1,6 +1,6 @@
 
 import curses
-import sys
+
 
 class Console(object):
     def __enter__(self):
@@ -28,7 +28,7 @@ class Console(object):
         self.sepwin.refresh()
 
     def append_log(self, buf):
-        self.logwin.addstr(buf + "\n")
+        self.logwin.addstr(buf)
         self.logwin.refresh()
 
     def read_cmd(self):
@@ -37,7 +37,7 @@ class Console(object):
         self.cmdwin.addstr(b" " * len(cmd) + b"\r")
         self.cmdwin.refresh()
 
-        self.append_log("> %s" % cmd)
+        self.append_log("> %s\n" % cmd)
         return cmd
 
 if __name__ == "__main__":
@@ -48,11 +48,11 @@ if __name__ == "__main__":
             iv.logwin.refresh()
             sleep(1.0)
 
-    with Interactive() as i:
+    with Console() as i:
         i.setup()
 
         import threading
-        t = threading.Thread(target=dadada, args = (i, ))
+        t = threading.Thread(target=dadada, args=(i, ))
         t.setDaemon(True)
         t.start()
 
@@ -60,4 +60,3 @@ if __name__ == "__main__":
             lines, cols = i.stdscr.getmaxyx()
             buf = i.stdscr.getstr(lines - 1, 0)
             i.append_log(buf)
-

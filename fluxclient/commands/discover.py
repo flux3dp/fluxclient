@@ -21,10 +21,9 @@ class DiscoverPrinter(object):
         sys.stdout.flush()
 
     def go(self):
-        self.discover.discover(self.result_callback, self.loop_callback,
-                               timeout=float("INF"))
+        self.discover.discover(self.result_callback, self.loop_callback)
 
-    def loop_callback(self):
+    def loop_callback(self, discover):
         c = self._running_chars[self._counter]
         self._counter = (self._counter + 1) % len(self._running_chars)
         sys.stdout.write("\r%s" % c)

@@ -12,9 +12,9 @@ def main():
 
     options = parser.parse_args()
 
+    serial = options.serial
     task = UpnpTask(serial)
 
-    serial = options.serial
     sys.stdout.write("""Serial: %s
 Model: %s
 Has Password: %s
