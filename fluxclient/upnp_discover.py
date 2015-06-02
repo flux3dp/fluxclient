@@ -46,7 +46,7 @@ class UpnpDiscover(object):
         self.serial = serial
         self.port = port
 
-    def discover(self, callback, timeout=3.0):
+    def discover(self, callback, loop_callback=None, timeout=3.0):
         """
         Call this method to execute discover task
 
@@ -66,6 +66,9 @@ class UpnpDiscover(object):
                 self._send_request(sock)
                 self._recv_response(sock, callback)
                 self._sleep_or_quit(timeout_at)
+
+                if loop_callback:
+                    loop_callback()
 
         finally:
             sock.close()
