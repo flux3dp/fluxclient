@@ -37,7 +37,7 @@ class UpnpBase(object):
                 d.ipaddr = ipaddr[0]
                 d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
-        if self.remote_version < "0.7a1":
+        if self.remote_version < "0.8a1":
             raise RuntimeError("fluxmonitor version is too old")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
@@ -86,7 +86,7 @@ class UpnpBase(object):
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
         if message and encrypt:
-            message = encryptor.encrypt(self.remote_keyobj, message)
+            message = encryptor.rsa_encrypt(self.remote_keyobj, message)
 
         payload = struct.pack('<4s16sB', b"FLUX", self.serial.bytes,
                               req_code) + message

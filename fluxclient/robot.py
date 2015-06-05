@@ -3,6 +3,8 @@ from time import time, sleep
 import socket
 import os
 
+from Crypto.Cipher import AES
+
 from fluxclient import encryptor as E
 
 
@@ -15,8 +17,6 @@ class RobotClient(object):
         self.output("Connecting..")
         self.sock = s = self.connect(ipaddr)
         self.output(" OK\n")
-        # self.sock = s = socket.socket()
-        # s.connect(ipaddr)
 
         buf = s.recv(4096)
 
@@ -30,14 +30,32 @@ class RobotClient(object):
         rsakey = E.get_or_create_keyobj()
         self.output("Protocol: %s\n" % ver.decode("ascii", "ignore"))
         self.output("Access ID: %s\n" % E.get_access_id(rsakey))
+
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         s.send(buf)
 
-        status = s.recv(16).rstrip(b"\x00").decode()
+        status = s.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
         self.output("Handshake: %s\n" % status)
 
-        if status != "OK":
-            raise RuntimeError("Handshake failed.")
+        if status == "OK":
+            aes_enc_init = s.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
+            aes_init = E.rsa_decrypt(rsakey, aes_enc_init)
+
+            self.aes_enc = AES.new(aes_init[:32], AES.MODE_CFB,
+                                   aes_init[32:48], segment_size=128)
+            self.aes_dec = AES.new(aes_init[:32], AES.MODE_CFB,
+                                   aes_init[32:48], segment_size=128)
+        else:
+            raise RuntimeError("Handshake failed: %s" % status)
+
+        self._recv_buf = bytearray(4096)
+        self._recv_bufview = memoryview(self._recv_buf)
+        self._recv_offset = 0
+
+        self.output("Ready\n")
+
+    def fileno(self):
+        return self.sock.fileno()
 
     def connect(self, ipaddr):
         while True:
@@ -51,50 +69,68 @@ class RobotClient(object):
             except ConnectionRefusedError:
                 sleep(min(0.6 - time() + t, 0.6))
 
-    def recv(self, l=4096):
-        buf = self.sock.recv(4096)
+    def recv(self, length=None):
+        l = self.sock.recv_into(self._recv_bufview[self._recv_offset:])
+
+        offset = self._recv_offset + l  # Total data in buffer
+        chunk_offset = 128 * (l // 128)   # Data can be processed
+        left_offset = offset - chunk_offset
+
+        buf = self.aes_dec.decrypt(self._recv_bufview[:chunk_offset].tobytes())
+        if left_offset:
+            self._recv_bufview[:left_offset] = \
+                self._recv_bufview[chunk_offset:offset]
         return buf
 
-    def send(self, buf):
+    def _send(self, buf):
+        l = len(buf)
+        if l > 4096:
+            raise RuntimeError("Do not send message larger then 4096, got %i" %
+                               l)
+
+        pad = b"\x00" * ((256 - (l % 128)) % 128)
+        payload = self.aes_enc.encrypt(buf + pad)
+        self.sock.send(payload)
+
+    def send_cmd(self, cmd):
+        cmd = cmd.strip()
         if self.mode == "cmd":
-            self.send_cmd(buf)
+            if cmd == b"raw":
+                self._send(cmd)
+                self.mode = "raw"
+            elif cmd.startswith(b"upload "):
+                filename = cmd.split(b" ", 1)[-1].decode("utf-8")
+                with open(filename, "rb") as f:
+                    self.output("FILE OPENED\n")
+                    size = os.fstat(f.fileno()).st_size
+                    cmd = ("upload %i" % size).encode()
+                    self._send(cmd)
+                    sleep(1.0)
+
+                    sent = 0
+                    ts = time()
+
+                    fbuf = bytearray(4096)
+                    while sent < size:
+                        l = f.readinto(fbuf)
+
+                        if l == 0:
+                            raise RuntimeError("File size error")
+                        sent += l
+
+                        self._send(bytes(fbuf[:l]))
+                        if time() - ts > 1.0:
+                            self.output("UPLOADING: %.3f %i / %i\n" %
+                                        (sent / size, sent, size))
+                            ts = time()
+
+                self.output("UPLOAD COMPLETE\n")
+                return
+            else:
+                self._send(cmd)
         elif self.mode == "raw":
-            self.send_raw(buf)
-
-    def send_cmd(self, buf):
-        if buf == b"raw":
-            self.mode = "raw"
-        elif buf.startswith(b"upload "):
-            filename = buf.split(b" ", 1)[-1].decode("utf-8")
-            with open(filename, "rb") as f:
-                self.output("FILE OPENED")
-                size = os.fstat(f.fileno()).st_size
-                buf = ("upload %i" % size).encode()
-                self.sock.send(buf)
-
-                sent = 0
-
-                self.output("%s %s" % (sent, size))
-                while sent < size:
-                    buf = f.read(4096)
-                    l = len(buf)
-
-                    if l == 0:
-                        raise RuntimeError("File size error")
-                    sent += l
-
-                    self.sock.send(buf)
-                    self.output("UPLOADING: %.3f %i / %i" %
-                                (sent / size, sent, size))
-
-            self.output("UPLOAD COMPLETE")
-            return
-
-        self.sock.send(buf)
-
-    def send_raw(self, buf):
-        if buf == b"quit":
-            self.sock.send(buf)
-            self.mode = "cmd"
-        else:
-            self.sock.send(buf + b"\r\n")
+            if cmd.strip() == b"quit":
+                self._send(cmd)
+                self.mode = "cmd"
+            else:
+                self._send(cmd + b"\n")

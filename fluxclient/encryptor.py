@@ -32,7 +32,7 @@ def get_or_create_keyobj(path=None):
     return keyobj
 
 
-def encrypt(keyobj, message):
+def rsa_encrypt(keyobj, message):
     chip = PKCS1_OAEP.new(keyobj)
     size = ((keyobj.size() + 1) // 8) - 42
     in_buf = BytesIO(message)
@@ -44,6 +44,24 @@ def encrypt(keyobj, message):
         buf = in_buf.read(size)
 
     return out_buf.getvalue()
+
+
+def rsa_decrypt(keyobj, message):
+    chip = PKCS1_OAEP.new(keyobj)
+    size = (keyobj.size() + 1) // 8
+    in_buf = BytesIO(message)
+    out_buf = BytesIO()
+
+    buf = in_buf.read(size)
+    while buf:
+        out_buf.write(chip.decrypt(buf))
+        buf = in_buf.read(size)
+
+    return out_buf.getvalue()
+
+
+def rsa_size(keyobj):
+    return (keyobj.size() + 1) // 8
 
 
 def get_public_key_der(keyobj):

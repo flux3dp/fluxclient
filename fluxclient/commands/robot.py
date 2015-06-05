@@ -58,7 +58,8 @@ def robot_shell_reciver(robot_client, console):
     while True:
         buf = robot_client.recv(4096)
         if buf:
-            console.append_log(buf.decode("utf-8", "ignore") + "\n")
+            console.append_log(buf.decode("utf-8", "ignore").strip("\x00") +
+                               "\n")
         else:
             console.append_log("Disconnected!!\n")
             return
@@ -68,7 +69,7 @@ def ipython_shell_reciver(robot_client):
     while True:
         buf = robot_client.recv(4096)
         if buf:
-            print(buf.decode("utf-8"))
+            print(buf.decode("utf-8", "ignore") + "\n")
         else:
             print("Disconnected!!")
             return
@@ -93,7 +94,8 @@ def robot_shell(options):
 
             while True:
                 cmd = console.read_cmd()
-                robot_client.send(cmd.encode())
+                if cmd:
+                    robot_client.send_cmd(cmd.encode())
 
         except Exception:
             from io import StringIO
@@ -138,11 +140,10 @@ def simple_shell(options):
 
     while True:
         r = sys.stdin.readline()
-        robot_client.send(r.encode())
+        robot_client.send_cmd(r.encode())
 
 
 def do_kill(options):
-    ipaddr, keyobj = parse_target(options, output=print)
     if is_serial(options.target):
         from fluxclient.upnp_task import UpnpTask
 
@@ -151,7 +152,9 @@ def do_kill(options):
         print("Serial: %s\nModel: %s\nIP Addr: %s\n" %
               (task.serial.hex, task.model_id, ipaddr[0]))
 
-        task.require_robot()
+        task.require_auth()
+        task.kill_control()
+        print("Kill signal sent.")
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
 
@@ -173,7 +176,7 @@ def main():
 
     if options.do_kill:
         do_kill(options)
-    if options.ipython:
+    elif options.ipython:
         ipython_shell(options)
     elif options.simple:
         simple_shell(options)

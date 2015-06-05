@@ -75,11 +75,11 @@ class UpnpTask(UpnpBase):
         return self.make_request(req_code, resp_code, request)
 
     def kill_control(self):
-        req_code = CODE_CONTROL_STATUS
-        resp_code = CODE_RESPONSE_CONTROL_STATUS
+        req_code = CODE_RESET_CONTROL
+        resp_code = CODE_RESPONSE_RESET_CONTROL
 
         message = b""
-        request = self.sign_request(message.encode())
+        request = self.sign_request(message)
 
         return self.make_request(req_code, resp_code, request)
 
