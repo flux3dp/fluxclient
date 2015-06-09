@@ -31,6 +31,9 @@ class Console(object):
         self.logwin.addstr(buf)
         self.logwin.refresh()
 
+    def write(self, buf):
+        self.append_log(buf)
+
     def read_cmd(self):
         lines, cols = self.stdscr.getmaxyx()
         cmd = self.stdscr.getstr(lines - 1, 0).decode("utf8")

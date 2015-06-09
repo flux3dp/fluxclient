@@ -1,9 +1,19 @@
 
 import threading
 import argparse
+import logging
 import sys
 import re
 
+from fluxclient.robot_console import RobotConsole
+from fluxclient.robot import connect_robot
+
+
+def config_logger(stdout=sys.stderr, level=logging.DEBUG):
+    logging.basicConfig(format="%(message)s", stream=stdout)
+    logger = logging.getLogger('')
+    logger.setLevel(level)
+    return logger
 
 def is_serial(target):
     return True if re.match("[0-9A-Z]{25}", target) else False
@@ -21,31 +31,31 @@ def select_ipaddr(remote_addrs):
     return (remote_addrs[0][0], 23811)
 
 
-def parse_target(options, output):
+def parse_target(options, logstream=sys.stdout):
     from fluxclient.upnp_task import UpnpTask
     from time import sleep
 
     def lookup_callback(discover):
-        output(".")
+        logstream.write(".")
 
     if is_serial(options.target):
-        output("Discover...")
+        logstream.write("Discover...")
         task = UpnpTask(options.target, lookup_callback=lookup_callback)
         ipaddr = select_ipaddr(task.remote_addrs)
-        output(" OK\n")
-        output("Serial: %s\nModel: %s\nIP Addr: %s\n" %
-               (task.serial.hex, task.model_id, ipaddr[0]))
+        logstream.write(" OK\n")
+        logstream.write("Serial: %s\nModel: %s\nIP Addr: %s\n" %
+                        (task.serial.hex, task.model_id, ipaddr[0]))
 
         task.require_auth()
 
         try:
             resp = task.require_robot()
             if resp is not None:
-                output("Robot launching...\n")
+                logstream.write("Robot launching...\n")
                 sleep(0.5)
         except RuntimeError as e:
             if e.args[0] == "ALREADY_RUNNING":
-                output("Robot already running\n")
+                logstream.write("Robot already running\n")
             else:
                 raise
 
@@ -54,93 +64,79 @@ def parse_target(options, output):
         return parse_ipaddr(options.target), None
 
 
-def robot_shell_reciver(robot_client, console):
-    while True:
-        buf = robot_client.recv(4096)
-        if buf:
-            console.append_log(buf.decode("utf-8", "ignore").strip("\x00") +
-                               "\n")
-        else:
-            console.append_log("Disconnected!!\n")
-            return
-
-
-def ipython_shell_reciver(robot_client):
-    while True:
-        buf = robot_client.recv(4096)
-        if buf:
-            print(buf.decode("utf-8", "ignore") + "\n")
-        else:
-            print("Disconnected!!")
-            return
-
-
 def robot_shell(options):
     from fluxclient.console import Console
-    from fluxclient.robot import RobotClient
 
     with Console() as console:
         console.setup()
 
+        def conn_callback(*args):
+            console.write(".")
+            return True
+
         try:
-            ipaddr, keyobj = parse_target(options, output=console.append_log)
-            robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj,
-                                       stdout=console.append_log)
-
-            t = threading.Thread(target=robot_shell_reciver,
-                                 args=(robot_client, console))
-            t.setDaemon(True)
-            t.start()
-
+            logger = config_logger(console)
+            ipaddr, keyobj = parse_target(options, logstream=console)
+            client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+                                   conn_callback=conn_callback)
+            robot_client = RobotConsole(client)
+            logger.info("----> READY")
             while True:
-                cmd = console.read_cmd()
-                if cmd:
-                    robot_client.send_cmd(cmd.encode())
+                try:
+                    cmd = console.read_cmd()
+                    if cmd:
+                        robot_client.on_cmd(cmd)
+                except Exception:
+                    logger.exception("Unhandle Error")
 
         except Exception:
-            from io import StringIO
-            import traceback
-
-            f = StringIO()
-            errargs = sys.exc_info()
-
-            traceback.print_exception(*errargs, file=f)
-            console.append_log(f.getvalue())
-            console.append_log("Press enter quit")
-            cmd = console.read_cmd()
-            return
+            logger.exception("Unhandle Error")
+            console.append_log("Press Control + C to quit")
+            while True:
+                cmd = console.read_cmd()
 
 
 def ipython_shell(options):
-    from fluxclient.robot import RobotClient
+    logger = config_logger()
     import IPython
 
-    ipaddr, keyobj = parse_target(options, output=print)
-    robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj, stdout=print)
+    def conn_callback(*args):
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        return True
 
-    t = threading.Thread(target=ipython_shell_reciver, args=(robot_client, ))
-    t.setDaemon(True)
-    t.start()
+    ipaddr, keyobj = parse_target(options)
+    robot_client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+                                 conn_callback=conn_callback)
 
-    print(">> robot_client")
+    logger.info("----> READY")
+    logger.info(">> robot_client")
     IPython.embed()
 
 
 def simple_shell(options):
-    from fluxclient.robot import RobotClient
+    from fluxclient.console import Console
+    logger = config_logger()
 
-    ipaddr, keyobj = parse_target(options, output=print)
-    robot_client = RobotClient(ipaddr=ipaddr, server_key=keyobj, stdout=print)
+    def conn_callback(*args):
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        return True
 
-    t = threading.Thread(target=ipython_shell_reciver, args=(robot_client, ))
-    t.setDaemon(True)
-    t.start()
-
-    print("Console Ready")
+    ipaddr, keyobj = parse_target(options)
+    client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+                           conn_callback=conn_callback)
+    robot_client = RobotConsole(client)
+    print("----> READY")
 
     while True:
-        r = sys.stdin.readline()
-        robot_client.send_cmd(r.encode())
+        r = sys.stdin.readline().strip()
+        if not r:
+            continue
+        try:
+            robot_client.on_cmd(r.strip())
+        except Exception:
+            logger.exception("Unhandle Error")
 
 
 def do_kill(options):
@@ -157,6 +153,10 @@ def do_kill(options):
         print("Kill signal sent.")
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
+
+def connecting_callback(*args):
+    print("...")
+    return True
 
 
 def main():
