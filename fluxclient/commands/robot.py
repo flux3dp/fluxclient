@@ -1,5 +1,4 @@
 
-import threading
 import argparse
 import logging
 import sys
@@ -14,6 +13,7 @@ def config_logger(stdout=sys.stderr, level=logging.DEBUG):
     logger = logging.getLogger('')
     logger.setLevel(level)
     return logger
+
 
 def is_serial(target):
     return True if re.match("[0-9A-Z]{25}", target) else False
@@ -115,7 +115,6 @@ def ipython_shell(options):
 
 
 def simple_shell(options):
-    from fluxclient.console import Console
     logger = config_logger()
 
     def conn_callback(*args):
@@ -153,6 +152,7 @@ def do_kill(options):
         print("Kill signal sent.")
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
+
 
 def connecting_callback(*args):
     print("...")

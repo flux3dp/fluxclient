@@ -1,4 +1,5 @@
 
+from io import BytesIO
 from time import time
 import logging
 import socket
@@ -9,6 +10,7 @@ from .base import RobotError
 from .sock_v0002 import RobotSocketV2
 
 logger = logging.getLogger(__name__)
+
 
 def ok_or_error(fn):
     def wrap(self, *args):
@@ -24,6 +26,7 @@ def ok_or_error(fn):
 
 class FluxRobotV0002(object):
     def __init__(self, sock, server_key=None):
+        sock.settimeout(300)
         buf = sock.recv(4096)
         sign, randbytes = buf[8:-128], buf[-128:]
 
@@ -53,12 +56,18 @@ class FluxRobotV0002(object):
     def on_recv(self):
         return self.sock.recv(4096)
 
-    def _make_cmd(self, buf):
+    def _send_cmd(self, buf):
         l = len(buf)
         pad = b"\x00" * ((256 - (l % 128)) % 128)
         self.sock.send(buf + pad)
-        buf = self.sock.recv(128)
-        return buf.rstrip(b"\x00\n").decode("utf8")
+
+    def _recv_resp(self):
+        buf = self.sock.recv(128, socket.MSG_WAITALL)
+        return buf.rstrip(b"\x00\n").decode("utf8", "ignore")
+
+    def _make_cmd(self, buf):
+        self._send_cmd(buf)
+        return self._recv_resp()
 
     # Command Tasks
     def list_file(self):
@@ -129,6 +138,32 @@ class FluxRobotV0002(object):
 
     def report_play(self):
         return self._make_cmd(b"report")
+
+    def take_image(self):
+        self._send_cmd(b"image")
+        images = []
+        while True:
+            resp = self._recv_resp().split(" ")
+
+            if resp[0] == "image":
+                mime, length = resp[1], int(resp[2])
+                logger.debug("Recv image %s %i" % (mime, length))
+
+                buf = BytesIO()
+                left = length
+                while left > 0:
+                    left -= buf.write(self.sock.recv(min(4096, left)))
+
+                # No use padding
+                self.sock.recv((256 - (length % 128)) % 128,
+                               socket.MSG_WAITALL)
+                images.append((mime, buf.getvalue()))
+
+            elif resp[0] == "ok":
+                return images
+
+            else:
+                raise RuntimeError(resp)
 
     # Scan Tasks
     def taks_scanshot(self):

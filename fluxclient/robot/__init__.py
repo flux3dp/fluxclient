@@ -32,6 +32,8 @@ def _connect(ipaddr, conn_callback):
             return s
         except ConnectionRefusedError:
             if conn_callback and conn_callback():
-                sleep(min(0.6 - time() + t, 0.6))
+                t = min(0.6 - time() + t, 0.6)
+                if t > 0:
+                    sleep(t)
                 continue
             raise
