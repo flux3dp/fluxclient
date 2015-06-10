@@ -83,29 +83,29 @@ class FluxRobotV0002(object):
         if ret != "ok":
             raise RuntimeError(ret)
 
-    def upload_file(self, filename, cmd="upload", progress_callback=None):
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            cmd = ("%s %i" % (cmd, size)).encode()
+    def upload_stream(self, stream, length, cmd="upload",
+                      progress_callback=None):
+        cmd = ("%s %i" % (cmd, length)).encode()
 
-            upload_ret = self._make_cmd(cmd)
-            if upload_ret != "continue":
-                raise RobotError(upload_ret)
+        upload_ret = self._make_cmd(cmd)
+        if upload_ret != "continue":
+            raise RobotError(upload_ret)
 
-            sent = 0
-            ts = 0
-            while sent < size:
-                buf = f.read(4096)
-                lbuf = len(buf)
-                if lbuf == 0:
-                    raise RobotError("Upload file error")
-                sent += lbuf
-                self.sock.send(buf)
+        logger.debug("Upload stream length: %i" % length)
 
-                if progress_callback and time() - ts > 1.0:
-                    ts = time()
-                    progress_callback(self, sent, size)
+        sent = 0
+        ts = 0
+        while sent < length:
+            buf = stream.read(4096)
+            lbuf = len(buf)
+            if lbuf == 0:
+                raise RobotError("Upload file error")
+            sent += lbuf
+            self.sock.send(buf)
+
+            if progress_callback and time() - ts > 1.0:
+                ts = time()
+                progress_callback(self, sent, size)
 
         progress_callback(self, sent, size)
         buf = self.sock.recv(128, socket.MSG_WAITALL)
@@ -114,6 +114,12 @@ class FluxRobotV0002(object):
         final_ret = buf.rstrip(b"\x00\n").decode("utf8")
         if final_ret != "ok":
             raise RobotError(final_ret)
+
+    def upload_file(self, filename, cmd="upload", progress_callback=None):
+        with open(filename, "rb") as f:
+            logger.debug("File opened")
+            size = os.fstat(f.fileno()).st_size
+            return self.upload_stream(f, size, cmd, progress_callback)
 
     @ok_or_error
     def begin_scan(self):
