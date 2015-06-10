@@ -1,5 +1,6 @@
 
 import uuid as _uuid
+import re
 
 
 DEFAULT_PORT = 3310
@@ -24,6 +25,10 @@ CODE_RESPONSE_SET_NETWORK = 0x0b
 
 GLOBAL_SERIAL = _uuid.UUID(int=0)
 HEXMAP = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def is_serial(input):
+    return True if re.match("[0-9A-Z]{25}", input) else False
 
 
 def uuid_to_short(uuid_hex, mapping=HEXMAP):

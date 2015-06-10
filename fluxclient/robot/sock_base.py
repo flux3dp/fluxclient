@@ -5,7 +5,7 @@ class RobotSocketBase(object):
         self.sock = sock
 
     def fileno(self):
-        return self._sock.fileno()
+        return self.sock.fileno()
 
     @property
     def family(self):

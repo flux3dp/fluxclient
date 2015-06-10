@@ -12,10 +12,10 @@ from .sock_v0002 import RobotSocketV2
 logger = logging.getLogger(__name__)
 
 
-def ok_or_error(fn):
+def ok_or_error(fn, resp="ok"):
     def wrap(self, *args):
         ret = fn(self, *args)
-        if ret == "ok":
+        if ret == resp:
             return ret
         elif ret.startswith("error "):
             raise RuntimeError(ret.split(" ")[1:])
@@ -70,6 +70,13 @@ class FluxRobotV0002(object):
         return self._recv_resp()
 
     # Command Tasks
+    def position(self):
+        ret = self._make_cmd(b"position")
+        if ret.startswith("error "):
+            raise RuntimeError(*ret.split(" ")[1:])
+        else:
+            return ret
+
     def list_file(self):
         # TODO: TBC
         ret = self._make_cmd(b"ls")
@@ -145,13 +152,39 @@ class FluxRobotV0002(object):
     def report_play(self):
         return self._make_cmd(b"report")
 
-    def take_image(self):
-        self._send_cmd(b"image")
+    def oneshot(self):
+        self._send_cmd(b"oneshot")
         images = []
         while True:
             resp = self._recv_resp().split(" ")
 
-            if resp[0] == "image":
+            if resp[0] == "binary":
+                mime, length = resp[1], int(resp[2])
+                logger.debug("Recv image %s %i" % (mime, length))
+
+                buf = BytesIO()
+                left = length
+                while left > 0:
+                    left -= buf.write(self.sock.recv(min(4096, left)))
+
+                # No use padding
+                self.sock.recv((256 - (length % 128)) % 128,
+                               socket.MSG_WAITALL)
+                images.append((mime, buf.getvalue()))
+
+            elif resp[0] == "ok":
+                return images
+
+            else:
+                raise RuntimeError(resp)
+
+    def scanimages(self):
+        self._send_cmd(b"scanimages")
+        images = []
+        while True:
+            resp = self._recv_resp().split(" ")
+
+            if resp[0] == "binary":
                 mime, length = resp[1], int(resp[2])
                 logger.debug("Recv image %s %i" % (mime, length))
 
@@ -175,8 +208,19 @@ class FluxRobotV0002(object):
     def taks_scanshot(self):
         pass
 
+    @ok_or_error
     def scan_next(self):
-        pass
+        return self._make_cmd(b"scan_next")
 
+    @ok_or_error
     def scan_forword(self):
-        pass
+        return self._make_cmd(b"scan_forword")
+
+    def raw_mode(self):
+        ret = self._make_cmd(b"raw")
+        if ret == "continue":
+            return self.sock
+        elif ret.startswith("error "):
+            raise RuntimeError(ret.split(" ")[1:])
+        else:
+            raise RuntimeError("UNKNOW_ERROR", ret)
