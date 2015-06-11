@@ -1,4 +1,5 @@
 
+from collections import namedtuple
 from time import time, sleep
 import uuid as _uuid
 import logging
@@ -22,7 +23,8 @@ Here is a simple example:
 
 from fluxclient.upnp_discover import UpnpDiscover
 
-def my_callback(discover, model, id, ipaddss):
+def my_callback(discover, serial, model_id, timestemp, version,
+                has_passwd, ipaddrs):
     print("Find Printer at: " + ipaddrs)
 
     # We find only one printer in this example
@@ -34,11 +36,15 @@ d.discover(my_callback)
 """
 
 GLOBAL_SERIAL = _uuid.UUID(int=0)
+INIT_PING_FREQ = 0.5
+PING_RREQ_RATIO = 1.3
+MAX_PING_FREQ = 3.0
 
 
 class UpnpDiscover(object):
-    _last_sent = 0
     _break = True
+    _last_sent = 0
+    _send_freq = INIT_PING_FREQ
 
     def __init__(self, serial=GLOBAL_SERIAL, ipaddr="255.255.255.255",
                  port=DEFAULT_PORT):
@@ -51,21 +57,25 @@ class UpnpDiscover(object):
         Call this method to execute discover task
 
         @callback: when find a flux printer, it will invoke
-        `callback(instance, model, id, ipaddrs)` where ipaddrs is a list.
+        `callback(instance, serial, model_id, timestemp, version,
+                     has_passwd, ipaddrs)` where ipaddrs is a list.
         """
         self._break = False
         timeout_at = time() + timeout
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                             socket.IPPROTO_UDP)
-
         try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                 socket.IPPROTO_UDP)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
             while not self._break:
-                self._send_request(sock)
-                self._recv_response(sock, callback)
-                self._sleep_or_quit(timeout_at)
+                wait_time = min(timeout_at - time(), 0.5)
+                if wait_time < 0.05:
+                    self.stop()
+                    break
+
+                self._ping(sock)
+                self._receiving_pong(sock, callback, wait_time)
 
                 if lookup_callback:
                     lookup_callback(self)
@@ -77,10 +87,9 @@ class UpnpDiscover(object):
         """Call this function to break discover task"""
         self._break = True
 
-    def _send_request(self, sock):
-        now = time()
-
-        if now - self._last_sent > 0.3:
+    def _ping(self, sock):
+        
+        if time() - self._last_sent > self._send_freq:
             payload = struct.pack('<4s16sB', b"FLUX",
                                   self.serial.bytes,
                                   CODE_DISCOVER)
@@ -88,38 +97,35 @@ class UpnpDiscover(object):
             sock.sendto(payload, (self.ipaddr, self.port))
             self._last_sent = time()
 
-    def _recv_response(self, sock, callback):
-        while self._has_response(sock):
-            if self._break:
-                return
+            self._send_freq = min(self._send_freq * PING_RREQ_RATIO,
+                                  MAX_PING_FREQ)
 
-            buf, remote = sock.recvfrom(4096)
-            resp_code, status = struct.unpack("<BB", buf[:2])
+    def _receiving_pong(self, sock, callback, timeout=1.5):
+        timeout_at = time() + timeout
 
-            if resp_code != CODE_RESPONSE_DISCOVER:
-                continue
+        while timeout > 0:
+            rl = select.select((sock, ), (), (), timeout)[0]
+            if rl:
+                buf, remote = sock.recvfrom(4096)
+                args = self._parse_response(buf)
+                if args:
+                    callback(self, *args)
 
-            payload = json.loads(buf[2:-1].decode("utf8"))
+            timeout = timeout_at - time()
 
-            serial = payload.get("serial")
-            version = payload.get("ver")
-            model_id = payload.get("model")
-            timestemp = payload.get("time")
-            ipaddrs = payload.get("ip")
-            has_passwd = payload.get("pwd")
+    def _parse_response(self, buf):
+        resp_code, status = struct.unpack("<BB", buf[:2])
 
-            callback(self, serial, model_id, timestemp, version,
-                     has_passwd, ipaddrs)
+        if resp_code != CODE_RESPONSE_DISCOVER:
+            return None
 
-    def _sleep_or_quit(self, timeout_at):
-        time_left = timeout_at - time()
-        if time_left > 0:
-            sleep(min(time_left, 0.3))
-        else:
-            self.stop()
+        payload = json.loads(buf[2:-1].decode("utf8"))
 
-    def _has_response(self, sock):
-        if select.select((sock, ), (), (), 0)[0]:
-            return True
-        else:
-            return False
+        serial = payload.get("serial")
+        version = payload.get("ver")
+        model_id = payload.get("model")
+        timestemp = payload.get("time")
+        ipaddrs = payload.get("ip")
+        has_passwd = payload.get("pwd")
+
+        return serial, model_id, timestemp, version, has_passwd, ipaddrs

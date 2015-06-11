@@ -49,7 +49,10 @@ class DiscoverPrinter(object):
 
 def main():
     s = DiscoverPrinter()
-    s.go()
+    try:
+        s.go()
+    except KeyboardInterrupt:
+        print("\nAbort\n")
 
 
 if __name__ == "__main__":
