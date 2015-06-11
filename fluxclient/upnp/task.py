@@ -3,7 +3,7 @@ from time import time
 import binascii
 import struct
 
-from fluxclient.upnp_base import UpnpBase
+from fluxclient.upnp.base import UpnpBase
 
 
 CODE_NOPWD_ACCESS = 0x04

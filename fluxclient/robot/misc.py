@@ -2,8 +2,8 @@
 from time import sleep
 import sys
 
-from fluxclient.upnp_task import UpnpTask
-from fluxclient.misc import is_serial
+from fluxclient.upnp.task import UpnpTask
+from fluxclient.upnp.misc import is_serial
 
 
 def select_ipaddr(remote_addrs):

@@ -1,8 +1,8 @@
 
 import sys
 
-from fluxclient import misc
-from fluxclient.upnp_discover import UpnpDiscover
+from fluxclient.upnp import misc
+from fluxclient.upnp.discover import UpnpDiscover
 
 
 class DiscoverPrinter(object):

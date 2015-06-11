@@ -3,7 +3,7 @@ from getpass import getpass
 import argparse
 import sys
 
-from fluxclient.upnp_task import UpnpTask
+from fluxclient.upnp.task import UpnpTask
 
 
 def main():

@@ -8,8 +8,8 @@ from time import sleep
 import argparse
 import sys
 
-from fluxclient.misc import parse_network_config as parse_network
-from fluxclient.upnp_task import UpnpTask
+from fluxclient.upnp.misc import parse_network_config as parse_network
+from fluxclient.upnp.task import UpnpTask
 
 
 def main(opt):

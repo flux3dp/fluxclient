@@ -7,9 +7,9 @@ import struct
 import socket
 import json
 
-from fluxclient.upnp_discover import UpnpDiscover
+from fluxclient.upnp.discover import UpnpDiscover
+from fluxclient.upnp import misc
 from fluxclient import encryptor
-from fluxclient import misc
 
 
 class UpnpBase(object):

@@ -5,9 +5,10 @@ import sys
 import re
 
 from fluxclient.robot_console import RobotConsole
-from fluxclient.robot_misc import parse_ipaddr, select_ipaddr, kill_robot, require_robot
+from fluxclient.robot.misc import parse_ipaddr, select_ipaddr, kill_robot, \
+    require_robot
 from fluxclient.robot import connect_robot
-from fluxclient.misc import is_serial
+from fluxclient.upnp.misc import is_serial
 
 
 def config_logger(stdout=sys.stderr, level=logging.DEBUG):

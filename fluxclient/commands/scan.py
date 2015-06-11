@@ -6,7 +6,7 @@ import logging
 import sys
 import os
 
-from fluxclient.robot_misc import require_robot
+from fluxclient.robot.misc import require_robot
 from fluxclient.robot import connect_robot
 
 
