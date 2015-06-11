@@ -30,18 +30,26 @@ def require_robot(target, logstream=sys.stdout):
         logstream.write("Serial: %s\nModel: %s\nIP Addr: %s\n" %
                         (task.serial.hex, task.model_id, ipaddr[0]))
 
-        task.require_auth()
+        while True:
+            try:
+                task.require_auth()
+                break
+            except RuntimeError as e:
+                sys.stdout.write("Error: %s, retry...\n" % e.args[0])
 
-        try:
-            resp = task.require_robot()
-            if resp is not None:
-                logstream.write("Robot launching...\n")
-                sleep(0.5)
-        except RuntimeError as e:
-            if e.args[0] == "ALREADY_RUNNING":
-                logstream.write("Robot already running\n")
-            else:
-                raise
+        while True:
+            try:
+                resp = task.require_robot()
+                if resp is not None:
+                    logstream.write("Robot launching...\n")
+                    break
+            except RuntimeError as e:
+                if e.args[0] == "ALREADY_RUNNING":
+                    logstream.write("Robot already running\n")
+                    break
+                else:
+                    sys.stdout.write("Error: %s\n" % e.args[0])
+            sys.stdout.write("Retry require robot\n")
 
         return ipaddr, task.remote_keyobj
     else:
