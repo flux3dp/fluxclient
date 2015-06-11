@@ -82,13 +82,13 @@ class FluxRobotV0002(object):
         ret = self._make_cmd(b"ls")
         return ret
 
-    def select_file(self, fildid):
-        raise RuntimeError("NOT_SUPPORT")
+    @ok_or_error
+    def select_file(self, fileid):
+        return self._make_cmd(b"select " + fileid.encode())
 
+    @ok_or_error
     def start_play(self):
-        ret = self._make_cmd(b"start")
-        if ret != "ok":
-            raise RuntimeError(ret)
+        return self._make_cmd(b"start")
 
     def upload_stream(self, stream, length, cmd="upload",
                       progress_callback=None):
@@ -112,9 +112,9 @@ class FluxRobotV0002(object):
 
             if progress_callback and time() - ts > 1.0:
                 ts = time()
-                progress_callback(self, sent, size)
+                progress_callback(self, sent, length)
 
-        progress_callback(self, sent, size)
+        progress_callback(self, sent, length)
         buf = self.sock.recv(128, socket.MSG_WAITALL)
         logger.debug("File uploaded")
 

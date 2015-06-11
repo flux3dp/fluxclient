@@ -15,11 +15,13 @@ class RobotConsole(object):
     def __init__(self, robot_obj):
         self.robot_obj = robot_obj
         self.simple_mapping = {
+            "select": robot_obj.select_file,
             "start": robot_obj.start_play,
             "pause": robot_obj.pause_play,
             "resume": robot_obj.resume_play,
             "abort": robot_obj.abort_play,
             "report": robot_obj.report_play,
+            "position": robot_obj.position,
 
             "scan": robot_obj.begin_scan,
             "scan_forword": robot_obj.scan_forword,
@@ -38,7 +40,10 @@ class RobotConsole(object):
 
     def on_cmd(self, arguments):
         if self._mode == "raw":
-            self._raw_sock.send(arguments.encode() + b"\n")
+            if arguments == "quit":
+                self._raw_sock.send(arguments.encode())
+            else:
+                self._raw_sock.send(arguments.encode() + b"\n")
         else:
             args = arguments.split(" ", 1)
             cmd = args[0]
@@ -53,7 +58,7 @@ class RobotConsole(object):
                     logger.error("Unknow Command Q")
 
             except RuntimeError as e:
-                logger.error(" ".join(*e.args))
+                logger.error(" ".join((str(i) for i in e.args)))
 
     def simple_cmd(self, func_ptr, *args):
         logger.info(func_ptr(*args))
