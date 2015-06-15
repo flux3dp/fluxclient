@@ -6,15 +6,46 @@ configuration to fluxmonitord daemon.
 
 from time import sleep
 import argparse
+import logging
 import sys
 
 from fluxclient.upnp.misc import parse_network_config as parse_network
+from fluxclient.upnp.misc import is_serial as is_serial_id
+from fluxclient.usb.misc import is_serial_port
 from fluxclient.upnp.task import UpnpTask
+from fluxclient.usb.task import UsbTask, UsbTaskError
+
+logging.basicConfig(format="%(message)s", stream=sys.stdout)
+logger = logging.getLogger('')
 
 
-def main(opt):
+def try_lan_config(task, config):
+    for i in range(3):
+        resp = task.config_network(config)
+        if resp:
+            if resp.get("status") == "ok":
+                return True
+            else:
+                raise RuntimeError("Network change failed: %s" %
+                                   resp.get("message", ""))
+        sleep(0.2)
+    return False
+
+
+def main():
     parser = argparse.ArgumentParser(description='network config')
 
+    parser.add_argument('-d', dest='debug', action='store_const',
+                        const=True, default=False, help='Print debug log')
+    parser.add_argument('--ssid', dest='ssid', type=str, default=None,
+                        help='SSID, example:: FLUX', required=True)
+    parser.add_argument('--security', dest='security', type=str, default=None,
+                        choices=['', 'WEP', 'WPA-PSK', 'WPA2-PSK'],
+                        help='wifi security')
+    parser.add_argument('--psk', dest='psk', type=str, default=None,
+                        help='WPA-PSK')
+    parser.add_argument('--wepkey', dest='wepkey', type=str, default=None,
+                        help='wepkey')
     parser.add_argument('--ip', dest='ipaddr', type=str, default=None,
                         help='IP Address, example: 192.168.1.2. '
                              'If no ip given, use dhcp')
@@ -24,44 +55,51 @@ def main(opt):
                         help='Route, example: 192.168.1.1')
     parser.add_argument('--dns', dest='ns', type=str, default=None,
                         help='Route, example: 192.168.1.1')
-    parser.add_argument('--ssid', dest='ssid', type=str, default=None,
-                        help='SSID, example:: FLUX')
-    parser.add_argument('--security', dest='security', type=str, default=None,
-                        choices=['', 'WEP', 'WPA-PSK', 'WPA2-PSK'],
-                        help='wifi security')
-    parser.add_argument('--psk', dest='psk', type=str, default=None,
-                        help='WPA-PSK')
-    parser.add_argument('--wepkey', dest='wepkey', type=str, default=None,
-                        help='wepkey')
 
-    parser.add_argument(dest='serial', type=str, help='Printer Serial')
+    parser.add_argument(dest='target', type=str,
+                        help='Printer Serial ID or serial port')
 
     opt = parser.parse_args()
+    if opt.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
 
     method = "static" if opt.ipaddr else "dhcp"
-    serial = opt.serial
-
-    task = UpnpTask(serial)
-    task.require_auth()
-
     c = parse_network(method=method, ipaddr=opt.ipaddr, mask=opt.mask,
                       route=opt.route, ns=opt.ns,
                       ssid=opt.ssid, security=opt.security,
                       wepkey=opt.wepkey, psk=opt.psk)
+    try:
+        if is_serial_id(opt.target):
+            logger.info("Config network over LAN...")
 
-    for i in range(3):
-        resp = task.config_network(c)
-        if resp:
-            if resp.get("status") == "ok":
-                print("Network config changed")
-                return 0
-            else:
-                print("Network change failed: %s" % resp.get("message", ""))
-                return 1
-        sleep(0.2)
+            task = UpnpTask(opt.target)
+            task.require_auth()
 
-    print("Remote no response")
-    return 2
+            if not try_lan_config(task, c):
+                raise RuntimeError("Remote no response")
+
+        elif is_serial_port(opt.target):
+            logger.info("Config network over COM port...")
+
+            task = UsbTask(opt.target)
+            task.require_auth()
+
+            ret = task.config_network(c)
+            if ret != "OK":
+                raise RuntimeError(ret)
+        else:
+            logger.error("Unknow target: %s" % opt.target)
+
+    except RuntimeError as e:
+        if opt.debug:
+            raise
+        logger.error("Network change failed: %s" % e.args)
+        return 2
+
+    logger.info("Network config changed")
+    return 0
 
 
 if __name__ == "__main__":

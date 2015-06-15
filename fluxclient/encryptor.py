@@ -64,6 +64,10 @@ def rsa_size(keyobj):
     return (keyobj.size() + 1) // 8
 
 
+def get_public_key_pem(keyobj):
+    return keyobj.publickey().exportKey("PEM")
+
+
 def get_public_key_der(keyobj):
     return keyobj.publickey().exportKey("DER")
 
