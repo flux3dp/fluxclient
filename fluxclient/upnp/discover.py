@@ -52,6 +52,17 @@ class UpnpDiscover(object):
         self.serial = serial
         self.port = port
 
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                  socket.IPPROTO_UDP)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+    def __del__(self):
+        self.sock.close()
+        self.sock = None
+
+    def fileno(self):
+        return self.sock.fileno()
+
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
         Call this method to execute discover task
@@ -63,51 +74,46 @@ class UpnpDiscover(object):
         self._break = False
         timeout_at = time() + timeout
 
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                 socket.IPPROTO_UDP)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        while not self._break:
+            wait_time = min(timeout_at - time(), 0.5)
+            if wait_time < 0.05:
+                self.stop()
+                break
 
-            while not self._break:
-                wait_time = min(timeout_at - time(), 0.5)
-                if wait_time < 0.05:
-                    self.stop()
-                    break
+            self.ping()
+            self._receiving_pong(self.sock, callback, wait_time)
 
-                self._ping(sock)
-                self._receiving_pong(sock, callback, wait_time)
+            if lookup_callback:
+                lookup_callback(self)
 
-                if lookup_callback:
-                    lookup_callback(self)
-
-        finally:
-            sock.close()
 
     def stop(self):
         """Call this function to break discover task"""
         self._break = True
 
-    def _ping(self, sock):
-        
+    def ping(self):
         if time() - self._last_sent > self._send_freq:
             payload = struct.pack('<4s16sB', b"FLUX",
                                   self.serial.bytes,
                                   CODE_DISCOVER)
 
-            sock.sendto(payload, (self.ipaddr, self.port))
+            self.sock.sendto(payload, (self.ipaddr, self.port))
             self._last_sent = time()
 
             self._send_freq = min(self._send_freq * PING_RREQ_RATIO,
                                   MAX_PING_FREQ)
 
+    def on_recv_pong(self):
+        buf, remote = self.sock.recvfrom(4096)
+        args = self._parse_response(buf)
+        return args
+
     def _receiving_pong(self, sock, callback, timeout=1.5):
         timeout_at = time() + timeout
 
         while timeout > 0:
-            rl = select.select((sock, ), (), (), timeout)[0]
-            if rl:
-                buf, remote = sock.recvfrom(4096)
-                args = self._parse_response(buf)
+            if select.select((sock, ), (), (), timeout)[0]:
+                args = self.on_recv_pong()
                 if args:
                     callback(self, *args)
 
