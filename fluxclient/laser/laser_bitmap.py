@@ -1,10 +1,10 @@
 # !/usr/bin/env python3
 from math import pi, sin, cos
 
-from fluxclient.laser.laser_base import laser
+from fluxclient.laser.laser_base import laser_base
 
 
-class laser_bitmap(laser):
+class laser_bitmap(laser_base):
     """
     laser_bitmap class:
       generate gcode base on given images
@@ -26,41 +26,20 @@ class laser_bitmap(laser):
 
         self.rotation = 0  # general rotation for final gcode
         self.laser_on = False  # recording if laser is on
-        self.focal_l = 11 + 3 - 0.7  # focal z coordinate
 
         # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
         self.thres = 100
         self.ratio = 1.  # ratio to scale gcode, bot safe, shouldn't be any value except than 1
 
-    def moveTo(self, x, y, speed=600):
-        """
-            move to position x,y
-        """
+    def bitmap_moveTo(self, x, y):
         x = float(x) / self.pixel_per_mm - self.radius
         y = float(len(self.image_map) - y) / self.pixel_per_mm - self.radius
+        self.moveTo(x, y)
 
-        x2 = x * cos(self.rotation) - y * sin(self.rotation)
-        y2 = x * sin(self.rotation) + y * cos(self.rotation)
-
-        x = x2 / self.ratio
-        y = y2 / self.ratio
-
-        if speed == 'draw':
-            speed = 200
-        elif speed == 'move':
-            speed = 600
-
-        return ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ";Draw to"]
-
-    def drawTo(self, x, y, speed='draw'):
-        """
-            turn on, move to x, y and turn off the laser
-
-            draw to position x,y with speed
-        """
+    def bitmap_drawTo(self, x, y):
         gcode = []
         gcode += self.turnOn()
-        gcode += self.moveTo(x, y, speed)
+        gcode += self.bitmap_moveTo(x, y, speed)
         gcode += self.turnOff()
 
         return gcode
@@ -172,13 +151,13 @@ class laser_bitmap(laser):
         self.find_edges()
         gcode += self.turnHalf()
         for _ in range(times):
-            gcode += self.moveTo(self.edges[0], self.edges[2])
+            gcode += self.bitmap_moveTo(self.edges[0], self.edges[2])
             gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[0], self.edges[3])
+            gcode += self.bitmap_moveTo(self.edges[0], self.edges[3])
             gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[1], self.edges[3])
+            gcode += self.bitmap_moveTo(self.edges[1], self.edges[3])
             gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[1], self.edges[2])
+            gcode += self.bitmap_moveTo(self.edges[1], self.edges[2])
             gcode += ["G4 P300"]
         gcode += self.turnOff()
 
@@ -187,21 +166,7 @@ class laser_bitmap(laser):
     def gcode_generate(self):
         gcode = []
 
-        gcode.append("@X5H2000")
-        gcode.append("@X5H2000")
-
-        #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
-        gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
-
-        gcode += self.turnOff()
-        gcode.append(";Flux image laser")
-        # gcode.append(";Image size:%d * %d" % (img_width, img_height))
-
-        gcode.append("G28")
-        gcode.append(";G29")
-
-        gcode.append("G1 F3000 Z" + str(self.focal_l) + "")
-
+        gcode += self.header('bitmap')
         # pix = cv2.imread('S.png')
         # pix = cv2.cvtColor(pix, cv2.COLOR_BGR2GRAY)
 
@@ -228,7 +193,7 @@ class laser_bitmap(laser):
                 if self.image_map[h][w] < self.thres:
                     if not self.laser_on:
                         last_i = w
-                        gcode += self.moveTo(w, h)
+                        gcode += self.bitmap_moveTo(w, h)
                         gcode += self.turnOn()
                 else:
                     if self.laser_on:
@@ -236,13 +201,13 @@ class laser_bitmap(laser):
                             pass
                             gcode += ["G4 P100"]
                         elif final_x > 0:
-                            gcode += self.drawTo(w, h)
+                            gcode += self.bitmap_drawTo(w, h)
                         else:
-                            gcode += self.drawTo(w, h)
+                            gcode += self.bitmap_drawTo(w, h)
                         gcode += self.turnOff()
 
             if self.laser_on:
-                gcode += self.drawTo(final_x, h)
+                gcode += self.bitmap_drawTo(final_x, h)
                 gcode += self.turnOff()
 
         # gcode += ["M104 S0"]
