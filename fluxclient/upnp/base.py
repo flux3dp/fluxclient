@@ -16,7 +16,8 @@ class UpnpBase(object):
     remote_addr = "255.255.255.255"
 
     def __init__(self, serial, lookup_callback=None,
-                 port=misc.DEFAULT_PORT, forcus_broadcast=False):
+                 port=misc.DEFAULT_PORT, forcus_broadcast=False,
+                 lookup_timeout=float("INF")):
         self.port = port
 
         if len(serial) == 25:
@@ -28,7 +29,7 @@ class UpnpBase(object):
         self._inited = False
 
         d = UpnpDiscover(serial=self.serial)
-        d.discover(self._load_profile, lookup_callback)
+        d.discover(self._load_profile, lookup_callback, lookup_timeout)
         if not self._inited:
             raise RuntimeError("Can not find device")
 
