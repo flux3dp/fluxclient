@@ -9,13 +9,23 @@ class laser_base(object):
         self.focal_l = 11 + 3  # focal z coordinate
         self.rotation = 0.0
 
+        # machine indicate how you pass gcode into machine
+        # choose marlin if you are using printrun
+        # self.machine = 'pi'
+        self.machine = 'marlin'
+
     def header(self, header):
         gcode = []
         gcode.append(";Flux laser")
         gcode.append(";" + header)
 
-        gcode.append("@X5H2000")
-        gcode.append("@X5H2000")
+        if self.machine == 'marlin':
+            gcode.append("@X5H2000")
+            gcode.append("@X5H2000")
+        elif self.machine == 'pi':
+            gcode.append("H2000")
+            gcode.append("H2000")
+
         #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
         gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
 
@@ -32,17 +42,26 @@ class laser_base(object):
         if self.laser_on:
             return []
         self.laser_on = True
-        return ["G4 P10", "@X9L0"]
+        if self.machine == 'marlin':
+            return ["G4 P10", "@X9L0"]
+        elif self.machine == 'pi':
+            return ["G4 P10", "L0"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
-        return ["G4 P1", "@X9L255"]
+        if self.machine == 'marlin':
+            return ["G4 P1", "@X9L255"]
+        elif self.machine == 'pi':
+            return ["G4 P1", "L255"]
 
     def turnHalf(self):
         self.laser_on = False
-        return ["G4 P1", "@X9L250"]
+        if self.machine == 'marlin':
+            return ["G4 P1", "@X9L250"]
+        elif self.machine == 'pi':
+            return ["G4 P1", "L250"]
 
     def moveTo(self, x, y, speed=600):
         """
