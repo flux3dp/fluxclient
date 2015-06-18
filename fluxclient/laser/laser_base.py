@@ -35,7 +35,7 @@ class laser_base(object):
         gcode.append("G28")
         gcode.append(";G29")
 
-        gcode.append("G1 F3000 Z" + str(self.focal_l) + "")
+        gcode.append("G1 F5000 Z" + str(self.focal_l) + "")
         return gcode
 
     def turnOn(self):
@@ -43,25 +43,25 @@ class laser_base(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P10", "@X9L0"]
+            return ["G4 P10", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P10", "L0"]
+            return ["G4 P10", "L0", "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L255"]
+            return ["G4 P1", "@X9L255", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L255"]
+            return ["G4 P1", "L255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L250"]
+            return ["G4 P1", "@X9L250", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L250"]
+            return ["G4 P1", "L250", "G4 P1"]
 
     def moveTo(self, x, y, speed=600):
         """
