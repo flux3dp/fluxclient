@@ -103,3 +103,6 @@ class laser_base(object):
         image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
         return image
+if __name__ == '__main__':
+    m_laser_base = laser_base()
+    print(m_laser_base)

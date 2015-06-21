@@ -225,3 +225,4 @@ class laser_bitmap(laser_base):
 
 if __name__ == '__main__':
     a = laser_bitmap()
+    print(a)
