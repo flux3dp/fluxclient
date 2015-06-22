@@ -1,8 +1,8 @@
 # !/usr/bin/env python3
-from laser_base import laser_base
+from laser_base import LaserBase
 
 
-class logo(laser_base):
+class logo(LaserBase):
     """drawing FLUX logo"""
     def __init__(self):
         super(logo, self).__init__()

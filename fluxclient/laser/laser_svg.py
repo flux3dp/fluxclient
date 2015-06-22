@@ -6,10 +6,10 @@ except ImportError:
 from math import sin, cos, pi
 import sys
 
-from fluxclient.laser.laser_base import laser_base
+from fluxclient.laser.laser_base import LaserBase
 
 
-class laser_svg(laser_base):
+class LaserSvg(LaserBase):
     """docstring for laser_svg"""
     def __init__(self):
         super(laser_svg, self).__init__()

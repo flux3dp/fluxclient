@@ -13,7 +13,7 @@ if not sys.version_info >= (3, 3):
 
 VERSION = ".".join([str(i) for i in _VERSION])
 
-install_requires = ['setuptools', 'pycrypto', 'pyserial']
+install_requires = ['setuptools', 'pycrypto', 'pyserial', 'pillow']
 
 setup(
     name="fluxclient",
@@ -32,7 +32,9 @@ setup(
             "flux_config_network=fluxclient.commands.config_network:main",
             "flux_robot=fluxclient.commands.robot:main",
             "flux_scan=fluxclient.commands.scan:main",
-            "flux_usb=fluxclient.commands.usb:main"
+            "flux_usb=fluxclient.commands.usb:main",
+
+            "flux_laser=fluxclient.commands.laser_patten:main"
         ],
     },
     install_requires=install_requires,

@@ -1,16 +1,16 @@
 # !/usr/bin/env python3
 from math import pi, sin, cos
 
-from fluxclient.laser.laser_base import laser_base
+from fluxclient.laser.laser_base import LaserBase
 
 
-class laser_bitmap(laser_base):
+class LaserBitmap(LaserBase):
     """
     laser_bitmap class:
       generate gcode base on given images
     """
     def __init__(self):
-        super(laser_bitmap, self).__init__()
+        super(LaserBitmap, self).__init__()
         self.reset()
 
     def reset(self):
@@ -31,15 +31,19 @@ class laser_bitmap(laser_base):
         self.thres = 100
         self.ratio = 1.  # ratio to scale gcode, bot safe, shouldn't be any value except than 1
 
-    def bitmap_moveTo(self, x, y):
+    #TODO:
+    # OLD: def bitmap_moveTo(self, x, y):
+    def bitmap_moveTo(self, x, y, speed=600):
         x = float(x) / self.pixel_per_mm - self.radius
         y = float(len(self.image_map) - y) / self.pixel_per_mm - self.radius
-        self.moveTo(x, y)
+        return self.moveTo(x, y)
 
     def bitmap_drawTo(self, x, y):
         gcode = []
         gcode += self.turnOn()
-        gcode += self.bitmap_moveTo(x, y, speed)
+        #TODO: 
+        # OLD: gcode += self.bitmap_moveTo(x, y, speed)
+        gcode += self.bitmap_moveTo(x, y, 600)
         gcode += self.turnOff()
 
         return gcode
@@ -162,6 +166,9 @@ class laser_bitmap(laser_base):
         gcode += self.turnOff()
 
         return gcode
+
+    def export_to_stream(self, stream):
+        stream.write(self.gcode_generate())
 
     def gcode_generate(self):
         gcode = []

@@ -2,7 +2,7 @@
 from math import pi, sin, cos
 
 
-class laser_base(object):
+class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
