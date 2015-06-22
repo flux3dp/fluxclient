@@ -1,7 +1,11 @@
 # !/usr/bin/env python3
+
 from math import pi, sin, cos
+import logging
 
 from fluxclient.laser.laser_base import LaserBase
+
+logger = logging.getLogger(__name__)
 
 
 class LaserBitmap(LaserBase):
@@ -68,17 +72,18 @@ class LaserBitmap(LaserBase):
             None
         """
         pix = self.to_image(buffer_data, img_width, img_height)
-        print("recv", img_width, img_height, x1, y1, x2, y2, rotation)
+        logger.debug("Recv (%i, %i) @ [%.2f, %.2f], [%.2f, %.2f] R%.2f" %
+                     (img_width, img_height, x1, y1, x2, y2, rotation))
 
         # protocol fail
-        print("corner:", x1, ',', y1, x2, ',', y2)
+        logger.debug("Corner: [%.2f, %.2f], [%.2f, %.2f]" % (x1, y1, x2, y2))
         real_width = float(x2 - x1)
         real_height = float(y1 - y2)
 
         # rotation center
         mx = (x1 + x2) / 2.
         my = (y1 + y2) / 2.
-        print('c', mx, my)
+        logger.debug('c %f, %f' % (mx, my))
 
         print (x1, y1)
         x1, y1 = self.rotate(x1, y1, -rotation, mx, my)
@@ -88,13 +93,14 @@ class LaserBitmap(LaserBase):
 
         x2, y2 = self.rotate(x2, y2, -rotation, mx, my)
 
-        print("corner rotate:", x1, ',', y1, x2, ',', y2)
+        logger.info("Corner rotate: [%.2f, %.2f], [%.2f, %.2f]" %
+                    (x1, y1, x2, y2))
 
         for h in range(img_height):
             for w in range(img_width):
                 real_x = (x1 * (img_width - w) + x2 * w) / img_width
                 real_y = (y1 * (img_height - h) + y2 * h) / img_height
-                # print(real_x, real_y)
+                # logger.info(real_x, real_y)
                 # real_x = (x1 + w * (real_width) / img_width)
                 # real_y = (y1 - h * (real_height) / img_height)
                 if real_x ** 2 + real_y ** 2 <= self.radius ** 2:
@@ -148,7 +154,7 @@ class LaserBitmap(LaserBase):
         if y2 is False:
             y2 = 53.03
         self.edges = [x1, x2, y1, y2]
-        print(self.edges)
+        logger.info(self.edges)
 
     def alignment_process(self, times=3):
         gcode = []
@@ -219,17 +225,8 @@ class LaserBitmap(LaserBase):
 
         # gcode += ["M104 S0"]
         gcode += ["G28"]
-
-        store = True
-        if store:
-            with open('./S.gcode', 'w') as f:
-                print("\n".join(gcode) + "\n", file=f)
-                # print >> f, "\n".join(gcode) + "\n"
-        else:
-            pass
-
         return "\n".join(gcode) + "\n"
 
 if __name__ == '__main__':
     a = laser_bitmap()
-    print(a)
+    logger.info(a)
