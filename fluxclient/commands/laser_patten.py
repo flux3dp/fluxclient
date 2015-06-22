@@ -1,6 +1,6 @@
 
 
-import argparse
+from argparse import ArgumentParser, RawTextHelpFormatter
 import logging
 import sys
 
@@ -27,11 +27,23 @@ def process_bitmaps(options, stream):
     from fluxclient.laser.laser_bitmap import LaserBitmap
     lb = LaserBitmap()
 
-    for filename in options.images:
-        if filename.startswith('@'):
-            pass
+    for arg in options.images:
+        if arg.startswith('@'):
+            try:
+                x1, y1, x2, y2, r, filename = arg[1:].split(",")
+                i = Image.open(filename)
+                w, h = i.size
+                lb.add_image(process_to_gray_bitmap(i), w, h,
+                             float(x1), float(y1), float(x2), float(y2),
+                             float(r), thres=options.threshold)
+            except Exception:
+                logger.error("Image argument error, syntax:")
+                logger.error("'@x1,y1,x2,y2,r,/your/image/file/path'")
+                logger.error("Example: 50.2,40.2,-40.2,-30.2,3.1415,"
+                             "/home/flux/myimage.jpg")
+                logger.exception("Argument Error")
         else:
-            i = Image.open(filename)
+            i = Image.open(arg)
             w, h = i.size
             lb.add_image(process_to_gray_bitmap(i), w, h,
                          -w/40, h/40, w/40, -h/40, .0, thres=options.threshold)
@@ -39,7 +51,27 @@ def process_bitmaps(options, stream):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Create laser GCode')
+    parser = ArgumentParser(description='Create laser GCode',
+                            formatter_class=RawTextHelpFormatter,
+                            epilog="""
+flux_laser usage example:
+===============================================================================
+\033[1ma) Convert single bitmap (Simple)\033[0m
+$ flux_laser /my/image1.jpg
+
+-------------------------------------------------------------------------------
+\033[1mb) Convert single bitmap (With coordinate adjust)\033[0m
+$ flux_laser @1,2,3,4,5,/my/image2.jpg
+
+Note: '@' is required prefix, 1: is X1, 2: Y1, 3: X2, 4, Y2, 5: Rotate
+
+-------------------------------------------------------------------------------
+\033[1mc) Process multi image\033[0m
+$ flux_laser @1,2,3,4,5,/my/image1.jpg /my/image2.jpg 
+
+Note: Process image1.jpg with coordinate variable, then process image2.jpg with
+default
+""")
 
     # Mode options
     mode_args = parser.add_mutually_exclusive_group()
