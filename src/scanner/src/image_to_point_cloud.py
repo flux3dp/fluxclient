@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import struct
+import io
 
 import numpy as np
+from PIL import Image
 
 import freeless
 import scan_settings
@@ -11,15 +13,21 @@ def to_image(buffer_data):
     '''
         convert buffer_data into image -> (numpy.ndarray, uint8)
     '''
-    int_data = list(buffer_data)
-    img_width = scan_settings.img_width
-    img_height = scan_settings.img_height
+    # int_data = list(buffer_data)
+    # img_width = scan_settings.img_width
+    # img_height = scan_settings.img_height
 
-    assert len(int_data) == img_width * img_height * 3, "data length != width * height, %d != %d * %d" % (len(int_data), img_width, img_height)
+    # assert len(int_data) == img_width * img_height * 3, "data length != width * height, %d != %d * %d" % (len(int_data), img_width, img_height)
 
-    image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
+    # image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
-    return np.array(image, dtype=np.uint8)
+    # return np.array(image, dtype=np.uint8)
+
+    f = io.BytesIO(buffer_data)
+    im = Image.open(f)
+    im_array = np.array(im)
+    im_array[:, :, [0, 2]] = im_array[:, :, [2, 0]]  # change rgb to bgr, fit in cv2's rgb order
+    return im_array
 
 
 def points_to_bytes(points):
