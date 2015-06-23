@@ -52,5 +52,5 @@ target/
 
 #ignore process pid file
 *.pid
-fluxclient/scanner/src/PoissonRecon/Bin
-fluxclient/scanner/src/PoissonRecon/vbfile
+src/scanner/src/PoissonRecon/Bin
+src/scanner/src/PoissonRecon/vbfile
