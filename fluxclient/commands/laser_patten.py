@@ -116,6 +116,7 @@ default
 
 if __name__ == "__main__":
     import os
-    pwd = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    p = os.path.abspath(__file__)
+    pwd = os.path.dirname(os.path.dirname(os.path.dirname(p)))
     sys.path.insert(0, pwd)
     main()
