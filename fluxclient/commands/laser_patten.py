@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import logging
@@ -112,3 +112,10 @@ default
             processer(options, f)
     else:
         processer(options, sys.stdout)
+
+
+if __name__ == "__main__":
+    import os
+    pwd = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    sys.path.insert(0, pwd)
+    main()
