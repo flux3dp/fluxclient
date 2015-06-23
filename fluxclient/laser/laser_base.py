@@ -13,6 +13,7 @@ class LaserBase(object):
         # choose marlin if you are using printrun
         # self.machine = 'pi'
         self.machine = 'marlin'
+        self.ratio = 1.
 
     def header(self, header):
         gcode = []
@@ -71,8 +72,8 @@ class LaserBase(object):
         x2 = x * cos(self.rotation) - y * sin(self.rotation)
         y2 = x * sin(self.rotation) + y * cos(self.rotation)
 
-        x = x2 / self.ratio
-        y = y2 / self.ratio
+        x = x2 * self.ratio
+        y = y2 * self.ratio
 
         if speed == 'draw':
             speed = 200
