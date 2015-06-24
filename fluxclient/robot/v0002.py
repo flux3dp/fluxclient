@@ -67,6 +67,9 @@ class FluxRobotV0002(object):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
 
+    def get_resp(self, timeout=30.):
+        return self._recv_resp(timeout)
+
     def _recv_resp(self, timeout=30.):
         bml = self.sock.recv(2, socket.MSG_WAITALL)
         message_length = struct.unpack("<H", bml)[0]
@@ -107,6 +110,14 @@ class FluxRobotV0002(object):
     @ok_or_error
     def start_play(self):
         return self._make_cmd(b"start")
+
+    def begin_upload(self, length, cmd="upload"):
+        cmd = ("%s %i" % (cmd, length)).encode()
+        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
+        if upload_ret == "continue":
+            return self.sock
+        else:
+            raise RuntimeError(upload_ret)
 
     def upload_stream(self, stream, length, cmd="upload",
                       progress_callback=None):
@@ -198,7 +209,7 @@ class FluxRobotV0002(object):
         self._send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self._recv_resp().split(" ")
+            resp = self._recv_resp().decode("ascii", "ignore").split(" ")
 
             if resp[0] == "binary":
                 mime, length = resp[1], int(resp[2])
@@ -209,9 +220,6 @@ class FluxRobotV0002(object):
                 while left > 0:
                     left -= buf.write(self.sock.recv(min(4096, left)))
 
-                # No use padding
-                self.sock.recv((256 - (length % 128)) % 128,
-                               socket.MSG_WAITALL)
                 images.append((mime, buf.getvalue()))
 
             elif resp[0] == "ok":
