@@ -15,17 +15,9 @@ class RobotSocketV2(RobotSocketBase):
         return self.decoder.decrypt(buf)
 
     def send(self, buf):
-        # Fit 128 chunk
         l = len(buf)
-        lpad = ((256 - (l % 128)) % 128)
-
-        if lpad:
-            length = l + lpad
-            pad = b"\x00" * lpad
-            chiptext = memoryview(self.encoder.encrypt(buf + pad))
-        else:
-            length = l
-            chiptext = memoryview(self.encoder.encrypt(buf))
+        length = l
+        chiptext = memoryview(self.encoder.encrypt(buf))
 
         sent = self.sock.send(chiptext)
         while sent < length:

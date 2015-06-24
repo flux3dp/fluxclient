@@ -1,6 +1,8 @@
 
+from select import select
 from io import BytesIO
 from time import time
+import struct
 import logging
 import socket
 import os
@@ -12,15 +14,20 @@ from .sock_v0002 import RobotSocketV2
 logger = logging.getLogger(__name__)
 
 
+def raise_error(ret):
+    if ret.startswith("error "):
+        raise RuntimeError(*(ret.split(" ")[1:]))
+    else:
+        raise RuntimeError("UNKNOW_ERROR", ret)
+
+
 def ok_or_error(fn, resp="ok"):
     def wrap(self, *args):
-        ret = fn(self, *args)
+        ret = fn(self, *args).decode("utf8", "ignore")
         if ret == resp:
             return ret
-        elif ret.startswith("error "):
-            raise RuntimeError(ret.split(" ")[1:])
         else:
-            raise RuntimeError("UNKNOW_ERROR", ret)
+            raise_error(ret)
     return wrap
 
 
@@ -57,13 +64,13 @@ class FluxRobotV0002(object):
         return self.sock.recv(4096)
 
     def _send_cmd(self, buf):
-        l = len(buf)
-        pad = b"\x00" * ((256 - (l % 128)) % 128)
-        self.sock.send(buf + pad)
+        l = len(buf) + 2
+        self.sock.send(struct.pack("<H", l) + buf)
 
-    def _recv_resp(self):
-        buf = self.sock.recv(128, socket.MSG_WAITALL)
-        return buf.rstrip(b"\x00\n").decode("utf8", "ignore")
+    def _recv_resp(self, timeout=30.):
+        bml = self.sock.recv(2, socket.MSG_WAITALL)
+        message_length = struct.unpack("<H", bml)[0]
+        return self.sock.recv(message_length, socket.MSG_WAITALL)
 
     def _make_cmd(self, buf):
         self._send_cmd(buf)
@@ -71,16 +78,27 @@ class FluxRobotV0002(object):
 
     # Command Tasks
     def position(self):
-        ret = self._make_cmd(b"position")
+        ret = self._make_cmd(b"position").decode("ascii", "ignore")
         if ret.startswith("error "):
-            raise RuntimeError(*ret.split(" ")[1:])
+            raise RuntimeError(*(ret.split(" ")[1:]))
         else:
             return ret
 
     def list_file(self):
         # TODO: TBC
-        ret = self._make_cmd(b"ls")
-        return ret
+        self._send_cmd(b"ls")
+        files = []
+        while True:
+            line = self._recv_resp()
+            if line.startswith(b"file "):
+                files.append(line[5:].decode("utf8", "ignore"))
+            elif line == b"ok":
+                return files
+            elif line.startswith(b"error "):
+                errarg = line.decode("ascii", "ignore").split(" ")[1:]
+                raise RuntimeError(*errarg)
+            else:
+                raise RuntimeError(line)
 
     @ok_or_error
     def select_file(self, fileid):
@@ -94,9 +112,11 @@ class FluxRobotV0002(object):
                       progress_callback=None):
         cmd = ("%s %i" % (cmd, length)).encode()
 
-        upload_ret = self._make_cmd(cmd)
+        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
+        if upload_ret == "continue":
+            logger.info(upload_ret)
         if upload_ret != "continue":
-            raise RobotError(upload_ret)
+            raise RuntimeError(upload_ret)
 
         logger.debug("Upload stream length: %i" % length)
 
@@ -115,12 +135,11 @@ class FluxRobotV0002(object):
                 progress_callback(self, sent, length)
 
         progress_callback(self, sent, length)
-        buf = self.sock.recv(128, socket.MSG_WAITALL)
+        final_ret = self._recv_resp()
         logger.debug("File uploaded")
 
-        final_ret = buf.rstrip(b"\x00\n").decode("utf8")
-        if final_ret != "ok":
-            raise RobotError(final_ret)
+        if final_ret != b"ok":
+            raise_error(final_ret)
 
     def upload_file(self, filename, cmd="upload", progress_callback=None):
         with open(filename, "rb") as f:
@@ -156,7 +175,7 @@ class FluxRobotV0002(object):
         self._send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self._recv_resp().split(" ")
+            resp = self._recv_resp().decode("ascii", "ignore").split(" ")
 
             if resp[0] == "binary":
                 mime, length = resp[1], int(resp[2])
@@ -167,9 +186,6 @@ class FluxRobotV0002(object):
                 while left > 0:
                     left -= buf.write(self.sock.recv(min(4096, left)))
 
-                # No use padding
-                self.sock.recv((256 - (length % 128)) % 128,
-                               socket.MSG_WAITALL)
                 images.append((mime, buf.getvalue()))
 
             elif resp[0] == "ok":
@@ -216,11 +232,17 @@ class FluxRobotV0002(object):
     def scan_forword(self):
         return self._make_cmd(b"scan_forword")
 
+    @ok_or_error
+    def begin_maintain(self):
+        return self._make_cmd(b"maintain")
+
+    @ok_or_error
+    def maintain_home(self):
+        return self._make_cmd(b"home")
+
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
-        if ret == "continue":
+        if ret == b"continue":
             return self.sock
-        elif ret.startswith("error "):
-            raise RuntimeError(ret.split(" ")[1:])
         else:
-            raise RuntimeError("UNKNOW_ERROR", ret)
+            raise_error(ret.decode("ascii", "ignore"))
