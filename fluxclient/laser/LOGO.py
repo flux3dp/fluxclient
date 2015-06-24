@@ -1,8 +1,8 @@
 # !/usr/bin/env python3
-from laser_base import laser_base
+from laser_base import LaserBase
 
 
-class logo(laser_base):
+class logo(LaserBase):
     """drawing FLUX logo"""
     def __init__(self):
         super(logo, self).__init__()
@@ -10,6 +10,9 @@ class logo(laser_base):
         # self.ratio = 0.01
 
     def shift_move(self, x, y, shift_x=-50, shift_y=-50, speed=300):  # default 1
+        x *= -1
+        x += 100
+
         x += shift_x
         y += shift_y
         return self.moveTo(x, y, speed)

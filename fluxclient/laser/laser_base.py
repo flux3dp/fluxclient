@@ -2,7 +2,7 @@
 from math import pi, sin, cos
 
 
-class laser_base(object):
+class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
@@ -13,6 +13,7 @@ class laser_base(object):
         # choose marlin if you are using printrun
         # self.machine = 'pi'
         self.machine = 'marlin'
+        self.ratio = 1.
 
     def header(self, header):
         gcode = []
@@ -35,7 +36,7 @@ class laser_base(object):
         gcode.append("G28")
         gcode.append(";G29")
 
-        gcode.append("G1 F3000 Z" + str(self.focal_l) + "")
+        gcode.append("G1 F5000 Z" + str(self.focal_l) + "")
         return gcode
 
     def turnOn(self):
@@ -43,25 +44,25 @@ class laser_base(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P10", "@X9L0"]
+            return ["G4 P10", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P10", "L0"]
+            return ["G4 P10", "L0", "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L255"]
+            return ["G4 P1", "@X9L255", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L255"]
+            return ["G4 P1", "L255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L250"]
+            return ["G4 P1", "@X9L250", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L250"]
+            return ["G4 P1", "L250", "G4 P1"]
 
     def moveTo(self, x, y, speed=600):
         """
@@ -71,8 +72,8 @@ class laser_base(object):
         x2 = x * cos(self.rotation) - y * sin(self.rotation)
         y2 = x * sin(self.rotation) + y * cos(self.rotation)
 
-        x = x2 / self.ratio
-        y = y2 / self.ratio
+        x = x2 * self.ratio
+        y = y2 * self.ratio
 
         if speed == 'draw':
             speed = 200
@@ -103,3 +104,6 @@ class laser_base(object):
         image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
         return image
+if __name__ == '__main__':
+    m_laser_base = laser_base()
+    print(m_laser_base)
