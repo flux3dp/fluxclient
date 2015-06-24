@@ -54,7 +54,7 @@ class image_to_pcTest(unittest.TestCase):
         m_img_to_pc = image_to_pc.image_to_pc()
         tmp = []
         for step in range(10):
-            buffer_O, buffer_L, buffer_R = images_loader('data', step)
+            buffer_O, buffer_L, buffer_R = images_loader('data/inso', step)
             # tmp.append(m_img_to_pc.feed(buffer_O, buffer_L, buffer_R, step))
         # print (tmp)
 
