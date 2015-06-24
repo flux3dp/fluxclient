@@ -11,22 +11,13 @@ import scan_settings
 
 def to_image(buffer_data):
     '''
-        convert buffer_data into image -> (numpy.ndarray, uint8)
+        convert buffer_data(bytes readin from jpg) into image -> (numpy.ndarray, uint8)
     '''
-    # int_data = list(buffer_data)
-    # img_width = scan_settings.img_width
-    # img_height = scan_settings.img_height
-
-    # assert len(int_data) == img_width * img_height * 3, "data length != width * height, %d != %d * %d" % (len(int_data), img_width, img_height)
-
-    # image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
-
-    # return np.array(image, dtype=np.uint8)
-
     f = io.BytesIO(buffer_data)
     im = Image.open(f)
     im_array = np.array(im)
-    im_array[:, :, [0, 2]] = im_array[:, :, [2, 0]]  # change rgb to bgr, fit in cv2's rgb order
+    # change order from "rgb" to "bgr" <- cv2's order
+    im_array[:, :, [0, 2]] = im_array[:, :, [2, 0]]
     return im_array
 
 
@@ -44,8 +35,8 @@ def points_to_bytes(points):
     return b''.join([struct.pack('<ffffff', p[0], p[1], p[2], p[5] / 255., p[4] / 255., p[3] / 255.) for p in points])
 
 
-class image_to_point_cloud():
-    """docstring for image_to_point_cloud"""
+class image_to_pc():
+    """docstring for image_to_pc"""
     def __init__(self):
         self.reset()
 
@@ -59,6 +50,7 @@ class image_to_point_cloud():
         self.step_counter = 0
 
     def feed(self, buffer_O, buffer_L, buffer_R, step):
+
         img_O = to_image(buffer_O)
         img_L = to_image(buffer_L)
         img_R = to_image(buffer_R)

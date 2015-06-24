@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 import time
 import math
@@ -5,11 +6,66 @@ import math
 
 import numpy
 
-import scan_settings as utl
+import scan_settings
+import tools
 
 
 NUM_LASER_RANGE_THRESHOLD = 3
 RED_HUE_UPPER_THRESHOLD = 5
+
+
+def normalize(v):
+    l = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
+    l = math.sqrt(l)
+
+    v[0] /= l
+    v[1] /= l
+    v[2] /= l
+    return v
+
+
+def pre_cut(img, x=0, y=0, w=None, h=None):
+    return img[y: y + h, x: x + w]  # x, y, w, h
+
+
+def point_dis_sq(a, b):
+    return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[1] - b[1]) ** 2
+
+
+def dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def check_tri(tri, thres=25):
+    '''
+      check if a triangle is valid
+      return True if each edge is smaller than thres, False otherwise
+      tri = [[x, y, z], [x, y, z], [x, y, z]]
+    '''
+    thres = thres ** 2
+    if (tri[0][0] - tri[1][0]) ** 2 + (tri[0][1] - tri[1][1]) ** 2 + (tri[0][2] - tri[1][2]) ** 2 > thres:
+        return False
+    elif (tri[0][0] - tri[2][0]) ** 2 + (tri[0][1] - tri[2][1]) ** 2 + (tri[0][2] - tri[2][2]) ** 2 > thres:
+        return False
+    elif (tri[1][0] - tri[2][0]) ** 2 + (tri[1][1] - tri[2][1]) ** 2 + (tri[1][2] - tri[2][2]) ** 2 > thres:
+        return False
+    else:
+        return True
+
+
+def normal(tri):
+    '''
+      compute normal of a triangle
+      tri = [[x, y, z], [x, y, z], [x, y, z]]
+    '''
+    return (
+        (tri[1][1] - tri[1][0]) * (tri[2][2] - tri[2][0]) -
+        (tri[1][2] - tri[1][0]) * (tri[2][1] - tri[2][0]),
+        (tri[2][1] - tri[2][0]) * (tri[0][2] - tri[0][0]) -
+        (tri[0][1] - tri[0][0]) * (tri[2][2] - tri[2][0]),
+        (tri[0][1] - tri[0][0]) * (tri[1][2] - tri[1][0]) -
+        (tri[0][2] - tri[0][0]) * (tri[1][1] - tri[1][0])
+    )
 
 
 class freeless():
@@ -29,11 +85,11 @@ class freeless():
         self.m_minLaserWidth = 3
         self.MAX_MAGNITUDE_SQ = (255 * 255 * 3.0)
         self.m_laserMagnitudeThreshold = .8
-        self.firstRowLaserCol = 0.5 * utl.img_width
+        self.firstRowLaserCol = 0.5 * scan_settings.img_width
         self.RANGE_DISTANCE_THRESHOLD = 2
         self.numSuspectedBadLaserLocations = 0
         self.results = []
-        self.laser_plane = [[0, 0, 0], utl.normalize([laserZ, 0, -1 * laserX])]
+        self.laser_plane = [[0, 0, 0], normalize([laserZ, 0, -1 * laserX])]
 
     def img_to_points(self, img_o, img_red, indices, step, side, clock=False):
         '''
@@ -71,11 +127,11 @@ class freeless():
             step = - step
 
         if side == 'L':
-            theta = math.pi * 2 * step / utl.scan_step
-            # + utl.theta_a
+            theta = math.pi * 2 * step / scan_settings.scan_step
+            # + scan_settings.theta_a
         elif side == 'R':
-            theta = math.pi * 2 * step / utl.scan_step
-            # - utl.theta_a
+            theta = math.pi * 2 * step / scan_settings.scan_step
+            # - scan_settings.theta_a
         else:
             print ('shouldn\'t happen, input=' + side)
 
@@ -103,7 +159,7 @@ class freeless():
 
         # If dn is close to 0 then they don't intersect.  This should never happen
         # print ray[1], self.laser_plane[1]
-        denominator = utl.dot(ray[1], self.laser_plane[1])
+        denominator = dot(ray[1], self.laser_plane[1])
         # print denominator
 
         if abs(denominator) < 0.0000001:
@@ -114,7 +170,7 @@ class freeless():
              [1] - ray[0][1], self.laser_plane[0][2] - ray[0][2]]
 
         # v = [m_laserPlane.point.x - ray.origin.x, m_laserPlane.point.y - ray.origin.y, m_laserPlane.point.z - ray.origin.z]
-        numerator = utl.dot(v, self.laser_plane[1])
+        numerator = dot(v, self.laser_plane[1])
         d = float(numerator) / denominator
         if d < 0:
             # print 'warning: d < 0:', ray
@@ -122,8 +178,8 @@ class freeless():
 
         point = [[ray[0][
             0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
-        point.append([utl.laserX_L - point[0][0],
-                      utl.laserY_L - point[0][1], utl.laserZ_L - point[0][2]])
+        point.append([scan_settings.laserX_L - point[0][0],
+                      scan_settings.laserY_L - point[0][1], scan_settings.laserZ_L - point[0][2]])
         # print point
 
         return True, point
@@ -139,15 +195,15 @@ class freeless():
 
         # else:
         # portion, We subtract by one because the image is 0 indexed
-        x = float(x) / (utl.img_width - 1)
-        y = float(utl.img_height - y) / (utl.img_height - 1)
+        x = float(x) / (scan_settings.img_width - 1)
+        y = float(scan_settings.img_height - y) / (scan_settings.img_height - 1)
 
-        x = (x * utl.sensorWidth) + utl.cameraX - (utl.sensorWidth * 0.5)
-        y = (y * utl.sensorHeight) + utl.cameraY - (utl.sensorHeight * 0.5)
-        z = utl.cameraZ - utl.focalLength
+        x = (x * scan_settings.sensorWidth) + scan_settings.cameraX - (scan_settings.sensorWidth * 0.5)
+        y = (y * scan_settings.sensorHeight) + scan_settings.cameraY - (scan_settings.sensorHeight * 0.5)
+        z = scan_settings.cameraZ - scan_settings.focalLength
 
-        ray = [[x, y, z], utl.normalize(
-            [x - utl.cameraX, y - utl.cameraY, z - utl.cameraZ])]
+        ray = [[x, y, z], normalize(
+            [x - scan_settings.cameraX, y - scan_settings.cameraY, z - scan_settings.cameraZ])]
         # self.place[(x, y)] = ray
         return ray
 
@@ -162,13 +218,13 @@ class freeless():
             while iCur + 1 < len(currentFrame):
                 c1 = currentFrame[iCur]
                 c2 = currentFrame[iCur + 1]
-                if utl.check([l1[:3], c1[:3], c2[:3]]):
-                    distSq1 = utl.point_dis_sq(l1[:3], c2[:3])
-                    distSq2 = utl.point_dis_sq(l2[:3], c2[:3])
+                if check([l1[:3], c1[:3], c2[:3]]):
+                    distSq1 = point_dis_sq(l1[:3], c2[:3])
+                    distSq2 = point_dis_sq(l2[:3], c2[:3])
                     if distSq1 < distSq2:
                         tri.append([l1[:3], c1[:3], c2[:3]])
                     else:
-                        if utl.check([l2[:3], l1[:3], c1[:3]]):
+                        if check([l2[:3], l1[:3], c1[:3]]):
                             tri.append([l2[:3], l1[:3], c1[:3]])
                         else:
                             iCur += 1
@@ -208,9 +264,9 @@ class freeless():
             self.writeTrianglesForColumn(lastFrame, firstFrame, tri)
 
         print ('tri:', len(tri), 'triangels')
-        utl.write_stl(tri, file_name)
+        tools.write_stl(tri, file_name)
 
-    def subProcess(self, img1, img2, maxNumLocations=utl.img_height):
+    def subProcess(self, img1, img2, maxNumLocations=scan_settings.img_height):
         '''
           find out the location of the laser dots
           return a list of indices [[x,y], [x,y], [x,y]]
@@ -230,12 +286,12 @@ class freeless():
         # some transform
         mag = 255.0 * d / self.MAX_MAGNITUDE_SQ
 
-        for row in range(utl.img_height):
+        for row in range(scan_settings.img_height):
             m_laserRanges = []
             # candidates, [ [starting index, ending index, middle point], ... ]
             m_laserRanges.append([-1, -1, None])
 
-            for col in range(utl.img_width):
+            for col in range(scan_settings.img_width):
                 # diff value is bigger than threshold
                 if mag[row][col] > self.m_laserMagnitudeThreshold:
                     # store the beginning, if it's a new candidate, keep going
@@ -273,7 +329,7 @@ class freeless():
                     else:
                         m_laserRanges[-1][0] = -1
 
-            # if m_laserRanges[-1][0] != -1 and m_laserRanges[-1][0] != utl.img_width - 1:
+            # if m_laserRanges[-1][0] != -1 and m_laserRanges[-1][0] != scan_settings.img_width - 1:
             #   print m_laserRanges
             #   input()
 
@@ -334,6 +390,6 @@ class freeless():
 if __name__ == '__main__':
     tmp = freeless()
     # p = tmp.img_to_points(sys.argv[1])
-    # utl.pcd_write(p, sys.argv[2])
+    # scan_settings.write_pcd(p, sys.argv[2])
 
     # print >>sys.stderr, "\nError: python ./img_to_points.py [img location] [output file name]\n"

@@ -263,7 +263,7 @@ class LaserBitmap(LaserBase):
                 gcode += self.turnOff()
 
         gcode += ["G28"]
-        self.dump('gen.jpg',)
+        # self.dump('gen.jpg',)
         # return ''
         return "\n".join(gcode) + "\n"
 
