@@ -52,5 +52,5 @@ target/
 
 #ignore process pid file
 *.pid
-src/scanner/src/PoissonRecon/Bin
-src/scanner/src/PoissonRecon/vbfile
+src/scanner/PoissonRecon/Bin
+src/scanner/PoissonRecon/vbfile
