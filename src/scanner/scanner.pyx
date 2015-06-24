@@ -3,6 +3,7 @@ from libcpp.vector cimport vector
 
 from scan_settings import write_stl
 
+
 cdef extern from "scan_module.h":
     cdef cppclass PointCloudXYZRGBPtr:
         pass
@@ -118,6 +119,7 @@ cdef class RegCloud:
             raise RuntimeError("Load failed")
         if loadPointNT(filename_obj.encode(), self.obj) == -1:
             raise RuntimeError("Load failed")
+
 
     cpdef dump_o(self, unicode filename):
         dumpPointNT(filename.encode(), self.obj)

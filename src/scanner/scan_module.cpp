@@ -9,7 +9,7 @@
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/surface/poisson.h>
 #include <pcl/PolygonMesh.h>
-#include <pcl/io/vtk_lib_io.h>
+// #include <pcl/io/vtk_lib_io.h>
 
 
 
@@ -53,7 +53,6 @@ int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold) {
 
 int VG(PointCloudXYZRGBPtr cloud) {
     // voxel_grid
-
     pcl::VoxelGrid<pcl::PointXYZRGB> vg;
     vg.setMinimumPointsNumberPerVoxel(0); //set min points need to in a voxel
     vg.setInputCloud (cloud);
@@ -212,7 +211,8 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles){
 }
 int dumpSTL(const char* file, MeshPtr triangles){
   // (*triangles)
-  return pcl::io::savePolygonFileSTL (file, *triangles);
+  // return pcl::io::savePolygonFileSTL (file, *triangles);
+  return 0;
 
 
 }

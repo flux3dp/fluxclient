@@ -242,8 +242,8 @@ class __Pyx_FakeReference {
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
-#define __PYX_HAVE___scanner
-#define __PYX_HAVE_API___scanner
+#define __PYX_HAVE__fluxclient__scanner___scanner
+#define __PYX_HAVE_API__fluxclient__scanner___scanner
 #include <vector>
 #include "ios"
 #include "new"
@@ -432,52 +432,52 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "/scanner.pyx",
-  "stringsource",
+  "xclient/src/scanner/scanner.pyx",
+  "xclient/stringsource",
 };
 
 /*--- Type declarations ---*/
-struct __pyx_obj_8_scanner_PointCloudXYZRGBObj;
-struct __pyx_obj_8_scanner_RegCloud;
-struct __pyx_opt_args_8_scanner_8RegCloud_SCP;
+struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
+struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud;
+struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP;
 
-/* "scanner/scanner.pyx":130
+/* "src/scanner/scanner.pyx":137
  *         return FE(self.scene, self.scene_f, radius) & FE(self.obj, self.obj_f, radius)
  * 
  *     cpdef int SCP(self, float leaf = 2.0):             # <<<<<<<<<<<<<<
  *         return SCP(self.obj, self.obj_f, self.scene, self.scene_f, self.transformation, leaf)
  */
-struct __pyx_opt_args_8_scanner_8RegCloud_SCP {
+struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP {
   int __pyx_n;
   float leaf;
 };
 
-/* "scanner/scanner.pyx":27
+/* "src/scanner/scanner.pyx":31
  *     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
  * 
  * cdef class PointCloudXYZRGBObj:             # <<<<<<<<<<<<<<
  *     cdef PointCloudXYZRGBPtr obj
  *     cdef NormalPtr normalObj
  */
-struct __pyx_obj_8_scanner_PointCloudXYZRGBObj {
+struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj {
   PyObject_HEAD
-  struct __pyx_vtabstruct_8_scanner_PointCloudXYZRGBObj *__pyx_vtab;
+  struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_vtab;
   PointCloudXYZRGBPtr obj;
   NormalPtr normalObj;
   PointXYZRGBNormalPtr bothobj;
 };
 
 
-/* "scanner/scanner.pyx":104
+/* "src/scanner/scanner.pyx":108
  * 
  * 
  * cdef class RegCloud:             # <<<<<<<<<<<<<<
  *     cdef PointXYZRGBNormalPtr scene, obj
  *     cdef FeatureCloudTPtr scene_f, obj_f
  */
-struct __pyx_obj_8_scanner_RegCloud {
+struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud {
   PyObject_HEAD
-  struct __pyx_vtabstruct_8_scanner_RegCloud *__pyx_vtab;
+  struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_vtab;
   PointXYZRGBNormalPtr scene;
   PointXYZRGBNormalPtr obj;
   FeatureCloudTPtr scene_f;
@@ -487,7 +487,7 @@ struct __pyx_obj_8_scanner_RegCloud {
 
 
 
-/* "scanner/scanner.pyx":27
+/* "src/scanner/scanner.pyx":31
  *     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
  * 
  * cdef class PointCloudXYZRGBObj:             # <<<<<<<<<<<<<<
@@ -495,21 +495,21 @@ struct __pyx_obj_8_scanner_RegCloud {
  *     cdef NormalPtr normalObj
  */
 
-struct __pyx_vtabstruct_8_scanner_PointCloudXYZRGBObj {
-  PyObject *(*loadFile)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch);
-  struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *(*clone)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
-  PyObject *(*dump)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch);
-  PyObject *(*push_backPoint)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, float, float, float, unsigned int, int __pyx_skip_dispatch);
-  int (*SOR)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int, float, int __pyx_skip_dispatch);
-  int (*VG)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
-  int (*ne)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
-  int (*ne_viewpoint)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, PyObject *, int __pyx_skip_dispatch);
-  int (*concatenatePointsNormal)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
+struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj {
+  PyObject *(*loadFile)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch);
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *(*clone)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
+  PyObject *(*dump)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch);
+  PyObject *(*push_backPoint)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, float, float, float, unsigned int, int __pyx_skip_dispatch);
+  int (*SOR)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int, float, int __pyx_skip_dispatch);
+  int (*VG)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
+  int (*ne)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
+  int (*ne_viewpoint)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, PyObject *, int __pyx_skip_dispatch);
+  int (*concatenatePointsNormal)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch);
 };
-static struct __pyx_vtabstruct_8_scanner_PointCloudXYZRGBObj *__pyx_vtabptr_8_scanner_PointCloudXYZRGBObj;
+static struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_vtabptr_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
 
 
-/* "scanner/scanner.pyx":104
+/* "src/scanner/scanner.pyx":108
  * 
  * 
  * cdef class RegCloud:             # <<<<<<<<<<<<<<
@@ -517,15 +517,15 @@ static struct __pyx_vtabstruct_8_scanner_PointCloudXYZRGBObj *__pyx_vtabptr_8_sc
  *     cdef FeatureCloudTPtr scene_f, obj_f
  */
 
-struct __pyx_vtabstruct_8_scanner_RegCloud {
-  PyObject *(*loadFile)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch);
-  PyObject *(*dump_o)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch);
-  PyObject *(*dump_s)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch);
-  PyObject *(*dump)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch);
-  int (*FE)(struct __pyx_obj_8_scanner_RegCloud *, float, int __pyx_skip_dispatch);
-  int (*SCP)(struct __pyx_obj_8_scanner_RegCloud *, int __pyx_skip_dispatch, struct __pyx_opt_args_8_scanner_8RegCloud_SCP *__pyx_optional_args);
+struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud {
+  PyObject *(*loadFile)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch);
+  PyObject *(*dump_o)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch);
+  PyObject *(*dump_s)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch);
+  PyObject *(*dump)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch);
+  int (*FE)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, float, int __pyx_skip_dispatch);
+  int (*SCP)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, int __pyx_skip_dispatch, struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP *__pyx_optional_args);
 };
-static struct __pyx_vtabstruct_8_scanner_RegCloud *__pyx_vtabptr_8_scanner_RegCloud;
+static struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_vtabptr_10fluxclient_7scanner_8_scanner_RegCloud;
 
 /* --- Runtime support code (head) --- */
 #ifndef CYTHON_REFNANNY
@@ -668,6 +668,8 @@ static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
 
 static int __Pyx_SetVtable(PyObject *dict, void *vtable);
 
+static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
+
 typedef struct {
     int code_line;
     PyCodeObject* code_object;
@@ -686,6 +688,8 @@ static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
 #include <new>
+
+static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
 
 static CYTHON_INLINE unsigned int __Pyx_PyInt_As_unsigned_int(PyObject *);
 
@@ -744,60 +748,60 @@ static int __Pyx_check_binary_version(void);
 
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
-static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19PointCloudXYZRGBObj_clone(CYTHON_UNUSED struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius, int __pyx_skip_dispatch); /* proto*/
-static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_8_scanner_8RegCloud_SCP *__pyx_optional_args); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
+static struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_clone(CYTHON_UNUSED struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_o(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_s(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_FE(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius, int __pyx_skip_dispatch); /* proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_SCP(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP *__pyx_optional_args); /* proto*/
 
 /* Module declarations from 'cython' */
 
 /* Module declarations from 'libcpp.vector' */
 
-/* Module declarations from '_scanner' */
-static PyTypeObject *__pyx_ptype_8_scanner_PointCloudXYZRGBObj = 0;
-static PyTypeObject *__pyx_ptype_8_scanner_RegCloud = 0;
+/* Module declarations from 'fluxclient.scanner._scanner' */
+static PyTypeObject *__pyx_ptype_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj = 0;
+static PyTypeObject *__pyx_ptype_10fluxclient_7scanner_8_scanner_RegCloud = 0;
 static PyObject *__pyx_convert_vector_to_py_float(const std::vector<float>  &); /*proto*/
 static PyObject *__pyx_convert_vector_to_py_std_3a__3a_vector_3c_float_3e___(const std::vector<std::vector<float> >  &); /*proto*/
 static PyObject *__pyx_convert_vector_to_py_int(const std::vector<int>  &); /*proto*/
 static std::vector<float>  __pyx_convert_vector_from_py_float(PyObject *); /*proto*/
 static std::vector<std::vector<float> >  __pyx_convert_vector_from_py_std_3a__3a_vector_3c_float_3e___(PyObject *); /*proto*/
 static std::vector<int>  __pyx_convert_vector_from_py_int(PyObject *); /*proto*/
-#define __Pyx_MODULE_NAME "_scanner"
-int __pyx_module_is_main__scanner = 0;
+#define __Pyx_MODULE_NAME "fluxclient.scanner._scanner"
+int __pyx_module_is_main_fluxclient__scanner___scanner = 0;
 
-/* Implementation of '_scanner' */
+/* Implementation of 'fluxclient.scanner._scanner' */
 static PyObject *__pyx_builtin_RuntimeError;
 static PyObject *__pyx_builtin_range;
-static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step); /* proto */
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
-static int __pyx_pf_8_scanner_8RegCloud___init__(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_10FE(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius); /* proto */
-static PyObject *__pyx_pf_8_scanner_8RegCloud_12SCP(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_leaf); /* proto */
-static PyObject *__pyx_tp_new_8_scanner_PointCloudXYZRGBObj(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
-static PyObject *__pyx_tp_new_8_scanner_RegCloud(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static int __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self); /* proto */
+static int __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud___init__(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_8dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_10FE(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius); /* proto */
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_12SCP(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_leaf); /* proto */
+static PyObject *__pyx_tp_new_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_10fluxclient_7scanner_8_scanner_RegCloud(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static char __pyx_k_x[] = "x";
 static char __pyx_k_y[] = "y";
 static char __pyx_k_z[] = "z";
@@ -817,9 +821,11 @@ static char __pyx_k_range[] = "range";
 static char __pyx_k_viewp[] = "viewp";
 static char __pyx_k_dump_o[] = "dump_o";
 static char __pyx_k_dump_s[] = "dump_s";
+static char __pyx_k_import[] = "__import__";
 static char __pyx_k_loadFile[] = "loadFile";
 static char __pyx_k_neighbors[] = "neighbors";
 static char __pyx_k_threshold[] = "threshold";
+static char __pyx_k_write_stl[] = "write_stl";
 static char __pyx_k_filename_1[] = "filename_1";
 static char __pyx_k_filename_2[] = "filename_2";
 static char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
@@ -827,6 +833,7 @@ static char __pyx_k_Load_failed[] = "Load failed";
 static char __pyx_k_RuntimeError[] = "RuntimeError";
 static char __pyx_k_filename_obj[] = "filename_obj";
 static char __pyx_k_ne_viewpoint[] = "ne_viewpoint";
+static char __pyx_k_scan_settings[] = "scan_settings";
 static char __pyx_k_filename_scene[] = "filename_scene";
 static char __pyx_k_push_backPoint[] = "push_backPoint";
 static char __pyx_k_Not_implement_clone_yet[] = "Not implement clone yet";
@@ -847,6 +854,7 @@ static PyObject *__pyx_n_s_filename_1;
 static PyObject *__pyx_n_s_filename_2;
 static PyObject *__pyx_n_s_filename_obj;
 static PyObject *__pyx_n_s_filename_scene;
+static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_leaf;
 static PyObject *__pyx_n_s_loadFile;
 static PyObject *__pyx_n_s_main;
@@ -857,10 +865,12 @@ static PyObject *__pyx_n_s_push_backPoint;
 static PyObject *__pyx_n_s_pyx_vtable;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_rgb;
+static PyObject *__pyx_n_s_scan_settings;
 static PyObject *__pyx_n_s_step;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_threshold;
 static PyObject *__pyx_n_s_viewp;
+static PyObject *__pyx_n_s_write_stl;
 static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_z;
@@ -869,7 +879,7 @@ static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_tuple__4;
 
-/* "scanner/scanner.pyx":32
+/* "src/scanner/scanner.pyx":36
  *     cdef PointXYZRGBNormalPtr bothobj
  * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -878,27 +888,27 @@ static PyObject *__pyx_tuple__4;
  */
 
 /* Python wrapper */
-static int __pyx_pw_8_scanner_19PointCloudXYZRGBObj_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_8_scanner_19PointCloudXYZRGBObj_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
   if (unlikely(PyTuple_GET_SIZE(__pyx_args) > 0)) {
     __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__init__", 0))) return -1;
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj___init__(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
+static int __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "scanner/scanner.pyx":33
+  /* "src/scanner/scanner.pyx":37
  * 
  *     def __init__(self):
  *         self.obj = createPointCloudXYZRGB()             # <<<<<<<<<<<<<<
@@ -907,7 +917,7 @@ static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_
  */
   __pyx_v_self->obj = createPointCloudXYZRGB();
 
-  /* "scanner/scanner.pyx":34
+  /* "src/scanner/scanner.pyx":38
  *     def __init__(self):
  *         self.obj = createPointCloudXYZRGB()
  *         self.normalObj = createNormalPtr()             # <<<<<<<<<<<<<<
@@ -916,7 +926,7 @@ static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_
  */
   __pyx_v_self->normalObj = createNormalPtr();
 
-  /* "scanner/scanner.pyx":32
+  /* "src/scanner/scanner.pyx":36
  *     cdef PointXYZRGBNormalPtr bothobj
  * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -930,7 +940,7 @@ static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":36
+/* "src/scanner/scanner.pyx":40
  *         self.normalObj = createNormalPtr()
  * 
  *     cpdef loadFile(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -938,8 +948,8 @@ static int __pyx_pf_8_scanner_19PointCloudXYZRGBObj___init__(struct __pyx_obj_8_
  *             raise RuntimeError("Load failed")
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -957,9 +967,9 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_loadFile); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_loadFile); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_3loadFile)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -973,16 +983,16 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_5);
         PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_filename);
         PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_filename);
         __Pyx_GIVEREF(__pyx_v_filename);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
@@ -995,7 +1005,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":37
+  /* "src/scanner/scanner.pyx":41
  * 
  *     cpdef loadFile(self, unicode filename):
  *         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:             # <<<<<<<<<<<<<<
@@ -1004,30 +1014,30 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
  */
   if (unlikely(__pyx_v_filename == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_7 = ((loadPointCloudXYZRGB(__pyx_t_6, __pyx_v_self->obj) == -1) != 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_7) {
 
-    /* "scanner/scanner.pyx":38
+    /* "src/scanner/scanner.pyx":42
  *     cpdef loadFile(self, unicode filename):
  *         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  * 
  *     cpdef PointCloudXYZRGBObj clone(self):
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "scanner/scanner.pyx":36
+  /* "src/scanner/scanner.pyx":40
  *         self.normalObj = createNormalPtr()
  * 
  *     cpdef loadFile(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -1044,7 +1054,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1053,16 +1063,16 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(struct __pyx_o
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("loadFile (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_2loadFile(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
 
   /* function exit code */
   goto __pyx_L0;
@@ -1073,7 +1083,7 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile(PyObject *__
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1082,7 +1092,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("loadFile", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 36; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_loadFile(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1091,7 +1101,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1099,7 +1109,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":40
+/* "src/scanner/scanner.pyx":44
  *             raise RuntimeError("Load failed")
  * 
  *     cpdef PointCloudXYZRGBObj clone(self):             # <<<<<<<<<<<<<<
@@ -1107,10 +1117,10 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_2loadFile(struct __pyx
  *         # TODO:
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19PointCloudXYZRGBObj_clone(CYTHON_UNUSED struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
-  CYTHON_UNUSED struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_obj = 0;
-  struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_r = NULL;
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_clone(CYTHON_UNUSED struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
+  CYTHON_UNUSED struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_obj = 0;
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -1124,9 +1134,9 @@ static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19Point
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_clone); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_clone); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_5clone)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_5clone)) {
       __Pyx_XDECREF(((PyObject *)__pyx_r));
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -1140,15 +1150,15 @@ static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19Point
         }
       }
       if (__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else {
-        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_8_scanner_PointCloudXYZRGBObj))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-      __pyx_r = ((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_t_2);
+      if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj))))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_r = ((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_t_2);
       __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       goto __pyx_L0;
@@ -1156,32 +1166,32 @@ static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19Point
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":41
+  /* "src/scanner/scanner.pyx":45
  * 
  *     cpdef PointCloudXYZRGBObj clone(self):
  *         cdef PointCloudXYZRGBObj obj = PointCloudXYZRGBObj()             # <<<<<<<<<<<<<<
  *         # TODO:
  *         raise RuntimeError("Not implement clone yet")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_8_scanner_PointCloudXYZRGBObj)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)((PyObject*)__pyx_ptype_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 45; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_obj = ((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_t_1);
+  __pyx_v_obj = ((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":43
+  /* "src/scanner/scanner.pyx":47
  *         cdef PointCloudXYZRGBObj obj = PointCloudXYZRGBObj()
  *         # TODO:
  *         raise RuntimeError("Not implement clone yet")             # <<<<<<<<<<<<<<
  *         # return obj
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 43; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  {__pyx_filename = __pyx_f[0]; __pyx_lineno = 43; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "scanner/scanner.pyx":40
+  /* "src/scanner/scanner.pyx":44
  *             raise RuntimeError("Load failed")
  * 
  *     cpdef PointCloudXYZRGBObj clone(self):             # <<<<<<<<<<<<<<
@@ -1195,7 +1205,7 @@ static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19Point
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.clone", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.clone", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_obj);
@@ -1205,19 +1215,19 @@ static struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_f_8_scanner_19Point
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_5clone(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("clone (wrapper)", 0);
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_4clone(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1226,7 +1236,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("clone", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8_scanner_19PointCloudXYZRGBObj_clone(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 40; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((PyObject *)__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_clone(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 44; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1235,7 +1245,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_ob
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.clone", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.clone", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1243,7 +1253,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":46
+/* "src/scanner/scanner.pyx":50
  *         # return obj
  * 
  *     cpdef dump(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -1251,8 +1261,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_4clone(struct __pyx_ob
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1269,9 +1279,9 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_7dump)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -1285,16 +1295,16 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_5);
         PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_filename);
         PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_filename);
         __Pyx_GIVEREF(__pyx_v_filename);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
@@ -1307,7 +1317,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":47
+  /* "src/scanner/scanner.pyx":51
  * 
  *     cpdef dump(self, unicode filename):
  *         dumpPointCloudXYZRGB(filename.encode(), self.obj)             # <<<<<<<<<<<<<<
@@ -1316,15 +1326,15 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
  */
   if (unlikely(__pyx_v_filename == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 51; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   dumpPointCloudXYZRGB(__pyx_t_6, __pyx_v_self->obj);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":46
+  /* "src/scanner/scanner.pyx":50
  *         # return obj
  * 
  *     cpdef dump(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -1341,7 +1351,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1350,16 +1360,16 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(struct __pyx_obj_8
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("dump (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_6dump(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
 
   /* function exit code */
   goto __pyx_L0;
@@ -1370,7 +1380,7 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump(PyObject *__pyx_
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_filename) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1379,7 +1389,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dump", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_19PointCloudXYZRGBObj_dump(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 46; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_dump(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 50; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1388,7 +1398,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1396,7 +1406,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":49
+/* "src/scanner/scanner.pyx":53
  *         dumpPointCloudXYZRGB(filename.encode(), self.obj)
  * 
  *     cpdef push_backPoint(self, float x, float y, float z, cython.uint rgb):             # <<<<<<<<<<<<<<
@@ -1404,8 +1414,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_6dump(struct __pyx_obj
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1426,17 +1436,17 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_push_backPoint); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_push_backPoint); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_9push_backPoint)) {
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_x); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_x); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_y); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_y); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_5 = PyFloat_FromDouble(__pyx_v_z); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = PyFloat_FromDouble(__pyx_v_z); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = __Pyx_PyInt_From_unsigned_int(__pyx_v_rgb); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = __Pyx_PyInt_From_unsigned_int(__pyx_v_rgb); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_7 = __pyx_t_1; __pyx_t_8 = NULL;
@@ -1451,7 +1461,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
           __pyx_t_9 = 1;
         }
       }
-      __pyx_t_10 = PyTuple_New(4+__pyx_t_9); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_10 = PyTuple_New(4+__pyx_t_9); if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_10);
       if (__pyx_t_8) {
         PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_8); __Pyx_GIVEREF(__pyx_t_8); __pyx_t_8 = NULL;
@@ -1468,7 +1478,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
       __pyx_t_4 = 0;
       __pyx_t_5 = 0;
       __pyx_t_6 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_10, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_10, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -1480,7 +1490,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":50
+  /* "src/scanner/scanner.pyx":54
  * 
  *     cpdef push_backPoint(self, float x, float y, float z, cython.uint rgb):
  *         push_backPoint(self.obj, x, y, z, rgb)             # <<<<<<<<<<<<<<
@@ -1489,7 +1499,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
  */
   push_backPoint(__pyx_v_self->obj, __pyx_v_x, __pyx_v_y, __pyx_v_z, __pyx_v_rgb);
 
-  /* "scanner/scanner.pyx":49
+  /* "src/scanner/scanner.pyx":53
  *         dumpPointCloudXYZRGB(filename.encode(), self.obj)
  * 
  *     cpdef push_backPoint(self, float x, float y, float z, cython.uint rgb):             # <<<<<<<<<<<<<<
@@ -1510,7 +1520,7 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1519,8 +1529,8 @@ static PyObject *__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(struct _
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_x;
   float __pyx_v_y;
   float __pyx_v_z;
@@ -1553,21 +1563,21 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObje
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_z)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  3:
         if (likely((values[3] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_rgb)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 3); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, 3); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "push_backPoint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "push_backPoint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -1577,27 +1587,27 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint(PyObje
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_z = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_z == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_rgb = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_rgb == (unsigned int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_x = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_x == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_y = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_y == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_z = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_z == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_rgb = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_rgb == (unsigned int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("push_backPoint", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_x, __pyx_v_y, __pyx_v_z, __pyx_v_rgb);
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_x, __pyx_v_y, __pyx_v_z, __pyx_v_rgb);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, float __pyx_v_x, float __pyx_v_y, float __pyx_v_z, unsigned int __pyx_v_rgb) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1606,7 +1616,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("push_backPoint", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint(__pyx_v_self, __pyx_v_x, __pyx_v_y, __pyx_v_z, __pyx_v_rgb, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 49; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_push_backPoint(__pyx_v_self, __pyx_v_x, __pyx_v_y, __pyx_v_z, __pyx_v_rgb, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 53; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1615,7 +1625,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.push_backPoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1623,7 +1633,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":52
+/* "src/scanner/scanner.pyx":56
  *         push_backPoint(self.obj, x, y, z, rgb)
  * 
  *     cpdef int SOR(self, int neighbors, float threshold):             # <<<<<<<<<<<<<<
@@ -1631,8 +1641,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_8push_backPoint(struct
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold, int __pyx_skip_dispatch) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1652,12 +1662,12 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_SOR); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_SOR); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR)) {
-      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_neighbors); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_11SOR)) {
+      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_neighbors); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_threshold); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_threshold); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -1672,7 +1682,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
           __pyx_t_7 = 1;
         }
       }
-      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_8);
       if (__pyx_t_6) {
         PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __Pyx_GIVEREF(__pyx_t_6); __pyx_t_6 = NULL;
@@ -1683,11 +1693,11 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
       __Pyx_GIVEREF(__pyx_t_4);
       __pyx_t_3 = 0;
       __pyx_t_4 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_9;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -1696,7 +1706,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":53
+  /* "src/scanner/scanner.pyx":57
  * 
  *     cpdef int SOR(self, int neighbors, float threshold):
  *         return SOR(self.obj, neighbors, threshold)             # <<<<<<<<<<<<<<
@@ -1706,7 +1716,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
   __pyx_r = SOR(__pyx_v_self->obj, __pyx_v_neighbors, __pyx_v_threshold);
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":52
+  /* "src/scanner/scanner.pyx":56
  *         push_backPoint(self.obj, x, y, z, rgb)
  * 
  *     cpdef int SOR(self, int neighbors, float threshold):             # <<<<<<<<<<<<<<
@@ -1723,7 +1733,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_WriteUnraisable("_scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -1731,8 +1741,8 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(struct __pyx_obj_8_scanne
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_v_neighbors;
   float __pyx_v_threshold;
   int __pyx_lineno = 0;
@@ -1761,11 +1771,11 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_threshold)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("SOR", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("SOR", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "SOR") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "SOR") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1773,25 +1783,25 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR(PyObject *__pyx_
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
-    __pyx_v_neighbors = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_neighbors == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_threshold = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_threshold == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_neighbors = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_neighbors == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_threshold = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_threshold == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("SOR", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("SOR", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_neighbors, __pyx_v_threshold);
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_10SOR(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_neighbors, __pyx_v_threshold);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_v_neighbors, float __pyx_v_threshold) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1800,7 +1810,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("SOR", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR(__pyx_v_self, __pyx_v_neighbors, __pyx_v_threshold, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 52; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_SOR(__pyx_v_self, __pyx_v_neighbors, __pyx_v_threshold, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 56; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1809,7 +1819,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.SOR", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1817,7 +1827,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":55
+/* "src/scanner/scanner.pyx":59
  *         return SOR(self.obj, neighbors, threshold)
  * 
  *     cpdef int VG(self):             # <<<<<<<<<<<<<<
@@ -1825,8 +1835,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_10SOR(struct __pyx_obj
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1842,9 +1852,9 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_VG); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_VG); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_13VG)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_13VG)) {
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
       if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -1857,14 +1867,14 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
         }
       }
       if (__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else {
-        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_5;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -1873,7 +1883,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":56
+  /* "src/scanner/scanner.pyx":60
  * 
  *     cpdef int VG(self):
  *         return VG(self.obj)             # <<<<<<<<<<<<<<
@@ -1883,7 +1893,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
   __pyx_r = VG(__pyx_v_self->obj);
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":55
+  /* "src/scanner/scanner.pyx":59
  *         return SOR(self.obj, neighbors, threshold)
  * 
  *     cpdef int VG(self):             # <<<<<<<<<<<<<<
@@ -1897,7 +1907,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_WriteUnraisable("_scanner.PointCloudXYZRGBObj.VG", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.PointCloudXYZRGBObj.VG", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -1905,19 +1915,19 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(struct __pyx_obj_8_scanner
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_13VG(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("VG (wrapper)", 0);
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_12VG(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1926,7 +1936,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("VG", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_19PointCloudXYZRGBObj_VG(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 55; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_VG(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -1935,7 +1945,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.VG", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.VG", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1943,7 +1953,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":58
+/* "src/scanner/scanner.pyx":62
  *         return VG(self.obj)
  * 
  *     cpdef int ne(self):             # <<<<<<<<<<<<<<
@@ -1951,8 +1961,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_12VG(struct __pyx_obj_
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1968,9 +1978,9 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ne); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ne); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_15ne)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_15ne)) {
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
       if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -1983,14 +1993,14 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
         }
       }
       if (__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else {
-        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_5;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -1999,7 +2009,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":59
+  /* "src/scanner/scanner.pyx":63
  * 
  *     cpdef int ne(self):
  *         return ne(self.obj, self.normalObj, 1.0)             # <<<<<<<<<<<<<<
@@ -2009,7 +2019,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
   __pyx_r = ne(__pyx_v_self->obj, __pyx_v_self->normalObj, 1.0);
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":58
+  /* "src/scanner/scanner.pyx":62
  *         return VG(self.obj)
  * 
  *     cpdef int ne(self):             # <<<<<<<<<<<<<<
@@ -2023,7 +2033,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_WriteUnraisable("_scanner.PointCloudXYZRGBObj.ne", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.PointCloudXYZRGBObj.ne", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -2031,19 +2041,19 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(struct __pyx_obj_8_scanner
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_15ne(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("ne (wrapper)", 0);
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_14ne(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2052,7 +2062,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ne", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_19PointCloudXYZRGBObj_ne(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2061,7 +2071,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.ne", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.ne", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2069,7 +2079,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":61
+/* "src/scanner/scanner.pyx":65
  *         return ne(self.obj, self.normalObj, 1.0)
  * 
  *     cpdef int ne_viewpoint(self, viewp, step):             # <<<<<<<<<<<<<<
@@ -2077,8 +2087,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_14ne(struct __pyx_obj_
  *         cdef vector[vector[float]] vect1
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step, int __pyx_skip_dispatch) {
   std::vector<std::vector<float> >  __pyx_v_vect1;
   std::vector<float>  __pyx_v_vect2;
   PyObject *__pyx_v_i = NULL;
@@ -2109,9 +2119,9 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ne_viewpoint); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_ne_viewpoint); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint)) {
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
       __pyx_t_5 = 0;
@@ -2125,7 +2135,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
           __pyx_t_5 = 1;
         }
       }
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_4) {
         PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
@@ -2136,11 +2146,11 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
       __Pyx_INCREF(__pyx_v_step);
       PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_step);
       __Pyx_GIVEREF(__pyx_v_step);
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_7;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2149,7 +2159,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":66
+  /* "src/scanner/scanner.pyx":70
  *         cdef vector[float] vect2
  * 
  *         for i in viewp:             # <<<<<<<<<<<<<<
@@ -2160,25 +2170,25 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     __pyx_t_1 = __pyx_v_viewp; __Pyx_INCREF(__pyx_t_1); __pyx_t_5 = 0;
     __pyx_t_8 = NULL;
   } else {
-    __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_viewp); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_viewp); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_8 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   for (;;) {
     if (likely(!__pyx_t_8)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       } else {
         if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       }
     } else {
@@ -2187,7 +2197,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 66; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
         break;
       }
@@ -2196,7 +2206,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "scanner/scanner.pyx":67
+    /* "src/scanner/scanner.pyx":71
  * 
  *         for i in viewp:
  *             vect2.clear()             # <<<<<<<<<<<<<<
@@ -2205,7 +2215,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
  */
     __pyx_v_vect2.clear();
 
-    /* "scanner/scanner.pyx":69
+    /* "src/scanner/scanner.pyx":73
  *             vect2.clear()
  *             # vect2 = new vector[int]()
  *             for j in i:             # <<<<<<<<<<<<<<
@@ -2216,25 +2226,25 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
       __pyx_t_2 = __pyx_v_i; __Pyx_INCREF(__pyx_t_2); __pyx_t_9 = 0;
       __pyx_t_10 = NULL;
     } else {
-      __pyx_t_9 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_i); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_9 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_i); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_10 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_10 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
     for (;;) {
       if (likely(!__pyx_t_10)) {
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_9 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_3 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #endif
         } else {
           if (__pyx_t_9 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_COMPILING_IN_CPYTHON
-          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_3 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_9); __Pyx_INCREF(__pyx_t_3); __pyx_t_9++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #else
-          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          __pyx_t_3 = PySequence_ITEM(__pyx_t_2, __pyx_t_9); __pyx_t_9++; if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           #endif
         }
       } else {
@@ -2243,7 +2253,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 69; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+            else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 73; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
           }
           break;
         }
@@ -2252,22 +2262,22 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
       __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "scanner/scanner.pyx":70
+      /* "src/scanner/scanner.pyx":74
  *             # vect2 = new vector[int]()
  *             for j in i:
  *                 vect2.push_back(j)             # <<<<<<<<<<<<<<
  *             vect1.push_back(vect2)
  *         viewp = vect1
  */
-      __pyx_t_11 = __pyx_PyFloat_AsFloat(__pyx_v_j); if (unlikely((__pyx_t_11 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_11 = __pyx_PyFloat_AsFloat(__pyx_v_j); if (unlikely((__pyx_t_11 == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       try {
         __pyx_v_vect2.push_back(__pyx_t_11);
       } catch(...) {
         __Pyx_CppExn2PyErr();
-        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 70; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        {__pyx_filename = __pyx_f[0]; __pyx_lineno = 74; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
 
-      /* "scanner/scanner.pyx":69
+      /* "src/scanner/scanner.pyx":73
  *             vect2.clear()
  *             # vect2 = new vector[int]()
  *             for j in i:             # <<<<<<<<<<<<<<
@@ -2277,7 +2287,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "scanner/scanner.pyx":71
+    /* "src/scanner/scanner.pyx":75
  *             for j in i:
  *                 vect2.push_back(j)
  *             vect1.push_back(vect2)             # <<<<<<<<<<<<<<
@@ -2288,10 +2298,10 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
       __pyx_v_vect1.push_back(__pyx_v_vect2);
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 71; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
 
-    /* "scanner/scanner.pyx":66
+    /* "src/scanner/scanner.pyx":70
  *         cdef vector[float] vect2
  * 
  *         for i in viewp:             # <<<<<<<<<<<<<<
@@ -2301,19 +2311,19 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":72
+  /* "src/scanner/scanner.pyx":76
  *                 vect2.push_back(j)
  *             vect1.push_back(vect2)
  *         viewp = vect1             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = __pyx_convert_vector_to_py_std_3a__3a_vector_3c_float_3e___(__pyx_v_vect1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_convert_vector_to_py_std_3a__3a_vector_3c_float_3e___(__pyx_v_vect1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF_SET(__pyx_v_viewp, __pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":76
+  /* "src/scanner/scanner.pyx":80
  * 
  *         cdef vector[int] vect
  *         for i in step:             # <<<<<<<<<<<<<<
@@ -2324,25 +2334,25 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     __pyx_t_1 = __pyx_v_step; __Pyx_INCREF(__pyx_t_1); __pyx_t_5 = 0;
     __pyx_t_8 = NULL;
   } else {
-    __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_step); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_step); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_8 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_8 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   for (;;) {
     if (likely(!__pyx_t_8)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_5 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       } else {
         if (__pyx_t_5 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_COMPILING_IN_CPYTHON
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_5); __Pyx_INCREF(__pyx_t_2); __pyx_t_5++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_5); __pyx_t_5++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         #endif
       }
     } else {
@@ -2351,7 +2361,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 76; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+          else {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         }
         break;
       }
@@ -2360,22 +2370,22 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "scanner/scanner.pyx":77
+    /* "src/scanner/scanner.pyx":81
  *         cdef vector[int] vect
  *         for i in step:
  *             vect.push_back(i)             # <<<<<<<<<<<<<<
  *         step = vect
  * 
  */
-    __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_i); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_v_i); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 81; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     try {
       __pyx_v_vect.push_back(__pyx_t_7);
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 77; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      {__pyx_filename = __pyx_f[0]; __pyx_lineno = 81; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
 
-    /* "scanner/scanner.pyx":76
+    /* "src/scanner/scanner.pyx":80
  * 
  *         cdef vector[int] vect
  *         for i in step:             # <<<<<<<<<<<<<<
@@ -2385,31 +2395,31 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":78
+  /* "src/scanner/scanner.pyx":82
  *         for i in step:
  *             vect.push_back(i)
  *         step = vect             # <<<<<<<<<<<<<<
  * 
  *         return ne_viewpoint(self.obj, self.normalObj, 1.0, viewp, step)
  */
-  __pyx_t_1 = __pyx_convert_vector_to_py_int(__pyx_v_vect); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 78; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_convert_vector_to_py_int(__pyx_v_vect); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 82; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF_SET(__pyx_v_step, __pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":80
+  /* "src/scanner/scanner.pyx":84
  *         step = vect
  * 
  *         return ne_viewpoint(self.obj, self.normalObj, 1.0, viewp, step)             # <<<<<<<<<<<<<<
  *         # return ne_viewpoint(self.obj, self.normalObj, step)
  * 
  */
-  __pyx_t_12 = __pyx_convert_vector_from_py_std_3a__3a_vector_3c_float_3e___(__pyx_v_viewp); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_t_13 = __pyx_convert_vector_from_py_int(__pyx_v_step); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 80; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_12 = __pyx_convert_vector_from_py_std_3a__3a_vector_3c_float_3e___(__pyx_v_viewp); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_13 = __pyx_convert_vector_from_py_int(__pyx_v_step); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 84; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = ne_viewpoint(__pyx_v_self->obj, __pyx_v_self->normalObj, 1.0, __pyx_t_12, __pyx_t_13);
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":61
+  /* "src/scanner/scanner.pyx":65
  *         return ne(self.obj, self.normalObj, 1.0)
  * 
  *     cpdef int ne_viewpoint(self, viewp, step):             # <<<<<<<<<<<<<<
@@ -2424,7 +2434,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_WriteUnraisable("_scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_i);
@@ -2436,8 +2446,8 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(struct __pyx_obj
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_viewp = 0;
   PyObject *__pyx_v_step = 0;
   int __pyx_lineno = 0;
@@ -2466,11 +2476,11 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObjec
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_step)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("ne_viewpoint", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("ne_viewpoint", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "ne_viewpoint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "ne_viewpoint") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2483,20 +2493,20 @@ static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint(PyObjec
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("ne_viewpoint", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("ne_viewpoint", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_viewp, __pyx_v_step);
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self), __pyx_v_viewp, __pyx_v_step);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, PyObject *__pyx_v_viewp, PyObject *__pyx_v_step) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2505,7 +2515,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("ne_viewpoint", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(__pyx_v_self, __pyx_v_viewp, __pyx_v_step, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint(__pyx_v_self, __pyx_v_viewp, __pyx_v_step, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 65; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2514,7 +2524,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.ne_viewpoint", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2522,7 +2532,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct 
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":83
+/* "src/scanner/scanner.pyx":87
  *         # return ne_viewpoint(self.obj, self.normalObj, step)
  * 
  *     cpdef int concatenatePointsNormal(self):             # <<<<<<<<<<<<<<
@@ -2530,8 +2540,8 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_16ne_viewpoint(struct 
  *         return 0
  */
 
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self, int __pyx_skip_dispatch) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2547,9 +2557,9 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_concatenatePointsNormal); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_concatenatePointsNormal); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal)) {
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
       if (CYTHON_COMPILING_IN_CPYTHON && unlikely(PyMethod_Check(__pyx_t_3))) {
@@ -2562,14 +2572,14 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
         }
       }
       if (__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else {
-        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       }
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_5;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -2578,7 +2588,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":84
+  /* "src/scanner/scanner.pyx":88
  * 
  *     cpdef int concatenatePointsNormal(self):
  *         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)             # <<<<<<<<<<<<<<
@@ -2587,7 +2597,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
  */
   __pyx_v_self->bothobj = concatenatePointsNormal(__pyx_v_self->obj, __pyx_v_self->normalObj);
 
-  /* "scanner/scanner.pyx":85
+  /* "src/scanner/scanner.pyx":89
  *     cpdef int concatenatePointsNormal(self):
  *         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
  *         return 0             # <<<<<<<<<<<<<<
@@ -2597,7 +2607,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":83
+  /* "src/scanner/scanner.pyx":87
  *         # return ne_viewpoint(self.obj, self.normalObj, step)
  * 
  *     cpdef int concatenatePointsNormal(self):             # <<<<<<<<<<<<<<
@@ -2611,7 +2621,7 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_WriteUnraisable("_scanner.PointCloudXYZRGBObj.concatenatePointsNormal", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.PointCloudXYZRGBObj.concatenatePointsNormal", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -2619,19 +2629,19 @@ static int __pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(struc
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static PyObject *__pyx_pw_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("concatenatePointsNormal (wrapper)", 0);
-  __pyx_r = __pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNormal(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2640,7 +2650,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNor
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("concatenatePointsNormal", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 83; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 87; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2649,7 +2659,7 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNor
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.PointCloudXYZRGBObj.concatenatePointsNormal", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.PointCloudXYZRGBObj.concatenatePointsNormal", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2657,56 +2667,56 @@ static PyObject *__pyx_pf_8_scanner_19PointCloudXYZRGBObj_18concatenatePointsNor
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":108
- *     cdef FeatureCloudTPtr scene_f, obj_f
+/* "src/scanner/scanner.pyx":113
  *     cdef M4f transformation
+ * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.obj = createPointXYZRGBNormalPtr()
  *         self.scene = createPointXYZRGBNormalPtr()
  */
 
 /* Python wrapper */
-static int __pyx_pw_8_scanner_8RegCloud_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_8_scanner_8RegCloud_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
   if (unlikely(PyTuple_GET_SIZE(__pyx_args) > 0)) {
     __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__init__", 0))) return -1;
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud___init__(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud___init__(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_8_scanner_8RegCloud___init__(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self) {
+static int __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud___init__(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "scanner/scanner.pyx":109
- *     cdef M4f transformation
+  /* "src/scanner/scanner.pyx":114
+ * 
  *     def __init__(self):
  *         self.obj = createPointXYZRGBNormalPtr()             # <<<<<<<<<<<<<<
  *         self.scene = createPointXYZRGBNormalPtr()
- *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
+ * 
  */
   __pyx_v_self->obj = createPointXYZRGBNormalPtr();
 
-  /* "scanner/scanner.pyx":110
+  /* "src/scanner/scanner.pyx":115
  *     def __init__(self):
  *         self.obj = createPointXYZRGBNormalPtr()
  *         self.scene = createPointXYZRGBNormalPtr()             # <<<<<<<<<<<<<<
+ * 
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
- *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  */
   __pyx_v_self->scene = createPointXYZRGBNormalPtr();
 
-  /* "scanner/scanner.pyx":108
- *     cdef FeatureCloudTPtr scene_f, obj_f
+  /* "src/scanner/scanner.pyx":113
  *     cdef M4f transformation
+ * 
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.obj = createPointXYZRGBNormalPtr()
  *         self.scene = createPointXYZRGBNormalPtr()
@@ -2718,16 +2728,16 @@ static int __pyx_pf_8_scanner_8RegCloud___init__(struct __pyx_obj_8_scanner_RegC
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":111
- *         self.obj = createPointXYZRGBNormalPtr()
+/* "src/scanner/scanner.pyx":117
  *         self.scene = createPointXYZRGBNormalPtr()
+ * 
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):             # <<<<<<<<<<<<<<
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  *             raise RuntimeError("Load failed")
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2746,9 +2756,9 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_loadFile); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_loadFile); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_3loadFile)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_3loadFile)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -2763,7 +2773,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
           __pyx_t_5 = 1;
         }
       }
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_4) {
         PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
@@ -2774,7 +2784,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
       __Pyx_INCREF(__pyx_v_filename_obj);
       PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_filename_obj);
       __Pyx_GIVEREF(__pyx_v_filename_obj);
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -2786,8 +2796,8 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":112
- *         self.scene = createPointXYZRGBNormalPtr()
+  /* "src/scanner/scanner.pyx":118
+ * 
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:             # <<<<<<<<<<<<<<
  *             raise RuntimeError("Load failed")
@@ -2795,30 +2805,30 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
  */
   if (unlikely(__pyx_v_filename_scene == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename_scene, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename_scene, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 112; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_8 = ((loadPointNT(__pyx_t_7, __pyx_v_self->scene) == -1) != 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_8) {
 
-    /* "scanner/scanner.pyx":113
+    /* "src/scanner/scanner.pyx":119
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  *         if loadPointNT(filename_obj.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 113; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 113; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "scanner/scanner.pyx":114
+  /* "src/scanner/scanner.pyx":120
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  *             raise RuntimeError("Load failed")
  *         if loadPointNT(filename_obj.encode(), self.obj) == -1:             # <<<<<<<<<<<<<<
@@ -2827,32 +2837,32 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
  */
   if (unlikely(__pyx_v_filename_obj == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename_obj, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename_obj, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 114; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_7 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_7) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_8 = ((loadPointNT(__pyx_t_7, __pyx_v_self->obj) == -1) != 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_8) {
 
-    /* "scanner/scanner.pyx":115
+    /* "src/scanner/scanner.pyx":121
  *             raise RuntimeError("Load failed")
  *         if loadPointNT(filename_obj.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  * 
- *     cpdef dump_o(self, unicode filename):
+ * 
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "scanner/scanner.pyx":111
- *         self.obj = createPointXYZRGBNormalPtr()
+  /* "src/scanner/scanner.pyx":117
  *         self.scene = createPointXYZRGBNormalPtr()
+ * 
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):             # <<<<<<<<<<<<<<
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  *             raise RuntimeError("Load failed")
@@ -2867,7 +2877,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("_scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2876,8 +2886,8 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_loadFile(struct __pyx_obj_8_scanner
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_filename_scene = 0;
   PyObject *__pyx_v_filename_obj = 0;
   int __pyx_lineno = 0;
@@ -2906,11 +2916,11 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, 
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_filename_obj)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("loadFile", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("loadFile", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "loadFile") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "loadFile") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -2923,15 +2933,15 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("loadFile", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("loadFile", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_scene), (&PyUnicode_Type), 1, "filename_scene", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_obj), (&PyUnicode_Type), 1, "filename_obj", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_2loadFile(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_filename_scene, __pyx_v_filename_obj);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_scene), (&PyUnicode_Type), 1, "filename_scene", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_obj), (&PyUnicode_Type), 1, "filename_obj", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_2loadFile(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_filename_scene, __pyx_v_filename_obj);
 
   /* function exit code */
   goto __pyx_L0;
@@ -2942,7 +2952,7 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_3loadFile(PyObject *__pyx_v_self, 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_scene, PyObject *__pyx_v_filename_obj) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2951,7 +2961,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_8_scann
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("loadFile", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_8RegCloud_loadFile(__pyx_v_self, __pyx_v_filename_scene, __pyx_v_filename_obj, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 111; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_loadFile(__pyx_v_self, __pyx_v_filename_scene, __pyx_v_filename_obj, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -2960,7 +2970,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_8_scann
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.loadFile", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2968,16 +2978,16 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_2loadFile(struct __pyx_obj_8_scann
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":117
- *             raise RuntimeError("Load failed")
+/* "src/scanner/scanner.pyx":124
+ * 
  * 
  *     cpdef dump_o(self, unicode filename):             # <<<<<<<<<<<<<<
  *         dumpPointNT(filename.encode(), self.obj)
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_o(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -2994,9 +3004,9 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump_o); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump_o); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_5dump_o)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_5dump_o)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -3010,16 +3020,16 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_5);
         PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_filename);
         PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_filename);
         __Pyx_GIVEREF(__pyx_v_filename);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
@@ -3032,7 +3042,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":118
+  /* "src/scanner/scanner.pyx":125
  * 
  *     cpdef dump_o(self, unicode filename):
  *         dumpPointNT(filename.encode(), self.obj)             # <<<<<<<<<<<<<<
@@ -3041,16 +3051,16 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
  */
   if (unlikely(__pyx_v_filename == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 118; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   dumpPointNT(__pyx_t_6, __pyx_v_self->obj);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":117
- *             raise RuntimeError("Load failed")
+  /* "src/scanner/scanner.pyx":124
+ * 
  * 
  *     cpdef dump_o(self, unicode filename):             # <<<<<<<<<<<<<<
  *         dumpPointNT(filename.encode(), self.obj)
@@ -3066,7 +3076,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump_o", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump_o", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3075,16 +3085,16 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_o(struct __pyx_obj_8_scanner_R
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("dump_o (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_4dump_o(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_4dump_o(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
 
   /* function exit code */
   goto __pyx_L0;
@@ -3095,7 +3105,7 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_5dump_o(PyObject *__pyx_v_self, Py
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3104,7 +3114,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dump_o", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_8RegCloud_dump_o(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 117; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_o(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3113,7 +3123,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump_o", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump_o", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3121,7 +3131,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":120
+/* "src/scanner/scanner.pyx":127
  *         dumpPointNT(filename.encode(), self.obj)
  * 
  *     cpdef dump_s(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -3129,8 +3139,8 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_4dump_o(struct __pyx_obj_8_scanner
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_s(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3147,9 +3157,9 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump_s); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump_s); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_7dump_s)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_7dump_s)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -3163,16 +3173,16 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_filename); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_5 = PyTuple_New(1+1); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_5);
         PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_filename);
         PyTuple_SET_ITEM(__pyx_t_5, 0+1, __pyx_v_filename);
         __Pyx_GIVEREF(__pyx_v_filename);
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
@@ -3185,7 +3195,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":121
+  /* "src/scanner/scanner.pyx":128
  * 
  *     cpdef dump_s(self, unicode filename):
  *         dumpPointNT(filename.encode(), self.scene)             # <<<<<<<<<<<<<<
@@ -3194,15 +3204,15 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
  */
   if (unlikely(__pyx_v_filename == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "encode");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 128; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyUnicode_AsEncodedString(__pyx_v_filename, NULL, NULL); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 128; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_6 = __Pyx_PyObject_AsString(__pyx_t_1); if (unlikely((!__pyx_t_6) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 128; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   dumpPointNT(__pyx_t_6, __pyx_v_self->scene);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":120
+  /* "src/scanner/scanner.pyx":127
  *         dumpPointNT(filename.encode(), self.obj)
  * 
  *     cpdef dump_s(self, unicode filename):             # <<<<<<<<<<<<<<
@@ -3219,7 +3229,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump_s", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump_s", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3228,16 +3238,16 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump_s(struct __pyx_obj_8_scanner_R
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, PyObject *__pyx_v_filename) {
   CYTHON_UNUSED int __pyx_lineno = 0;
   CYTHON_UNUSED const char *__pyx_filename = NULL;
   CYTHON_UNUSED int __pyx_clineno = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("dump_s (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_6dump_s(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_6dump_s(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), ((PyObject*)__pyx_v_filename));
 
   /* function exit code */
   goto __pyx_L0;
@@ -3248,7 +3258,7 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_7dump_s(PyObject *__pyx_v_self, Py
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3257,7 +3267,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dump_s", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_8RegCloud_dump_s(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 120; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_s(__pyx_v_self, __pyx_v_filename, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3266,7 +3276,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump_s", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump_s", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3274,7 +3284,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":123
+/* "src/scanner/scanner.pyx":130
  *         dumpPointNT(filename.encode(), self.scene)
  * 
  *     cpdef dump(self, unicode filename_1, unicode filename_2):             # <<<<<<<<<<<<<<
@@ -3282,8 +3292,8 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_6dump_s(struct __pyx_obj_8_scanner
  *         self.dump_s(filename_2)
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2, int __pyx_skip_dispatch) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3300,9 +3310,9 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_dump); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_9dump)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_9dump)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -3317,7 +3327,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
           __pyx_t_5 = 1;
         }
       }
-      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_6 = PyTuple_New(2+__pyx_t_5); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_6);
       if (__pyx_t_4) {
         PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __Pyx_GIVEREF(__pyx_t_4); __pyx_t_4 = NULL;
@@ -3328,7 +3338,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
       __Pyx_INCREF(__pyx_v_filename_2);
       PyTuple_SET_ITEM(__pyx_t_6, 1+__pyx_t_5, __pyx_v_filename_2);
       __Pyx_GIVEREF(__pyx_v_filename_2);
-      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -3340,29 +3350,29 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":124
+  /* "src/scanner/scanner.pyx":131
  * 
  *     cpdef dump(self, unicode filename_1, unicode filename_2):
  *         self.dump_o(filename_1)             # <<<<<<<<<<<<<<
  *         self.dump_s(filename_2)
  * 
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_8_scanner_RegCloud *)__pyx_v_self->__pyx_vtab)->dump_o(__pyx_v_self, __pyx_v_filename_1, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 124; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self->__pyx_vtab)->dump_o(__pyx_v_self, __pyx_v_filename_1, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 131; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":125
+  /* "src/scanner/scanner.pyx":132
  *     cpdef dump(self, unicode filename_1, unicode filename_2):
  *         self.dump_o(filename_1)
  *         self.dump_s(filename_2)             # <<<<<<<<<<<<<<
  * 
  *     cpdef int FE(self, float radius):
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_8_scanner_RegCloud *)__pyx_v_self->__pyx_vtab)->dump_s(__pyx_v_self, __pyx_v_filename_2, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 125; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = ((struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self->__pyx_vtab)->dump_s(__pyx_v_self, __pyx_v_filename_2, 0); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 132; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scanner/scanner.pyx":123
+  /* "src/scanner/scanner.pyx":130
  *         dumpPointNT(filename.encode(), self.scene)
  * 
  *     cpdef dump(self, unicode filename_1, unicode filename_2):             # <<<<<<<<<<<<<<
@@ -3379,7 +3389,7 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3388,8 +3398,8 @@ static PyObject *__pyx_f_8_scanner_8RegCloud_dump(struct __pyx_obj_8_scanner_Reg
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_filename_1 = 0;
   PyObject *__pyx_v_filename_2 = 0;
   int __pyx_lineno = 0;
@@ -3418,11 +3428,11 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyOb
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_filename_2)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("dump", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("dump", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "dump") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "dump") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3435,15 +3445,15 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyOb
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("dump", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("dump", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_1), (&PyUnicode_Type), 1, "filename_1", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_2), (&PyUnicode_Type), 1, "filename_2", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_8dump(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_filename_1, __pyx_v_filename_2);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_1), (&PyUnicode_Type), 1, "filename_1", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename_2), (&PyUnicode_Type), 1, "filename_2", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_8dump(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_filename_1, __pyx_v_filename_2);
 
   /* function exit code */
   goto __pyx_L0;
@@ -3454,7 +3464,7 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_9dump(PyObject *__pyx_v_self, PyOb
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_8dump(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, PyObject *__pyx_v_filename_1, PyObject *__pyx_v_filename_2) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3463,7 +3473,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_R
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dump", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8_scanner_8RegCloud_dump(__pyx_v_self, __pyx_v_filename_1, __pyx_v_filename_2, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 123; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump(__pyx_v_self, __pyx_v_filename_1, __pyx_v_filename_2, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3472,7 +3482,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_R
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.dump", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3480,7 +3490,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_R
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":127
+/* "src/scanner/scanner.pyx":134
  *         self.dump_s(filename_2)
  * 
  *     cpdef int FE(self, float radius):             # <<<<<<<<<<<<<<
@@ -3488,8 +3498,8 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_8dump(struct __pyx_obj_8_scanner_R
  * 
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius); /*proto*/
-static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_FE(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius, int __pyx_skip_dispatch) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3507,10 +3517,10 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_FE); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_FE); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_11FE)) {
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_radius); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_11FE)) {
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_radius); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -3524,22 +3534,22 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
         }
       }
       if (!__pyx_t_5) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_6);
         PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __Pyx_GIVEREF(__pyx_t_5); __pyx_t_5 = NULL;
         PyTuple_SET_ITEM(__pyx_t_6, 0+1, __pyx_t_3);
         __Pyx_GIVEREF(__pyx_t_3);
         __pyx_t_3 = 0;
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_7;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3548,7 +3558,7 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":128
+  /* "src/scanner/scanner.pyx":135
  * 
  *     cpdef int FE(self, float radius):
  *         return FE(self.scene, self.scene_f, radius) & FE(self.obj, self.obj_f, radius)             # <<<<<<<<<<<<<<
@@ -3558,7 +3568,7 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
   __pyx_r = (FE(__pyx_v_self->scene, __pyx_v_self->scene_f, __pyx_v_radius) & FE(__pyx_v_self->obj, __pyx_v_self->obj_f, __pyx_v_radius));
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":127
+  /* "src/scanner/scanner.pyx":134
  *         self.dump_s(filename_2)
  * 
  *     cpdef int FE(self, float radius):             # <<<<<<<<<<<<<<
@@ -3574,7 +3584,7 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_WriteUnraisable("_scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -3582,8 +3592,8 @@ static int __pyx_f_8_scanner_8RegCloud_FE(struct __pyx_obj_8_scanner_RegCloud *_
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObject *__pyx_arg_radius) {
   float __pyx_v_radius;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -3592,22 +3602,22 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_11FE(PyObject *__pyx_v_self, PyObj
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("FE (wrapper)", 0);
   assert(__pyx_arg_radius); {
-    __pyx_v_radius = __pyx_PyFloat_AsFloat(__pyx_arg_radius); if (unlikely((__pyx_v_radius == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_radius = __pyx_PyFloat_AsFloat(__pyx_arg_radius); if (unlikely((__pyx_v_radius == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_10FE(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), ((float)__pyx_v_radius));
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_10FE(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), ((float)__pyx_v_radius));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_10FE(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_10FE(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_radius) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3616,7 +3626,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_10FE(struct __pyx_obj_8_scanner_Re
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("FE", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_8_scanner_8RegCloud_FE(__pyx_v_self, __pyx_v_radius, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 127; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_FE(__pyx_v_self, __pyx_v_radius, 1)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3625,7 +3635,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_10FE(struct __pyx_obj_8_scanner_Re
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("_scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.FE", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -3633,15 +3643,15 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_10FE(struct __pyx_obj_8_scanner_Re
   return __pyx_r;
 }
 
-/* "scanner/scanner.pyx":130
+/* "src/scanner/scanner.pyx":137
  *         return FE(self.scene, self.scene_f, radius) & FE(self.obj, self.obj_f, radius)
  * 
  *     cpdef int SCP(self, float leaf = 2.0):             # <<<<<<<<<<<<<<
  *         return SCP(self.obj, self.obj_f, self.scene, self.scene_f, self.transformation, leaf)
  */
 
-static PyObject *__pyx_pw_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_8_scanner_8RegCloud_SCP *__pyx_optional_args) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_SCP(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, int __pyx_skip_dispatch, struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP *__pyx_optional_args) {
   float __pyx_v_leaf = ((float)2.0);
   int __pyx_r;
   __Pyx_RefNannyDeclarations
@@ -3665,10 +3675,10 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
   if (unlikely(__pyx_skip_dispatch)) ;
   /* Check if overridden in Python */
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_SCP); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_SCP); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_8_scanner_8RegCloud_13SCP)) {
-      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_leaf); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_13SCP)) {
+      __pyx_t_3 = PyFloat_FromDouble(__pyx_v_leaf); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -3682,22 +3692,22 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
         }
       }
       if (!__pyx_t_5) {
-        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_2);
       } else {
-        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_6);
         PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_5); __Pyx_GIVEREF(__pyx_t_5); __pyx_t_5 = NULL;
         PyTuple_SET_ITEM(__pyx_t_6, 0+1, __pyx_t_3);
         __Pyx_GIVEREF(__pyx_t_3);
         __pyx_t_3 = 0;
-        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+        __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+      __pyx_t_7 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_7 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_r = __pyx_t_7;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3706,7 +3716,7 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "scanner/scanner.pyx":131
+  /* "src/scanner/scanner.pyx":138
  * 
  *     cpdef int SCP(self, float leaf = 2.0):
  *         return SCP(self.obj, self.obj_f, self.scene, self.scene_f, self.transformation, leaf)             # <<<<<<<<<<<<<<
@@ -3714,7 +3724,7 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
   __pyx_r = SCP(__pyx_v_self->obj, __pyx_v_self->obj_f, __pyx_v_self->scene, __pyx_v_self->scene_f, __pyx_v_self->transformation, __pyx_v_leaf);
   goto __pyx_L0;
 
-  /* "scanner/scanner.pyx":130
+  /* "src/scanner/scanner.pyx":137
  *         return FE(self.scene, self.scene_f, radius) & FE(self.obj, self.obj_f, radius)
  * 
  *     cpdef int SCP(self, float leaf = 2.0):             # <<<<<<<<<<<<<<
@@ -3729,7 +3739,7 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_WriteUnraisable("_scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
+  __Pyx_WriteUnraisable("fluxclient.scanner._scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename, 0);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -3737,8 +3747,8 @@ static int __pyx_f_8_scanner_8RegCloud_SCP(struct __pyx_obj_8_scanner_RegCloud *
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   float __pyx_v_leaf;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -3766,7 +3776,7 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyOb
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "SCP") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "SCP") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -3776,31 +3786,31 @@ static PyObject *__pyx_pw_8_scanner_8RegCloud_13SCP(PyObject *__pyx_v_self, PyOb
       }
     }
     if (values[0]) {
-      __pyx_v_leaf = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_leaf == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_leaf = __pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_leaf == (float)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_leaf = ((float)2.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("SCP", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("SCP", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8_scanner_8RegCloud_12SCP(((struct __pyx_obj_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_leaf);
+  __pyx_r = __pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_12SCP(((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)__pyx_v_self), __pyx_v_leaf);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8_scanner_8RegCloud_12SCP(struct __pyx_obj_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_leaf) {
+static PyObject *__pyx_pf_10fluxclient_7scanner_8_scanner_8RegCloud_12SCP(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *__pyx_v_self, float __pyx_v_leaf) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
-  struct __pyx_opt_args_8_scanner_8RegCloud_SCP __pyx_t_2;
+  struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -3809,8 +3819,8 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_12SCP(struct __pyx_obj_8_scanner_R
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.leaf = __pyx_v_leaf;
-  __pyx_t_1 = __pyx_vtabptr_8_scanner_RegCloud->SCP(__pyx_v_self, 1, &__pyx_t_2); 
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 130; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_vtabptr_10fluxclient_7scanner_8_scanner_RegCloud->SCP(__pyx_v_self, 1, &__pyx_t_2); 
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 137; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_r = __pyx_t_3;
   __pyx_t_3 = 0;
@@ -3819,7 +3829,7 @@ static PyObject *__pyx_pf_8_scanner_8RegCloud_12SCP(struct __pyx_obj_8_scanner_R
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("_scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fluxclient.scanner._scanner.RegCloud.SCP", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -4356,10 +4366,10 @@ static std::vector<int>  __pyx_convert_vector_from_py_int(PyObject *__pyx_v_o) {
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
-static struct __pyx_vtabstruct_8_scanner_PointCloudXYZRGBObj __pyx_vtable_8_scanner_PointCloudXYZRGBObj;
+static struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
 
-static PyObject *__pyx_tp_new_8_scanner_PointCloudXYZRGBObj(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
-  struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *p;
+static PyObject *__pyx_tp_new_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *p;
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -4367,16 +4377,16 @@ static PyObject *__pyx_tp_new_8_scanner_PointCloudXYZRGBObj(PyTypeObject *t, CYT
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  p = ((struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)o);
-  p->__pyx_vtab = __pyx_vtabptr_8_scanner_PointCloudXYZRGBObj;
+  p = ((struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)o);
+  p->__pyx_vtab = __pyx_vtabptr_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
   new((void*)&(p->obj)) PointCloudXYZRGBPtr();
   new((void*)&(p->normalObj)) NormalPtr();
   new((void*)&(p->bothobj)) PointXYZRGBNormalPtr();
   return o;
 }
 
-static void __pyx_tp_dealloc_8_scanner_PointCloudXYZRGBObj(PyObject *o) {
-  struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *p = (struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *)o;
+static void __pyx_tp_dealloc_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj(PyObject *o) {
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *p = (struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *)o;
   #if PY_VERSION_HEX >= 0x030400a1
   if (unlikely(Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -4388,25 +4398,25 @@ static void __pyx_tp_dealloc_8_scanner_PointCloudXYZRGBObj(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_8_scanner_PointCloudXYZRGBObj[] = {
-  {"loadFile", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_3loadFile, METH_O, 0},
-  {"clone", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_5clone, METH_NOARGS, 0},
-  {"dump", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_7dump, METH_O, 0},
-  {"push_backPoint", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_9push_backPoint, METH_VARARGS|METH_KEYWORDS, 0},
-  {"SOR", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_11SOR, METH_VARARGS|METH_KEYWORDS, 0},
-  {"VG", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_13VG, METH_NOARGS, 0},
-  {"ne", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_15ne, METH_NOARGS, 0},
-  {"ne_viewpoint", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint, METH_VARARGS|METH_KEYWORDS, 0},
-  {"concatenatePointsNormal", (PyCFunction)__pyx_pw_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal, METH_NOARGS, 0},
+static PyMethodDef __pyx_methods_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj[] = {
+  {"loadFile", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_3loadFile, METH_O, 0},
+  {"clone", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_5clone, METH_NOARGS, 0},
+  {"dump", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_7dump, METH_O, 0},
+  {"push_backPoint", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_9push_backPoint, METH_VARARGS|METH_KEYWORDS, 0},
+  {"SOR", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_11SOR, METH_VARARGS|METH_KEYWORDS, 0},
+  {"VG", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_13VG, METH_NOARGS, 0},
+  {"ne", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_15ne, METH_NOARGS, 0},
+  {"ne_viewpoint", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_17ne_viewpoint, METH_VARARGS|METH_KEYWORDS, 0},
+  {"concatenatePointsNormal", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_19concatenatePointsNormal, METH_NOARGS, 0},
   {0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_8_scanner_PointCloudXYZRGBObj = {
+static PyTypeObject __pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj = {
   PyVarObject_HEAD_INIT(0, 0)
-  "_scanner.PointCloudXYZRGBObj", /*tp_name*/
-  sizeof(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj), /*tp_basicsize*/
+  "fluxclient.scanner._scanner.PointCloudXYZRGBObj", /*tp_name*/
+  sizeof(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_8_scanner_PointCloudXYZRGBObj, /*tp_dealloc*/
+  __pyx_tp_dealloc_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -4433,7 +4443,7 @@ static PyTypeObject __pyx_type_8_scanner_PointCloudXYZRGBObj = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_8_scanner_PointCloudXYZRGBObj, /*tp_methods*/
+  __pyx_methods_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -4441,9 +4451,9 @@ static PyTypeObject __pyx_type_8_scanner_PointCloudXYZRGBObj = {
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pw_8_scanner_19PointCloudXYZRGBObj_1__init__, /*tp_init*/
+  __pyx_pw_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_8_scanner_PointCloudXYZRGBObj, /*tp_new*/
+  __pyx_tp_new_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -4457,10 +4467,10 @@ static PyTypeObject __pyx_type_8_scanner_PointCloudXYZRGBObj = {
   0, /*tp_finalize*/
   #endif
 };
-static struct __pyx_vtabstruct_8_scanner_RegCloud __pyx_vtable_8_scanner_RegCloud;
+static struct __pyx_vtabstruct_10fluxclient_7scanner_8_scanner_RegCloud __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud;
 
-static PyObject *__pyx_tp_new_8_scanner_RegCloud(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
-  struct __pyx_obj_8_scanner_RegCloud *p;
+static PyObject *__pyx_tp_new_10fluxclient_7scanner_8_scanner_RegCloud(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *p;
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -4468,8 +4478,8 @@ static PyObject *__pyx_tp_new_8_scanner_RegCloud(PyTypeObject *t, CYTHON_UNUSED 
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  p = ((struct __pyx_obj_8_scanner_RegCloud *)o);
-  p->__pyx_vtab = __pyx_vtabptr_8_scanner_RegCloud;
+  p = ((struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)o);
+  p->__pyx_vtab = __pyx_vtabptr_10fluxclient_7scanner_8_scanner_RegCloud;
   new((void*)&(p->scene)) PointXYZRGBNormalPtr();
   new((void*)&(p->obj)) PointXYZRGBNormalPtr();
   new((void*)&(p->scene_f)) FeatureCloudTPtr();
@@ -4478,8 +4488,8 @@ static PyObject *__pyx_tp_new_8_scanner_RegCloud(PyTypeObject *t, CYTHON_UNUSED 
   return o;
 }
 
-static void __pyx_tp_dealloc_8_scanner_RegCloud(PyObject *o) {
-  struct __pyx_obj_8_scanner_RegCloud *p = (struct __pyx_obj_8_scanner_RegCloud *)o;
+static void __pyx_tp_dealloc_10fluxclient_7scanner_8_scanner_RegCloud(PyObject *o) {
+  struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *p = (struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *)o;
   #if PY_VERSION_HEX >= 0x030400a1
   if (unlikely(Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -4493,22 +4503,22 @@ static void __pyx_tp_dealloc_8_scanner_RegCloud(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_8_scanner_RegCloud[] = {
-  {"loadFile", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_3loadFile, METH_VARARGS|METH_KEYWORDS, 0},
-  {"dump_o", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_5dump_o, METH_O, 0},
-  {"dump_s", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_7dump_s, METH_O, 0},
-  {"dump", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_9dump, METH_VARARGS|METH_KEYWORDS, 0},
-  {"FE", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_11FE, METH_O, 0},
-  {"SCP", (PyCFunction)__pyx_pw_8_scanner_8RegCloud_13SCP, METH_VARARGS|METH_KEYWORDS, 0},
+static PyMethodDef __pyx_methods_10fluxclient_7scanner_8_scanner_RegCloud[] = {
+  {"loadFile", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_3loadFile, METH_VARARGS|METH_KEYWORDS, 0},
+  {"dump_o", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_5dump_o, METH_O, 0},
+  {"dump_s", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_7dump_s, METH_O, 0},
+  {"dump", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_9dump, METH_VARARGS|METH_KEYWORDS, 0},
+  {"FE", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_11FE, METH_O, 0},
+  {"SCP", (PyCFunction)__pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_13SCP, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_8_scanner_RegCloud = {
+static PyTypeObject __pyx_type_10fluxclient_7scanner_8_scanner_RegCloud = {
   PyVarObject_HEAD_INIT(0, 0)
-  "_scanner.RegCloud", /*tp_name*/
-  sizeof(struct __pyx_obj_8_scanner_RegCloud), /*tp_basicsize*/
+  "fluxclient.scanner._scanner.RegCloud", /*tp_name*/
+  sizeof(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_8_scanner_RegCloud, /*tp_dealloc*/
+  __pyx_tp_dealloc_10fluxclient_7scanner_8_scanner_RegCloud, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -4535,7 +4545,7 @@ static PyTypeObject __pyx_type_8_scanner_RegCloud = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_8_scanner_RegCloud, /*tp_methods*/
+  __pyx_methods_10fluxclient_7scanner_8_scanner_RegCloud, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -4543,9 +4553,9 @@ static PyTypeObject __pyx_type_8_scanner_RegCloud = {
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pw_8_scanner_8RegCloud_1__init__, /*tp_init*/
+  __pyx_pw_10fluxclient_7scanner_8_scanner_8RegCloud_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_8_scanner_RegCloud, /*tp_new*/
+  __pyx_tp_new_10fluxclient_7scanner_8_scanner_RegCloud, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -4599,6 +4609,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_filename_2, __pyx_k_filename_2, sizeof(__pyx_k_filename_2), 0, 0, 1, 1},
   {&__pyx_n_s_filename_obj, __pyx_k_filename_obj, sizeof(__pyx_k_filename_obj), 0, 0, 1, 1},
   {&__pyx_n_s_filename_scene, __pyx_k_filename_scene, sizeof(__pyx_k_filename_scene), 0, 0, 1, 1},
+  {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_leaf, __pyx_k_leaf, sizeof(__pyx_k_leaf), 0, 0, 1, 1},
   {&__pyx_n_s_loadFile, __pyx_k_loadFile, sizeof(__pyx_k_loadFile), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
@@ -4609,17 +4620,19 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pyx_vtable, __pyx_k_pyx_vtable, sizeof(__pyx_k_pyx_vtable), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_rgb, __pyx_k_rgb, sizeof(__pyx_k_rgb), 0, 0, 1, 1},
+  {&__pyx_n_s_scan_settings, __pyx_k_scan_settings, sizeof(__pyx_k_scan_settings), 0, 0, 1, 1},
   {&__pyx_n_s_step, __pyx_k_step, sizeof(__pyx_k_step), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_threshold, __pyx_k_threshold, sizeof(__pyx_k_threshold), 0, 0, 1, 1},
   {&__pyx_n_s_viewp, __pyx_k_viewp, sizeof(__pyx_k_viewp), 0, 0, 1, 1},
+  {&__pyx_n_s_write_stl, __pyx_k_write_stl, sizeof(__pyx_k_write_stl), 0, 0, 1, 1},
   {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
   {&__pyx_n_s_z, __pyx_k_z, sizeof(__pyx_k_z), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 68; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
   __pyx_L1_error:;
@@ -4630,47 +4643,47 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "scanner/scanner.pyx":38
+  /* "src/scanner/scanner.pyx":42
  *     cpdef loadFile(self, unicode filename):
  *         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  * 
  *     cpdef PointCloudXYZRGBObj clone(self):
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 38; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple_)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 42; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "scanner/scanner.pyx":43
+  /* "src/scanner/scanner.pyx":47
  *         cdef PointCloudXYZRGBObj obj = PointCloudXYZRGBObj()
  *         # TODO:
  *         raise RuntimeError("Not implement clone yet")             # <<<<<<<<<<<<<<
  *         # return obj
  * 
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_s_Not_implement_clone_yet); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 43; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_s_Not_implement_clone_yet); if (unlikely(!__pyx_tuple__2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 47; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "scanner/scanner.pyx":113
+  /* "src/scanner/scanner.pyx":119
  *     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
  *         if loadPointNT(filename_scene.encode(), self.scene) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  *         if loadPointNT(filename_obj.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 113; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple__3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 119; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "scanner/scanner.pyx":115
+  /* "src/scanner/scanner.pyx":121
  *             raise RuntimeError("Load failed")
  *         if loadPointNT(filename_obj.encode(), self.obj) == -1:
  *             raise RuntimeError("Load failed")             # <<<<<<<<<<<<<<
  * 
- *     cpdef dump_o(self, unicode filename):
+ * 
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple__4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 115; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_Load_failed); if (unlikely(!__pyx_tuple__4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 121; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
   __Pyx_RefNannyFinishContext();
@@ -4696,6 +4709,7 @@ PyMODINIT_FUNC PyInit__scanner(void)
 #endif
 {
   PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -4748,14 +4762,14 @@ PyMODINIT_FUNC PyInit__scanner(void)
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
-  if (__pyx_module_is_main__scanner) {
+  if (__pyx_module_is_main_fluxclient__scanner___scanner) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    if (!PyDict_GetItemString(modules, "_scanner")) {
-      if (unlikely(PyDict_SetItemString(modules, "_scanner", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "fluxclient.scanner._scanner")) {
+      if (unlikely(PyDict_SetItemString(modules, "fluxclient.scanner._scanner", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
   }
   #endif
@@ -4767,47 +4781,68 @@ PyMODINIT_FUNC PyInit__scanner(void)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  __pyx_vtabptr_8_scanner_PointCloudXYZRGBObj = &__pyx_vtable_8_scanner_PointCloudXYZRGBObj;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.loadFile = (PyObject *(*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_loadFile;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.clone = (struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *(*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_clone;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.dump = (PyObject *(*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_dump;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.push_backPoint = (PyObject *(*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, float, float, float, unsigned int, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_push_backPoint;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.SOR = (int (*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int, float, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_SOR;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.VG = (int (*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_VG;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.ne = (int (*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_ne;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.ne_viewpoint = (int (*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint;
-  __pyx_vtable_8_scanner_PointCloudXYZRGBObj.concatenatePointsNormal = (int (*)(struct __pyx_obj_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal;
-  if (PyType_Ready(&__pyx_type_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_type_8_scanner_PointCloudXYZRGBObj.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_8_scanner_PointCloudXYZRGBObj.tp_dict, __pyx_vtabptr_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "PointCloudXYZRGBObj", (PyObject *)&__pyx_type_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_8_scanner_PointCloudXYZRGBObj = &__pyx_type_8_scanner_PointCloudXYZRGBObj;
-  __pyx_vtabptr_8_scanner_RegCloud = &__pyx_vtable_8_scanner_RegCloud;
-  __pyx_vtable_8_scanner_RegCloud.loadFile = (PyObject *(*)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_8RegCloud_loadFile;
-  __pyx_vtable_8_scanner_RegCloud.dump_o = (PyObject *(*)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_8RegCloud_dump_o;
-  __pyx_vtable_8_scanner_RegCloud.dump_s = (PyObject *(*)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_8RegCloud_dump_s;
-  __pyx_vtable_8_scanner_RegCloud.dump = (PyObject *(*)(struct __pyx_obj_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_8_scanner_8RegCloud_dump;
-  __pyx_vtable_8_scanner_RegCloud.FE = (int (*)(struct __pyx_obj_8_scanner_RegCloud *, float, int __pyx_skip_dispatch))__pyx_f_8_scanner_8RegCloud_FE;
-  __pyx_vtable_8_scanner_RegCloud.SCP = (int (*)(struct __pyx_obj_8_scanner_RegCloud *, int __pyx_skip_dispatch, struct __pyx_opt_args_8_scanner_8RegCloud_SCP *__pyx_optional_args))__pyx_f_8_scanner_8RegCloud_SCP;
-  if (PyType_Ready(&__pyx_type_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_type_8_scanner_RegCloud.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_8_scanner_RegCloud.tp_dict, __pyx_vtabptr_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "RegCloud", (PyObject *)&__pyx_type_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 104; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_8_scanner_RegCloud = &__pyx_type_8_scanner_RegCloud;
+  __pyx_vtabptr_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj = &__pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.loadFile = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_loadFile;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.clone = (struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_clone;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.dump = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_dump;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.push_backPoint = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, float, float, float, unsigned int, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_push_backPoint;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.SOR = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int, float, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_SOR;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.VG = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_VG;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.ne = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.ne_viewpoint = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_ne_viewpoint;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.concatenatePointsNormal = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_19PointCloudXYZRGBObj_concatenatePointsNormal;
+  if (PyType_Ready(&__pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.tp_print = 0;
+  if (__Pyx_SetVtable(__pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj.tp_dict, __pyx_vtabptr_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "PointCloudXYZRGBObj", (PyObject *)&__pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj = &__pyx_type_10fluxclient_7scanner_8_scanner_PointCloudXYZRGBObj;
+  __pyx_vtabptr_10fluxclient_7scanner_8_scanner_RegCloud = &__pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.loadFile = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_loadFile;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.dump_o = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_o;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.dump_s = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump_s;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.dump = (PyObject *(*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, PyObject *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_dump;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.FE = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, float, int __pyx_skip_dispatch))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_FE;
+  __pyx_vtable_10fluxclient_7scanner_8_scanner_RegCloud.SCP = (int (*)(struct __pyx_obj_10fluxclient_7scanner_8_scanner_RegCloud *, int __pyx_skip_dispatch, struct __pyx_opt_args_10fluxclient_7scanner_8_scanner_8RegCloud_SCP *__pyx_optional_args))__pyx_f_10fluxclient_7scanner_8_scanner_8RegCloud_SCP;
+  if (PyType_Ready(&__pyx_type_10fluxclient_7scanner_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 108; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_10fluxclient_7scanner_8_scanner_RegCloud.tp_print = 0;
+  if (__Pyx_SetVtable(__pyx_type_10fluxclient_7scanner_8_scanner_RegCloud.tp_dict, __pyx_vtabptr_10fluxclient_7scanner_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 108; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "RegCloud", (PyObject *)&__pyx_type_10fluxclient_7scanner_8_scanner_RegCloud) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 108; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_10fluxclient_7scanner_8_scanner_RegCloud = &__pyx_type_10fluxclient_7scanner_8_scanner_RegCloud;
   /*--- Type import code ---*/
   /*--- Variable import code ---*/
   /*--- Function import code ---*/
   /*--- Execution code ---*/
 
-  /* "scanner/scanner.pyx":1
+  /* "src/scanner/scanner.pyx":4
+ * from libcpp.vector cimport vector
+ * 
+ * from scan_settings import write_stl             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 4; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_n_s_write_stl);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_write_stl);
+  __Pyx_GIVEREF(__pyx_n_s_write_stl);
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_scan_settings, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 4; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_write_stl); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 4; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_write_stl, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 4; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "src/scanner/scanner.pyx":1
  * import cython             # <<<<<<<<<<<<<<
  * from libcpp.vector cimport vector
- * cdef extern from "scan_module.h":
+ * 
  */
-  __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "vector.from_py":49
  * 
@@ -4822,13 +4857,14 @@ PyMODINIT_FUNC PyInit__scanner(void)
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init _scanner", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init fluxclient.scanner._scanner", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init _scanner");
+    PyErr_SetString(PyExc_ImportError, "init fluxclient.scanner._scanner");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
@@ -5400,6 +5436,19 @@ bad:
     return -1;
 }
 
+static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
+    PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
+    if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Format(PyExc_ImportError,
+        #if PY_MAJOR_VERSION < 3
+            "cannot import name %.230s", PyString_AS_STRING(name));
+        #else
+            "cannot import name %S", name);
+        #endif
+    }
+    return value;
+}
+
 static int __pyx_bisect_code_objects(__Pyx_CodeObjectCacheEntry* entries, int count, int code_line) {
     int start = 0, mid = 0, end = count - 1;
     if (end >= 0 && code_line > entries[end].code_line) {
@@ -5557,6 +5606,79 @@ static void __Pyx_AddTraceback(const char *funcname, int c_line,
 bad:
     Py_XDECREF(py_code);
     Py_XDECREF(py_frame);
+}
+
+static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
+    PyObject *empty_list = 0;
+    PyObject *module = 0;
+    PyObject *global_dict = 0;
+    PyObject *empty_dict = 0;
+    PyObject *list;
+    #if PY_VERSION_HEX < 0x03030000
+    PyObject *py_import;
+    py_import = __Pyx_PyObject_GetAttrStr(__pyx_b, __pyx_n_s_import);
+    if (!py_import)
+        goto bad;
+    #endif
+    if (from_list)
+        list = from_list;
+    else {
+        empty_list = PyList_New(0);
+        if (!empty_list)
+            goto bad;
+        list = empty_list;
+    }
+    global_dict = PyModule_GetDict(__pyx_m);
+    if (!global_dict)
+        goto bad;
+    empty_dict = PyDict_New();
+    if (!empty_dict)
+        goto bad;
+    {
+        #if PY_MAJOR_VERSION >= 3
+        if (level == -1) {
+            if (strchr(__Pyx_MODULE_NAME, '.')) {
+                #if PY_VERSION_HEX < 0x03030000
+                PyObject *py_level = PyInt_FromLong(1);
+                if (!py_level)
+                    goto bad;
+                module = PyObject_CallFunctionObjArgs(py_import,
+                    name, global_dict, empty_dict, list, py_level, NULL);
+                Py_DECREF(py_level);
+                #else
+                module = PyImport_ImportModuleLevelObject(
+                    name, global_dict, empty_dict, list, 1);
+                #endif
+                if (!module) {
+                    if (!PyErr_ExceptionMatches(PyExc_ImportError))
+                        goto bad;
+                    PyErr_Clear();
+                }
+            }
+            level = 0;
+        }
+        #endif
+        if (!module) {
+            #if PY_VERSION_HEX < 0x03030000
+            PyObject *py_level = PyInt_FromLong(level);
+            if (!py_level)
+                goto bad;
+            module = PyObject_CallFunctionObjArgs(py_import,
+                name, global_dict, empty_dict, list, py_level, NULL);
+            Py_DECREF(py_level);
+            #else
+            module = PyImport_ImportModuleLevelObject(
+                name, global_dict, empty_dict, list, level);
+            #endif
+        }
+    }
+bad:
+    #if PY_VERSION_HEX < 0x03030000
+    Py_XDECREF(py_import);
+    #endif
+    Py_XDECREF(empty_list);
+    Py_XDECREF(empty_dict);
+    return module;
 }
 
 #define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)       \

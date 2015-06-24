@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup, find_packages, Extension
 from Cython.Distutils import build_ext
@@ -6,6 +6,8 @@ import platform
 import sys
 
 from fluxclient import VERSION as _VERSION
+
+from pcl_setup import EXTRA_COMPILE_ARGS, LIBRARYS, EXTRA_OBJECTS, INCLUDE_DIRS
 
 if not sys.version_info >= (3, 3):
     print("ERROR: fluxclient require Python version grather then 3.3\n")
@@ -38,6 +40,17 @@ setup(
     install_requires=install_requires,
     cmdclass = {'build_ext': build_ext},
     ext_modules=[
+            Extension(
+            'fluxclient.scanner._scanner', sources=[
+            "src/scanner/scanner.pyx",
+            "src/scanner/scan_module.cpp"],
+            language="c++",
+            extra_compile_args=EXTRA_COMPILE_ARGS,
+            libraries=LIBRARYS,
+            extra_objects=EXTRA_OBJECTS,
+            include_dirs=INCLUDE_DIRS
+            )
+
         # Extension(
         #     'fluxclient.robot.aes_socket', sources=[
         #         "src/robot/aes_socket.pyx"],
