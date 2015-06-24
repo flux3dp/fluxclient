@@ -14,3 +14,14 @@ fluxclient contains all toolsets to control FLUX 3D Printer
 
 * flux_config_network
 > Set printer network
+
+
+### Install require package
+
+#### On mac with homebrew
+
+* pcl:
+`brew install pcl --without-apps --without-qt`
+
+* Pillow
+`pip install Pillow`
