@@ -4,12 +4,15 @@ from setuptools import setup, find_packages, Extension
 from Cython.Distutils import build_ext
 import platform
 import sys
+import os
 
 from fluxclient import VERSION as _VERSION
 
 if not sys.version_info >= (3, 3):
     print("ERROR: fluxclient require Python version grather then 3.3\n")
     sys.exit(1)
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 VERSION = ".".join([str(i) for i in _VERSION])
 
