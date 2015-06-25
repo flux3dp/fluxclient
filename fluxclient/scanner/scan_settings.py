@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import math
 import struct
 import sys
@@ -7,8 +6,6 @@ import os
 from time import time
 from datetime import datetime
 
-
-from datetime import datetime
 name = datetime.fromtimestamp(time()).strftime('%Y-%m-%d-%H-%M-%S/')  # name
 scan_step = 600  # steps
 camera_port = 0

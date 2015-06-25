@@ -5,8 +5,8 @@ import io
 import numpy as np
 from PIL import Image
 
-import freeless
-import scan_settings
+import fluxclient.scanner.freeless as freeless
+import fluxclient.scanner.scan_settings as scan_settings
 
 
 class image_to_pc():
@@ -30,6 +30,7 @@ class image_to_pc():
         f = io.BytesIO(buffer_data)
         im = Image.open(f)
         im_array = np.array(im)
+
         # change order from "rgb" to "bgr" <- cv2's order
         im_array[:, :, [0, 2]] = im_array[:, :, [2, 0]]
         return im_array
@@ -40,13 +41,13 @@ class image_to_pc():
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
 
-        indices_L = self.fs_L.subProcess(img_O, img_L)
+        indices_L = self.fs_L.subProcess(img_O, img_L, scan_settings.img_height)
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', clock=True)
-        points_L.extend(point_L_this)
+        self.points_L.extend(point_L_this)
 
-        indices_R = self.fs_R.subProcess(img_O, img_R)
+        indices_R = self.fs_R.subProcess(img_O, img_R, scan_settings.img_height)
         point_R_this = self.fs_R.img_to_points(img_O, img_R, indices_R, step, 'R', clock=True)
-        points_R.extend(point_R_this)
+        self.points_R.extend(point_R_this)
 
         return [self.points_to_bytes(point_L_this), self.points_to_bytes(point_R_this)]
 
@@ -61,4 +62,4 @@ class image_to_pc():
                      ]
         output format: check https://github.com/flux3dp/fluxghost/wiki/websocket-3dscan-control
         '''
-        return b''.join([struct.pack('<ffffff', p[0], p[1], p[2], p[5] / 255., p[4] / 255., p[3] / 255.) for p in points])
+        return [struct.pack('<ffffff', p[0], p[1], p[2], p[5] / 255., p[4] / 255., p[3] / 255.) for p in points]

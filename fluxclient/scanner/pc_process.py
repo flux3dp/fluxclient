@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-
 import struct
 from operator import ge, le
 
 
-import scan_settings
-import _scanner
+import fluxclient.scanner.scan_settings as scan_settings
+import fluxclient.scanner._scanner as _scanner
 
 
 class pc_process():
