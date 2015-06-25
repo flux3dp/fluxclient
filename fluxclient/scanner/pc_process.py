@@ -4,7 +4,10 @@ from operator import ge, le
 
 
 import fluxclient.scanner.scan_settings as scan_settings
-import fluxclient.scanner._scanner as _scanner
+try:
+    import fluxclient.scanner._scanner as _scanner
+except:
+    pass
 
 
 class pc_process():
@@ -17,11 +20,18 @@ class pc_process():
         # upload [name] [point count L] [point count R]
 
     def unpack_data(self, buffer_data):
+        """
+            unpack buffer data into [[x,y,z,]]
+        """
         assert len(buffer_data) % 24 == 0, "wrong buffer size %d (can't devide by 24)" % (len(buffer_data) % 24)
-        data = []
+        pc = []
         for p in range(len(buffer_data) / 24):
-            data.append(list(struct.unpack('<ffffff', buffer_data[p * 24:p * 24 + 24])))
-        return data
+            tmp_point = list(struct.unpack('<ffffff', buffer_data[p * 24:p * 24 + 24]))
+            tmp_point[3] = round(tmp_point[3] * 255)
+            tmp_point[4] = round(tmp_point[4] * 255)
+            tmp_point[5] = round(tmp_point[5] * 255)
+            pc.append(tmp_point)
+        return pc
 
     def base(self, name):
         self.current_name = name
@@ -83,3 +93,12 @@ class pc_process():
 
     def to_mesh(self):
         pass
+
+    def dump(self, name):
+        pc = self.clouds[name]
+        buffer_data = []
+        for p in pc:
+            buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., [4] / 255., [5] / 255.))
+        buffer_data = b''.join(buffer_data)
+        assert len(pc) * 24 == len(buffer_data), "dumping error!"
+        return buffer_data
