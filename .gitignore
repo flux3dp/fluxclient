@@ -54,3 +54,4 @@ target/
 *.pid
 src/scanner/PoissonRecon/Bin
 src/scanner/PoissonRecon/vbfile
+tests/scanner/data/inso
