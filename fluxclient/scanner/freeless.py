@@ -6,8 +6,8 @@ import math
 
 import numpy
 
-import scan_settings
-import tools
+import fluxclient.scanner.scan_settings as scan_settings
+import fluxclient.scanner.tools as tools
 
 
 NUM_LASER_RANGE_THRESHOLD = 3
@@ -275,14 +275,14 @@ class freeless():
         numMerged = 0
         prevLaserCol = self.firstRowLaserCol
 
-        # diff two img
-
-        d = abs(img1 - img2)
+        # diff two img, need set type to int to avoid overflow in uint8
+        d = abs((img1.astype(int)) - (img2.astype(int)))
         d = d.astype(int)
         # squre each element
         d = numpy.multiply(d, d)
         # sum up r, g, b into one number
         d = numpy.sum(d, axis=2)
+
         # some transform
         mag = 255.0 * d / self.MAX_MAGNITUDE_SQ
 
@@ -375,7 +375,7 @@ class freeless():
           return int
         '''
         d = abs(
-            img1[row][bestRange[0]:bestRange[1]] - img2[row][bestRange[0]:bestRange[1]])
+            (img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
         d = d.astype(int)
         d = numpy.multiply(d, d)
         d = numpy.sum(d, axis=1)
