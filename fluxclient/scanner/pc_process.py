@@ -97,10 +97,12 @@ class pc_process():
         pass
 
     def dump(self, name):
-        pc = self.clouds[name]
+        pc_both = self.clouds[name]
         buffer_data = []
-        for p in pc:
-            buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., [4] / 255., [5] / 255.))
+
+        for pc in pc_both:
+            for p in pc:
+                buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., [4] / 255., [5] / 255.))
         buffer_data = b''.join(buffer_data)
-        assert len(pc) * 24 == len(buffer_data), "dumping error!"
-        return buffer_data
+        assert [len(pc_both[0]) + len(pc_both)[1]] * 24 == len(buffer_data), "dumping error!"
+        return len(pc_both[0]), len(pc_both[1]), buffer_data
