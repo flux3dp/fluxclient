@@ -17,8 +17,8 @@ class pc_process():
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
         self.clouds[name] = (self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R))
-        logger.debug('upload %s,L: %d R: %d', (name, len(self.clouds[name][1]), len(self.clouds[name][1])))
-        logger.debug('all:' + " ".join(self.clouds.keys()))
+        print('upload %s,L: %d R: %d' % (name, len(self.clouds[name][1]), len(self.clouds[name][1])))
+        print('all:' + " ".join(self.clouds.keys()))
         # upload [name] [point count L] [point count R]
 
     def unpack_data(self, buffer_data):
