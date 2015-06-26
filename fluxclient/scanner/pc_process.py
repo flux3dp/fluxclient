@@ -27,7 +27,7 @@ class pc_process():
         """
         assert len(buffer_data) % 24 == 0, "wrong buffer size %d (can't devide by 24)" % (len(buffer_data) % 24)
         pc = []
-        for p in range(len(buffer_data) / 24):
+        for p in range(int(len(buffer_data) / 24)):
             tmp_point = list(struct.unpack('<ffffff', buffer_data[p * 24:p * 24 + 24]))
             tmp_point[3] = round(tmp_point[3] * 255)
             tmp_point[4] = round(tmp_point[4] * 255)
