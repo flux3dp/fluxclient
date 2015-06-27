@@ -25,9 +25,9 @@ class LaserBitmap(LaserBase):
         """
         reset LaserBitmap class
         """
-        self.pixel_per_mm = 4  # kind of sample rate, for each mm, but not really matter
+        self.pixel_per_mm = 4  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
-        self.front_end_radius = 250  # front-end input(250 px as r)
+        self.front_end_radius = 250  # front-end input(250 px as r), doesn't matter ()
         self.ratio = self.radius / self.front_end_radius  # ratio for actually moving head
 
         # list holding current image
@@ -38,22 +38,8 @@ class LaserBitmap(LaserBase):
         self.laser_on = False  # recording if laser is on
 
         # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
-        self.thres = 100
-
-    # def bitmap_moveTo(self, x, y, speed=600):
-    #     # TODO fix this shit
-    #     x = float(x) / self.pixel_per_mm - self.radius
-    #     y = float(len(self.image_map) - y) / self.pixel_per_mm - self.radius
-    #     return self.moveTo(x, y, speed)
-
-    # def bitmap_drawTo(self, x, y, speed='draw'):
-    #     gcode = []
-
-    #     gcode += self.turnOn()
-    #     gcode += self.bitmap_moveTo(x, y, speed)
-    #     gcode += self.turnOff()
-
-    #     return gcode
+        self.thres = 255
+        self.ratio = 0.25
 
     def rotate(self, x, y, rotation, cx=0., cy=0.):
         """
@@ -106,12 +92,21 @@ class LaserBitmap(LaserBase):
         ox4, oy4 = self.rotate(ox4, oy4, rotation, cx, cy)
 
         # find upper-left corner after rotation(edge)
-        gx = min(ox1, ox2, ox3, ox4)
-        gy = max(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
-        print(gx, gy)
-        gy_on_map = round((gx / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
-        gx_on_map = round(-(gy / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
-        print(gx_on_map, gy_on_map)
+        gx1 = min(ox1, ox2, ox3, ox4)
+        gy1 = max(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        gy1_on_map = round((gx1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        gx1_on_map = round(-(gy1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        print("gx1:", gx1_on_map, gy1_on_map)
+
+        gx2 = max(ox1, ox2, ox3, ox4)
+        gy2 = min(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        print(gx2, gy2)
+        gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        print("gx1:", gx2_on_map, gy2_on_map)
+        print('size', gx2_on_map - gx1_on_map, gy2_on_map - gy1_on_map)
+
+        # print(thres)
 
         # logger.info("Corner rotate: [%.2f, %.2f], [%.2f, %.2f]" %
         #             (x1, y1, x2, y2))
@@ -121,6 +116,8 @@ class LaserBitmap(LaserBase):
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
         new_pix.paste(pix, (1, 1))
         new_pix = new_pix.rotate(degrees(rotation), expand=1)
+        new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
+        new_pix.show()
 
         for h in range(new_pix.size[0]):
             # using white frame to find start and end index
@@ -134,25 +131,8 @@ class LaserBitmap(LaserBase):
             # print(find_s, find_e, find_e-find_s)
 
             for w in range(find_s, find_e):
-                if (gx_on_map + w - len(self.image_map) / 2.) ** 2 + (gy_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    self.image_map[gx_on_map + w][gy_on_map + h] = new_pix.getpixel((h, w))
-
-                # try:
-                #     self.image_map[gx_on_map + w][gy_on_map + h] = new_pix.getpixel((h, w))
-                # except:
-                #     pass
-
-
-                # if real_x ** 2 + real_y ** 2 <= self.radius ** 2:
-                #     if pix[h][w] < thres:
-                #         # [TODO]
-                #         # if picture  pixel is small, when mapping to image_map should add more interval points
-                #         # but not gonna happen in near future?
-                #         x_on_map = int(round(self.radius * self.pixel_per_mm + real_x / self.pixel_per_mm))
-                #         y_on_map = int(round(self.radius * self.pixel_per_mm + real_y / self.pixel_per_mm))
-                #         # self.image_map[x_on_map][y_on_map] = pix[h][w]
-                #         self.image_map[x_on_map][y_on_map] = 0
-        # alignment fail when float to int
+                if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
+                    self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
 
     def find_edges(self):
         """
@@ -217,22 +197,12 @@ class LaserBitmap(LaserBase):
 
     def gcode_generate(self):
         gcode = []
-
         gcode += self.header('bitmap')
-        # pix = cv2.imread('S.png')
-        # pix = cv2.cvtColor(pix, cv2.COLOR_BGR2GRAY)
-
-        # print pix.shape
-        # input()
-
         # last_i = 0
-        # # gcode += ["M104 S200"]
-        # gcode += turnOff()
-        # gcode += turnHalf()
-
         # gcode += self.alignment_process()
 
         #row iteration
+        abs_shift = len(self.image_map) / 2
         for h in range(0, len(self.image_map)):
             #column iteration
             itera = range(0, len(self.image_map))
@@ -245,7 +215,7 @@ class LaserBitmap(LaserBase):
                 if self.image_map[h][w] < self.thres:
                     if not self.laser_on:
                         last_i = w
-                        gcode += self.moveTo(w, h)
+                        gcode += self.moveTo(w - abs_shift, h - abs_shift)
                         gcode += self.turnOn()
                 else:
                     if self.laser_on:
@@ -253,18 +223,21 @@ class LaserBitmap(LaserBase):
                             pass
                             gcode += ["G4 P100"]
                         elif final_x > 0:
-                            gcode += self.drawTo(w, h)
+                            gcode += self.drawTo(w - abs_shift, h - abs_shift)
                         else:
-                            gcode += self.drawTo(w, h)
+                            gcode += self.drawTo(w - abs_shift, h - abs_shift)
                         gcode += self.turnOff()
 
             if self.laser_on:
-                gcode += self.drawTo(final_x, h)
+                gcode += self.drawTo(final_x - abs_shift, h - abs_shift)
                 gcode += self.turnOff()
 
         gcode += ["G28"]
-        self.dump('gen.jpg',)
+
+        self.dump('gen.jpg')
         # return ''
+        with open('S.gcode', 'w') as f:
+            print("\n".join(gcode) + "\n", file=f)
         return "\n".join(gcode) + "\n"
 
     def dump(self, file_name):
