@@ -9,6 +9,8 @@ try:
 except:
     pass
 
+logger = logging.getLogger(__name__)
+
 
 class pc_process():
     """process point cloud"""
@@ -17,8 +19,8 @@ class pc_process():
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
         self.clouds[name] = (self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R))
-        print('upload %s,L: %d R: %d' % (name, len(self.clouds[name][1]), len(self.clouds[name][1])))
-        print('all:' + " ".join(self.clouds.keys()))
+        logger.debug('upload %s,L: %d R: %d' % (name, len(self.clouds[name][1]), len(self.clouds[name][1])))
+        logger.debug('all:' + " ".join(self.clouds.keys()))
         # upload [name] [point count L] [point count R]
 
     def unpack_data(self, buffer_data):
@@ -35,8 +37,8 @@ class pc_process():
             pc.append(tmp_point)
         return pc
 
-    def base(self, name):
-        self.current_name = name
+    # def base(self, name):
+    #     self.current_name = name
 
     def cut(self, name_in, name_out, mode, direction, value):
         """
@@ -45,6 +47,8 @@ class pc_process():
             direction = True(>=), False(<=)
             [FUTURE WORK] transplant to cpp in future to spped up
         """
+        logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
+
         pc = self.clouds[name_in]
         cropped_pc = []
 
@@ -84,27 +88,30 @@ class pc_process():
         """
         delete noise base on distance of each point
         pc_source could be a string indcating the point cloud that we want
-        """
-        # if type(pc_source) == str:
-        #     pc = _scanner.PointCloudXYZRGBObj()
-        #     pc.load(pc_source)
-        # else:
-        #     pc = pc_source
 
+        """
+        logger.debug('noise_del [%s] [%s] [%.4f]' % (name_in, name_out, r))
         pc = self.clouds[name_in]
         pc = self.to_cpp(pc)
-        pc.SOR(50, 0.3)
+        pc.SOR(50, r)
         self.clouds[name_out] = pc
+
         return 0
 
     def to_mesh(self):
         pass
 
     def dump(self, name):
+        """
+        dump the indicated(name) cloud
+        """
+        logger.debug('dumping' + name)
+
         pc_both = self.clouds[name]
         buffer_data = []
 
         for pc in pc_both:
+            # TODO : add if statement pc is a PointCloudXYZRGBObj
             for p in pc:
                 buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
         buffer_data = b''.join(buffer_data)
