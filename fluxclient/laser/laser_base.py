@@ -1,5 +1,7 @@
 # !/usr/bin/env python3
+
 from math import pi, sin, cos
+import os
 
 
 class LaserBase(object):
@@ -12,20 +14,17 @@ class LaserBase(object):
         # machine indicate how you pass gcode into machine
         # choose marlin if you are using printrun
         # self.machine = 'pi'
-        self.machine = 'marlin'
+        if "FLUXHW" in os.environ:
+            self.machine = os.environ["FLUXHW"]
+        else:
+            self.machine = 'pi'
+
         self.ratio = 1.
 
     def header(self, header):
         gcode = []
         gcode.append(";Flux laser")
         gcode.append(";" + header)
-
-        if self.machine == 'marlin':
-            gcode.append("@X5H2000")
-            gcode.append("@X5H2000")
-        elif self.machine == 'pi':
-            gcode.append("H2000")
-            gcode.append("H2000")
 
         #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
         gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
@@ -104,6 +103,3 @@ class LaserBase(object):
         image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
         return image
-if __name__ == '__main__':
-    m_laser_base = laser_base()
-    print(m_laser_base)
