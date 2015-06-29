@@ -14,6 +14,8 @@ PointCloudXYZRGBPtr createPointCloudXYZRGB();
 void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32_t rgb);
 int loadPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud);
 void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud);
+int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point);
+int get_w(PointCloudXYZRGBPtr cloud);
 
 int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold);
 int VG(PointCloudXYZRGBPtr cloud);

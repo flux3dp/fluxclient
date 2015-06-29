@@ -96,7 +96,9 @@ class pc_process():
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
         pc = self.clouds[name_in]
         pc = self.to_cpp(pc)
+        print (pc.get_w())
         pc.SOR(50, r)
+        print (pc.get_w())
         self.clouds[name_out] = pc
         return 0
 
@@ -111,11 +113,21 @@ class pc_process():
 
         pc_both = self.clouds[name]
         buffer_data = []
-
-        for pc in pc_both:
-            # TODO : add if statement pc is a PointCloudXYZRGBObj
-            for p in pc:
+        if type(pc_both) == _scanner.PointCloudXYZRGBObj:
+            pc = pc_both
+            pc_size = pc.get_w()
+            for p_i in range(pc_size):
+                p = pc_both.get_item(p_i)
                 buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
-        buffer_data = b''.join(buffer_data)
-        assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
-        return len(pc_both[0]), len(pc_both[1]), buffer_data
+                # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
+            buffer_data = b''.join(buffer_data)
+            return pc_size, 0, buffer_data
+
+        else:
+            for pc in pc_both:
+                # TODO : add if statement pc is a PointCloudXYZRGBObj
+                for p in pc:
+                    buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
+            buffer_data = b''.join(buffer_data)
+            assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
+            return len(pc_both[0]), len(pc_both[1]), buffer_data

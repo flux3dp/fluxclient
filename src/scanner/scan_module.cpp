@@ -28,6 +28,22 @@ void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud) {
     pcl::io::savePCDFileASCII (file, *cloud);
 }
 
+int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point){
+  pcl::PointXYZRGB p = (*cloud)[key];
+
+  point[0] = p.x;
+  point[1] = p.y;
+  point[2] = p.z;
+  point[3] = (uint32_t(p.rgb) >> 16) & 0x0000ff;
+  point[4] = (uint32_t(p.rgb) >> 8) & 0x0000ff;
+  point[5] = (uint32_t(p.rgb)) & 0x0000ff;
+
+  return 1;
+}
+int get_w(PointCloudXYZRGBPtr cloud){
+  return (*cloud).size();
+}
+
 void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32_t rgb){
     pcl::PointXYZRGB p;
     p.x = x;
@@ -210,10 +226,7 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles){
   return 0;
 }
 int dumpSTL(const char* file, MeshPtr triangles){
-  // (*triangles)
-  // return pcl::io::savePolygonFileSTL (file, *triangles);
+  // return pcl::io::savePolygonFileSTL (file, *triangles);  // can't compile
   return 0;
-
-
 }
 

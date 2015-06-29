@@ -17,6 +17,9 @@ cdef extern from "scan_module.h":
     int loadPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
     void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
     void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
+    int get_item(PointCloudXYZRGBPtr cloud, int key, vector[float] point)
+    int get_w(PointCloudXYZRGBPtr cloud)
+
     # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
 
     int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float thresh)
@@ -37,6 +40,9 @@ cdef class PointCloudXYZRGBObj:
         self.obj = createPointCloudXYZRGB()
         self.normalObj = createNormalPtr()
 
+    def get_w(self):
+        return get_w(self.obj)
+
     cpdef loadFile(self, unicode filename):
         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:
             raise RuntimeError("Load failed")
@@ -51,7 +57,14 @@ cdef class PointCloudXYZRGBObj:
         dumpPointCloudXYZRGB(filename.encode(), self.obj)
 
     cpdef push_backPoint(self, float x, float y, float z, cython.uint rgb):
+        # TODO: put r,g,b -> rgb in here
         push_backPoint(self.obj, x, y, z, rgb)
+
+    cpdef get_item(self, key):
+        cdef vector[float] point = [0., 0., 0., 0., 0., 0.]
+        assert key < self.get_w(), 'get index:%d out of range:%d' % (key, self.get_w())
+        get_item(self.obj, key, point)
+        return point
 
     cpdef int SOR(self, int neighbors, float threshold):
         return SOR(self.obj, neighbors, threshold)
@@ -119,7 +132,6 @@ cdef class RegCloud:
             raise RuntimeError("Load failed")
         if loadPointNT(filename_obj.encode(), self.obj) == -1:
             raise RuntimeError("Load failed")
-
 
     cpdef dump_o(self, unicode filename):
         dumpPointNT(filename.encode(), self.obj)
