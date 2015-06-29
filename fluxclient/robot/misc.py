@@ -35,7 +35,7 @@ def require_robot(target, logstream=sys.stdout):
                 task.require_auth()
                 break
             except RuntimeError as e:
-                sys.stdout.write("Error: %s, retry...\n" % e.args[0])
+                logstream.write("Error: %s, retry...\n" % e.args[0])
 
         while True:
             try:
@@ -48,8 +48,8 @@ def require_robot(target, logstream=sys.stdout):
                     logstream.write("Robot already running\n")
                     break
                 else:
-                    sys.stdout.write("Error: %s\n" % e.args[0])
-            sys.stdout.write("Retry require robot\n")
+                    logstream.write("Error: %s\n" % e.args[0])
+            logstream.write("Retry require robot\n")
 
         return ipaddr, task.remote_keyobj
     else:
