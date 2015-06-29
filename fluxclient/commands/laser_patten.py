@@ -46,7 +46,7 @@ def process_bitmaps(options, stream):
             i = Image.open(arg)
             w, h = i.size
             lb.add_image(process_to_gray_bitmap(i), w, h,
-                         -w/40, h/40, w/40, -h/40, .0, thres=options.threshold)
+                         -28.5, 14.25, 28.5, -14.25, .0, thres=options.threshold)
     lb.export_to_stream(stream)
 
 
