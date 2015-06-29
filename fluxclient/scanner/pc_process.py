@@ -80,18 +80,22 @@ class pc_process():
             _scanner.push_backPoint(pc, i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
         return pc
 
-    def noise_del(self, pc_source):
+    def noise_del(self, name_in, name_out, r):
         """
-        delete noise base on idstance of each point
-        pc_source could be a string indcating the file that we want or a pc object
+        delete noise base on distance of each point
+        pc_source could be a string indcating the point cloud that we want
         """
-        if type(pc_source) == str:
-            pc = _scanner.PointCloudXYZRGBObj()
-            pc.load(pc_source)
-        else:
-            pc = pc_source
+        # if type(pc_source) == str:
+        #     pc = _scanner.PointCloudXYZRGBObj()
+        #     pc.load(pc_source)
+        # else:
+        #     pc = pc_source
+
+        pc = self.clouds[name_in]
+        pc = self.to_cpp(pc)
         pc.SOR(50, 0.3)
-        return pc
+        self.clouds[name_out] = pc
+        return 0
 
     def to_mesh(self):
         pass
