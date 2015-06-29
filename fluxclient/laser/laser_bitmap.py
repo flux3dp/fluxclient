@@ -132,7 +132,7 @@ class LaserBitmap(LaserBase):
 
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    # if new_pix.getpixel((h, w)) <= thres
+                    if new_pix.getpixel((h, w)) <= thres:
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
 
     def find_edges(self):
