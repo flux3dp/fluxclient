@@ -22,10 +22,14 @@ class RobotConsole(object):
             "abort": robot_obj.abort_play,
             "report": robot_obj.report_play,
             "position": robot_obj.position,
+            "quit": robot_obj.quit_task,
 
             "scan": robot_obj.begin_scan,
             "scan_forword": robot_obj.scan_forword,
             "scan_next": robot_obj.scan_next,
+
+            "maintain": robot_obj.begin_maintain,
+            "home": robot_obj.maintain_home,
 
         }
 
@@ -35,13 +39,12 @@ class RobotConsole(object):
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
-            "quit": self.quit_task,
         }
 
     def on_cmd(self, arguments):
         if self._mode == "raw":
             if arguments == "quit":
-                self._raw_sock.send(arguments.encode())
+                self.quit_raw_mode()
             else:
                 self._raw_sock.send(arguments.encode() + b"\n")
         else:
@@ -58,13 +61,15 @@ class RobotConsole(object):
                     logger.error("Unknow Command Q")
 
             except RuntimeError as e:
-                logger.error(" ".join((str(i) for i in e.args)))
+                logger.error("RuntimeError%s" % repr(e.args))
 
     def simple_cmd(self, func_ptr, *args):
         logger.info(func_ptr(*args))
 
     def list_file(self):
-        logger.error(self.robot_obj.list_file())
+        for f in self.robot_obj.list_file():
+            logger.info(f)
+        logger.info("ok")
 
     def upload_file(self, filename):
         self.robot_obj.upload_file(
@@ -100,12 +105,14 @@ class RobotConsole(object):
         self._thread.start()
         logger.info("raw mode ->")
 
-    def quit_task(self):
+    def quit_raw_mode(self):
         self._mode = "standard"
-        self._raw_soc = None
+        sock = self._raw_sock
+        self._raw_sock = None
         if self._thread:
             self._thread.join()
-        logger.info(self.robot_obj.quit_task())
+        sock.send(b"quit")
+        logger.info(self.robot_obj._recv_resp().decode("ascii", "ignore"))
 
     def log_progress_callback(self, robot, progress, total):
         logger.info("Processing %3.1f %% (%i of %i)" %

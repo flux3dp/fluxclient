@@ -30,7 +30,7 @@ def write_pcd(points, file_name="model.pcd"):
         for i in points:
             # print i
             try:
-                print('%f %f %f %f' % (i[0], i[1], i[2], i[3] + (i[4]) * 256 + (i[5]) * 256 * 256), file=f)
+                print('%f %f %f %f' % (i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16)), file=f)
             except:
                 pass
                 # print i, points.index(i)
