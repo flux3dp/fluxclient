@@ -120,19 +120,20 @@ class LaserBitmap(LaserBase):
         new_pix.show()
 
         for h in range(new_pix.size[0]):
-            # using white frame to find start and end index
+            # using white frame to find starting and ending index
             for find_s in range(new_pix.size[1]):
-                if new_pix.getpixel((h, find_s)) == 255:
+                if new_pix.getpixel((h, find_s)) > 0:
                     find_s += 1
                     break
             for find_e in range(new_pix.size[1] - 1, -1, -1):
-                if new_pix.getpixel((h, find_e)) == 255:
+                if new_pix.getpixel((h, find_e)) > 0:
                     break
             # print(find_s, find_e, find_e-find_s)
 
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
+                    # if new_pix.getpixel((h, w)) <= thres
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
 
     def find_edges(self):
         """
@@ -235,7 +236,6 @@ class LaserBitmap(LaserBase):
         gcode += ["G28"]
 
         self.dump('gen.jpg')
-        # return ''
         with open('S.gcode', 'w') as f:
             print("\n".join(gcode) + "\n", file=f)
         return "\n".join(gcode) + "\n"
