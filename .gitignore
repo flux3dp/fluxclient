@@ -52,6 +52,7 @@ target/
 
 #ignore process pid file
 *.pid
+src/scanner/scanner.cpp
 src/scanner/PoissonRecon/Bin
 src/scanner/PoissonRecon/vbfile
 tests/scanner/data/inso
