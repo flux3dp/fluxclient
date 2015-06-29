@@ -1,7 +1,7 @@
 import cython
 from libcpp.vector cimport vector
 
-from scan_settings import write_stl
+import fluxclient.scanner.scan_settings as scan_settings
 
 
 cdef extern from "scan_module.h":

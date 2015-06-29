@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import struct
 from operator import ge, le
-
+import logging
 
 import fluxclient.scanner.scan_settings as scan_settings
 
@@ -75,27 +75,29 @@ class pc_process():
                 cropped_pc.append(p)
         self.clouds[name_out] = cropped_pc
 
-    def to_cpp(pc_python):
+    def to_cpp(self, pc_python):
         """
         convert python style pc into cpp style pc object
         """
         pc = _scanner.PointCloudXYZRGBObj()
+        # TODO : fix data structure
+        pc_python = pc_python[0]
         for i in pc_python:
-            _scanner.push_backPoint(pc, i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
+            pc.push_backPoint(i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
+        logger.debug('to_cpp done')
         return pc
 
-    def noise_del(self, name_in, name_out, r):
+    def delete_noise(self, name_in, name_out, r):
         """
         delete noise base on distance of each point
         pc_source could be a string indcating the point cloud that we want
 
         """
-        logger.debug('noise_del [%s] [%s] [%.4f]' % (name_in, name_out, r))
+        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
         pc = self.clouds[name_in]
         pc = self.to_cpp(pc)
         pc.SOR(50, r)
         self.clouds[name_out] = pc
-
         return 0
 
     def to_mesh(self):
