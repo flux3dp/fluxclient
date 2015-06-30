@@ -164,7 +164,8 @@ class LaserBitmap(LaserBase):
         # self.dump('gen.jpg')
         # with open('S.gcode', 'w') as f:
         #     print("\n".join(gcode) + "\n", file=f)
-        # return "\n".join(gcode) + "\n"
+
+        return "\n".join(gcode) + "\n"
 
     def dump(self, file_name):
         img = np.uint8(np.array(self.image_map))
