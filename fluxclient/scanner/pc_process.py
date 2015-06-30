@@ -93,11 +93,15 @@ class pc_process():
         pc_source could be a string indcating the point cloud that we want
 
         """
+        #################### fake code : del noise only work in c-module branch #############
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
         pc = self.clouds[name_in]
-        pc = self.to_cpp(pc)
-        pc.SOR(50, r)
-        self.clouds[name_out] = pc
+        pc_o = []
+        for p in pc:
+            pc_o.append([p[0], p[1], p[2], 0, 0, 0])
+        self.clouds[name_out] = pc_o
+        #################### fake code : del noise only work in c-module branch #############
+
         return 0
 
     def to_mesh(self):
@@ -116,7 +120,7 @@ class pc_process():
         for pc in pc_both:
             # TODO : add if statement pc is a PointCloudXYZRGBObj
             for p in pc:
-                buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
+                buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
         buffer_data = b''.join(buffer_data)
         # assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
         return len(self.clouds[name][0]), len(self.clouds[name][1]), buffer_data
