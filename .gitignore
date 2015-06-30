@@ -55,3 +55,4 @@ target/
 src/scanner/PoissonRecon/Bin
 src/scanner/PoissonRecon/vbfile
 tests/scanner/data/inso
+src/scanner/scanner.cpp
