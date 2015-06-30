@@ -95,11 +95,14 @@ class pc_process():
         """
         #################### fake code : del noise only work in c-module branch #############
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
-        pc = self.clouds[name_in]
-        pc_o = []
-        for p in pc:
-            pc_o.append([p[0], p[1], p[2], 0, 0, 0])
-        self.clouds[name_out] = pc_o
+        pc_both = self.clouds[name_in]
+        pc_both_o = []
+        for pc in pc_both:
+            pc_o = []
+            for p in pc:
+                pc_o.append([p[0], p[1], p[2], 0, 0, 0])
+            pc_both_o.append(pc_o)
+        self.clouds[name_out] = pc_both_o
         #################### fake code : del noise only work in c-module branch #############
 
         return 0
