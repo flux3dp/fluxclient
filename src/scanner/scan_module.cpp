@@ -9,6 +9,8 @@
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/surface/poisson.h>
 #include <pcl/PolygonMesh.h>
+#include <pcl/conversions.h>
+
 // #include <pcl/io/vtk_lib_io.h>
 
 
@@ -225,7 +227,31 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles){
 
   return 0;
 }
-int dumpSTL(const char* file, MeshPtr triangles){
+int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > data){
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  fromPCLPointCloud2(triangles->cloud, *cloud);
+  // std::vector<std::vector< std::vector<float> > > data;
+  int v0, v1, v2;
+
+  for (size_t i = 0; i < triangles->polygons.size (); i += 1){
+    std::cout << "  polygons[" << i << "]: " <<std::endl;
+    v0 = triangles->polygons[i].vertices[0];
+    v1 = triangles->polygons[i].vertices[1];
+    v2 = triangles->polygons[i].vertices[2];
+
+    data[i][0][0] = (*cloud)[v0].x;
+    data[i][0][1] = (*cloud)[v0].y;
+    data[i][0][2] = (*cloud)[v0].z;
+
+    data[i][1][0] = (*cloud)[v1].x;
+    data[i][1][1] = (*cloud)[v1].y;
+    data[i][1][2] = (*cloud)[v1].z;
+
+    data[i][2][0] = (*cloud)[v2].x;
+    data[i][2][1] = (*cloud)[v2].y;
+    data[i][2][2] = (*cloud)[v2].z;
+  }
+
   // return pcl::io::savePolygonFileSTL (file, *triangles);  // can't compile
   return 0;
 }

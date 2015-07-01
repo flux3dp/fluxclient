@@ -54,4 +54,4 @@ int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZR
 typedef pcl::PolygonMesh::Ptr MeshPtr;
 MeshPtr createMeshPtr();
 int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr &triangles);
-int dumpSTL(const char* file, MeshPtr triangles);
+int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > data);
