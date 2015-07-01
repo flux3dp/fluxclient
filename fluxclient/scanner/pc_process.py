@@ -75,15 +75,16 @@ class pc_process():
                 cropped_pc.append(p)
         self.clouds[name_out] = cropped_pc
 
-    def to_cpp(self, pc_python):
+    def to_cpp(self, pc_both):
         """
         convert python style pc into cpp style pc object
         """
         pc = _scanner.PointCloudXYZRGBObj()
-        # TODO : fix data structure
-        pc_python = pc_python[0]
-        for i in pc_python:
-            pc.push_backPoint(i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
+        # TODO : fix data structure, now will merge L and R pc
+
+        for pc_python in pc_both:
+            for i in pc_python:
+                pc.push_backPoint(i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
         logger.debug('to_cpp done')
         return pc
 
@@ -96,9 +97,9 @@ class pc_process():
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
         pc = self.clouds[name_in]
         pc = self.to_cpp(pc)
-        print (pc.get_w())
+        logger.debug('start with %d point' % pc.get_w())
         pc.SOR(50, r)
-        print (pc.get_w())
+        logger.debug('finished with %d point' % pc.get_w())
         self.clouds[name_out] = pc
         return 0
 
