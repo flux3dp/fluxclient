@@ -100,11 +100,8 @@ class pc_process():
         for pc in pc_both:
             pc_o = []
             for p in pc:
-                # pc_o.append([p[0], p[1], p[2], len(pc_both), 0, 0])
-                pc_o.append([p[0], p[1], p[2], 255 - 255 * len(pc_both_o), 0, 0])
+                pc_o.append([p[0], p[1], p[2], 255 * len(pc_both_o), 0, 0])
             pc_both_o.append(pc_o)
-        print(pc_both_o[0][0])
-        print(pc_both_o[1][0])
         pc_both_o.reverse()
         self.clouds[name_out] = pc_both_o
         #################### fake code : del noise only work in c-module branch #############
@@ -123,12 +120,10 @@ class pc_process():
         pc_both = self.clouds[name]
         print(len(pc_both), len(self.clouds[name][0]), len(self.clouds[name][1]))
         buffer_data = []
-
         for pc in pc_both:
             # TODO : add if statement pc is a PointCloudXYZRGBObj
             for p in pc:
                 buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
         buffer_data = b''.join(buffer_data)
         assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
-        print(len(self.clouds[name][0]), len(self.clouds[name][1]))
         return len(self.clouds[name][0]), len(self.clouds[name][1]), buffer_data
