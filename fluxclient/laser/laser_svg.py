@@ -12,7 +12,7 @@ from fluxclient.laser.laser_base import LaserBase
 class LaserSvg(LaserBase):
     """docstring for laser_svg"""
     def __init__(self):
-        super(laser_svg, self).__init__()
+        super(LaserSvg, self).__init__()
 
     def rect(self, thing):
         'not supporot rx ,ry yet'
@@ -152,11 +152,15 @@ class LaserSvg(LaserBase):
         # print (color)
         return False
 
-    def parse_svg(self, filename):
+    def parse_svg(self, svg_data):
         gcode = []
-        tree = ET.parse(filename)
-        # should modify io part
-        root = tree.getroot()
+        # TODO:should modify io part
+        # tree = ET.parse(filename)
+        # root = tree.getroot()
+
+        root = ET.fromstring(svg_data)
+        print(root)
+
         header = root.tag[:root.tag.find('}svg') + 1]  # '{'
         debt = []  # things that should be fill in later
         for thing in root.iter():
@@ -180,8 +184,9 @@ class LaserSvg(LaserBase):
         return "\n".join(gcode) + "\n"
 
 if __name__ == '__main__':
-    m_laser_svg = laser_svg()
-    # main(sys.argv[1])
+    m_laser_svg = LaserSvg()
+    with open(sys.argv[1], 'r') as f:
+        print (m_laser_svg.parse_svg(f.read()))
     # main('Rust.svg')
     # main('HTML5_LOGO.svg')
 

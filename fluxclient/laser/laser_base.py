@@ -22,6 +22,9 @@ class LaserBase(object):
         self.ratio = 1.
 
     def header(self, header):
+        """
+        header gcode for laser
+        """
         gcode = []
         gcode.append(";Flux laser")
         gcode.append(";" + header)
@@ -30,8 +33,6 @@ class LaserBase(object):
         gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
 
         gcode += self.turnOff()
-        # gcode.append(";Image size:%d * %d" % (img_width, img_height))
-
         gcode.append("G28")
         gcode.append(";G29")
 
@@ -65,7 +66,7 @@ class LaserBase(object):
 
     def moveTo(self, x, y, speed=600):
         """
-            apply global rotation, scale
+            apply global rotation and scale
             move to position x,y
         """
         x2 = x * cos(self.rotation) - y * sin(self.rotation)
