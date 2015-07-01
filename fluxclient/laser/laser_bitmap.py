@@ -119,7 +119,7 @@ class LaserBitmap(LaserBase):
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                     if new_pix.getpixel((h, w)) <= thres:
-                        self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
     def export_to_stream(self, stream):
         stream.write(self.gcode_generate())
@@ -139,7 +139,7 @@ class LaserBitmap(LaserBase):
                 itera = reversed(range(0, len(self.image_map)))
 
             for w in itera:
-                if self.image_map[h][w] < self.thres:
+                if self.image_map[h][w] < self.thres:  # acturally meaningless self.thres=255 and only 0 or 255 on image_map
                     if not self.laser_on:
                         last_i = w
                         gcode += self.moveTo(w - abs_shift, h - abs_shift)
