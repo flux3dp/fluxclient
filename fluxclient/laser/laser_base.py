@@ -1,5 +1,7 @@
 # !/usr/bin/env python3
+
 from math import pi, sin, cos
+import os
 
 
 class LaserBase(object):
@@ -12,27 +14,25 @@ class LaserBase(object):
         # machine indicate how you pass gcode into machine
         # choose marlin if you are using printrun
         # self.machine = 'pi'
-        self.machine = 'marlin'
+        if "FLUXHW" in os.environ:
+            self.machine = os.environ["FLUXHW"]
+        else:
+            self.machine = 'pi'
+
         self.ratio = 1.
 
     def header(self, header):
+        """
+        header gcode for laser
+        """
         gcode = []
         gcode.append(";Flux laser")
         gcode.append(";" + header)
-
-        if self.machine == 'marlin':
-            gcode.append("@X5H2000")
-            gcode.append("@X5H2000")
-        elif self.machine == 'pi':
-            gcode.append("H2000")
-            gcode.append("H2000")
 
         #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
         gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
 
         gcode += self.turnOff()
-        # gcode.append(";Image size:%d * %d" % (img_width, img_height))
-
         gcode.append("G28")
         gcode.append(";G29")
 
@@ -46,7 +46,7 @@ class LaserBase(object):
         if self.machine == 'marlin':
             return ["G4 P10", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P10", "L0", "G4 P1"]
+            return ["G4 P10", "HL0", "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
@@ -55,18 +55,18 @@ class LaserBase(object):
         if self.machine == 'marlin':
             return ["G4 P1", "@X9L255", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L255", "G4 P1"]
+            return ["G4 P1", "HL255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
             return ["G4 P1", "@X9L250", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "L250", "G4 P1"]
+            return ["G4 P1", "HL250", "G4 P1"]
 
     def moveTo(self, x, y, speed=600):
         """
-            apply global rotation, scale
+            apply global rotation and scale
             move to position x,y
         """
         x2 = x * cos(self.rotation) - y * sin(self.rotation)
@@ -104,6 +104,3 @@ class LaserBase(object):
         image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
         return image
-if __name__ == '__main__':
-    m_laser_base = laser_base()
-    print(m_laser_base)

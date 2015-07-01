@@ -79,8 +79,8 @@ class pc_process():
         """
         convert python style pc into cpp style pc object
         """
-        pc = _scanner.PointCloudXYZRGBObj()
         # TODO : fix data structure, now will merge L and R pc
+        pc = _scanner.PointCloudXYZRGBObj()
 
         for pc_python in pc_both:
             for i in pc_python:
@@ -101,6 +101,7 @@ class pc_process():
         pc.SOR(50, r)
         logger.debug('finished with %d point' % pc.get_w())
         self.clouds[name_out] = pc
+
         return 0
 
     def to_mesh(self):
@@ -113,7 +114,9 @@ class pc_process():
         logger.debug('dumping' + name)
 
         pc_both = self.clouds[name]
+        print(len(pc_both), len(self.clouds[name][0]), len(self.clouds[name][1]))
         buffer_data = []
+
         if type(pc_both) == _scanner.PointCloudXYZRGBObj:
             pc = pc_both
             pc_size = pc.get_w()
@@ -126,7 +129,6 @@ class pc_process():
 
         else:
             for pc in pc_both:
-                # TODO : add if statement pc is a PointCloudXYZRGBObj
                 for p in pc:
                     buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
             buffer_data = b''.join(buffer_data)

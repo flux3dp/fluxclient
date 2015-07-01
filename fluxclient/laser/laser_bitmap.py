@@ -63,17 +63,11 @@ class LaserBitmap(LaserBase):
             None
         """
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
-        # pix = self.to_image(buffer_data, img_width, img_height)
 
         logger.debug("Recv (%i, %i) @ [%.2f, %.2f], [%.2f, %.2f] R%.2f" %
                      (img_width, img_height, x1, y1, x2, y2, rotation))
 
-        # protocol fail
-        # logger.debug("Corner: [%.2f, %.2f], [%.2f, %.2f]" % (x1, y1, x2, y2))
-        # real_width = float(x2 - x1)
-        # real_height = float(y1 - y2)
-
-        # rotation center
+        # image center (rotation center)
         cx = (x1 + x2) / 2.
         cy = (y1 + y2) / 2.
         logger.debug('c %f, %f' % (cx, cy))
@@ -103,94 +97,29 @@ class LaserBitmap(LaserBase):
         print(gx2, gy2)
         gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
-        print("gx1:", gx2_on_map, gy2_on_map)
+        print("gx2:", gx2_on_map, gy2_on_map)
         print('size', gx2_on_map - gx1_on_map, gy2_on_map - gy1_on_map)
-
-        # print(thres)
-
-        # logger.info("Corner rotate: [%.2f, %.2f], [%.2f, %.2f]" %
-        #             (x1, y1, x2, y2))
-        # pix = np.array(pix)
 
         # add white frame on each side
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
         new_pix.paste(pix, (1, 1))
         new_pix = new_pix.rotate(degrees(rotation), expand=1)
         new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
-        new_pix.show()
 
         for h in range(new_pix.size[0]):
-            # using white frame to find start and end index
+            # using white frame to find starting and ending index
             for find_s in range(new_pix.size[1]):
-                if new_pix.getpixel((h, find_s)) == 255:
+                if new_pix.getpixel((h, find_s)) > 0:
                     find_s += 1
                     break
             for find_e in range(new_pix.size[1] - 1, -1, -1):
-                if new_pix.getpixel((h, find_e)) == 255:
+                if new_pix.getpixel((h, find_e)) > 0:
                     break
-            # print(find_s, find_e, find_e-find_s)
 
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
-
-    def find_edges(self):
-        """
-        find the edge of 4 sides
-        return left-bound, right-bound, up-bound, down-bound
-        """
-        x1 = -53.03  # = 75/(sqrt(2))  Cyclic quadrilateral
-        for i in range(len(self.image_map)):
-            if any(j == 0 for j in self.image_map[i]):
-                x1 = i
-                break
-
-        x2 = 53.03
-        for i in range(len(self.image_map) - 1, 0 - 1, -1):
-            if any(j == 0 for j in self.image_map[i]):
-                x2 = i
-                break
-
-        y1 = False
-        for j in range(len(self.image_map[0])):
-            for i in range(len(self.image_map)):
-                if self.image_map[i][j] == 0:
-                    y1 = j
-                    break
-            if y1 is not False:
-                break
-        if y1 is False:
-            y1 = 53.03
-
-        y2 = False
-        for j in range(len(self.image_map[0]) - 1, 0 - 1, -1):
-            for i in range(len(self.image_map) - 1, 0 - 1, -1):
-                if self.image_map[i][j] == 0:
-                    y2 = j
-                    break
-            if y2 is not False:
-                break
-        if y2 is False:
-            y2 = 53.03
-        self.edges = [x1, x2, y1, y2]
-        logger.info(self.edges)
-
-    def alignment_process(self, times=3):
-        gcode = []
-        self.find_edges()
-        gcode += self.turnHalf()
-        for _ in range(times):
-            gcode += self.moveTo(self.edges[0], self.edges[2])
-            gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[0], self.edges[3])
-            gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[1], self.edges[3])
-            gcode += ["G4 P300"]
-            gcode += self.moveTo(self.edges[1], self.edges[2])
-            gcode += ["G4 P300"]
-        gcode += self.turnOff()
-
-        return gcode
+                    if new_pix.getpixel((h, w)) <= thres:
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
 
     def export_to_stream(self, stream):
         stream.write(self.gcode_generate())
@@ -198,8 +127,6 @@ class LaserBitmap(LaserBase):
     def gcode_generate(self):
         gcode = []
         gcode += self.header('bitmap')
-        # last_i = 0
-        # gcode += self.alignment_process()
 
         #row iteration
         abs_shift = len(self.image_map) / 2
@@ -234,9 +161,10 @@ class LaserBitmap(LaserBase):
 
         gcode += ["G28"]
 
-        self.dump('gen.jpg')
-        with open('S.gcode', 'w') as f:
-            print("\n".join(gcode) + "\n", file=f)
+        # self.dump('gen.jpg')
+        # with open('S.gcode', 'w') as f:
+        #     print("\n".join(gcode) + "\n", file=f)
+
         return "\n".join(gcode) + "\n"
 
     def dump(self, file_name):
