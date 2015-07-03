@@ -95,9 +95,9 @@ class freeless():
         '''
           convert indices on the image into x-y-z-rgb points
           return  [
-                                p1[x-coordinate, y-coord, z-coord, b, g, r],
-                                p2[x-coordinate, y-coord, z-coord, b, g, r],
-                                p3[x-coordinate, y-coord, z-coord, b, g, r],
+                                p1[x-coordinate, y-coord, z-coord, r, g, b],
+                                p2[x-coordinate, y-coord, z-coord, r, g, b],
+                                p3[x-coordinate, y-coord, z-coord, r, g, b],
                                   ...
                   ]
         '''
@@ -145,7 +145,7 @@ class freeless():
             p[0][2] = tmp2
 
         # points = [[p[0][0] * 10, p[0][2] * 10, p[0][1] * 10, p[2][0], p[2][1], p[2][2]] for p in points]
-        points = [[p[0][0], p[0][2], p[0][1] * 1.2, p[2][0], p[2][1], p[2][2]]
+        points = [[p[0][0], p[0][2], p[0][1] * 1.2, p[2][2], p[2][1], p[2][0]]
                   for p in points]
 
         return points
