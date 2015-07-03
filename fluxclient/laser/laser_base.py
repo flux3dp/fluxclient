@@ -44,25 +44,25 @@ class LaserBase(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P10", "@X9L0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P10", "HL0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL0", "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L255", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "HL255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L250", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "HL250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL250", "G4 P1"]
 
     def moveTo(self, x, y, speed=600):
         """

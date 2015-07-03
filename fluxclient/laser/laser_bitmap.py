@@ -25,7 +25,7 @@ class LaserBitmap(LaserBase):
         """
         reset LaserBitmap class
         """
-        self.pixel_per_mm = 4  # sample rate for each point
+        self.pixel_per_mm = 16  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
         self.front_end_radius = 250  # front-end input(250 px as r), doesn't matter ()
         self.ratio = self.radius / self.front_end_radius  # ratio for actually moving head
@@ -39,7 +39,7 @@ class LaserBitmap(LaserBase):
 
         # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
         self.thres = 255
-        self.ratio = 0.25
+        self.ratio = 1 / self.pixel_per_mm
 
     def rotate(self, x, y, rotation, cx=0., cy=0.):
         """
@@ -160,10 +160,6 @@ class LaserBitmap(LaserBase):
                 gcode += self.turnOff()
 
         gcode += ["G28"]
-
-        # self.dump('gen.jpg')
-        # with open('S.gcode', 'w') as f:
-        #     print("\n".join(gcode) + "\n", file=f)
 
         return "\n".join(gcode) + "\n"
 
