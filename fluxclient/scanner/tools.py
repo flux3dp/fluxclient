@@ -1,5 +1,28 @@
 #!/usr/bin/env python3
-import math
+
+
+# PCL NOTE: http://docs.pointclouds.org/1.7.0/structpcl_1_1_point_x_y_z_r_g_b.html
+# uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
+# uint8_t r = (rgb >> 16) & 0x0000ff;
+# uint8_t g = (rgb >> 8)  & 0x0000ff;
+# uint8_t b = (rgb)       & 0x0000ff;
+def testing_file():
+    pass
+
+
+def read_pcd(file_name):
+    assert file_name[-4:] == '.pcd', '%s is not a pcd file?' % file_name
+    pc = []
+    with open(file_name, 'r') as pcd:
+        for _ in range(11):
+            pcd.readline()  # read the header
+        for line in pcd:
+            point = [float(j) for j in line.rstrip().split(' ')]
+            rgb = int(point.pop())
+            b, g, r = rgb & 0x0000ff, (rgb >> 8) & 0x0000ff, (rgb >> 16) & 0x0000ff
+            point += [r, g, b]
+            pc.append(point)
+    return pc
 
 
 def write_pcd(points, file_name="model.pcd"):
@@ -7,9 +30,9 @@ def write_pcd(points, file_name="model.pcd"):
       write a pointclooud as .pcd file, in binary mode or ascii mode. (compact or readable)
       points should look like this:
                             [
-                              p1[x-coordinate, y-coord, z-coord, b, g, r],
-                              p2[x-coordinate, y-coord, z-coord, b, g, r],
-                              p3[x-coordinate, y-coord, z-coord, b, g, r],
+                              p1[x-coordinate, y-coord, z-coord, r, g, b],
+                              p2[x-coordinate, y-coord, z-coord, r, g, b],
+                              p3[x-coordinate, y-coord, z-coord, r, g, b],
                                 ...
                             ]
                             (coordinate and color data for each point, in a list of points for a pointclooud)
@@ -28,12 +51,7 @@ def write_pcd(points, file_name="model.pcd"):
         print('POINTS %d' % len(points), file=f)
         print('DATA ascii', file=f)
         for i in points:
-            # print i
-            try:
-                print('%f %f %f %f' % (i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16)), file=f)
-            except:
-                pass
-                # print i, points.index(i)
+            print('%f %f %f %f' % (i[0], i[1], i[2], (i[3] << 16) | (i[4] << 8) | i[5]), file=f)
 
     print('write', len(points), 'points into ' + file_name)
 

@@ -55,11 +55,11 @@ class image_to_pc():
         '''
         convert points to bytes
         input format: [
-                                    p1[x-coordinate, y-coord, z-coord, b, g, r],
-                                    p2[x-coordinate, y-coord, z-coord, b, g, r],
-                                    p3[x-coordinate, y-coord, z-coord, b, g, r],
+                                    p1[x-coordinate, y-coord, z-coord, r, g, b],
+                                    p2[x-coordinate, y-coord, z-coord, r, g, b],
+                                    p3[x-coordinate, y-coord, z-coord, r, g, b],
                                       ...
                      ]
         output format: check https://github.com/flux3dp/fluxghost/wiki/websocket-3dscan-control
         '''
-        return [struct.pack('<ffffff', p[0], p[1], p[2], p[5] / 255., p[4] / 255., p[3] / 255.) for p in points]
+        return [struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.) for p in points]
