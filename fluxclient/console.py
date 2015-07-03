@@ -1,6 +1,6 @@
 
+import readline
 import curses
-
 
 class Console(object):
     def __enter__(self):
@@ -36,30 +36,20 @@ class Console(object):
 
     def read_cmd(self):
         lines, cols = self.stdscr.getmaxyx()
-        cmd = self.stdscr.getstr(lines - 1, 0).decode("utf8")
-        self.cmdwin.addstr(b" " * len(cmd) + b"\r")
-        self.cmdwin.refresh()
 
+        self.cmdwin.addstr(b" " + b"\r")
+        self.cmdwin.refresh()
+        cmd = input()
+        self.logwin.redrawwin()
+        self.cmdwin.redrawwin()
+        self.sepwin.redrawwin()
         self.append_log("> %s\n" % cmd)
         return cmd
 
 if __name__ == "__main__":
-    def dadada(iv):
-        from time import sleep
-        while True:
-            iv.logwin.addstr("dadada\n")
-            iv.logwin.refresh()
-            sleep(1.0)
-
     with Console() as i:
         i.setup()
-
-        import threading
-        t = threading.Thread(target=dadada, args=(i, ))
-        t.setDaemon(True)
-        t.start()
-
         while True:
             lines, cols = i.stdscr.getmaxyx()
-            buf = i.stdscr.getstr(lines - 1, 0)
-            i.append_log(buf)
+            buf = i.read_cmd()
+            i.write(buf + "\n")

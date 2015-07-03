@@ -1,5 +1,5 @@
 
-from select import select
+from errno import EPIPE
 from io import BytesIO
 from time import time
 import struct
@@ -68,16 +68,15 @@ class FluxRobotV0002(object):
         self.sock.send(struct.pack("<H", l) + buf)
 
     def get_resp(self, timeout=30.):
-        return self._recv_resp(timeout)
-
-    def _recv_resp(self, timeout=30.):
         bml = self.sock.recv(2, socket.MSG_WAITALL)
+        if not bml:
+            raise socket.error(EPIPE, "Broken pipe")
         message_length = struct.unpack("<H", bml)[0]
         return self.sock.recv(message_length, socket.MSG_WAITALL)
 
     def _make_cmd(self, buf):
         self._send_cmd(buf)
-        return self._recv_resp()
+        return self.get_resp()
 
     # Command Tasks
     def position(self):
@@ -92,7 +91,7 @@ class FluxRobotV0002(object):
         self._send_cmd(b"ls")
         files = []
         while True:
-            line = self._recv_resp()
+            line = self.get_resp()
             if line.startswith(b"file "):
                 files.append(line[5:].decode("utf8", "ignore"))
             elif line == b"ok":
@@ -146,7 +145,7 @@ class FluxRobotV0002(object):
                 progress_callback(self, sent, length)
 
         progress_callback(self, sent, length)
-        final_ret = self._recv_resp()
+        final_ret = self.get_resp()
         logger.debug("File uploaded")
 
         if final_ret != b"ok":
@@ -166,6 +165,10 @@ class FluxRobotV0002(object):
     def quit_task(self):
         return self._make_cmd(b"quit")
 
+    @ok_or_error
+    def kick(self):
+        return self._make_cmd(b"kick")
+
     # Play Tasks
     @ok_or_error
     def pause_play(self):
@@ -180,13 +183,13 @@ class FluxRobotV0002(object):
         return self._make_cmd(b"resume")
 
     def report_play(self):
-        return self._make_cmd(b"report")
+        return self._make_cmd(b"report").decode("utf8", "ignore")
 
     def oneshot(self):
         self._send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self._recv_resp().decode("ascii", "ignore").split(" ")
+            resp = self.get_resp().decode("ascii", "ignore").split(" ")
 
             if resp[0] == "binary":
                 mime, length = resp[1], int(resp[2])
@@ -209,7 +212,7 @@ class FluxRobotV0002(object):
         self._send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self._recv_resp().decode("ascii", "ignore").split(" ")
+            resp = self.get_resp().decode("ascii", "ignore").split(" ")
 
             if resp[0] == "binary":
                 mime, length = resp[1], int(resp[2])

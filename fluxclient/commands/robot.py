@@ -1,8 +1,11 @@
 
+import readline
 import argparse
 import logging
+import atexit
 import sys
 import re
+import os
 
 from fluxclient.robot_console import RobotConsole
 from fluxclient.robot.misc import parse_ipaddr, select_ipaddr, kill_robot, \
@@ -11,11 +14,20 @@ from fluxclient.robot import connect_robot
 from fluxclient.upnp.misc import is_serial
 
 
-def config_logger(stdout=sys.stderr, level=logging.DEBUG):
+def setup_logger(stdout=sys.stderr, level=logging.DEBUG):
     logging.basicConfig(format="%(message)s", stream=stdout)
     logger = logging.getLogger('')
     logger.setLevel(level)
     return logger
+
+
+def setup_readline():
+    histfile = os.path.join(os.path.expanduser("~"), ".flux_robot_history")
+    try:
+        readline.read_history_file(histfile)
+    except IOError:
+        pass
+    atexit.register(readline.write_history_file, histfile)
 
 
 def robot_shell(options):
@@ -23,13 +35,14 @@ def robot_shell(options):
 
     with Console() as console:
         console.setup()
+        setup_readline()
 
         def conn_callback(*args):
             console.write(".")
             return True
 
         try:
-            logger = config_logger(console)
+            logger = setup_logger(console)
             ipaddr, keyobj = require_robot(options.target, console)
             client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
                                    conn_callback=conn_callback)
@@ -51,7 +64,7 @@ def robot_shell(options):
 
 
 def ipython_shell(options):
-    logger = config_logger()
+    logger = setup_logger()
     import IPython
 
     def conn_callback(*args):
@@ -69,7 +82,8 @@ def ipython_shell(options):
 
 
 def simple_shell(options):
-    logger = config_logger()
+    logger = setup_logger()
+    setup_readline()
 
     def conn_callback(*args):
         sys.stdout.write(".")
@@ -80,10 +94,10 @@ def simple_shell(options):
     client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
                            conn_callback=conn_callback)
     robot_client = RobotConsole(client)
-    print("----> READY")
+    logger.info("----> READY")
 
     while True:
-        r = sys.stdin.readline().strip()
+        r = input("> ")
         if not r:
             continue
         try:

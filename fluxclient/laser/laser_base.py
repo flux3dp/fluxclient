@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 
-from math import pi, sin, cos
+from math import pi, sin, cos, sqrt
 import os
 
 
@@ -10,6 +10,10 @@ class LaserBase(object):
         self.laser_on = False
         self.focal_l = 11 + 3  # focal z coordinate
         self.rotation = 0.0
+
+        self.current_x = None
+        self.current_y = None
+        self.current_z = None
 
         # machine indicate how you pass gcode into machine
         # choose marlin if you are using printrun
@@ -34,6 +38,12 @@ class LaserBase(object):
 
         gcode += self.turnOff()
         gcode.append("G28")
+
+        # TODO: this should be in config file
+        self.current_x = 0.
+        self.current_y = 0.
+        self.current_z = 241.20
+
         gcode.append(";G29")
 
         gcode.append("G1 F5000 Z" + str(self.focal_l) + "")
@@ -44,43 +54,60 @@ class LaserBase(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P10", "@X9L0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P10", "HL0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL0", "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L255", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "HL255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "@X9L250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L250", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "HL250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL250", "G4 P1"]
 
     def moveTo(self, x, y, speed=600):
         """
             apply global rotation and scale
             move to position x,y
         """
-        x2 = x * cos(self.rotation) - y * sin(self.rotation)
-        y2 = x * sin(self.rotation) + y * cos(self.rotation)
 
-        x = x2 * self.ratio
-        y = y2 * self.ratio
+        x2 = (x * cos(self.rotation) - y * sin(self.rotation)) * self.ratio
+        y2 = (x * sin(self.rotation) + y * cos(self.rotation)) * self.ratio
+
+        x = x2
+        y = y2
 
         if speed == 'draw':
             speed = 200
         elif speed == 'move':
             speed = 600
+        gcode = []
 
-        return ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ";Draw to"]
+        vx = x - self.current_x
+        vy = y - self.current_y
+        len_v = sqrt(vx ** 2 + vy ** 2)
+        if len_v > 1:
+            # convert to unit vector (as the smallest step length)
+            ux = vx / len_v
+            uy = vy / len_v
+            for _ in range(int(len_v)):
+                self.current_x += ux
+                self.current_y += uy
+                gcode += ["G1 F" + str(speed) + " X" + str(self.current_x) + " Y" + str(self.current_y) + ";Split draw to"]
+
+        self.current_x = x
+        self.current_y = y
+
+        return gcode + ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ";Draw to"]
 
     def drawTo(self, x, y, speed='draw'):
         """

@@ -2,6 +2,7 @@
 from tempfile import NamedTemporaryFile
 from select import select
 import logging
+import socket
 import os
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class RobotConsole(object):
             "report": robot_obj.report_play,
             "position": robot_obj.position,
             "quit": robot_obj.quit_task,
+            "kick": robot_obj.kick,
 
             "scan": robot_obj.begin_scan,
             "scan_forword": robot_obj.scan_forword,
@@ -112,15 +114,24 @@ class RobotConsole(object):
         if self._thread:
             self._thread.join()
         sock.send(b"quit")
-        logger.info(self.robot_obj._recv_resp().decode("ascii", "ignore"))
+        logger.info(self.robot_obj.get_resp().decode("ascii", "ignore"))
 
     def log_progress_callback(self, robot, progress, total):
         logger.info("Processing %3.1f %% (%i of %i)" %
                     (progress / total * 100.0, progress, total))
 
     def __raw_mode_thread(self):
-        while self._mode == "raw":
-            rl = select((self._raw_sock, ), (), (), 0.1)[0]
-            if rl:
-                buf = rl[0].recv(4096).decode("utf8", "ignore")
-                logger.info(buf.rstrip("\n\x00"))
+        try:
+            while self._mode == "raw":
+                rl = select((self._raw_sock, ), (), (), 0.1)[0]
+                if rl:
+                    buf = rl[0].recv(4096).decode("utf8", "ignore")
+                    if buf:
+                        logger.info(buf.rstrip("\n\x00"))
+                    else:
+                        logger.error("Connection closed")
+                        return
+
+        except Exception:
+            self._mode == "standard"
+            logger.exception("Raw mode fatel, your session my be broken")
