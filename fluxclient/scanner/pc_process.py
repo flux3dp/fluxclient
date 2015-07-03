@@ -17,6 +17,7 @@ class pc_process():
     """process point cloud"""
     def __init__(self):
         self.clouds = {}  # clouds that hold all the point cloud data, key:name, value:point cloud
+        self.meshs = {}
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
         self.clouds[name] = (self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R))
@@ -104,7 +105,8 @@ class pc_process():
 
         return 0
 
-    def to_mesh(self):
+    def to_mesh(self, name):
+        # mesh
         pass
 
     def dump(self, name):
@@ -134,3 +136,25 @@ class pc_process():
             buffer_data = b''.join(buffer_data)
             assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
             return len(pc_both[0]), len(pc_both[1]), buffer_data
+
+
+class mesh(object):
+    """mesh"""
+    def __init__(self, cloud_name, index_list, clouds):
+        super(mesh, self).__init__()
+        self.cloud_name = cloud_name
+        self.faces = index_list
+        self.cur = 0
+
+    def __len__(self):
+        return len(self.faces)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cur < len(self.faces):
+            face = [clouds[cloud_name][index] for index in self.faces[self.cur]]
+            return face
+        else:
+            raise StopIteration

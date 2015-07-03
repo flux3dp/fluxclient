@@ -101,7 +101,7 @@ cdef class PointCloudXYZRGBObj:
         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
         return 0
 
-
+# reg part
 cdef extern from "scan_module.h":
 
     cdef cppclass PointNT:
