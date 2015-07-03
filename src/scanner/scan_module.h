@@ -53,5 +53,7 @@ int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZR
 
 typedef pcl::PolygonMesh::Ptr MeshPtr;
 MeshPtr createMeshPtr();
-int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr &triangles);
-int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > data);
+PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles);
+int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data);
+int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data);
+

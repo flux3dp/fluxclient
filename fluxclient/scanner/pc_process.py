@@ -4,6 +4,7 @@ from operator import ge, le
 import logging
 
 import fluxclient.scanner.scan_settings as scan_settings
+from fluxclient.scanner.tools import write_stl
 
 try:
     import fluxclient.scanner._scanner as _scanner
@@ -85,29 +86,44 @@ class pc_process():
 
         for pc_python in pc_both:
             for i in pc_python:
-                pc.push_backPoint(i[0], i[1], i[2], i[3] | (i[4] << 8) | (i[5] << 16))
+                # pc.push_backPoint(i[0], i[1], i[2], (i[3] << 16) | (i[4] << 8) | i[5])
+                pc.push_backPoint(i[0], i[1], i[2], (255 << 16))
         logger.debug('to_cpp done')
         return pc
 
-    def delete_noise(self, name_in, name_out, r):
+    def delete_noise(self, name_in, name_out, stddev):
         """
         delete noise base on distance of each point
         pc_source could be a string indcating the point cloud that we want
 
         """
-        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, r))
+        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
         pc = self.clouds[name_in]
         pc = self.to_cpp(pc)
+
         logger.debug('start with %d point' % pc.get_w())
-        pc.SOR(50, r)
+        pc.SOR(50, stddev)
         logger.debug('finished with %d point' % pc.get_w())
         self.clouds[name_out] = pc
 
+        #################################################
+        self.to_mesh(name_out)
+        #################################################
+
         return 0
 
-    def to_mesh(self, name):
-        # mesh
-        pass
+    def to_mesh(self, name_in):
+        pc = self.clouds[name_in]
+        pc.ne()
+        # pc.ne_viewpoint()  # should use this one in the future
+        pc_new = pc.to_mesh()
+        print (pc.get_w())
+        print (pc_new.get_w())
+        self.clouds['wth'] = pc_new
+        a = pc.STL_to_Faces()
+        print(len(a))
+        m_mesh = mesh('wth', a, self.clouds)
+        write_stl(m_mesh, 'yoyo.stl', 'ascii')
 
     def dump(self, name):
         """
@@ -144,6 +160,7 @@ class mesh(object):
         super(mesh, self).__init__()
         self.cloud_name = cloud_name
         self.faces = index_list
+        self.clouds = clouds
         self.cur = 0
 
     def __len__(self):
@@ -154,7 +171,8 @@ class mesh(object):
 
     def __next__(self):
         if self.cur < len(self.faces):
-            face = [clouds[cloud_name][index] for index in self.faces[self.cur]]
+            face = [self.clouds[self.cloud_name].get_item(index) for index in self.faces[self.cur]]
+            self.cur += 1
             return face
         else:
             raise StopIteration

@@ -11,9 +11,12 @@ cdef extern from "scan_module.h":
         pass
     cdef cppclass PointXYZRGBNormalPtr:
         pass
+    cdef cppclass MeshPtr:
+        pass
 
     PointCloudXYZRGBPtr createPointCloudXYZRGB()
     NormalPtr createNormalPtr()
+    MeshPtr createMeshPtr()
     int loadPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
     void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
     void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
@@ -30,15 +33,20 @@ cdef extern from "scan_module.h":
     # int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, vector[float] viewp, vector[int] step)
     PointXYZRGBNormalPtr createPointXYZRGBNormalPtr()
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
+    PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles);
+
+    int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
 
 cdef class PointCloudXYZRGBObj:
     cdef PointCloudXYZRGBPtr obj
     cdef NormalPtr normalObj
     cdef PointXYZRGBNormalPtr bothobj
+    cdef MeshPtr meshobj
 
     def __init__(self):
         self.obj = createPointCloudXYZRGB()
         self.normalObj = createNormalPtr()
+        self.meshobj = createMeshPtr()
 
     def get_w(self):
         return get_w(self.obj)
@@ -73,7 +81,7 @@ cdef class PointCloudXYZRGBObj:
         return VG(self.obj)
 
     cpdef int ne(self):
-        return ne(self.obj, self.normalObj, 1.0)
+        return ne(self.obj, self.normalObj, 0.5)
 
     cpdef int ne_viewpoint(self, viewp, step):
 
@@ -100,6 +108,22 @@ cdef class PointCloudXYZRGBObj:
     cpdef int concatenatePointsNormal(self):
         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
         return 0
+
+    cpdef to_mesh(self):
+        self.concatenatePointsNormal()
+
+        new_c = PointCloudXYZRGBObj()
+        new_c.obj = POS(self.bothobj, self.meshobj)
+        return new_c
+
+
+    cpdef STL_to_Faces(self):
+        cdef vector[vector [int]] viewp
+        STL_to_Faces(self.meshobj, viewp)
+        return viewp
+
+
+
 
 # reg part
 cdef extern from "scan_module.h":
