@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, find_packages, Extension
-from Cython.Distutils import build_ext
-import platform
-import sys
-import os
+from setuptools import setup, find_packages
 
-from fluxclient import VERSION as _VERSION
+try:
+    from Cython.Distutils import build_ext
+except ImportError:
+    print("""
+ ******************************************************
+ * Cython must be installed before install fluxclient *
+ * Use command `pip install cython` to fix it         *
+ ******************************************************
+""")
+    raise
 
-from pcl_setup import EXTRA_COMPILE_ARGS, LIBRARYS, EXTRA_OBJECTS, INCLUDE_DIRS
+import setup_utils
 
-if not sys.version_info >= (3, 3):
-    print("ERROR: fluxclient require Python version grather then 3.3\n")
-    sys.exit(1)
-
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
-
-VERSION = ".".join([str(i) for i in _VERSION])
-
-install_requires = ['setuptools', 'pycrypto', 'pyserial', 'pillow']
+setup_utils.prepare_setup()
+VERSION = setup_utils.get_version()
 
 setup(
     name="fluxclient",
@@ -29,38 +27,10 @@ setup(
     license="?",
     packages=find_packages(),
     test_suite="tests.main.everything",
-    entry_points={
-        "console_scripts": [
-            "flux_discover=fluxclient.commands.discover:main",
-            "flux_passwd=fluxclient.commands.passwd:main",
-            "flux_auth=fluxclient.commands.auth:main",
-            "flux_config_network=fluxclient.commands.config_network:main",
-            "flux_robot=fluxclient.commands.robot:main",
-            "flux_scan=fluxclient.commands.scan:main",
-            "flux_usb=fluxclient.commands.usb:main",
-
-            "flux_laser=fluxclient.commands.laser_patten:main"
-        ],
-    },
-    install_requires=install_requires,
+    entry_points=setup_utils.get_entry_points(),
+    install_requires=setup_utils.get_install_requires(),
     cmdclass = {'build_ext': build_ext},
     ext_modules=[
-            Extension(
-            'fluxclient.scanner._scanner', sources=[
-            "src/scanner/scanner.pyx",
-            "src/scanner/scan_module.cpp"],
-            language="c++",
-            extra_compile_args=EXTRA_COMPILE_ARGS,
-            libraries=LIBRARYS,
-            extra_objects=EXTRA_OBJECTS,
-            include_dirs=INCLUDE_DIRS
-            )
-
-        # Extension(
-        #     'fluxclient.robot.aes_socket', sources=[
-        #         "src/robot/aes_socket.pyx"],
-        #     extra_compile_args=["-std=c99"],
-        #     libraries=[],
-        #     extra_objects=[], include_dirs=[])
+        setup_utils.create_scanner_extention()
     ]
 )
