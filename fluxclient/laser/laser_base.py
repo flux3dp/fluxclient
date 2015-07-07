@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 
-from math import pi, sin, cos, sqrt
 import os
+from math import pi, sin, cos, sqrt
 
 
 class LaserBase(object):
@@ -11,6 +11,7 @@ class LaserBase(object):
         self.focal_l = 11 + 3  # focal z coordinate
         self.rotation = 0.0
 
+        self.split_thres = 1
         self.current_x = None
         self.current_y = None
         self.current_z = None
@@ -30,8 +31,11 @@ class LaserBase(object):
         header gcode for laser
         """
         gcode = []
-        gcode.append(";Flux laser")
-        gcode.append(";" + header)
+
+        # header part
+        gcode.append(";Flux Laser")
+        for i in header.split('\n'):
+            gcode.append(";" + i)
 
         #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
         gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
@@ -78,6 +82,8 @@ class LaserBase(object):
         """
             apply global rotation and scale
             move to position x,y
+            if distance need to move is larger than self.split_thres,
+            path will split into many different command in order to support emergency stop
         """
 
         x2 = (x * cos(self.rotation) - y * sin(self.rotation)) * self.ratio
@@ -92,18 +98,18 @@ class LaserBase(object):
             speed = 600
         gcode = []
 
+        # (vx, vy) : direction vector
         vx = x - self.current_x
         vy = y - self.current_y
         len_v = sqrt(vx ** 2 + vy ** 2)
-        if len_v > 1:
+        if len_v > self.split_thres:
             # convert to unit vector (as the smallest step length)
             ux = vx / len_v
             uy = vy / len_v
-            for _ in range(int(len_v)):
-                self.current_x += ux
-                self.current_y += uy
+            for _ in range(int(len_v / self.split_thres)):  # math.floor of (len_v / self.split_thres)
+                self.current_x += ux * self.split_thres
+                self.current_y += uy * self.split_thres
                 gcode += ["G1 F" + str(speed) + " X" + str(self.current_x) + " Y" + str(self.current_y) + ";Split draw to"]
-
         self.current_x = x
         self.current_y = y
 
