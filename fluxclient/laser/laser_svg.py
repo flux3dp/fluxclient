@@ -97,10 +97,6 @@ class LaserSvg(LaserBase):
             tmp += map(float, data[i][1:].replace(',', ' ').replace('-', ' -').split())
             data[i] = tmp
 
-        for i in data:
-            print(i)
-            pass
-
         if data[0][0] == 'M':  # store init x,y for future use
             x_init, y_init = data[0][1], data[0][2]
         else:
@@ -113,9 +109,6 @@ class LaserSvg(LaserBase):
         x, y = None, None  # current x, y position
         prev_control = None
         for i in data:
-            # if i[0] == 'z' or i[0] == 'Z':
-            #     prev_control = None
-            #     break
             if i[0] == 'M':  # Move to
                 x, y = i[1], i[2]
                 gcode += self.moveTo(x, y)
@@ -164,7 +157,8 @@ class LaserSvg(LaserBase):
                 Z_flag = True
                 prev_control = None
 
-            elif i[0] == 'C' or i[0] == 'c':
+            # reference: http://en.wikipedia.org/wiki/B%C3%A9zier_curve
+            elif i[0] in 'CcSs':
                 p0 = (x, y)
                 if i[0] == 'C':
                     p1 = (i[1], i[2])
@@ -175,7 +169,19 @@ class LaserSvg(LaserBase):
                     p2 = (p0[0] + i[3], p0[1] + i[4])
                     p3 = (p0[0] + i[5], p0[1] + i[6])
 
-                # reference: http://en.wikipedia.org/wiki/B%C3%A9zier_curve
+                elif i[0] in 'Ss':
+                    if prev_control is not None and prev_control[0] is not None:
+                        p1 = 2 * x - prev_control[0][0], 2 * y - prev_control[0][1]
+                    else:
+                        p1 = (x, y)
+
+                    if i[0] == 'S':
+                        p2 = (i[1], i[2])
+                        p3 = (i[3], i[4])
+                    elif i[0] == 's':
+                        p2 = (p0[0] + i[1], p0[1] + i[2])
+                        p3 = (p0[0] + i[3], p0[1] + i[4])
+
                 for j in range(sample_n + 1):
                     t = j / float(sample_n)
                     t_ = 1 - t
@@ -184,31 +190,37 @@ class LaserSvg(LaserBase):
                     gcode += self.drawTo(tmp_x, tmp_y)
 
                 x, y = p3[0], p3[1]
-                prev_control = (p2[0], p2[1])
+                prev_control = [(p2[0], p2[1]), None]
 
-            elif i[0] == 'S' or i[0] == 's':
+            elif i[0] in 'QqTt':
                 p0 = (x, y)
-                if prev_control is not None:
-                    p1 = 2 * x - prev_control[0], 2 * y - prev_control[1]
-                else:
-                    p1 = (x, y)
-                if i[0] == 'S':
-                    p2 = (i[1], i[2])
-                    p3 = (i[3], i[4])
-                    # p3 = (i[5], i[6])
-                elif i[0] == 'S':
-                    p2 = (p0[0] + i[1], p0[1] + i[2])
-                    p3 = (p0[0] + i[3], p0[1] + i[4])
-                    # p3 = (p0[0] + i[5], p0[1] + i[6])
+                if i[0] == 'Q':
+                    p1 = (i[1], i[2])
+                    p2 = (i[3], i[4])
+                elif i[0] == 'q':
+                    p1 = (p0[0] + i[1], p0[1] + i[2])
+                    p2 = (p0[0] + i[3], p0[1] + i[4])
+
+                elif i[0] in 'Tt':
+                    if prev_control is not None and prev_control[1] is not None:
+                        p1 = 2 * x - prev_control[1][0], 2 * y - prev_control[1][1]
+                    else:
+                        p1 = (x, y)
+
+                    if i[0] == 'T':
+                        p2 = (i[1], i[2])
+                    elif i[0] == 't':
+                        p2 = (p0[0] + i[1], p0[1] + i[2])
+
                 for j in range(sample_n + 1):
                     t = j / float(sample_n)
                     t_ = 1 - t
-                    tmp_x = p0[0] * (t_ ** 3) + 3 * p1[0] * t * (t_ ** 2) + 3 * p2[0] * (t ** 2) * t_ + p3[0] * (t ** 3)
-                    tmp_y = p0[1] * (t_ ** 3) + 3 * p1[1] * t * (t_ ** 2) + 3 * p2[1] * (t ** 2) * t_ + p3[1] * (t ** 3)
+                    tmp_x = p0[0] * (t_ ** 2) + 2 * t_ * t * p1[0] + (t ** 2) * p2[0]
+                    tmp_y = p0[1] * (t_ ** 2) + 2 * t_ * t * p1[1] + (t ** 2) * p2[1]
                     gcode += self.drawTo(tmp_x, tmp_y)
 
-                x, y = p3[0], p3[1]
-                prev_control = (p2[0], p2[1])
+                x, y = p2[0], p2[1]
+                prev_control = [None, (p1[0], p1[1])]
 
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
