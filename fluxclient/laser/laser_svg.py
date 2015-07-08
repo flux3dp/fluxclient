@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 
 import sys
-from math import sin, cos, pi
+from math import sin, cos, pi, radians, sqrt, acos, copysign
 import xml.etree.ElementTree as ET  # cElementTree is the c implement of ElementTree, much faster and memory friendly
 
 from fluxclient.laser.laser_base import LaserBase
@@ -21,7 +21,7 @@ class LaserSvg(LaserBase):
         '''
         drawing a rectangle
         '''
-        # not supporot rx ,ry yet
+        # not support rx, ry yet
         gcode = []
         x, y, w, h = float(thing.attrib['x']), float(thing.attrib['y']), float(thing.attrib['width']), float(thing.attrib['height'])
         gcode += self.moveTo(x, y)
@@ -77,6 +77,7 @@ class LaserSvg(LaserBase):
     def path(self, thing, sample_n=100):
         '''
         reference:http://www.w3.org/TR/SVG/paths.html
+        command supported: M, m, L, l, H, h, V, v, Z, z, C, c, S, s, Q, q, T, t, A, a
         '''
         gcode = []
         data = []
@@ -221,7 +222,78 @@ class LaserSvg(LaserBase):
 
                 x, y = p2[0], p2[1]
                 prev_control = [None, (p1[0], p1[1])]
+            elif i[0] in 'Aa':
+                # implementation reference:http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
 
+                rx, ry = abs(i[1]), abs(i[2])
+                x_axis_rotation = i[3]  # degrees
+                phi = radians(x_axis_rotation)
+                # None zero means true
+                large_arc_flag = i[4] != 0
+                sweep_flag = i[5] != 0
+                if i[0] == 'A':
+                    end_x, end_y = i[6], i[7]
+                elif i[0] == 'a':
+                    end_x, end_y = x + i[6], y + i[7]
+
+                if x == end_x and y == end_y:
+                    # nothing happend
+                    pass
+                elif rx == 0 or ry == 0:
+                    # line to end point
+                    x, y = end_x, end_y
+                    gcode += self.drawTo(x, y)
+                else:
+                    # see F.6.5
+                    cp = cos(phi)
+                    sp = sin(phi)
+
+                    # F.6.5.1
+                    x_prime = cp * (x - end_x) / 2. + sp * (y - end_y) / 2.
+                    y_prime = (-sp) * (x - end_x) / 2. + cp * (y - end_y) / 2.
+
+                    # F.6.6.2
+                    cap = (x_prime ** 2) / (rx ** 2) + (y_prime ** 2) / (ry ** 2)
+                    if cap > 1:
+                        rx = sqrt(cap) * rx
+                        ry = sqrt(cap) * ry
+
+                    # F.6.5.2
+                    tmp = (rx ** 2 * ry ** 2 - rx ** 2 * y_prime ** 2 - ry ** 2 * x_prime ** 2) / (rx ** 2 * y_prime ** 2 + ry ** 2 * x_prime ** 2)
+                    if abs(tmp) < 1e-10:  # python math overflow error
+                        tmp = 0
+                    tmp = sqrt(tmp)
+                    if large_arc_flag == sweep_flag:
+                        tmp *= -1
+                    cx_prime = tmp * rx * y_prime / ry
+                    cy_prime = tmp * (-1) * ry * x_prime / rx
+
+                    # F.6.5.3
+                    cx = cp * cx_prime + (-sp) * cy_prime + ((x + end_x) / 2)
+                    cy = sp * cx_prime + cp * cy_prime + ((y + end_y) / 2)
+
+                    # F.6.5.4 - F.6.5.6
+                    angle_between = lambda v1, v2: copysign(acos((v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)), v1[0] * v2[1] - v1[1] * v2[0])
+                    tmp_v = (x_prime - cx_prime) / rx, y_prime - cy_prime / ry
+                    theta_1 = angle_between((1, 0), tmp_v)
+                    delta_theta = angle_between(tmp_v, ((-x_prime - cx_prime) / rx, (-y_prime - cy_prime) / ry))
+
+                    # buggy!!!!!!!!!!!!!!
+                    if sweep_flag and delta_theta < 0:
+                        delta_theta += 2 * pi
+                    elif not sweep_flag and delta_theta > 0:
+                        delta_theta += 2 * pi
+
+                    for j in range(sample_n + 1):
+                        t = j / float(sample_n)
+                        theta = theta_1 + t * delta_theta
+
+                        x = cp * rx * cos(theta) + (-sp) * ry * sin(theta) + cx
+                        y = sp * rx * cos(theta) + cp * ry * sin(theta) + cy
+                        gcode += self.drawTo(x, y)
+
+                x, y = end_x, end_y
+                prev_control = None
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
         return gcode
