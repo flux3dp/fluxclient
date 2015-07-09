@@ -54,28 +54,31 @@ class pc_process():
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
 
-        pc = self.clouds[name_in]
-        cropped_pc = []
-        if direction:  # ge = >=, le = <=
-            cmp_function = ge
-        else:
-            cmp_function = le
+        pc_both = self.clouds[name_in]
+        pc_both_o = []
+        for pc in pc_both:
+            cropped_pc = []
+            if direction:  # ge = >=, le = <=
+                cmp_function = ge
+            else:
+                cmp_function = le
 
-        if mode == 'r':
+            if mode == 'r':
+                for p in pc:
+                    if cmp_function(p[0] ** 2 + p[1] ** 2, thres ** 2):
+                        cropped_pc.append(p)
+
+            elif mode == 'x':
+                index = 0
+            elif mode == 'y':
+                index = 1
+            elif mode == 'z':
+                index = 2
             for p in pc:
-                if cmp_function(p[0] ** 2 + p[1] ** 2, thres ** 2):
+                if cmp_function(p[index], thres):
                     cropped_pc.append(p)
-
-        elif mode == 'x':
-            index = 0
-        elif mode == 'y':
-            index = 1
-        elif mode == 'z':
-            index = 2
-        for p in pc:
-            if cmp_function(p[index], thres):
-                cropped_pc.append(p)
-        self.clouds[name_out] = cropped_pc
+            pc_both_o.append(cropped_pc)
+        self.clouds[name_out] = pc_both_o
 
     def to_cpp(self, pc_both):
         """
