@@ -65,8 +65,10 @@ class pc_process():
 
             if mode == 'r':
                 for p in pc:
-                    if cmp_function(p[0] ** 2 + p[1] ** 2, thres ** 2):
+                    if cmp_function(p[0] ** 2 + p[1] ** 2, value ** 2):
                         cropped_pc.append(p)
+                pc_both_o.append(cropped_pc)
+                continue
 
             elif mode == 'x':
                 index = 0
@@ -74,8 +76,10 @@ class pc_process():
                 index = 1
             elif mode == 'z':
                 index = 2
+            else:
+                raise ValueError('Undefine cutting mode: %s ' % mode)
             for p in pc:
-                if cmp_function(p[index], thres):
+                if cmp_function(p[index], value):
                     cropped_pc.append(p)
             pc_both_o.append(cropped_pc)
         self.clouds[name_out] = pc_both_o
