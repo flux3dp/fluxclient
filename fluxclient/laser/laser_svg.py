@@ -282,7 +282,7 @@ class LaserSvg(LaserBase):
                     if sweep_flag and delta_theta < 0:
                         delta_theta += 2 * pi
                     elif not sweep_flag and delta_theta > 0:
-                        delta_theta += 2 * pi
+                        delta_theta -= 2 * pi
 
                     for j in range(sample_n + 1):
                         t = j / float(sample_n)
@@ -293,6 +293,7 @@ class LaserSvg(LaserBase):
                         gcode += self.drawTo(x, y)
 
                 x, y = end_x, end_y
+                self.drawTo(x, y)
                 prev_control = None
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
