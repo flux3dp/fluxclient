@@ -14,7 +14,7 @@ class LaserSvg(LaserBase):
         self.reset()
 
     def reset(self):
-        self.svgs = []
+        self.svgs = {}
         self.param = None
 
     def rect(self, thing):
@@ -24,12 +24,12 @@ class LaserSvg(LaserBase):
         # not support rx, ry yet
         gcode = []
         x, y, w, h = float(thing.attrib['x']), float(thing.attrib['y']), float(thing.attrib['width']), float(thing.attrib['height'])
-        gcode += self.moveTo(x, y)
-        gcode += self.drawTo(x + w, y)
-        gcode += self.drawTo(x + w, y + h)
-        gcode += self.drawTo(x, y + h)
-        gcode += self.drawTo(x, y)
-        gcode += self.turnOff()
+
+        gcode.append((x, y))
+        gcode.append((x + w, y))
+        gcode.append((x + w, y + h))
+        gcode.append((x, y + h))
+        gcode.append((x, y))
         return gcode
 
     def circle(self, thing, sample_n=100):
@@ -39,11 +39,10 @@ class LaserSvg(LaserBase):
         gcode = []
         # center of circle and radius
         cx, cy, r = float(thing.attrib['cx']), float(thing.attrib['cy']), float(thing.attrib['r'])
-        gcode += self.moveTo(cx + r, cy)
+        gcode.append((cx + r, cy))
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
-            gcode += self.drawTo(cx + (r * cos(theta)), cy + (r * sin(theta)))
-        gcode += self.turnOff()
+            gcode.append((cx + (r * cos(theta)), cy + (r * sin(theta))))
         return gcode
 
     def ellipse(self, thing, sample_n=100):
@@ -52,13 +51,11 @@ class LaserSvg(LaserBase):
         '''
         gcode = []
         cx, cy, rx, ry = float(thing.attrib['cx']), float(thing.attrib['cy']), float(thing.attrib['rx']), float(thing.attrib['ry'])
-        gcode += self.moveTo(cx + rx, cy)
-        # The explicit form, reference: https://en.wikipedia.org/wiki/Ellipse
+        gcode.append((cx + rx, cy))
+        # The explicit form of ellipse, reference: https://en.wikipedia.org/wiki/Ellipse
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
-            gcode += self.drawTo(cx + (rx * cos(theta)), cy + (ry * sin(theta)))
-
-        gcode += self.turnOff()
+            gcode.append((cx + (rx * cos(theta)), cy + (ry * sin(theta))))
         return gcode
 
     def polygon(self, thing):
@@ -67,11 +64,10 @@ class LaserSvg(LaserBase):
         '''
         gcode = []
         points = [list(map(float, i.split(','))) for i in thing.attrib['points'].split()]
-        gcode += self.moveTo(points[0][0], points[0][1])
+        gcode.append((points[0][0], points[0][1]))
         for p in points:
-            gcode += self.drawTo(p[0], p[1])
-        gcode += self.drawTo(points[0][0], points[0][1])
-        gcode += self.turnOff()
+            gcode.append((p[0], p[1]))
+        gcode.append((points[0][0], points[0][1]))
         return gcode
 
     def path(self, thing, sample_n=100):
@@ -112,49 +108,48 @@ class LaserSvg(LaserBase):
         for i in data:
             if i[0] == 'M':  # Move to
                 x, y = i[1], i[2]
-                gcode += self.moveTo(x, y)
+                gcode.append((x, y))
                 if Z_flag:
                     x_init, y_init = x, y
                     Z_flag = False
                 prev_control = None
             elif i[0] == 'm':  # relative move to
                 x, y = x + i[1], y + i[2]
-                gcode += self.moveTo(x, y)
+                gcode.append((x, y))
                 if Z_flag:
                     x_init, y_init = x, y
                     Z_flag = False
                 prev_control = None
             elif i[0] == 'L':  # Line to
                 x, y = i[1], i[2]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
             elif i[0] == 'l':  # relative line to
                 x, y = x + i[1], y + i[2]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
 
             elif i[0] == 'H':  # horizontal line to
                 x = i[1]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
             elif i[0] == 'h':  # relative horizontal line to
                 x = x + i[1]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
 
             elif i[0] == 'V':  # vertical lineto
                 y = i[1]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
             elif i[0] == 'v':  # relative vertical lineto
                 y = y + i[1]
-                gcode += self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
 
             elif i[0] == 'Z' or i[0] == 'z':  # close path
                 x, y = x_init, y_init
-                gcode += self.drawTo(x, y)
-                gcode.append(';z')
+                gcode.append((x, y))
                 Z_flag = True
                 prev_control = None
 
@@ -188,7 +183,7 @@ class LaserSvg(LaserBase):
                     t_ = 1 - t
                     tmp_x = p0[0] * (t_ ** 3) + 3 * p1[0] * t * (t_ ** 2) + 3 * p2[0] * (t ** 2) * t_ + p3[0] * (t ** 3)
                     tmp_y = p0[1] * (t_ ** 3) + 3 * p1[1] * t * (t_ ** 2) + 3 * p2[1] * (t ** 2) * t_ + p3[1] * (t ** 3)
-                    gcode += self.drawTo(tmp_x, tmp_y)
+                    gcode.append((tmp_x, tmp_y))
 
                 x, y = p3[0], p3[1]
                 prev_control = [(p2[0], p2[1]), None]
@@ -218,7 +213,7 @@ class LaserSvg(LaserBase):
                     t_ = 1 - t
                     tmp_x = p0[0] * (t_ ** 2) + 2 * t_ * t * p1[0] + (t ** 2) * p2[0]
                     tmp_y = p0[1] * (t_ ** 2) + 2 * t_ * t * p1[1] + (t ** 2) * p2[1]
-                    gcode += self.drawTo(tmp_x, tmp_y)
+                    gcode.append((tmp_x, tmp_y))
 
                 x, y = p2[0], p2[1]
                 prev_control = [None, (p1[0], p1[1])]
@@ -242,7 +237,7 @@ class LaserSvg(LaserBase):
                 elif rx == 0 or ry == 0:
                     # line to end point
                     x, y = end_x, end_y
-                    gcode += self.drawTo(x, y)
+                    gcode.append((x, y))
                 else:
                     # see F.6.5
                     cp = cos(phi)
@@ -290,7 +285,7 @@ class LaserSvg(LaserBase):
 
                         x = cp * rx * cos(theta) + (-sp) * ry * sin(theta) + cx
                         y = sp * rx * cos(theta) + cp * ry * sin(theta) + cy
-                        gcode += self.drawTo(x, y)
+                        gcode.append((x, y))
 
                 x, y = end_x, end_y
                 self.drawTo(x, y)
@@ -308,6 +303,9 @@ class LaserSvg(LaserBase):
         svg_data = svg_data.decode('utf8')
         root = ET.fromstring(svg_data)
         self.svgs.append(root)
+
+    def pretreat(self):
+        pass
 
     def gcode_generate(self):
         gcode = []
