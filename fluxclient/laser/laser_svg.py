@@ -15,6 +15,7 @@ class LaserSvg(LaserBase):
 
     def reset(self):
         self.svgs = {}
+        self.ready_svgs = {}
         self.param = None
 
     def rect(self, thing):
@@ -30,7 +31,7 @@ class LaserSvg(LaserBase):
         gcode.append((x + w, y + h))
         gcode.append((x, y + h))
         gcode.append((x, y))
-        return gcode
+        return [gcode]
 
     def circle(self, thing, sample_n=100):
         '''
@@ -43,7 +44,7 @@ class LaserSvg(LaserBase):
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
             gcode.append((cx + (r * cos(theta)), cy + (r * sin(theta))))
-        return gcode
+        return [gcode]
 
     def ellipse(self, thing, sample_n=100):
         '''
@@ -56,7 +57,7 @@ class LaserSvg(LaserBase):
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
             gcode.append((cx + (rx * cos(theta)), cy + (ry * sin(theta))))
-        return gcode
+        return [gcode]
 
     def polygon(self, thing):
         '''
@@ -68,7 +69,7 @@ class LaserSvg(LaserBase):
         for p in points:
             gcode.append((p[0], p[1]))
         gcode.append((points[0][0], points[0][1]))
-        return gcode
+        return [gcode]
 
     def path(self, thing, sample_n=100):
         '''
@@ -106,6 +107,7 @@ class LaserSvg(LaserBase):
         x, y = None, None  # current x, y position
         prev_control = None
         for i in data:
+            # TODO: Mm should use it's own list
             if i[0] == 'M':  # Move to
                 x, y = i[1], i[2]
                 gcode.append((x, y))
@@ -288,11 +290,11 @@ class LaserSvg(LaserBase):
                         gcode.append((x, y))
 
                 x, y = end_x, end_y
-                self.drawTo(x, y)
+                gcode.append((x, y))
                 prev_control = None
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
-        return gcode
+        return [gcode]
 
     def check_grey_scale(self, color):
         return False
@@ -304,37 +306,168 @@ class LaserSvg(LaserBase):
         root = ET.fromstring(svg_data)
         self.svgs.append(root)
 
-    def pretreat(self):
-        pass
+    def elements_to_list(self, svg):
+        # find the tag-header for each child element
+        # because will look like this when parsing the data -> '{http://www.w3.org/2000/svg}polygon'
+        # or should i use if [polygon, circle, ... ] in thing.tag instead?
+        header = svg.tag[:svg.tag.find('}svg') + 1]
+        gcode = []
+        for thing in svg.iter():
+            # deal with different svg graph
+            if thing.tag == header + 'rect':
+                gcode += self.rect(thing)
+            elif thing.tag == header + 'circle':
+                gcode += self.circle(thing)
+            elif thing.tag == header + 'ellipse':
+                gcode += self.ellipse(thing)
+            elif thing.tag == header + 'polygon':
+                gcode += self.polygon(thing)
+            elif thing.tag == header + 'path':
+                gcode += self.path(thing)
+        return gcode
+
+    def compute(self, buf, name, params):
+        self.ready_svgs[name] = [buf] + params
+
+    def preprocess(self, buf, name):
+        # may appear different language when readin a file in binary mode
+        # and be careful about the '\n', '\r\n' issue
+        svg_data = buf.decode('utf8')
+        root = ET.fromstring(svg_data)
+        tree = ET.ElementTree()
+        tree._setroot(root)
+        newtree = ET.ElementTree()
+        header = root.tag[:root.tag.find('}svg') + 1]
+
+        for i in range(len(root)):
+            thing = root[i]
+            tmp_thing = ET.Element(thing.tag)
+            # tmp_thing.tag = thing.tag
+            tmp_thing.attrib['fill'] = 'None'
+            tmp_thing.attrib['stroke'] = '#000000'
+            tmp_thing.tail = '\n'
+            if thing.tag == header + 'rect':
+                tmp_thing.attrib['x'] = thing.attrib['x']
+                tmp_thing.attrib['y'] = thing.attrib['y']
+                tmp_thing.attrib['height'] = thing.attrib['height']
+                tmp_thing.attrib['width'] = thing.attrib['width']
+                root[i] = tmp_thing
+            elif thing.tag == header + 'circle':
+                tmp_thing.attrib['cx'] = thing.attrib['cx']
+                tmp_thing.attrib['cy'] = thing.attrib['cy']
+                tmp_thing.attrib['r'] = thing.attrib['r']
+                root[i] = tmp_thing
+            elif thing.tag == header + 'ellipse':
+                tmp_thing.attrib['cx'] = thing.attrib['cx']
+                tmp_thing.attrib['cy'] = thing.attrib['cy']
+                tmp_thing.attrib['rx'] = thing.attrib['rx']
+                tmp_thing.attrib['ry'] = thing.attrib['ry']
+                root[i] = tmp_thing
+            elif thing.tag == header + 'polygon':
+                tmp_thing.attrib['points'] = thing.attrib['points']
+                root[i] = tmp_thing
+            elif thing.tag == header + 'path':
+                tmp_thing.attrib['d'] = thing.attrib['d']
+                root[i] = tmp_thing
+
+        path_data = self.elements_to_list(root)
+
+        min_x, min_y, max_x, max_y = float('inf'), float('inf'), 0., 0.
+        for path in path_data:
+            for x, y in path:
+                if x < min_x:
+                    min_x = x
+                if x > max_x:
+                    max_x = x
+                if y < min_y:
+                    min_y = y
+                if y > max_y:
+                    max_y = y
+        viewBox = root.attrib.get('viewBox', (0, 0, float('inf'), float('inf')))
+        if type(viewBox) == str:
+            viewBox = list(map(float, viewBox.replace(',', ' ').split()))
+        viewBox = [max(viewBox[0], min_x), max(viewBox[1], min_y), min(viewBox[2], max_x), min(viewBox[3], max_y)]
+        viewBox[2] = viewBox[2] - viewBox[0]
+        viewBox[3] = viewBox[3] - viewBox[1]
+        root.attrib['viewBox'] = " ".join(map(str, viewBox))
+        # theese are optional
+        root.attrib['width'] = str(viewBox[2])
+        root.attrib['height'] = str(viewBox[3])
+        root.attrib['style'] = "border:1px solid #ff0000;"
+
+        self.svgs[name] = ET.tostring(root)
+
+        # tree.write('preprocess.svg')
+    def transform(self, path_data, params, viewBox):
+        # viewBox
+        for path in range(len(path_data)):
+            new_path = []
+            for p in range(len(path_data[path]) - 1):
+                x1, y1 = path_data[path][p]
+                x2, y2 = path_data[path][p + 1]
+                out = 0
+                if x1 < viewBox[0] or x1 > viewBox[0] + viewBox[2] or y1 < viewBox[1] or y1 > viewBox[1] + viewBox[3]:
+                    out += 1
+                if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
+                    out += 2
+
+                if out == 0:
+                    new_path.append([x1, y1])
+                    new_path.append([x2, y2])
+                else:
+                    if y1 == y2:
+                        pass
+                        # horizontal
+                    if x1 == x2:
+                        pass
+                        # vertical
+
+                    # y = ax + b
+                    a = (y1 - y2) / (x1 - x2)
+                    b = y1 - (a * x1)
+
+                    condidate = []
+                    if a * x1 + b > viewBox[0] and a * x1 + b < viewBox[0] + viewBox[2]:
+                        condidate.append([x1, a * x1 + b])
+                    if a * x2 + b > viewBox[0] and a * x2 + b < viewBox[0] + viewBox[2]:
+                        condidate.append([x2, a * x2 + b])
+                    if (y1 - b) / a > viewBox[1] and (y1 - b) / a > viewBox[1] + viewBox[3]:
+                        condidate.append([(y1 - b) / a, y1])
+                    if (y2 - b) / a > viewBox[1] and (y2 - b) / a > viewBox[1] + viewBox[3]:
+                        condidate.append([(y2 - b) / a, y2])
+                    # TODO split to list
+                    if len(condidate) == 1:
+                        new_path.append(condidate[0])
+                    elif out == 3 and len(condidate) == 2:  # two points are both out of box
+                        for cx, cy in condidate:
+                            pass
+            # delete redundant points
+            tmp = [new_path[0]]
+            for i in new_path:
+                if tmp[-1] != i:
+                    tmp.append(i)
+            new_path = tmp
+            path_data[path] = new_path
 
     def gcode_generate(self):
         gcode = []
         gcode += self.header('laser svg')
-        for svg in self.svgs:
-            # find the tag-header for each child element
-            # because will look like this when parsing the data -> '{http://www.w3.org/2000yo/svg}polygon'
-            # or should i use if [polygon, circle, ... ] in thing.tag instead?
-            header = svg.tag[:svg.tag.find('}svg') + 1]
 
-            debt = []  # things that should be fill in later, not support yet~
-            for thing in svg.iter():
-                # deal with different svg graph
-                if thing.tag == header + 'rect':
-                    gcode += self.rect(thing)
-                elif thing.tag == header + 'circle':
-                    gcode += self.circle(thing)
-                elif thing.tag == header + 'ellipse':
-                    gcode += self.ellipse(thing)
-                elif thing.tag == header + 'polygon':
-                    gcode += self.polygon(thing)
-                elif thing.tag == header + 'path':
-                    gcode += self.path(thing)
+        for i in self.ready_svgs:
+            svg_data = i[0].decode('utf8')
+            root = ET.fromstring(svg_data)
+            viewBox = root.attrib[viewBox]
+            if type(viewBox) == str:
+                viewBox = list(map(float, viewBox.replace(',', ' ').split()))
+            path_data = self.elements_to_list(root)
+            path_data = self.transform(path_data, i[1:], viewBox)
 
-                if self.check_grey_scale(thing.attrib.get('fill')):  # things that should be fill in later, not support yet~
-                    debt.append(thing)
+            for each_path in path_data:
+                # move to the first place
+                gcode += self.moveTo(each_path[0][0], each_path[0][1])
+                for x, y in each_path[1:]:
+                    gcode += self.drawTo(x, y)
 
-            for thing in debt:
-                pass
         tmp = []
         for i in gcode:
             if i[:2] == 'G1':
@@ -350,5 +483,5 @@ if __name__ == '__main__':
     # filename = ('responsive-design.svg')
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
-        m_laser_svg.add_image(f.read())
-        print (m_laser_svg.gcode_generate())
+        m_laser_svg.preprocess(f.read())
+        # print (m_laser_svg.gcode_generate())
