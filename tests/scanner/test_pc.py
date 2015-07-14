@@ -8,7 +8,7 @@ from PIL import Image
 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
-import image_to_pc
+from fluxclient.scanner import image_to_pc
 
 
 def images_loader(location, step):
@@ -47,8 +47,10 @@ class image_to_pcTest(unittest.TestCase):
     #     # buffer_data = b''
 
     def test_points_to_bytes(self):
-        self.assertEqual(image_to_pc.points_to_bytes([[0, 0, 0, 0, 0, 0]]), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-        self.assertEqual(image_to_pc.points_to_bytes([[99, 99, 99, 255, 255, 255]]), b'\x00\x00\xc6B\x00\x00\xc6B\x00\x00\xc6B\x00\x00\x80?\x00\x00\x80?\x00\x00\x80?')
+
+        m_image_to_pc = image_to_pc.image_to_pc()
+        self.assertEqual(m_image_to_pc.points_to_bytes([[0, 0, 0, 0, 0, 0]]), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        self.assertEqual(m_image_to_pc.points_to_bytes([[99, 99, 99, 255, 255, 255]]), b'\x00\x00\xc6B\x00\x00\xc6B\x00\x00\xc6B\x00\x00\x80?\x00\x00\x80?\x00\x00\x80?')
 
     def test_image_to_point_cloud(self):
         m_img_to_pc = image_to_pc.image_to_pc()
