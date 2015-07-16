@@ -107,45 +107,33 @@ class LaserSvg(LaserBase):
         x, y = None, None  # current x, y position
         prev_control = None
         for i in data:
-            # TODO: Mm should use it's own list
-            if i[0] == 'M':  # Move to
-                x, y = i[1], i[2]
+            if i[0] in 'Mm':
+                if i[0] == 'M':  # absolute move to
+                    x, y = i[1], i[2]
+                elif i[0] == 'm':  # relative move to
+                    x, y = x + i[1], y + i[2]
+                gcode.append('\n')
                 gcode.append((x, y))
-                if Z_flag:
+
+                if Z_flag:  # store data if z command appear in the future
                     x_init, y_init = x, y
                     Z_flag = False
                 prev_control = None
-            elif i[0] == 'm':  # relative move to
-                x, y = x + i[1], y + i[2]
-                gcode.append((x, y))
-                if Z_flag:
-                    x_init, y_init = x, y
-                    Z_flag = False
-                prev_control = None
-            elif i[0] == 'L':  # Line to
-                x, y = i[1], i[2]
-                gcode.append((x, y))
-                prev_control = None
-            elif i[0] == 'l':  # relative line to
-                x, y = x + i[1], y + i[2]
-                gcode.append((x, y))
-                prev_control = None
 
-            elif i[0] == 'H':  # horizontal line to
-                x = i[1]
-                gcode.append((x, y))
-                prev_control = None
-            elif i[0] == 'h':  # relative horizontal line to
-                x = x + i[1]
-                gcode.append((x, y))
-                prev_control = None
+            elif i[0] in 'LlHhVv':
+                if i[0] == 'L':  # absolute Line to
+                    x, y = i[1], i[2]
+                elif i[0] == 'l':  # relative line to
+                    x, y = x + i[1], y + i[2]
+                elif i[0] == 'H':  # horizontal line to
+                    x = i[1]
+                elif i[0] == 'h':  # relative horizontal line to
+                    x = x + i[1]
+                elif i[0] == 'V':  # vertical lineto
+                    y = i[1]
+                elif i[0] == 'v':  # relative vertical lineto
+                    y = y + i[1]
 
-            elif i[0] == 'V':  # vertical lineto
-                y = i[1]
-                gcode.append((x, y))
-                prev_control = None
-            elif i[0] == 'v':  # relative vertical lineto
-                y = y + i[1]
                 gcode.append((x, y))
                 prev_control = None
 
@@ -275,7 +263,7 @@ class LaserSvg(LaserBase):
                     theta_1 = angle_between((1, 0), tmp_v)
                     delta_theta = angle_between(tmp_v, ((-x_prime - cx_prime) / rx, (-y_prime - cy_prime) / ry))
 
-                    # buggy!!!!!!!!!!!!!!
+                    # might be buggy!!??
                     if sweep_flag and delta_theta < 0:
                         delta_theta += 2 * pi
                     elif not sweep_flag and delta_theta > 0:
@@ -296,10 +284,8 @@ class LaserSvg(LaserBase):
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
         return [gcode]
 
-    def check_grey_scale(self, color):
-        return False
-
     def add_image(self, svg_data):
+
         # may appear different language when readin a file in binary mode
         # and be careful about the '\n', '\r\n' issue
         svg_data = svg_data.decode('utf8')
@@ -307,6 +293,11 @@ class LaserSvg(LaserBase):
         self.svgs.append(root)
 
     def elements_to_list(self, svg):
+        """
+        return list-in-list indicate the coordinate the laser should go through
+        each element in one list
+        in each list '\n' means it's a move to command not a line to
+        """
         # find the tag-header for each child element
         # because will look like this when parsing the data -> '{http://www.w3.org/2000/svg}polygon'
         # or should i use if [polygon, circle, ... ] in thing.tag instead?
@@ -330,7 +321,12 @@ class LaserSvg(LaserBase):
         self.ready_svgs[name] = [buf] + params
 
     def preprocess(self, buf, name):
-        # may appear different language when readin a file in binary mode
+        """
+        preprocess the svg file
+        make it only with black storke and element's frame
+        and compute smallest viewBox
+        """
+        # note that there may be different language when read in a file in binary mode
         # and be careful about the '\n', '\r\n' issue
         svg_data = buf.decode('utf8')
         root = ET.fromstring(svg_data)
@@ -396,10 +392,17 @@ class LaserSvg(LaserBase):
         root.attrib['style'] = "border:1px solid #ff0000;"
 
         self.svgs[name] = ET.tostring(root)
-
         # tree.write('preprocess.svg')
-    def transform(self, path_data, params, viewBox):
-        # viewBox
+
+    def process(self, path_data, params, viewBox):
+        """
+        actually compute the path that should appear on object
+        including delete things out of viewBox
+        scale, locate and rotate all the points
+        """
+        # viewBox: put all the points in viewBox
+        # scale: go through and find x, y
+        # transform: rotate the points
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
@@ -460,7 +463,7 @@ class LaserSvg(LaserBase):
             if type(viewBox) == str:
                 viewBox = list(map(float, viewBox.replace(',', ' ').split()))
             path_data = self.elements_to_list(root)
-            path_data = self.transform(path_data, i[1:], viewBox)
+            path_data = self.process(path_data, i[1:], viewBox)
 
             for each_path in path_data:
                 # move to the first place
@@ -483,5 +486,5 @@ if __name__ == '__main__':
     # filename = ('responsive-design.svg')
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
-        m_laser_svg.preprocess(f.read())
+        m_laser_svg.preprocess(f.read(), filename)
         # print (m_laser_svg.gcode_generate())
