@@ -112,7 +112,7 @@ class LaserSvg(LaserBase):
                     x, y = i[1], i[2]
                 elif i[0] == 'm':  # relative move to
                     x, y = x + i[1], y + i[2]
-                gcode.append('\n')
+                gcode.append(('\n', '\n'))
                 gcode.append((x, y))
 
                 if Z_flag:  # store data if z command appear in the future
@@ -371,14 +371,18 @@ class LaserSvg(LaserBase):
         min_x, min_y, max_x, max_y = float('inf'), float('inf'), 0., 0.
         for path in path_data:
             for x, y in path:
-                if x < min_x:
-                    min_x = x
-                if x > max_x:
-                    max_x = x
-                if y < min_y:
-                    min_y = y
-                if y > max_y:
-                    max_y = y
+                if x != '\n':  # moving command
+                    if x < min_x:
+                        min_x = x
+                    if x > max_x:
+                        max_x = x
+                    if y < min_y:
+                        min_y = y
+                    if y > max_y:
+                        max_y = y
+                else:
+                    pass
+
         viewBox = root.attrib.get('viewBox', (0, 0, float('inf'), float('inf')))
         if type(viewBox) == str:
             viewBox = list(map(float, viewBox.replace(',', ' ').split()))
@@ -403,6 +407,7 @@ class LaserSvg(LaserBase):
         # viewBox: put all the points in viewBox
         # scale: go through and find x, y
         # transform: rotate the points
+        w, h, x1, y1, x2, y2, rotation = params
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
@@ -418,6 +423,7 @@ class LaserSvg(LaserBase):
                     new_path.append([x1, y1])
                     new_path.append([x2, y2])
                 else:
+                    # TODO
                     if y1 == y2:
                         pass
                         # horizontal
@@ -429,28 +435,54 @@ class LaserSvg(LaserBase):
                     a = (y1 - y2) / (x1 - x2)
                     b = y1 - (a * x1)
 
-                    condidate = []
+                    candidate = []
                     if a * x1 + b > viewBox[0] and a * x1 + b < viewBox[0] + viewBox[2]:
-                        condidate.append([x1, a * x1 + b])
+                        candidate.append([x1, a * x1 + b])
                     if a * x2 + b > viewBox[0] and a * x2 + b < viewBox[0] + viewBox[2]:
-                        condidate.append([x2, a * x2 + b])
+                        candidate.append([x2, a * x2 + b])
                     if (y1 - b) / a > viewBox[1] and (y1 - b) / a > viewBox[1] + viewBox[3]:
-                        condidate.append([(y1 - b) / a, y1])
+                        candidate.append([(y1 - b) / a, y1])
                     if (y2 - b) / a > viewBox[1] and (y2 - b) / a > viewBox[1] + viewBox[3]:
-                        condidate.append([(y2 - b) / a, y2])
+                        candidate.append([(y2 - b) / a, y2])
                     # TODO split to list
-                    if len(condidate) == 1:
-                        new_path.append(condidate[0])
-                    elif out == 3 and len(condidate) == 2:  # two points are both out of box
-                        for cx, cy in condidate:
+                    if len(candidate) == 1:
+                        new_path.append(candidate[0])
+                    elif len(candidate) >= 3:
+                    # a line and a squre can only have less than 2 crossover
+                    # this statement only be true when the points meet in corner
+                    # TODO:
+                        pass
+                    # TODO:
+                    elif out == 3 and len(candidate) == 2:  # two points are both out of box
+                        for cx, cy in candidate:
                             pass
             # delete redundant points
-            tmp = [new_path[0]]
+            tmp_new_path = [new_path[0]]
             for i in new_path:
-                if tmp[-1] != i:
-                    tmp.append(i)
-            new_path = tmp
-            path_data[path] = new_path
+                if tmp_new_path[-1] != i:
+                    tmp_new_path.append(i)
+            new_path = tmp_new_path
+
+            # transformation
+            vx = [w, 0]
+            vx = [(vx[0] * cos(rotation) - vx[1] * sin(rotation)), (vx[0] * sin(rotation) + vx[1] * cos(rotation))]
+
+            vy = [0, -h]
+            vy = [(vy[0] * cos(rotation) - vy[1] * sin(rotation)), (vy[0] * sin(rotation) + vy[1] * cos(rotation))]
+
+            for i in range(len(new_path)):
+                if new_path[i][0] != '\n':
+                    new_path[i][0] -= viewBox[0]
+                    new_path[i][1] -= viewBox[1]
+
+                    new_path[i][0] /= viewBox[2]
+                    new_path[i][1] /= viewBox[3]
+
+                    x = x1 + new_path[i][0] * vx[0] + new_path[i][1] * vy[0]
+                    y = y1 + new_path[i][0] * vx[1] + new_path[i][1] * vy[1]
+                    new_path[i] = [x, y]
+                else:
+                    pass
 
     def gcode_generate(self):
         gcode = []
@@ -459,12 +491,12 @@ class LaserSvg(LaserBase):
         for i in self.ready_svgs:
             svg_data = i[0].decode('utf8')
             root = ET.fromstring(svg_data)
-            viewBox = root.attrib[viewBox]
-            if type(viewBox) == str:
-                viewBox = list(map(float, viewBox.replace(',', ' ').split()))
+            viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
+
             path_data = self.elements_to_list(root)
             path_data = self.process(path_data, i[1:], viewBox)
 
+            # TODO: y = -y
             for each_path in path_data:
                 # move to the first place
                 gcode += self.moveTo(each_path[0][0], each_path[0][1])
