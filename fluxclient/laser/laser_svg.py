@@ -408,6 +408,7 @@ class LaserSvg(LaserBase):
         # scale: go through and find x, y
         # transform: rotate the points
         w, h, x1, y1, x2, y2, rotation = params
+        dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
@@ -425,11 +426,25 @@ class LaserSvg(LaserBase):
                 else:
                     # TODO
                     if y1 == y2:
+                        # horizontal line
+                        x_candidate = sorted([x1, x2, viewBox[0], viewBox[0] + viewBox[2]])
+                        if x1 < x2:
+                            new_path.append([x_candidate[1], y1])
+                            new_path.append([x_candidate[2], y1])
+                        else:
+                            new_path.append([x_candidate[2], y1])
+                            new_path.append([x_candidate[1], y1])
+
                         pass
-                        # horizontal
-                    if x1 == x2:
-                        pass
-                        # vertical
+                    elif x1 == x2:
+                        # vertical line
+                        y_candidate = sorted([y1, y2, viewBox[1], viewBox[1] + viewBox[3]])
+                        if y1 < y2:
+                            new_path.append([x1, y_candidate[1]])
+                            new_path.append([x1, y_candidate[2]])
+                        else:
+                            new_path.append([x1, y_candidate[2]])
+                            new_path.append([x1, y_candidate[1]])
 
                     # y = ax + b
                     a = (y1 - y2) / (x1 - x2)
@@ -444,18 +459,41 @@ class LaserSvg(LaserBase):
                         candidate.append([(y1 - b) / a, y1])
                     if (y2 - b) / a > viewBox[1] and (y2 - b) / a > viewBox[1] + viewBox[3]:
                         candidate.append([(y2 - b) / a, y2])
-                    # TODO split to list
                     if len(candidate) == 1:
-                        new_path.append(candidate[0])
+                        # one cross point, so need to find out which point
+                        if out == 1:
+                            new_path.append(['\n', '\n'])
+                            new_path.append(candidate[0])
+                            new_path.append([x2, y2])
+                        elif out == 2:
+                            new_path.append([x1, y1])
+                            new_path.append(candidate[0])
+                            new_path.append(['\n', '\n'])
+
+                    elif len(candidate) == 2:
+                        new_path.append(['\n', '\n'])
+                        if dis(candidate[0], (x1, y1)) < dis(candidate[0], (x2, y2)):
+                            new_path.append(candidate[0])
+                            new_path.append(candidate[1])
+                        else:  # needless because it's not gonna happene?
+                            new_path.append(candidate[1])
+                            new_path.append(candidate[0])
+
                     elif len(candidate) >= 3:
-                    # a line and a squre can only have less than 2 crossover
-                    # this statement only be true when the points meet in corner
-                    # TODO:
-                        pass
-                    # TODO:
-                    elif out == 3 and len(candidate) == 2:  # two points are both out of box
-                        for cx, cy in candidate:
-                            pass
+                        # a line through a squre can only have less than 2 crossover
+                        # this statement could only be true when they meet in corner
+                        new_path.append(['\n', '\n'])
+                        M = max(dis(candidate[0], candidate[1]), dis(candidate[0], candidate[2]), dis(candidate[1], candidate[2]))
+                        if dis(candidate[0], candidate[1]) == M:
+                            new_path.append(candidate[0])
+                            new_path.append(candidate[1])
+                        elif dis(candidate[0], candidate[2]) == M:
+                            new_path.append(candidate[0])
+                            new_path.append(candidate[2])
+                        elif dis(candidate[1], candidate[2]) == M:
+                            new_path.append(candidate[1])
+                            new_path.append(candidate[2])
+
             # delete redundant points
             tmp_new_path = [new_path[0]]
             for i in new_path:
