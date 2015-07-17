@@ -182,3 +182,29 @@ class mesh(object):
             return face
         else:
             raise StopIteration
+
+
+class pc_process_no_pcl(pc_process):
+    """docstring for pc_process_no_pcl"""
+    def __init__(self):
+        super(pc_process_no_pcl, self).__init__()
+
+    def delete_noise(self, name_in, name_out, stddev):
+        """
+        delete noise base on distance of each point
+        pc_source could be a string indcating the point cloud that we want
+
+        """
+        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
+        pc_both = self.clouds[name_in]
+        pc_both_o = []
+        for pc in pc_both:
+            pc_o = []
+            for p in pc:
+                # pc_o.append([p[0], p[1], p[2], len(pc_both), 0, 0])
+                pc_o.append([p[0], p[1], p[2], 255 - 255 * len(pc_both_o), 0, 0])
+            pc_both_o.append(pc_o)
+
+        pc_both_o.reverse()
+        self.clouds[name_out] = pc_both_o
+        return 0

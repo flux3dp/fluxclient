@@ -9,4 +9,4 @@ def check_pcl():
 
 VERSION = ("0", "4a4")
 
-SUPPORT_PCL = check_pcl
+SUPPORT_PCL = check_pcl()
