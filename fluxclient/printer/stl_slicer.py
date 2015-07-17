@@ -16,8 +16,17 @@ class StlSlicer(object):
         self.parameter[name] = parameter
 
     def generate_gcode(self, names):
+        ## psudo code
+        ## self.mesh = Mesh(pcl mesh)
+
         for i in names:
-            self.add_in(names)
+            pass
+            ## self.mesh.add_on(names)
+            ## in add on, do the moving and rotating
+
+        ## mesh.store('tmp file name')
+        ## io, store a fucking mesh
+        ## raise cmd line command "slic3er tmp_file_name ... "
 
         ############### fake code ###############
         gcode = ""
