@@ -81,7 +81,7 @@ def get_entry_points():
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
 
-            "flux_laser=fluxclient.commands.laser_patten:main"
+            "flux_laser=fluxclient.commands.laser:main"
         ]
     }
 
