@@ -137,3 +137,12 @@ class LaserBase(object):
         image = [int_data[i * img_width: (i + 1) * img_width] for i in range(img_height)]
 
         return image
+
+    def gcode_generate(self):
+        """gcode_generate"""
+        gcode = self.header('laser svg')
+
+        return "\n".join(gcode) + "\n"
+
+    def export_to_stream(self, stream):
+        stream.write(self.gcode_generate())

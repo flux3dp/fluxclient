@@ -106,6 +106,7 @@ class LaserSvg(LaserBase):
 
         x, y = None, None  # current x, y position
         prev_control = None
+        print(data)
         for i in data:
             if i[0] in 'Mm':
                 if i[0] == 'M':  # absolute move to
@@ -395,7 +396,7 @@ class LaserSvg(LaserBase):
         root.attrib['height'] = str(viewBox[3])
         root.attrib['style'] = "border:1px solid #ff0000;"
 
-        self.svgs[name] = ET.tostring(root)
+        self.svgs[name] = ET.tostring(root)  # type: bytes
         # tree.write('preprocess.svg')
 
     def process(self, path_data, params, viewBox):
@@ -415,6 +416,8 @@ class LaserSvg(LaserBase):
                 x1, y1 = path_data[path][p]
                 x2, y2 = path_data[path][p + 1]
                 out = 0
+                print(path_data[path][p])  # bug '\n' case
+                # print(type(x1), type(y1), type(x2), type(y2))
                 if x1 < viewBox[0] or x1 > viewBox[0] + viewBox[2] or y1 < viewBox[1] or y1 > viewBox[1] + viewBox[3]:
                     out += 1
                 if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
@@ -526,7 +529,7 @@ class LaserSvg(LaserBase):
         gcode = []
         gcode += self.header('laser svg')
 
-        for i in self.ready_svgs:
+        for i in self.ready_svgs.values():  # might use 'name' as key instead in the future?
             svg_data = i[0].decode('utf8')
             root = ET.fromstring(svg_data)
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
@@ -537,15 +540,26 @@ class LaserSvg(LaserBase):
             # TODO: y = -y
             for each_path in path_data:
                 # move to the first place
-                gcode += self.moveTo(each_path[0][0], each_path[0][1])
-                for x, y in each_path[1:]:
-                    gcode += self.drawTo(x, y)
+                moveTo = True
+                for x, y in each_path:
+                    if x != '\n':
+                        if not moveTo:
+                            gcode += self.drawTo(x, y)
+                        else:
+                            gcode += self.moveTo(x, y)
+                            moveTo = False
+                    else:
+                        moveTo = True
+                        continue
 
+        ################ fake code ##############
         tmp = []
         for i in gcode:
             if i[:2] == 'G1':
                 tmp.append(i)
         return "\n".join(tmp) + "\n"
+        ##########################################
+
         return "\n".join(gcode) + "\n"
 
 if __name__ == '__main__':

@@ -121,10 +121,10 @@ class LaserBitmap(LaserBase):
                     if new_pix.getpixel((h, w)) <= thres:
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
-    def export_to_stream(self, stream):
-        stream.write(self.gcode_generate())
-
     def gcode_generate(self):
+        """
+        return gcode in string type, use method:export_to_stream to export gcode to stream
+        """
         gcode = []
         gcode += self.header('bitmap')
 

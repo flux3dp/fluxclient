@@ -12,7 +12,39 @@ logger = logging.getLogger('')
 
 def process_svg(options, stream):
     from fluxclient.laser.laser_svg import LaserSvg
-    raise RuntimeError("Not ready... XD")
+    m_laser_svg = LaserSvg()
+    count = 0
+    for arg in options.images:
+        name = str(count)
+        if arg.startswith('@'):
+            try:
+                w, h, x1, y1, x2, y2, rotation, filename = arg[1:].split(",")
+
+            except Exception:
+                logger.error("SVG Image argument error, syntax:")
+                logger.error("'@width,height,x1,y1,x2,y2,r,/your/image/file/path'")
+                logger.error("Example: 50.2,40.2,-40.2,-30.2,3.1415,"
+                             "/home/flux/myimage.jpg")
+                logger.exception("Argument Error")
+        else:
+            filename = arg
+            w = 100.
+            h = 100.
+            x1 = -50.
+            y1 = 50.
+            x2 = 50.
+            y2 = -50.
+            rotation = 0.
+        with open(filename, 'rb') as f:
+            buf = f.read()
+
+        m_laser_svg.preprocess(buf, name)
+        tmp_buf = (m_laser_svg.svgs[name])
+
+        m_laser_svg.compute(tmp_buf, name + '_ready', [w, h, x1, y1, x2, y2, rotation])
+        count += 1
+
+    m_laser_svg.export_to_stream(stream)
 
 
 def process_to_gray_bitmap(image):
@@ -22,6 +54,7 @@ def process_to_gray_bitmap(image):
         return image.tobytes()
     else:
         return image.convert('L').tobytes()
+
 
 def process_bitmaps(options, stream):
     from fluxclient.laser.laser_bitmap import LaserBitmap
@@ -37,7 +70,7 @@ def process_bitmaps(options, stream):
                              float(x1), float(y1), float(x2), float(y2),
                              float(r), thres=options.threshold)
             except Exception:
-                logger.error("Image argument error, syntax:")
+                logger.error("Bitmap Image argument error, syntax:")
                 logger.error("'@x1,y1,x2,y2,r,/your/image/file/path'")
                 logger.error("Example: 50.2,40.2,-40.2,-30.2,3.1415,"
                              "/home/flux/myimage.jpg")
@@ -67,7 +100,7 @@ Note: '@' is required prefix, 1: is X1, 2: Y1, 3: X2, 4, Y2, 5: Rotate
 
 -------------------------------------------------------------------------------
 \033[1mc) Process multi image\033[0m
-$ flux_laser @1,2,3,4,5,/my/image1.jpg /my/image2.jpg 
+$ flux_laser @1,2,3,4,5,/my/image1.jpg /my/image2.jpg
 
 Note: Process image1.jpg with coordinate variable, then process image2.jpg with
 default
