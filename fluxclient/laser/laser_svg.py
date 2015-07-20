@@ -424,6 +424,7 @@ class LaserSvg(LaserBase):
 
                 x1, y1 = path_data[path][p]
                 x2, y2 = path_data[path][p + 1]
+                print(x1, y1, x2, y2)
 
                 if x1 == '\n' or x2 == '\n':
                     new_path.append([x1, y1])
@@ -472,20 +473,18 @@ class LaserSvg(LaserBase):
                         b = y1 - (a * x1)
 
                         candidate = []
-                        tmp_x = viewBox[0]
-                        if a * tmp_x + b > viewBox[1] and a * tmp_x + b < viewBox[1] + viewBox[3]:
-                            candidate.append([tmp_x, a * tmp_x + b])
+                        for tmp_x in [viewBox[0], viewBox[0] + viewBox[2]]:
+                            if a * tmp_x + b > viewBox[1] and a * tmp_x + b < viewBox[1] + viewBox[3]:
+                                # check whether it's internal point of (x1, y1), (x2, y2)
+                                if (tmp_x <= x1 and tmp_x >= x2) or (tmp_x >= x1 and tmp_x <= x2):
+                                    candidate.append([tmp_x, a * tmp_x + b])
 
-                        tmp_x = viewBox[0] + viewBox[2]
-                        if a * tmp_x + b > viewBox[1] and a * tmp_x + b < viewBox[1] + viewBox[3]:
-                            candidate.append([tmp_x, a * tmp_x + b])
+                        for tmp_y in [viewBox[1], viewBox[1] + viewBox[3]]:
+                            if (tmp_y - b) / a > viewBox[0] and (tmp_y - b) / a < viewBox[0] + viewBox[2]:
+                                # check whether it's internal point of (x1, y1), (x2, y2)
+                                if (tmp_y <= y1 and tmp_y >= y2) or (tmp_y >= y1 and tmp_y <= y2):
+                                    candidate.append([(tmp_y - b) / a, tmp_y])
 
-                        tmp_y = viewBox[1]
-                        if (tmp_y - b) / a > viewBox[0] and (tmp_y - b) / a < viewBox[0] + viewBox[2]:
-                            candidate.append([(tmp_y - b) / a, tmp_y])
-                        tmp_y = viewBox[1] + viewBox[3]
-                        if (tmp_y - b) / a > viewBox[0] and (tmp_y - b) / a < viewBox[0] + viewBox[2]:
-                            candidate.append([(tmp_y - b) / a, tmp_y])
                         if len(candidate) > 0:
                             print('candidate', candidate, file=sys.stderr)
                         if len(candidate) == 1:
