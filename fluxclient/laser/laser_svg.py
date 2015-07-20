@@ -387,10 +387,17 @@ class LaserSvg(LaserBase):
 
         viewBox = root.attrib.get('viewBox', (0, 0, float('inf'), float('inf')))
         if type(viewBox) == str:
+            # viewBox
             viewBox = list(map(float, viewBox.replace(',', ' ').split()))
+            viewBox[2] = viewBox[0] + viewBox[2]
+            viewBox[3] = viewBox[1] + viewBox[3]
+
         viewBox = [max(viewBox[0], min_x), max(viewBox[1], min_y), min(viewBox[2], max_x), min(viewBox[3], max_y)]
+
         viewBox[2] = viewBox[2] - viewBox[0]
         viewBox[3] = viewBox[3] - viewBox[1]
+        print('pre', viewBox)
+
         root.attrib['viewBox'] = " ".join(map(str, viewBox))
         # theese are optional
         root.attrib['width'] = str(viewBox[2])
@@ -414,17 +421,20 @@ class LaserSvg(LaserBase):
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
+
                 x1, y1 = path_data[path][p]
                 x2, y2 = path_data[path][p + 1]
+
                 if x1 == '\n' or x2 == '\n':
                     new_path.append([x1, y1])
                     new_path.append([x2, y2])
                     continue
-                out = 0
+                out = 0  # flag show how the point's are out of viewBox, using binary encoding
                 if x1 < viewBox[0] or x1 > viewBox[0] + viewBox[2] or y1 < viewBox[1] or y1 > viewBox[1] + viewBox[3]:
                     out += 1
                 if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
                     out += 2
+                print(out)
 
                 if out == 0:
                     new_path.append([x1, y1])
@@ -432,79 +442,99 @@ class LaserSvg(LaserBase):
                 else:
                     if y1 == y2:
                         # horizontal line
-                        x_candidate = sorted([x1, x2, viewBox[0], viewBox[0] + viewBox[2]])
-                        if x1 < x2:
-                            new_path.append([x_candidate[1], y1])
-                            new_path.append([x_candidate[2], y1])
-                        else:
-                            new_path.append([x_candidate[2], y1])
-                            new_path.append([x_candidate[1], y1])
+                        if y1 >= viewBox[1] and y1 <= viewBox[1] + viewBox[3]:
 
-                        pass
+                            x_candidate = sorted([x1, x2, viewBox[0], viewBox[0] + viewBox[2]])
+
+                            if x1 < x2:
+                                new_path.append([x_candidate[1], y1])
+                                new_path.append([x_candidate[2], y1])
+                            else:
+                                new_path.append([x_candidate[2], y1])
+                                new_path.append([x_candidate[1], y1])
+
                     elif x1 == x2:
                         # vertical line
-                        y_candidate = sorted([y1, y2, viewBox[1], viewBox[1] + viewBox[3]])
-                        if y1 < y2:
-                            new_path.append([x1, y_candidate[1]])
-                            new_path.append([x1, y_candidate[2]])
-                        else:
-                            new_path.append([x1, y_candidate[2]])
-                            new_path.append([x1, y_candidate[1]])
+                        if x1 >= viewBox[0] and x1 <= viewBox[0] + viewBox[2]:
+                            y_candidate = sorted([y1, y2, viewBox[1], viewBox[1] + viewBox[3]])
+
+                            if y1 < y2:
+                                new_path.append([x1, y_candidate[1]])
+                                new_path.append([x1, y_candidate[2]])
+                            else:
+                                new_path.append([x1, y_candidate[2]])
+                                new_path.append([x1, y_candidate[1]])
 
                     # y = ax + b
-                    a = (y1 - y2) / (x1 - x2)
-                    b = y1 - (a * x1)
+                    else:
+                        # get the line that go through (x1, y1), (x2, y2)
+                        a = (y1 - y2) / (x1 - x2)
+                        b = y1 - (a * x1)
 
-                    candidate = []
-                    if a * x1 + b > viewBox[0] and a * x1 + b < viewBox[0] + viewBox[2]:
-                        candidate.append([x1, a * x1 + b])
-                    if a * x2 + b > viewBox[0] and a * x2 + b < viewBox[0] + viewBox[2]:
-                        candidate.append([x2, a * x2 + b])
-                    if (y1 - b) / a > viewBox[1] and (y1 - b) / a > viewBox[1] + viewBox[3]:
-                        candidate.append([(y1 - b) / a, y1])
-                    if (y2 - b) / a > viewBox[1] and (y2 - b) / a > viewBox[1] + viewBox[3]:
-                        candidate.append([(y2 - b) / a, y2])
-                    if len(candidate) == 1:
-                        # one cross point, so need to find out which point
-                        if out == 1:
+                        candidate = []
+                        tmp_x = viewBox[0]
+                        if a * tmp_x + b > viewBox[1] and a * tmp_x + b < viewBox[1] + viewBox[3]:
+                            candidate.append([tmp_x, a * tmp_x + b])
+
+                        tmp_x = viewBox[0] + viewBox[2]
+                        if a * tmp_x + b > viewBox[1] and a * tmp_x + b < viewBox[1] + viewBox[3]:
+                            candidate.append([tmp_x, a * tmp_x + b])
+
+                        tmp_y = viewBox[1]
+                        if (tmp_y - b) / a > viewBox[0] and (tmp_y - b) / a < viewBox[0] + viewBox[2]:
+                            candidate.append([(tmp_y - b) / a, tmp_y])
+                        tmp_y = viewBox[1] + viewBox[3]
+                        if (tmp_y - b) / a > viewBox[0] and (tmp_y - b) / a < viewBox[0] + viewBox[2]:
+                            candidate.append([(tmp_y - b) / a, tmp_y])
+                        if len(candidate) > 0:
+                            print('candidate', candidate, file=sys.stderr)
+                        if len(candidate) == 1:
+                            # one cross point, so need to find out which point
+                            if out == 1:
+                                new_path.append(['\n', '\n'])
+                                new_path.append(candidate[0])
+                                new_path.append([x2, y2])
+                            elif out == 2:
+                                new_path.append([x1, y1])
+                                new_path.append(candidate[0])
+                                new_path.append(['\n', '\n'])
+                            elif out == 3:
+                                # TODO
+                                pass
+
+                        elif len(candidate) == 2:
                             new_path.append(['\n', '\n'])
-                            new_path.append(candidate[0])
-                            new_path.append([x2, y2])
-                        elif out == 2:
-                            new_path.append([x1, y1])
-                            new_path.append(candidate[0])
+                            if dis(candidate[0], (x1, y1)) < dis(candidate[0], (x2, y2)):
+                                new_path.append(candidate[0])
+                                new_path.append(candidate[1])
+                            else:  # needless because it's not gonna happene?
+                                new_path.append(candidate[1])
+                                new_path.append(candidate[0])
+
+                        elif len(candidate) >= 3:
+                            # a line through a squre can only have less than 2 crossover
+                            # this statement could only be true when they meet in corner
                             new_path.append(['\n', '\n'])
-
-                    elif len(candidate) == 2:
-                        new_path.append(['\n', '\n'])
-                        if dis(candidate[0], (x1, y1)) < dis(candidate[0], (x2, y2)):
-                            new_path.append(candidate[0])
-                            new_path.append(candidate[1])
-                        else:  # needless because it's not gonna happene?
-                            new_path.append(candidate[1])
-                            new_path.append(candidate[0])
-
-                    elif len(candidate) >= 3:
-                        # a line through a squre can only have less than 2 crossover
-                        # this statement could only be true when they meet in corner
-                        new_path.append(['\n', '\n'])
-                        M = max(dis(candidate[0], candidate[1]), dis(candidate[0], candidate[2]), dis(candidate[1], candidate[2]))
-                        if dis(candidate[0], candidate[1]) == M:
-                            new_path.append(candidate[0])
-                            new_path.append(candidate[1])
-                        elif dis(candidate[0], candidate[2]) == M:
-                            new_path.append(candidate[0])
-                            new_path.append(candidate[2])
-                        elif dis(candidate[1], candidate[2]) == M:
-                            new_path.append(candidate[1])
-                            new_path.append(candidate[2])
+                            M = max(dis(candidate[0], candidate[1]), dis(candidate[0], candidate[2]), dis(candidate[1], candidate[2]))
+                            if dis(candidate[0], candidate[1]) == M:
+                                new_path.append(candidate[0])
+                                new_path.append(candidate[1])
+                            elif dis(candidate[0], candidate[2]) == M:
+                                new_path.append(candidate[0])
+                                new_path.append(candidate[2])
+                            elif dis(candidate[1], candidate[2]) == M:
+                                new_path.append(candidate[1])
+                                new_path.append(candidate[2])
 
             # delete redundant points
-            tmp_new_path = [new_path[0]]
-            for i in new_path:
-                if tmp_new_path[-1] != i:
-                    tmp_new_path.append(i)
-            new_path = tmp_new_path
+            print('new path before', new_path)
+            if len(new_path) > 0:
+                tmp_new_path = [new_path[0]]
+                for i in new_path:
+                    if tmp_new_path[-1] != i:
+                        tmp_new_path.append(i)
+                new_path = tmp_new_path
+            print('new path', new_path)
 
             # transformation
             vx = [w, 0]
@@ -512,20 +542,29 @@ class LaserSvg(LaserBase):
 
             vy = [0, -h]
             vy = [(vy[0] * cos(rotation) - vy[1] * sin(rotation)), (vy[0] * sin(rotation) + vy[1] * cos(rotation))]
+            if path == 0:
+                print(new_path)
+                print('viewBox:', viewBox)
+                print('vx, vy:', vx, vy)
 
             for i in range(len(new_path)):
                 if new_path[i][0] != '\n':
                     new_path[i][0] -= viewBox[0]
                     new_path[i][1] -= viewBox[1]
+                    print(new_path[i])
 
                     new_path[i][0] /= viewBox[2]
                     new_path[i][1] /= viewBox[3]
-
+                    if path == 0:
+                        print('hi', new_path[i])
+                        print('real', x1_real, y1_real)
                     x = x1_real + new_path[i][0] * vx[0] + new_path[i][1] * vy[0]
                     y = y1_real + new_path[i][0] * vx[1] + new_path[i][1] * vy[1]
                     new_path[i] = [x, y]
                 else:
                     pass
+            if path == 1:
+                print(new_path)
             path_data[path] = new_path
         return path_data
 
