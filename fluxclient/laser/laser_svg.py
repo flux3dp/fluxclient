@@ -51,6 +51,7 @@ class LaserSvg(LaserBase):
         drawing a ellipse, sample_n indicate the sample rate or the straight line
         '''
         gcode = []
+
         cx, cy, rx, ry = float(thing.attrib['cx']), float(thing.attrib['cy']), float(thing.attrib['rx']), float(thing.attrib['ry'])
         gcode.append((cx + rx, cy))
         # The explicit form of ellipse, reference: https://en.wikipedia.org/wiki/Ellipse
@@ -106,7 +107,7 @@ class LaserSvg(LaserBase):
 
         x, y = None, None  # current x, y position
         prev_control = None
-        print(data)
+
         for i in data:
             if i[0] in 'Mm':
                 if i[0] == 'M':  # absolute move to
@@ -209,7 +210,7 @@ class LaserSvg(LaserBase):
                 x, y = p2[0], p2[1]
                 prev_control = [None, (p1[0], p1[1])]
             elif i[0] in 'Aa':
-                # implementation reference:http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
+                # implementation reference: http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
 
                 rx, ry = abs(i[1]), abs(i[2])
                 x_axis_rotation = i[3]  # degrees
@@ -408,16 +409,18 @@ class LaserSvg(LaserBase):
         # viewBox: put all the points in viewBox
         # scale: go through and find x, y
         # transform: rotate the points
-        w, h, x1, y1, x2, y2, rotation = params
+        w, h, x1_real, y1_real, x2_real, y2_real, rotation = params
         dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
                 x1, y1 = path_data[path][p]
                 x2, y2 = path_data[path][p + 1]
+                if x1 == '\n' or x2 == '\n':
+                    new_path.append([x1, y1])
+                    new_path.append([x2, y2])
+                    continue
                 out = 0
-                print(path_data[path][p])  # bug '\n' case
-                # print(type(x1), type(y1), type(x2), type(y2))
                 if x1 < viewBox[0] or x1 > viewBox[0] + viewBox[2] or y1 < viewBox[1] or y1 > viewBox[1] + viewBox[3]:
                     out += 1
                 if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
@@ -427,7 +430,6 @@ class LaserSvg(LaserBase):
                     new_path.append([x1, y1])
                     new_path.append([x2, y2])
                 else:
-                    # TODO
                     if y1 == y2:
                         # horizontal line
                         x_candidate = sorted([x1, x2, viewBox[0], viewBox[0] + viewBox[2]])
@@ -519,11 +521,13 @@ class LaserSvg(LaserBase):
                     new_path[i][0] /= viewBox[2]
                     new_path[i][1] /= viewBox[3]
 
-                    x = x1 + new_path[i][0] * vx[0] + new_path[i][1] * vy[0]
-                    y = y1 + new_path[i][0] * vx[1] + new_path[i][1] * vy[1]
+                    x = x1_real + new_path[i][0] * vx[0] + new_path[i][1] * vy[0]
+                    y = y1_real + new_path[i][0] * vx[1] + new_path[i][1] * vy[1]
                     new_path[i] = [x, y]
                 else:
                     pass
+            path_data[path] = new_path
+        return path_data
 
     def gcode_generate(self):
         gcode = []
@@ -535,6 +539,7 @@ class LaserSvg(LaserBase):
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
 
             path_data = self.elements_to_list(root)
+
             path_data = self.process(path_data, i[1:], viewBox)
 
             # TODO: y = -y

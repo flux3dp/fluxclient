@@ -11,7 +11,7 @@ class LaserBase(object):
         self.focal_l = 11 + 3  # focal z coordinate
         self.rotation = 0.0
 
-        self.split_thres = 1
+        self.split_thres = 999
         self.current_x = None
         self.current_y = None
         self.current_z = None
@@ -92,10 +92,15 @@ class LaserBase(object):
         x = x2
         y = y2
 
+        ending = ';Move to'
+
         if speed == 'draw':
             speed = 200
+            ending = ';Draw to'
         elif speed == 'move':
             speed = 600
+            ending = ';Move to'
+
         gcode = []
 
         # (vx, vy) : direction vector
@@ -113,7 +118,7 @@ class LaserBase(object):
         self.current_x = x
         self.current_y = y
 
-        return gcode + ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ";Draw to"]
+        return gcode + ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ending]
 
     def drawTo(self, x, y, speed='draw'):
         """
