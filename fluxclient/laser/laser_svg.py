@@ -396,7 +396,6 @@ class LaserSvg(LaserBase):
 
         viewBox[2] = viewBox[2] - viewBox[0]
         viewBox[3] = viewBox[3] - viewBox[1]
-        print('pre', viewBox)
 
         root.attrib['viewBox'] = " ".join(map(str, viewBox))
         # theese are optional
@@ -424,7 +423,6 @@ class LaserSvg(LaserBase):
 
                 x1, y1 = path_data[path][p]
                 x2, y2 = path_data[path][p + 1]
-                print(x1, y1, x2, y2)
 
                 if x1 == '\n' or x2 == '\n':
                     new_path.append([x1, y1])
@@ -435,7 +433,6 @@ class LaserSvg(LaserBase):
                     out += 1
                 if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
                     out += 2
-                print(out)
 
                 if out == 0:
                     new_path.append([x1, y1])
@@ -485,8 +482,6 @@ class LaserSvg(LaserBase):
                                 if (tmp_y <= y1 and tmp_y >= y2) or (tmp_y >= y1 and tmp_y <= y2):
                                     candidate.append([(tmp_y - b) / a, tmp_y])
 
-                        if len(candidate) > 0:
-                            print('candidate', candidate, file=sys.stderr)
                         if len(candidate) == 1:
                             # one cross point, so need to find out which point
                             if out == 1:
@@ -526,14 +521,12 @@ class LaserSvg(LaserBase):
                                 new_path.append(candidate[2])
 
             # delete redundant points
-            print('new path before', new_path)
             if len(new_path) > 0:
                 tmp_new_path = [new_path[0]]
                 for i in new_path:
                     if tmp_new_path[-1] != i:
                         tmp_new_path.append(i)
                 new_path = tmp_new_path
-            print('new path', new_path)
 
             # transformation
             vx = [w, 0]
@@ -541,29 +534,21 @@ class LaserSvg(LaserBase):
 
             vy = [0, -h]
             vy = [(vy[0] * cos(rotation) - vy[1] * sin(rotation)), (vy[0] * sin(rotation) + vy[1] * cos(rotation))]
-            if path == 0:
-                print(new_path)
-                print('viewBox:', viewBox)
-                print('vx, vy:', vx, vy)
 
             for i in range(len(new_path)):
                 if new_path[i][0] != '\n':
                     new_path[i][0] -= viewBox[0]
                     new_path[i][1] -= viewBox[1]
-                    print(new_path[i])
 
                     new_path[i][0] /= viewBox[2]
                     new_path[i][1] /= viewBox[3]
-                    if path == 0:
-                        print('hi', new_path[i])
-                        print('real', x1_real, y1_real)
+
                     x = x1_real + new_path[i][0] * vx[0] + new_path[i][1] * vy[0]
                     y = y1_real + new_path[i][0] * vx[1] + new_path[i][1] * vy[1]
                     new_path[i] = [x, y]
                 else:
                     pass
-            if path == 1:
-                print(new_path)
+
             path_data[path] = new_path
         return path_data
 
