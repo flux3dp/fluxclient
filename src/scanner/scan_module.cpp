@@ -230,6 +230,7 @@ PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangl
 }
 
 int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data){
+  // point's data
   // data =[
   //           t1[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
   //           t2[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
@@ -264,6 +265,7 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
 }
 
 int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
+  // index of faces
   // data = [ f1[p1_index, p2_index, p3_index],
   //          f2[p1_index, p2_index, p3_index], ...
   //        ]

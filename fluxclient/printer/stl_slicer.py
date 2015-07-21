@@ -1,4 +1,10 @@
 # !/usr/bin/env python3
+try:
+    import fluxclient.scanner._printer as _printer
+except:
+    pass
+
+
 class StlSlicer(object):
     """slicing objects"""
     def __init__(self):
@@ -20,7 +26,7 @@ class StlSlicer(object):
         ## self.mesh = Mesh(pcl mesh)
 
         for i in names:
-            pass
+            m_mesh = _printer.MeshObj()
             ## self.mesh.add_on(names)
             ## in add on, do the moving and rotating
 
