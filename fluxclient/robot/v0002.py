@@ -236,7 +236,7 @@ class FluxRobotV0002(object):
         pass
 
     @ok_or_error
-    def scan_next(self):
+    def scan_next(self, resolution=200):
         return self._make_cmd(b"scan_next")
 
     @ok_or_error

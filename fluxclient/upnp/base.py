@@ -1,4 +1,5 @@
 
+from distutils.version import StrictVersion
 from select import select
 from random import randint
 from time import time
@@ -38,8 +39,10 @@ class UpnpBase(object):
                 d.ipaddr = ipaddr[0]
                 d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
-        if self.remote_version < "0.8a1":
+        if self.remote_version < StrictVersion("0.9a1"):
             raise RuntimeError("fluxmonitor version is too old")
+        elif self.remote_version >= StrictVersion("0.10"):
+            raise RuntimeError("fluxmonitor version is too new")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
@@ -60,7 +63,7 @@ class UpnpBase(object):
         if serial == self.serial.hex:
             self.model_id = model_id
             self.timedelta = timestemp - time()
-            self.remote_version = version
+            self.remote_version = StrictVersion(version)
             self.has_password = has_password
             self.remote_addrs = ipaddrs
             self._inited = True
@@ -101,8 +104,8 @@ class UpnpBase(object):
 
     def sign_request(self, body):
         salt = ("%i" % randint(1000, 9999)).encode()
-        message = struct.pack("<20sf4s", self.access_id, time(), salt) + body
-
+        ts = self.create_timestemp()
+        message = struct.pack("<20sd4s", self.access_id, ts, salt) + body
         signature = encryptor.sign(self.keyobj,
                                    self.serial.bytes + message)
 
@@ -124,8 +127,6 @@ class UpnpBase(object):
             if encryptor.validate_signature(remote_keyobj, payload,
                                             signature):
                 return resp
-            else:
-                print("DIE")
         else:
             if encryptor.validate_signature(self.remote_keyobj, payload,
                                             signature):

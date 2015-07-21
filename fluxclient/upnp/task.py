@@ -89,21 +89,35 @@ class UpnpTask(UpnpBase):
         start_at = time()
 
         while timeout >= (time() - start_at):
-            request = self.sign_request(b"")
-            resp = self.make_request(req_code, resp_code, request)
-            if resp:
-                return resp
+            try:
+                request = self.sign_request(b"")
+                resp = self.make_request(req_code, resp_code, request)
+                if resp:
+                    return resp
+            except RuntimeError as err:
+                if err.args[0] == "AUTH_ERROR":
+                    continue
+                else:
+                    raise
 
-        raise RuntimeError("Timeout")
+        raise RuntimeError("TIMEOUT")
 
     def require_auth(self, timeout=6):
         start_at = time()
         while timeout >= (time() - start_at):
-            resp = self.auth_without_password()
-            if resp:
-                if resp.get("status") == "ok":
-                    return resp
-                else:
-                    raise RuntimeError("Auth failed")
+            try:
+                resp = self.auth_without_password()
+                if resp:
+                    if resp.get("status") == "ok":
+                        return resp
+                    else:
+                        raise RuntimeError("AUTH_ERROR", resp.get("status"))
 
-        raise RuntimeError("Timeout")
+            except RuntimeError as err:
+                if err.args[0] == "AUTH_ERROR":
+                    # Miss payload
+                    continue
+                else:
+                    raise
+
+        raise RuntimeError("TIMEOUT")
