@@ -401,7 +401,7 @@ class LaserSvg(LaserBase):
         # theese are optional
         root.attrib['width'] = str(viewBox[2])
         root.attrib['height'] = str(viewBox[3])
-        root.attrib['style'] = "border:1px solid #ff0000;"
+        # root.attrib['style'] = "border:1px solid #ff0000;"
 
         self.svgs[name] = ET.tostring(root)  # type: bytes
         # tree.write('preprocess.svg')
@@ -552,18 +552,19 @@ class LaserSvg(LaserBase):
             path_data[path] = new_path
         return path_data
 
-    def gcode_generate(self):
+    def gcode_generate(self, names, preview_bitmap):
         gcode = []
         gcode += self.header('laser svg')
 
-        for i in self.ready_svgs.values():  # might use 'name' as key instead in the future?
-            svg_data = i[0].decode('utf8')
+        for name in names:
+            ready_svg = self.ready_svgs[name]
+            svg_data = ready_svg[0].decode('utf8')
             root = ET.fromstring(svg_data)
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
 
             path_data = self.elements_to_list(root)
 
-            path_data = self.process(path_data, i[1:], viewBox)
+            path_data = self.process(path_data, ready_svg[1:], viewBox)
 
             # TODO: y = -y
             for each_path in path_data:
