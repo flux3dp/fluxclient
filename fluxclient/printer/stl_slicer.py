@@ -1,5 +1,6 @@
 # !/usr/bin/env python3
 import struct
+import io
 
 try:
     import fluxclient.scanner._printer as _printer
@@ -17,17 +18,41 @@ def read_stl(file_data):
         Byte_Order = '<'
     else:
         raise ValueError('wrong stl data type:%s' % str(type(file_data)))
+    points = {}  # key: points, value: index
+    faces = []
+    counter = 0
     if file_data.startswith(b'solid '):
         # ascii stl file
-        pass
+        instl = io.StringIO(file_data.decode('utf8'))
+        instl.readline()  # solid ascii
+
+        while True:
+            t = instl.readline()  # facet normal 0 0 0
+            if t[:8] != 'endsolid':  # end of file
+                instl.readline()   # outer loop
+                v0 = tuple(map(float, (instl.readline().split()[-3:])))
+                v1 = tuple(map(float, (instl.readline().split()[-3:])))
+                v2 = tuple(map(float, (instl.readline().split()[-3:])))
+
+                instl.readline()  # endloop
+                instl.readline()  # endfacet
+
+            else:
+                break
+            face = []
+            for v in [v0, v1, v2]:
+                if v not in points:
+                    points[v] = counter
+                    points[counter] = v
+                    counter += 1
+                face.append(points[v])
+            faces.append(face)
+
     else:
         # binary stl file
         header = file_data[:80]
         length = struct.unpack(Byte_Order + 'I', file_data[80:84])[0]
 
-        points = {}  # key: points, value: index
-        faces = []
-        counter = 0
         for i in range(length):
             index = i * 50 + 84
             # n = struct.unpack(Byte_Order + 'III', file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
@@ -38,15 +63,15 @@ def read_stl(file_data):
             face = []
             for v in [v0, v1, v2]:
                 if v not in points:
-                    counter
                     points[v] = counter
                     points[counter] = v
                     counter += 1
                 face.append(points[v])
             faces.append(face)
-        points_list = []
-        for i in range(counter):
-            points_list.append(points[i])
+
+    points_list = []
+    for i in range(counter):
+        points_list.append(points[i])
     return points_list, faces
 
 
