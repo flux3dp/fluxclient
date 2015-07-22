@@ -1,6 +1,9 @@
 # !/usr/bin/env python3
 import struct
 import io
+import subprocess
+import tempfile
+import os
 
 try:
     import fluxclient.scanner._printer as _printer
@@ -55,11 +58,9 @@ def read_stl(file_data):
 
         for i in range(length):
             index = i * 50 + 84
-            # n = struct.unpack(Byte_Order + 'III', file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
             v0 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
             v1 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
             v2 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
-            # v = struct.unpack(Byte_Order + 'I' * 9, file_data[index + (4 * 3 * 1):index + (4 * 3 * 4)])
             face = []
             for v in [v0, v1, v2]:
                 if v not in points:
@@ -88,22 +89,47 @@ class StlSlicer(object):
     def upload(self, name, buf):
         self.models[name] = buf
 
+    def delete(self, name):
+        del self.models[name]
+        del self.parameter[name]
+
     def set(self, name, parameter):
         self.parameter[name] = parameter
 
     def generate_gcode(self, names):
         ## psudo code
         ## self.mesh = Mesh(pcl mesh)
+        m_mesh_merge = _printer.MeshObj([], [])
+        for n in names:
+            points, faces = read_stl(self.models[n])
+            m_mesh = _printer.MeshObj(points, faces)
+            m_mesh.apply_transform(self.parameter[n])
+            m_mesh_merge.add_on(m_mesh)
+        bounding_box = m_mesh_merge.bounding_box()
+        cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
 
-        for i in names:
-            points, faces = read_stl(buf)
-            m_mesh = _printer.MeshObj()
-            ## self.mesh.add_on(names)
-            ## in add on, do the moving and rotating
+        tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
+        file_name = tmp.name  # store merged stl
+        m_mesh_merge.store(file_name)
 
-        ## mesh.store('tmp file name')
-        ## io, store a fucking mesh
-        ## raise cmd line command "slic3er tmp_file_name ... "
+        slic3r = './Slic3r/slic3r.pl'
+        slic3r_setting = './Slic3r_config_bundle.ini'
+        tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
+        tmp_gcode_file = tmp.name  # store gcode
+
+        command = [slic3r, file_name]
+        command += ['--load', slic3r_setting]
+        command += ['--output', tmp_gcode_file]
+        command += ['--print-center', '%f,%f' % (cx, cy)]
+        command += ['--gcode-comments']
+        slic3r_out = subprocess.check_output(command)
+        slic3r_out.decode('utf8')
+        with open(tmp_gcode_file, 'r') as f:
+            gcode = f.read()
+
+        # clean up tmp files
+        os.remove(file_name)
+        os.remove(tmp_gcode_file)
 
         ############### fake code ###############
         gcode = ""
