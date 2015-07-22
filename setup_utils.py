@@ -24,6 +24,7 @@ build_ext.user_options.append(
     ("without-pcl", None, "Do not install any extention depend on PCL")
 )
 
+
 # Base method to find package in system
 def has_package(package_name):
     return subprocess.call(["pkg-config", "--exists", package_name]) == 0
@@ -124,7 +125,8 @@ def create_scanner_extention():
 """)
         raise
 
-    return Extension(
+    return_Extensions = []
+    return_Extensions.append(Extension(
         'fluxclient.scanner._scanner',
         sources=[
             "src/scanner/scan_module.cpp",
@@ -135,4 +137,18 @@ def create_scanner_extention():
         extra_objects=[],
         include_dirs=include_dirs
     )
+    )
+    return_Extensions.append(Extension(
+        'fluxclient.printer._printer',
+        sources=[
+            "src/printer/printer_module.cpp",
+            "src/printer/printer.pyx"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        libraries=libraries,
+        extra_objects=[],
+        include_dirs=include_dirs
+    )
+    )
 
+    return return_Extensions

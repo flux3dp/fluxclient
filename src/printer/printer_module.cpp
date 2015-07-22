@@ -1,28 +1,41 @@
-#include <vector>
 #include "printer_module.h"
 
-int set_point(MeshPtr triangles, std::vector< std::vector<float> > points;){
+MeshPtr createMeshPtr(){
+  MeshPtr mesh(new pcl::PolygonMesh);
+  return mesh;
+}
+
+int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   for (int i = 0; i < points.size(); i += 1){
-    pcl::PointXYZRGB p;
+    pcl::PointXYZ p;
     p.x = points[i][0];
     p.y = points[i][1];
     p.z = points[i][2];
     cloud -> push_back(p);
   }
+
   pcl::PCLPointCloud2 cloud2;
-  toPCLPointCloud2(cloud, cloud2);
+  toPCLPointCloud2(*cloud, cloud2);
   triangles->cloud = cloud2;
   return 0;
 }
 
 int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
-  pxl::Vertices v;
+  pcl::Vertices v;
   v.vertices.resize(3);
   v.vertices[0] = v0;
   v.vertices[1] = v1;
   v.vertices[2] = v2;
   triangles->polygons.push_back(v);
+  return 0;
+}
+// TODO
+int add_on(MeshPtr base, MeshPtr new_mesh){
+
+  return 0;
+}
+int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float scale){
   return 0;
 }
 

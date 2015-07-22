@@ -1,6 +1,6 @@
-#include "scan_module.h"
-
 #include <iostream>
+
+#include "scan_module.h"
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -8,7 +8,6 @@
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/surface/poisson.h>
-#include <pcl/PolygonMesh.h>
 #include <pcl/conversions.h>
 
 // #include <pcl/io/vtk_lib_io.h>
