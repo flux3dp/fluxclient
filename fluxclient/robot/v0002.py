@@ -22,8 +22,8 @@ def raise_error(ret):
 
 
 def ok_or_error(fn, resp="ok"):
-    def wrap(self, *args):
-        ret = fn(self, *args).decode("utf8", "ignore")
+    def wrap(self, *args, **kw):
+        ret = fn(self, *args, **kw).decode("utf8", "ignore")
         if ret == resp:
             return ret
         else:
@@ -257,3 +257,8 @@ class FluxRobotV0002(object):
             return self.sock
         else:
             raise_error(ret.decode("ascii", "ignore"))
+
+    @ok_or_error
+    def set_setting(self, key, value):
+        cmd = "set %s %s" % (key, value)
+        return self._make_cmd(cmd.encode())

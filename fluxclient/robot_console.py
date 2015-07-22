@@ -41,6 +41,7 @@ class RobotConsole(object):
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
+            "set": self.set_setting,
         }
 
     def on_cmd(self, arguments):
@@ -96,6 +97,15 @@ class RobotConsole(object):
             tempfiles.append(ntf)
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
+
+    def set_setting(self, line):
+        params = line.split(" ")
+        if len(params) == 2:
+            logger.info(
+                self.robot_obj.set_setting(key=params[0], value=params[1])
+            )
+        else:
+            logger.info("BAD_PARAMS")
 
     def raw_mode(self):
         import threading
