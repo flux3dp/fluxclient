@@ -415,7 +415,7 @@ class LaserSvg(LaserBase):
         # viewBox: put all the points in viewBox
         # scale: go through and find x, y
         # transform: rotate the points
-        w, h, x1_real, y1_real, x2_real, y2_real, rotation = params
+        w, h, x1_real, y1_real, x2_real, y2_real, rotation, buf = params
         dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
         for path in range(len(path_data)):
             new_path = []
@@ -552,7 +552,7 @@ class LaserSvg(LaserBase):
             path_data[path] = new_path
         return path_data
 
-    def gcode_generate(self, names, preview_bitmap):
+    def gcode_generate(self, names):
         gcode = []
         gcode += self.header('laser svg')
 
