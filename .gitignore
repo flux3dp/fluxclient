@@ -50,10 +50,12 @@ docs/_build/
 # PyBuilder
 target/
 
-#ignore process pid file
+# ignore process pid file
 *.pid
-src/scanner/scanner.cpp
 src/scanner/PoissonRecon/Bin
 src/scanner/PoissonRecon/vbfile
 tests/scanner/data/inso
+
+# file that Cython generate
 src/scanner/scanner.cpp
+src/printer/printer.cpp

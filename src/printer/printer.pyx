@@ -5,7 +5,6 @@ cdef extern from "printer_module.h":
     cdef cppclass MeshPtr:
         pass
     MeshPtr createMeshPtr()
-    int set_point()
     int set_point(MeshPtr triangles, vector[vector [float]] points)
     int push_backFace(MeshPtr triangles, int v0, int v1, int v2)
     int add_on(MeshPtr base, MeshPtr new_mesh)
