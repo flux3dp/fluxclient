@@ -70,7 +70,6 @@ class LaserBitmap(LaserBase):
         # image center (rotation center)
         cx = (x1 + x2) / 2.
         cy = (y1 + y2) / 2.
-        logger.debug('c %f, %f' % (cx, cy))
 
         # compute four original corner
         ox1, oy1 = self.rotate(x1, y1, - rotation, cx, cy)
@@ -90,15 +89,11 @@ class LaserBitmap(LaserBase):
         gy1 = max(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
         gy1_on_map = round((gx1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx1_on_map = round(-(gy1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
-        print("gx1:", gx1_on_map, gy1_on_map)
 
         gx2 = max(ox1, ox2, ox3, ox4)
         gy2 = min(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
-        print(gx2, gy2)
         gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
-        print("gx2:", gx2_on_map, gy2_on_map)
-        print('size', gx2_on_map - gx1_on_map, gy2_on_map - gy1_on_map)
 
         # add white frame on each side
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
@@ -160,13 +155,20 @@ class LaserBitmap(LaserBase):
                 gcode += self.turnOff()
 
         gcode += ["G28"]
+        gcode = "\n".join(gcode) + "\n"
+        logger.debug("generate gcode done:%d bytes" % len(gcode))
 
-        return "\n".join(gcode) + "\n"
+        return gcode
 
-    def dump(self, file_name):
+    def dump(self, file_name, mode='save'):
         img = np.uint8(np.array(self.image_map))
         img = Image.fromarray(img)
-        img.save(file_name, 'JPEG')
+        if mode == 'save':
+            img.save(file_name, 'png')
+            return
+        else:
+            # TODO: generate thumbnail for fcode
+            pass
         return
 
 if __name__ == '__main__':

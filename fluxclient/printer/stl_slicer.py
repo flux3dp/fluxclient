@@ -130,7 +130,7 @@ class StlSlicer(object):
         # clean up tmp files
         os.remove(file_name)
         os.remove(tmp_gcode_file)
-
+        metadata = [1000., 300.0]  # fake code
         return gcode, metadata
 
 
@@ -143,6 +143,6 @@ class StlSlicer_no_pcl(StlSlicer):
     def generate_gcode(self, names):
         ############### fake code ###############
         gcode = ""
-        metadata = [0]
+        metadata = [1000., 300.0]
         ############### fake code ###############
         return gcode, metadata
