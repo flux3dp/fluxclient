@@ -131,6 +131,16 @@ class StlSlicer(object):
         os.remove(file_name)
         os.remove(tmp_gcode_file)
 
+        return gcode, metadata
+
+
+class StlSlicer_no_pcl(StlSlicer):
+    """docstring for StlSlicer_no_pcl"""
+    def __init__(self):
+        super(StlSlicer_no_pcl, self).__init__()
+        self.reset()
+
+    def generate_gcode(self, names):
         ############### fake code ###############
         gcode = ""
         metadata = [0]
