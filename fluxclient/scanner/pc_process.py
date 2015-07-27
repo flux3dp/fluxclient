@@ -14,7 +14,7 @@ except:
 logger = logging.getLogger(__name__)
 
 
-class pc_process():
+class PcProcess():
     """process point cloud"""
     def __init__(self):
         self.clouds = {}  # clouds that hold all the point cloud data, key:name, value:point cloud
@@ -187,10 +187,10 @@ class mesh(object):
             raise StopIteration
 
 
-class pc_process_no_pcl(pc_process):
-    """docstring for pc_process_no_pcl"""
+class PcProcessNoPCL(PcProcess):
+    """docstring for PcProcessNoPCL"""
     def __init__(self):
-        super(pc_process_no_pcl, self).__init__()
+        super(PcProcessNoPCL, self).__init__()
 
     def delete_noise(self, name_in, name_out, stddev):
         """
