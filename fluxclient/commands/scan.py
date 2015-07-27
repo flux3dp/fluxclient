@@ -60,8 +60,9 @@ def interactive(robot):
 def print_progress(step, total):
     left = int((step / total) * 70)
     right = 70 - left
-    sys.stdout.write("\r[%s>%s] Step %3i" % ("=" * left, " " * right, step))
+    sys.stdout.write("\r[%s>%s] Step %3i\n" % ("=" * left, " " * right, step))
     sys.stdout.flush()
+
 
 def main():
     parser = argparse.ArgumentParser(description='flux scanner')
@@ -92,7 +93,10 @@ def main():
         interactive(robot)
 
     filename_prefix = options.prefix or \
-                      datetime.datetime.now().strftime("scan_%Y%m%d_%H%M")
+        datetime.datetime.now().strftime("scan_%Y%m%d_%H%M")
+
+    filename_prefix = os.path.join(options.dist, filename_prefix)
+
     logger.info("Image will save to %s*" % filename_prefix)
 
     for step in range(400):
