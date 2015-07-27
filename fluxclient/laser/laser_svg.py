@@ -286,14 +286,6 @@ class LaserSvg(LaserBase):
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
         return [gcode]
 
-    def add_image(self, svg_data):
-
-        # may appear different language when readin a file in binary mode
-        # and be careful about the '\n', '\r\n' issue
-        svg_data = svg_data.decode('utf8')
-        root = ET.fromstring(svg_data)
-        self.svgs.append(root)
-
     def elements_to_list(self, svg):
         """
         return list-in-list indicate the coordinate the laser should go through
@@ -336,9 +328,8 @@ class LaserSvg(LaserBase):
         tree._setroot(root)
         newtree = ET.ElementTree()
         header = root.tag[:root.tag.find('}svg') + 1]
-
-        for i in range(len(root)):
-            thing = root[i]
+        for i in root.iter():
+            thing = i
             tmp_thing = ET.Element(thing.tag)
             # tmp_thing.tag = thing.tag
             tmp_thing.attrib['fill'] = 'None'
@@ -349,24 +340,27 @@ class LaserSvg(LaserBase):
                 tmp_thing.attrib['y'] = thing.attrib['y']
                 tmp_thing.attrib['height'] = thing.attrib['height']
                 tmp_thing.attrib['width'] = thing.attrib['width']
-                root[i] = tmp_thing
+                i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'circle':
                 tmp_thing.attrib['cx'] = thing.attrib['cx']
                 tmp_thing.attrib['cy'] = thing.attrib['cy']
                 tmp_thing.attrib['r'] = thing.attrib['r']
-                root[i] = tmp_thing
+                i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'ellipse':
                 tmp_thing.attrib['cx'] = thing.attrib['cx']
                 tmp_thing.attrib['cy'] = thing.attrib['cy']
                 tmp_thing.attrib['rx'] = thing.attrib['rx']
                 tmp_thing.attrib['ry'] = thing.attrib['ry']
-                root[i] = tmp_thing
+                i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'polygon':
                 tmp_thing.attrib['points'] = thing.attrib['points']
-                root[i] = tmp_thing
+                i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'path':
                 tmp_thing.attrib['d'] = thing.attrib['d']
-                root[i] = tmp_thing
+                i.attrib = tmp_thing.attrib
+            else:
+                pass
+                # print(thing.tag)
 
         path_data = self.elements_to_list(root)
 
@@ -403,7 +397,7 @@ class LaserSvg(LaserBase):
         root.attrib['height'] = str(viewBox[3])
         # root.attrib['style'] = "border:1px solid #ff0000;"
 
-        self.svgs[name] = ET.tostring(root)  # type: bytes
+        self.svgs[name] = [ET.tostring(root), viewBox[2], viewBox[3]]  # type: bytes
         # tree.write('preprocess.svg')
 
     def process(self, path_data, params, viewBox):
@@ -586,7 +580,10 @@ class LaserSvg(LaserBase):
         for i in gcode:
             if i[:2] == 'G1':
                 tmp.append(i)
-        return "\n".join(tmp) + "\n"
+
+        # with open('output.gcode', 'w') as f:
+        #     print("\n".join(tmp) + "\n", file=f)
+        # return "\n".join(tmp) + "\n"
         ##########################################
 
         return "\n".join(gcode) + "\n"

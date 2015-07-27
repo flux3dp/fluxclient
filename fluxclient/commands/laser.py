@@ -39,12 +39,15 @@ def process_svg(options, stream):
             buf = f.read()
 
         m_laser_svg.preprocess(buf, name)
-        tmp_buf = (m_laser_svg.svgs[name])
+        tmp_buf, w, h = m_laser_svg.svgs[name]
 
-        m_laser_svg.compute(tmp_buf, name + '_ready', [w, h, x1, y1, x2, y2, rotation])
+        with open('pre.svg', 'wb') as f:
+            f.write(tmp_buf)
+
+        # m_laser_svg.compute(tmp_buf, name + '_ready', [w, h, x1, y1, x2, y2, rotation, b''])
         count += 1
 
-    m_laser_svg.export_to_stream(stream)
+    m_laser_svg.export_to_stream(stream, [name + '_ready'])
 
 
 def process_to_gray_bitmap(image):

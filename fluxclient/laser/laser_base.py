@@ -11,7 +11,7 @@ class LaserBase(object):
         self.focal_l = 11 + 3  # focal z coordinate
         self.rotation = 0.0
 
-        self.split_thres = 999
+        self.split_thres = 999  # should be some small number
         self.current_x = None
         self.current_y = None
         self.current_z = None
@@ -149,5 +149,5 @@ class LaserBase(object):
 
         return "\n".join(gcode) + "\n"
 
-    def export_to_stream(self, stream):
-        stream.write(self.gcode_generate())
+    def export_to_stream(self, stream, *args):
+        stream.write(self.gcode_generate(*args))
