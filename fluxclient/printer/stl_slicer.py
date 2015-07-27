@@ -11,71 +11,6 @@ except:
     pass
 
 
-def read_stl(file_data):
-    # https://en.wikipedia.org/wiki/STL_(file_format)
-    if type(file_data) == str:
-        with open(file_data, 'rb') as f:
-            file_data = f.read()
-            Byte_Order = '@'
-    elif type(file_data) == bytes:
-        Byte_Order = '<'
-    else:
-        raise ValueError('wrong stl data type:%s' % str(type(file_data)))
-    points = {}  # key: points, value: index
-    faces = []
-    counter = 0
-    if file_data.startswith(b'solid '):
-        # ascii stl file
-        instl = io.StringIO(file_data.decode('utf8'))
-        instl.readline()  # solid ascii
-
-        while True:
-            t = instl.readline()  # facet normal 0 0 0
-            if t[:8] != 'endsolid':  # end of file
-                instl.readline()   # outer loop
-                v0 = tuple(map(float, (instl.readline().split()[-3:])))
-                v1 = tuple(map(float, (instl.readline().split()[-3:])))
-                v2 = tuple(map(float, (instl.readline().split()[-3:])))
-
-                instl.readline()  # endloop
-                instl.readline()  # endfacet
-
-            else:
-                break
-            face = []
-            for v in [v0, v1, v2]:
-                if v not in points:
-                    points[v] = counter
-                    points[counter] = v
-                    counter += 1
-                face.append(points[v])
-            faces.append(face)
-
-    else:
-        # binary stl file
-        header = file_data[:80]
-        length = struct.unpack(Byte_Order + 'I', file_data[80:84])[0]
-
-        for i in range(length):
-            index = i * 50 + 84
-            v0 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
-            v1 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
-            v2 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
-            face = []
-            for v in [v0, v1, v2]:
-                if v not in points:
-                    points[v] = counter
-                    points[counter] = v
-                    counter += 1
-                face.append(points[v])
-            faces.append(face)
-
-    points_list = []
-    for i in range(counter):
-        points_list.append(points[i])
-    return points_list, faces
-
-
 class StlSlicer(object):
     """slicing objects"""
     def __init__(self):
@@ -90,18 +25,25 @@ class StlSlicer(object):
         self.models[name] = buf
 
     def delete(self, name):
-        del self.models[name]
-        del self.parameter[name]
+        if name in self.models:
+            del self.models[name]
+            if name in self.parameter:
+                del self.parameter[name]
+        else:
+            raise ValueError("%s not upload yet" % (name))
 
     def set(self, name, parameter):
-        self.parameter[name] = parameter
+        if name in self.models:
+            self.parameter[name] = parameter
+        else:
+            raise ValueError("%s not upload yet" % (name))
 
     def generate_gcode(self, names):
         ## psudo code
         ## self.mesh = Mesh(pcl mesh)
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
-            points, faces = read_stl(self.models[n])
+            points, faces = self.read_stl(self.models[n])
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
             m_mesh_merge.add_on(m_mesh)
@@ -133,16 +75,81 @@ class StlSlicer(object):
         metadata = [1000., 300.0]  # fake code
         return gcode, metadata
 
+    @classmethod
+    def read_stl(cls, file_data):
+        # https://en.wikipedia.org/wiki/STL_(file_format)
+        if type(file_data) == str:
+            with open(file_data, 'rb') as f:
+                file_data = f.read()
+                Byte_Order = '@'
+        elif type(file_data) == bytes:
+            Byte_Order = '<'
+        else:
+            raise ValueError('wrong stl data type:%s' % str(type(file_data)))
+        points = {}  # key: points, value: index
+        faces = []
+        counter = 0
+        if file_data.startswith(b'solid '):
+            # ascii stl file
+            instl = io.StringIO(file_data.decode('utf8'))
+            instl.readline()  # solid ascii
 
-class StlSlicer_no_pcl(StlSlicer):
-    """docstring for StlSlicer_no_pcl"""
+            while True:
+                t = instl.readline()  # facet normal 0 0 0
+                if t[:8] != 'endsolid':  # end of file
+                    instl.readline()   # outer loop
+                    v0 = tuple(map(float, (instl.readline().split()[-3:])))
+                    v1 = tuple(map(float, (instl.readline().split()[-3:])))
+                    v2 = tuple(map(float, (instl.readline().split()[-3:])))
+
+                    instl.readline()  # endloop
+                    instl.readline()  # endfacet
+
+                else:
+                    break
+                face = []
+                for v in [v0, v1, v2]:
+                    if v not in points:
+                        points[v] = counter
+                        points[counter] = v
+                        counter += 1
+                    face.append(points[v])
+                faces.append(face)
+
+        else:
+            # binary stl file
+            header = file_data[:80]
+            length = struct.unpack(Byte_Order + 'I', file_data[80:84])[0]
+
+            for i in range(length):
+                index = i * 50 + 84
+                v0 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
+                v1 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
+                v2 = struct.unpack(Byte_Order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
+                face = []
+                for v in [v0, v1, v2]:
+                    if v not in points:
+                        points[v] = counter
+                        points[counter] = v
+                        counter += 1
+                    face.append(points[v])
+                faces.append(face)
+
+        points_list = []
+        for i in range(counter):
+            points_list.append(points[i])
+        return points_list, faces
+
+
+class StlSlicerNoPCL(StlSlicer):
+    """docstring for StlSlicerNoPCL"""
     def __init__(self):
-        super(StlSlicer_no_pcl, self).__init__()
+        super(StlSlicerNoPCL, self).__init__()
         self.reset()
 
     def generate_gcode(self, names):
         ############### fake code ###############
-        gcode = ""
+        gcode = "Nothing to do here~~"
         metadata = [1000., 300.0]
         ############### fake code ###############
-        return gcode, metadata
+        return gcode.encode(), metadata
