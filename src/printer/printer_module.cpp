@@ -37,13 +37,14 @@ int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
 int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     fromPCLPointCloud2(base->cloud, *cloud);
+    int size_to_add_on = cloud->size();
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
     fromPCLPointCloud2(add_on_mesh->cloud, *cloud2);
+
     // add cloud together
     *cloud += *cloud2;
 
-    int size_to_add_on = cloud2->size();
     pcl::Vertices v;
     v.vertices.resize(3);
     // add faces, but shift the index for add on mesh
@@ -61,7 +62,7 @@ int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
 }
 
 int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
@@ -87,6 +88,7 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
       minz = (*cloud)[i].z;
     }
   }
+
   b_box.resize(6);
   b_box[0] = minx;
   b_box[1] = miny;
@@ -94,6 +96,7 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
   b_box[3] = maxx;
   b_box[4] = maxy;
   b_box[5] = maxz;
+
   return 0;
 }
 int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z){
@@ -148,6 +151,8 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   transform(2, 3) = z;
   pcl::transformPointCloud(*cloud, *cloud, transform);
 
+
+
   // put back to mesh
     pcl::PCLPointCloud2 cloud2;
     toPCLPointCloud2(*cloud, cloud2);
@@ -164,12 +169,18 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   //           t3[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
   //             ...
   //       ]
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     fromPCLPointCloud2(triangles->cloud, *cloud);
+
     int v0, v1, v2;
 
+    std::vector<float> tmpvv(3, 0.0);
+    std::vector< std::vector<float> > tmpv(3, tmpvv);
+    data.resize(triangles->polygons.size());
+
     for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-      std::cout << "  polygons[" << i << "]: " <<std::endl;
+      data[i] = tmpv;
+
       v0 = triangles->polygons[i].vertices[0];
       v1 = triangles->polygons[i].vertices[1];
       v2 = triangles->polygons[i].vertices[2];
@@ -185,9 +196,10 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
       data[i][2][0] = (*cloud)[v2].x;
       data[i][2][1] = (*cloud)[v2].y;
       data[i][2][2] = (*cloud)[v2].z;
+      // std::cout << "  polygons[" << i << "]: " <<std::endl;
     }
 
-  // return pcl::io::savePolygonFileSTL (file, *triangles);  // can't compile
+
     return 0;
   }
 

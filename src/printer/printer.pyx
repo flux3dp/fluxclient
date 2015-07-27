@@ -1,6 +1,8 @@
 import cython
 from libcpp.vector cimport vector
 
+from fluxclient.scanner.tools import write_stl
+
 cdef extern from "printer_module.h":
     cdef cppclass MeshPtr:
         pass
@@ -30,12 +32,17 @@ cdef class MeshObj:
     def add_on(self, MeshObj new_mesh):
         add_on(self.meshobj, new_mesh.meshobj)
 
-    def bounding_box(self):
-        tmp = []
-        bounding_box(self.meshobj, tmp)
+    cpdef write_stl(self, file_name):
+        cpdef vector[vector [vector [float]]] tri
+        STL_to_List(self.meshobj, tri)
+        write_stl(tri, file_name, 'ascii')
 
-        b_box = [[_ for i in range(3)] for j in range(2)]
+    cpdef bounding_box(self):
+        cpdef vector[float] tmp_b_box
+        bounding_box(self.meshobj, tmp_b_box)
+
+        b_box = [[0. for i in range(3)] for j in range(2)]
         for i in range(6):
-            b_box[i // 3][i % 3] = tmp[i]
+            b_box[i // 3][i % 3] = tmp_b_box[i]
 
         return b_box

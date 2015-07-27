@@ -6,7 +6,7 @@ import tempfile
 import os
 
 try:
-    import fluxclient.scanner._printer as _printer
+    import fluxclient.printer._printer as _printer
 except:
     pass
 
@@ -47,15 +47,17 @@ class StlSlicer(object):
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
             m_mesh_merge.add_on(m_mesh)
+
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
 
         tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
         file_name = tmp.name  # store merged stl
-        m_mesh_merge.store(file_name)
 
-        slic3r = './Slic3r/slic3r.pl'
-        slic3r_setting = './Slic3r_config_bundle.ini'
+        m_mesh_merge.write_stl(file_name)
+
+        slic3r = '../Slic3r/slic3r.pl'
+        slic3r_setting = '../Slic3r_config_bundle.ini'
         tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
@@ -64,15 +66,24 @@ class StlSlicer(object):
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--gcode-comments']
+        print('command:', ' '.join(command))
         slic3r_out = subprocess.check_output(command)
-        slic3r_out.decode('utf8')
+        slic3r_out = slic3r_out.decode('utf8')
+        print(slic3r_out)
+
         with open(tmp_gcode_file, 'r') as f:
             gcode = f.read()
 
         # clean up tmp files
         os.remove(file_name)
         os.remove(tmp_gcode_file)
-        metadata = [1000., 300.0]  # fake code
+        metadata = [1000., 300.0]  # fake code, should use gcode_to_fcode
+
+        ##################### fake code ###########################
+        with open('output.gcode', 'w') as f:
+            print(gcode, file=f)
+        ###########################################################
+
         return gcode, metadata
 
     @classmethod
@@ -152,4 +163,4 @@ class StlSlicerNoPCL(StlSlicer):
         gcode = "Nothing to do here~~"
         metadata = [1000., 300.0]
         ############### fake code ###############
-        return gcode.encode(), metadata
+        return gcode, metadata

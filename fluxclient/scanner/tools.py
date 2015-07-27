@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-
+import struct
 
 # PCL NOTE: http://docs.pointclouds.org/1.7.0/structpcl_1_1_point_x_y_z_r_g_b.html
 # uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
 # uint8_t r = (rgb >> 16) & 0x0000ff;
 # uint8_t g = (rgb >> 8)  & 0x0000ff;
 # uint8_t b = (rgb)       & 0x0000ff;
-def testing_file():
-    pass
 
 
 def read_pcd(file_name):
@@ -70,13 +68,13 @@ def write_stl(tri, output='model.stl', mode='binary'):
     '''
     if mode == 'binary':
         with open(output, 'wb') as outstl:
-            Header = 'FLUX 3d printer: flux3dp.com, 2015'
+            Header = b'FLUX 3d printer: flux3dp.com, 2015'
 
             for i in range(80):
                 if i < len(Header):
-                    outstl.write(struct.pack('c', Header[i]))
+                    outstl.write(struct.pack('c', Header[i:i + 1]))
                 else:
-                    outstl.write(struct.pack("c", ' '))
+                    outstl.write(struct.pack("c", b' '))
 
             outstl.write(struct.pack("I", len(tri)))
             for i in tri:
@@ -106,4 +104,4 @@ def write_stl(tri, output='model.stl', mode='binary'):
         print('mode error, mode could only be \'binary\' or \'ascii\'', file=sys.err)
         return
 
-    print(len(tri), 'triangle write in' + output)
+    print(len(tri), 'triangle write in ' + output)
