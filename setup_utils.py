@@ -90,12 +90,14 @@ def get_entry_points():
 def create_scanner_extention():
     try:
         # Process extra_compile_args
-        extra_compile_args = ["--stdlib=libc++"]
 
         if platform.platform().startswith("Darwin"):
+            extra_compile_args = ["--stdlib=libc++"]
             extra_compile_args += ["-mmacosx-version-min=10.9"]
         elif platform.platform().startswith("Linux"):
-            raise RuntimeError("Not test under linux")
+            ### TODO: figure out how to compile on linux platform ###
+            pass
+            # raise RuntimeError("Not test under linux")
         else:
             raise RuntimeError("Unknow platform!!")
 
