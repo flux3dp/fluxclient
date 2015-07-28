@@ -103,6 +103,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   std::vector<float> b_box;
   bounding_box(triangles, b_box);
   std::vector<float> center;
+
   center.resize(3);
   for (int i = 0; i < 3; i += 1){
     center[i] = (b_box[i] + b_box[i + 3]) / 2;
@@ -110,12 +111,16 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
+
   // scale
   for (int i = 0; i < cloud->size(); i += 1){
     (*cloud)[i].x *= sc_x;
     (*cloud)[i].y *= sc_y;
     (*cloud)[i].z *= sc_z;
   }
+  center[0] *= sc_x;
+  center[1] *= sc_y;
+  center[2] *= sc_z;
 
   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
@@ -146,9 +151,10 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   tmpM(1, 1) = cos (theta);
   transform *= tmpM;
 
-  transform(0, 3) = x;
-  transform(1, 3) = y;
-  transform(2, 3) = z;
+  transform(0, 3) = x - center[0];
+  transform(1, 3) = y - center[1];
+  transform(2, 3) = z - center[2];
+
   pcl::transformPointCloud(*cloud, *cloud, transform);
 
 

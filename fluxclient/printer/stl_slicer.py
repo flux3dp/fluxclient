@@ -52,16 +52,16 @@ class StlSlicer(object):
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
 
         tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
-        file_name = tmp.name  # store merged stl
+        tmp_stl_file = tmp.name  # store merged stl
 
-        m_mesh_merge.write_stl(file_name)
+        m_mesh_merge.write_stl(tmp_stl_file)
 
         slic3r = '../Slic3r/slic3r.pl'
         slic3r_setting = '../Slic3r_config_bundle.ini'
         tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
-        command = [slic3r, file_name]
+        command = [slic3r, tmp_stl_file]
         command += ['--load', slic3r_setting]
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
@@ -74,15 +74,20 @@ class StlSlicer(object):
         with open(tmp_gcode_file, 'r') as f:
             gcode = f.read()
 
-        # clean up tmp files
-        os.remove(file_name)
-        os.remove(tmp_gcode_file)
         metadata = [1000., 300.0]  # fake code, should use gcode_to_fcode
 
         ##################### fake code ###########################
         with open('output.gcode', 'w') as f:
             print(gcode, file=f)
+
+        with open(tmp_stl_file, 'rb') as f:
+            with open('merged.stl', 'wb') as f2:
+                f2.write(f.read())
         ###########################################################
+
+        # clean up tmp files
+        os.remove(tmp_stl_file)
+        os.remove(tmp_gcode_file)
 
         return gcode, metadata
 
