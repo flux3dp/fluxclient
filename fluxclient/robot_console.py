@@ -137,7 +137,8 @@ class RobotConsole(object):
                 if rl:
                     buf = rl[0].recv(4096).decode("utf8", "ignore")
                     if buf:
-                        logger.info(buf.rstrip("\n\x00"))
+                        for ln in buf.split("\n"):
+                            logger.info(ln.rstrip("\r\x00"))
                     else:
                         logger.error("Connection closed")
                         return
