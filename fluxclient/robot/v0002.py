@@ -185,6 +185,21 @@ class FluxRobotV0002(object):
     def report_play(self):
         return self._make_cmd(b"report").decode("utf8", "ignore")
 
+    @ok_or_error
+    def scan_laser(self, left, right):
+        bcmd = b"scanlaser "
+        if left:
+            bcmd += b"l"
+        if right:
+            bcmd += b"r"
+
+        return self._make_cmd(bcmd)
+
+    @ok_or_error
+    def set_scanlen(self, l):
+        cmd = "set steplen %.5f" % l
+        return self._make_cmd(cmd.encode())
+
     def oneshot(self):
         self._send_cmd(b"oneshot")
         images = []
