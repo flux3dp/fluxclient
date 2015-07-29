@@ -34,7 +34,12 @@ def prepare_robot(endpoint, server_key):
 def interactive(robot):
     logger.info("Type 'i' (image) to get a screenshot")
     logger.info("Type 'g' (go) to start progress")
+    logger.info("Type 'L' (Left) toggle Left Laser")
+    logger.info("Type 'R' (Right) toggle Right Laser")
+    logger.info("Type 'S' (Step) to mave a step")
 
+    laser_Left = False
+    laser_Right = False
     while True:
         sys.stdout.write("> ")
         sys.stdout.flush()
@@ -54,16 +59,20 @@ def interactive(robot):
             return
 
         # TODO: make theese command available
-        # elif l.startswith('S'):
-        #     pass
-        # elif l.startswith('L'):
-        #     pass
-        # elif l.startswith('R'):
-        #     pass
-
+        elif l.startswith('S'):
+            robot.scan_next()
+        elif l.startswith('L'):
+            laser_Left = not laser_Left
+            robot.scan_laser(laser_Left, laser_Right)
+        elif l.startswith('R'):
+            laser_Right = not laser_Right
+            robot.scan_laser(laser_Left, laser_Right)
         else:
             logger.info("Type 'i' (image) to get a screenshot")
             logger.info("Type 'g' (go) to start progress")
+            logger.info("Type 'L' (Left) toggle Left Laser")
+            logger.info("Type 'R' (Right) toggle Right Laser")
+            logger.info("Type 'S' (Step) to mave a step")
 
 
 def print_progress(step, total):
