@@ -581,9 +581,9 @@ class LaserSvg(LaserBase):
             if i[:2] == 'G1':
                 tmp.append(i)
 
-        # with open('output.gcode', 'w') as f:
-        #     print("\n".join(tmp) + "\n", file=f)
-        # return "\n".join(tmp) + "\n"
+        with open('output.gcode', 'w') as f:
+            print("\n".join(tmp) + "\n", file=f)
+        return "\n".join(tmp) + "\n"
         ##########################################
 
         return "\n".join(gcode) + "\n"

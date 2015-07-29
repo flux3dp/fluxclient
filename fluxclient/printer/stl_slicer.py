@@ -78,7 +78,7 @@ class StlSlicer(object):
 
         ##################### fake code ###########################
         with open('output.gcode', 'w') as f:
-            print(gcode, file=f)
+            print(gcode, file=f, end='')
 
         with open(tmp_stl_file, 'rb') as f:
             with open('merged.stl', 'wb') as f2:

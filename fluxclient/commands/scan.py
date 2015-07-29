@@ -52,6 +52,15 @@ def interactive(robot):
         elif l.startswith("g"):
             logger.info("Go!")
             return
+
+        # TODO: make theese command available
+        # elif l.startswith('S'):
+        #     pass
+        # elif l.startswith('L'):
+        #     pass
+        # elif l.startswith('R'):
+        #     pass
+
         else:
             logger.info("Type 'i' (image) to get a screenshot")
             logger.info("Type 'g' (go) to start progress")
