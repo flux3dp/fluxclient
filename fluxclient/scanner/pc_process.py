@@ -4,7 +4,7 @@ from operator import ge, le
 import logging
 
 import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_stl
+from fluxclient.scanner.tools import write_stl, write_pcd
 
 try:
     import fluxclient.scanner._scanner as _scanner
@@ -161,6 +161,9 @@ class PcProcess():
 
     def export(self, name, file_format):
         return b""
+
+    def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+        return True
 
 
 class mesh(object):

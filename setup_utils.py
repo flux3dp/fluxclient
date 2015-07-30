@@ -96,8 +96,6 @@ def create_scanner_extention():
             extra_compile_args += ["-mmacosx-version-min=10.9"]
         elif platform.platform().startswith("Linux"):
             extra_compile_args = ["-lstdc++"]
-            ### TODO: figure out how to compile on linux platform ###
-            pass
             # raise RuntimeError("Not test under linux")
         else:
             raise RuntimeError("Unknow platform!!")
