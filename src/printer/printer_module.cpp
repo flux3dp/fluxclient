@@ -18,9 +18,7 @@ int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
     cloud -> push_back(p);
   }
 
-  pcl::PCLPointCloud2 cloud2;
-  toPCLPointCloud2(*cloud, cloud2);
-  triangles->cloud = cloud2;
+  toPCLPointCloud2(*cloud, triangles->cloud);
   return 0;
 }
 
@@ -54,10 +52,8 @@ int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
         v.vertices[2] = add_on_mesh->polygons[i].vertices[2] + size_to_add_on;
         base->polygons.push_back(v);
     }
-    pcl::PCLPointCloud2 final_cloud;
-    toPCLPointCloud2(*cloud, final_cloud);
-    base->cloud = final_cloud;
-    // pcl::io::savePolygonFileSTL("tmp.stl", *add_on_mesh);
+
+    toPCLPointCloud2(*cloud, base->cloud);
     return 0;
 }
 
@@ -99,18 +95,55 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
 
   return 0;
 }
-int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z){
-  std::vector<float> b_box;
-  bounding_box(triangles, b_box);
-  std::vector<float> center;
 
-  center.resize(3);
-  for (int i = 0; i < 3; i += 1){
-    center[i] = (b_box[i] + b_box[i + 3]) / 2;
+int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &b_box){
+  float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
+  float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
+
+  for (int i = 0; i < cloud->size(); i += 1){
+    if((*cloud)[i].x > maxx){
+      maxx = (*cloud)[i].x;
+    }
+    if((*cloud)[i].y > maxy){
+      maxy = (*cloud)[i].y;
+    }
+    if((*cloud)[i].z > maxz){
+      maxz = (*cloud)[i].z;
+    }
+
+    if((*cloud)[i].x < minx){
+      minx = (*cloud)[i].x;
+    }
+    if((*cloud)[i].y < miny){
+      miny = (*cloud)[i].y;
+    }
+    if((*cloud)[i].z < minz){
+      minz = (*cloud)[i].z;
+    }
   }
+  b_box.resize(6);
+  b_box[0] = minx;
+  b_box[1] = miny;
+  b_box[2] = minz;
+  b_box[3] = maxx;
+  b_box[4] = maxy;
+  b_box[5] = maxz;
 
+  return 0;
+}
+
+int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
+
+  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+  Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
+  float theta; // The angle of rotation in radians
+
+  std::vector<float> b_box;
+  b_box.resize(3);
+  std::vector<float> center;
+  center.resize(3);
 
   // scale
   for (int i = 0; i < cloud->size(); i += 1){
@@ -118,15 +151,20 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
     (*cloud)[i].y *= sc_y;
     (*cloud)[i].z *= sc_z;
   }
-  center[0] *= sc_x;
-  center[1] *= sc_y;
-  center[2] *= sc_z;
 
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+  // move to origin
+  bounding_box(cloud, b_box);
+  for (int i = 0; i < 3; i += 1){
+    center[i] = (b_box[i] + b_box[i + 3]) / 2;
+  }
+  transform = Eigen::Matrix4f::Identity();
+  transform(0, 3) = - center[0];
+  transform(1, 3) = - center[1];
+  transform(2, 3) = - center[2];
+  pcl::transformPointCloud(*cloud, *cloud, transform);
 
-  float theta; // The angle of rotation in radians
-  Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
-
+  // rotate
+  transform = Eigen::Matrix4f::Identity();
   tmpM = Eigen::Matrix4f::Identity();
   theta = rx; // The angle of rotation in radians
   tmpM(1, 1) = cos (theta); //x
@@ -144,27 +182,24 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   transform *= tmpM;
 
   tmpM = Eigen::Matrix4f::Identity();
-  theta = rx;
+  theta = rz;
   tmpM(0, 0) = cos (theta); //z
   tmpM(0, 1) = -sin(theta);
   tmpM(1, 0) = sin (theta);
   tmpM(1, 1) = cos (theta);
   transform *= tmpM;
-
-  transform(0, 3) = x - center[0];
-  transform(1, 3) = y - center[1];
-  transform(2, 3) = z - center[2];
-
   pcl::transformPointCloud(*cloud, *cloud, transform);
 
+  // move to proper position
+  transform = Eigen::Matrix4f::Identity();
+  transform(0, 3) = x;
+  transform(1, 3) = y;
+  transform(2, 3) = z;
+  pcl::transformPointCloud(*cloud, *cloud, transform);
 
-
-  // put back to mesh
-    pcl::PCLPointCloud2 cloud2;
-    toPCLPointCloud2(*cloud, cloud2);
-    triangles->cloud = cloud2;
-
-    return 0;
+  // rotate first
+  toPCLPointCloud2(*cloud, triangles->cloud);
+  return 0;
   }
 
   int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data){
@@ -204,8 +239,6 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
       data[i][2][2] = (*cloud)[v2].z;
       // std::cout << "  polygons[" << i << "]: " <<std::endl;
     }
-
-
     return 0;
   }
 
@@ -214,11 +247,9 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   // data = [ f1[p1_index, p2_index, p3_index],
   //          f2[p1_index, p2_index, p3_index], ...
   //        ]
-
     data.resize(triangles->polygons.size());
     for (size_t i = 0; i < triangles->polygons.size(); i += 1){
       data[i].resize(3);
-
       data[i][0] = triangles->polygons[i].vertices[0];
       data[i][1] = triangles->polygons[i].vertices[1];
       data[i][2] = triangles->polygons[i].vertices[2];
