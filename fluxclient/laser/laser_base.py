@@ -78,6 +78,12 @@ class LaserBase(object):
         elif self.machine == 'pi':
             return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL250", "G4 P1"]
 
+    def closeTo(self, x, y, speed=600):
+        gcode = []
+        gcode += self.turnOff()
+        gcode += self.moveTo(x, y, speed=600)
+        return gcode
+
     def moveTo(self, x, y, speed=600):
         """
             apply global rotation and scale
@@ -85,6 +91,7 @@ class LaserBase(object):
             if distance need to move is larger than self.split_thres,
             path will split into many different command in order to support emergency stop
         """
+        gcode = []
 
         x2 = (x * cos(self.rotation) - y * sin(self.rotation)) * self.ratio
         y2 = (x * sin(self.rotation) + y * cos(self.rotation)) * self.ratio
@@ -100,8 +107,6 @@ class LaserBase(object):
         elif speed == 'move':
             speed = 600
             ending = ';Move to'
-
-        gcode = []
 
         # (vx, vy) : direction vector
         vx = x - self.current_x
@@ -129,7 +134,6 @@ class LaserBase(object):
         gcode = []
         gcode += self.turnOn()
         gcode += self.moveTo(x, y, speed)
-        gcode += self.turnOff()
 
         return gcode
 

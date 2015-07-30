@@ -569,7 +569,7 @@ class LaserSvg(LaserBase):
                         if not moveTo:
                             gcode += self.drawTo(x, y)
                         else:
-                            gcode += self.moveTo(x, y)
+                            gcode += self.closeTo(x, y)
                             moveTo = False
                     else:
                         moveTo = True
@@ -578,8 +578,9 @@ class LaserSvg(LaserBase):
         ################ fake code ##############
         tmp = []
         for i in gcode:
-            if i[:2] == 'G1':
-                tmp.append(i)
+            tmp.append(i)
+            # if i[:2] == 'G1':
+            #     tmp.append(i)
 
         with open('output.gcode', 'w') as f:
             print("\n".join(tmp) + "\n", file=f)

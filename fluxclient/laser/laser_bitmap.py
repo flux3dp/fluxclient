@@ -137,7 +137,7 @@ class LaserBitmap(LaserBase):
                 if self.image_map[h][w] < self.thres:  # acturally meaningless self.thres=255 and only 0 or 255 on image_map
                     if not self.laser_on:
                         last_i = w
-                        gcode += self.moveTo(w - abs_shift, h - abs_shift)
+                        gcode += self.closeTo(w - abs_shift, h - abs_shift)
                         gcode += self.turnOn()
                 else:
                     if self.laser_on:
