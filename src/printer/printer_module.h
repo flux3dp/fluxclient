@@ -16,3 +16,4 @@ int add_on(MeshPtr base, MeshPtr new_mesh);
 int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data);
 int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z);
 int bounding_box(MeshPtr triangles, std::vector<float> &b_box);
+int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &b_box);
