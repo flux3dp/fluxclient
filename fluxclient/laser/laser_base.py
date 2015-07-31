@@ -8,13 +8,17 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 11 + 3  # focal z coordinate
+        self.focal_l = 11  # focal z coordinate
+        self.laser_speed = 600
         self.rotation = 0.0
+        self.laser_power = 0
 
         self.split_thres = 999  # should be some small number
         self.current_x = None
         self.current_y = None
         self.current_z = None
+
+        # speed F= mm/minute
 
         # machine indicate how you pass gcode into machine
         # choose marlin if you are using printrun
@@ -58,9 +62,9 @@ class LaserBase(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L%d" % self.laser_power, "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL0", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL%d" % self.laser_power, "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
@@ -78,13 +82,7 @@ class LaserBase(object):
         elif self.machine == 'pi':
             return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL250", "G4 P1"]
 
-    def closeTo(self, x, y, speed=600):
-        gcode = []
-        gcode += self.turnOff()
-        gcode += self.moveTo(x, y, speed=600)
-        return gcode
-
-    def moveTo(self, x, y, speed=600):
+    def moveTo(self, x, y, speed=None):
         """
             apply global rotation and scale
             move to position x,y
@@ -102,24 +100,29 @@ class LaserBase(object):
         ending = ';Move to'
 
         if speed == 'draw':
-            speed = 200
+            speed = self.laser_speed
             ending = ';Draw to'
         elif speed == 'move':
             speed = 600
             ending = ';Move to'
+        elif not speed:
+            speed = 600
+            ending = ';Move to'
 
-        # (vx, vy) : direction vector
-        vx = x - self.current_x
-        vy = y - self.current_y
-        len_v = sqrt(vx ** 2 + vy ** 2)
-        if len_v > self.split_thres:
-            # convert to unit vector (as the smallest step length)
-            ux = vx / len_v
-            uy = vy / len_v
-            for _ in range(int(len_v / self.split_thres)):  # math.floor of (len_v / self.split_thres)
-                self.current_x += ux * self.split_thres
-                self.current_y += uy * self.split_thres
-                gcode += ["G1 F" + str(speed) + " X" + str(self.current_x) + " Y" + str(self.current_y) + ";Split draw to"]
+        # # split path to small step
+        # # (vx, vy) : direction vector
+        # vx = x - self.current_x
+        # vy = y - self.current_y
+        # len_v = sqrt(vx ** 2 + vy ** 2)
+        # if len_v > self.split_thres:
+        #     # convert to unit vector (as the smallest step length)
+        #     ux = vx / len_v
+        #     uy = vy / len_v
+        #     for _ in range(int(len_v / self.split_thres)):  # math.floor of (len_v / self.split_thres)
+        #         self.current_x += ux * self.split_thres
+        #         self.current_y += uy * self.split_thres
+        #         gcode += ["G1 F" + str(speed) + " X" + str(self.current_x) + " Y" + str(self.current_y) + ";Split draw to"]
+
         self.current_x = x
         self.current_y = y
 
@@ -127,7 +130,7 @@ class LaserBase(object):
 
     def drawTo(self, x, y, speed='draw'):
         """
-            turn on, move to x, y and turn off the laser
+            turn on, move to x, y
 
             draw to position x,y with speed
         """
@@ -135,6 +138,15 @@ class LaserBase(object):
         gcode += self.turnOn()
         gcode += self.moveTo(x, y, speed)
 
+        return gcode
+
+    def closeTo(self, x, y, speed=None):
+        """
+            turn off, move to x, y
+        """
+        gcode = []
+        gcode += self.turnOff()
+        gcode += self.moveTo(x, y, speed)
         return gcode
 
     def to_image(self, buffer_data, img_width, img_height):
@@ -155,3 +167,14 @@ class LaserBase(object):
 
     def export_to_stream(self, stream, *args):
         stream.write(self.gcode_generate(*args))
+
+    def set_params(self, key, value):
+        if key == 'object_height':
+            self.focal_l += float(value)
+        elif key == 'laser_speed':
+            self.laser_speed = float(value) * 60  # mm/s -> mm/min
+
+        elif key == 'power':
+            self.laser_power = int((100 - float(value)) / 100 * 255)   # pwm, int
+        else:
+            raise ValueError('undefine setting key')
