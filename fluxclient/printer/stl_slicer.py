@@ -18,8 +18,11 @@ class StlSlicer(object):
         self.reset()
 
     def reset(self):
-        self.models = {}
-        self.parameter = {}
+        self.models = {}  # models data
+        self.parameter = {}  # model's parameter
+        self.user_setting = {}  # slcing setting
+        self.slic3r = '../Slic3r/slic3r.pl'
+        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
 
     def upload(self, name, buf):
         self.models[name] = buf
@@ -37,6 +40,9 @@ class StlSlicer(object):
             self.parameter[name] = parameter
         else:
             raise ValueError("%s not upload yet" % (name))
+
+    def set_params(self, key, value):
+        self.user_setting[key] = value
 
     def generate_gcode(self, names):
         ## psudo code
@@ -56,16 +62,40 @@ class StlSlicer(object):
 
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        slic3r = '../Slic3r/slic3r.pl'
-        slic3r_setting = '../Slic3r_config_bundle.ini'
         tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
-        command = [slic3r, tmp_stl_file]
-        command += ['--load', slic3r_setting]
+        tmp = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
+        tmp_slic3r_setting_file = tmp.name  # store gcode
+
+        command = [self.slic3r, tmp_stl_file]
+
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--gcode-comments']
+
+        config = self.my_ini_parser(self.slic3r_setting)
+        for key in self.user_setting:
+            if self.user_setting[key] != "defaule":
+                if key == 'layer_height':
+                    config['first_layer_height'] = self.user_setting[key]
+                    config['layer_height'] = self.user_setting[key]
+                elif key == 'infill':
+                    config['fill_density'] = self.user_setting[key]
+                elif key == 'traveling':
+                    config['travel_speed'] = self.user_setting[key]
+                elif key == 'extruding':
+                    config['perimeter_speed'] = self.user_setting[key]
+                    config['infill_speed'] = self.user_setting[key]
+                elif key == 'temperature':
+                    config['temperature'] = self.user_setting[key]
+                elif key == 'support_type':
+                    config['support_material'] = self.user_setting[key]
+                elif key == 'raft':
+                    config['raft_layers'] = self.user_setting[key]
+
+        self.my_ini_writer(tmp_slic3r_setting_file, config)
+        command += ['--load', tmp_slic3r_setting_file]
         print('command:', ' '.join(command))
         slic3r_out = subprocess.check_output(command)
         slic3r_out = slic3r_out.decode('utf8')
@@ -88,8 +118,31 @@ class StlSlicer(object):
         # clean up tmp files
         os.remove(tmp_stl_file)
         os.remove(tmp_gcode_file)
+        # os.remove(tmp_slic3r_setting_file)
 
         return gcode, metadata
+
+    @classmethod
+    def my_ini_parser(cls, file_path):
+        result = {}
+        with open(file_path, 'r') as f:
+            for i in f.readlines():
+                if i[0] == '#':
+                    pass
+                elif '=' in i:
+                    tmp = i.rstrip().split('=')
+                    result[tmp[0]] = tmp[1]
+                else:
+                    print(i)
+                    raise ValueError('not ini file?')
+        return result
+
+    @classmethod
+    def my_ini_writer(cls, file_path, content):
+        with open(file_path, 'w') as f:
+            for i in content:
+                print("%s=%s" % (i, content[i]), file=f)
+        return
 
     @classmethod
     def read_stl(cls, file_data):
