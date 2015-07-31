@@ -336,8 +336,8 @@ class LaserSvg(LaserBase):
             tmp_thing.attrib['stroke'] = '#000000'
             tmp_thing.tail = '\n'
             if thing.tag == header + 'rect':
-                tmp_thing.attrib['x'] = thing.attrib['x']
-                tmp_thing.attrib['y'] = thing.attrib['y']
+                tmp_thing.attrib['x'] = thing.attrib.get('x', '0')
+                tmp_thing.attrib['y'] = thing.attrib.get('y', '0')
                 tmp_thing.attrib['height'] = thing.attrib['height']
                 tmp_thing.attrib['width'] = thing.attrib['width']
                 i.attrib = tmp_thing.attrib

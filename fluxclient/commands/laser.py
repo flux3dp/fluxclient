@@ -44,7 +44,7 @@ def process_svg(options, stream):
         with open('pre.svg', 'wb') as f:
             f.write(tmp_buf)
 
-        # m_laser_svg.compute(tmp_buf, name + '_ready', [w, h, x1, y1, x2, y2, rotation, b''])
+        m_laser_svg.compute(tmp_buf, name + '_ready', [w, h, x1, y1, x2, y2, rotation, b''])
         count += 1
 
     m_laser_svg.export_to_stream(stream, [name + '_ready'])
