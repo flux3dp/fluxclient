@@ -1,15 +1,7 @@
-class fcode_base(object):
-    """class deal with gcode <-> fcode... etc"""
+class FcodeBase(object):
+    """
+    class dealing with gcode <-> fcode... etc
+    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
+    """
     def __init__(self):
-        super(fcode_base, self).__init__()
-
-    def read_file(self, file_name):
-        with open(file_name, 'r') as f:
-            if file_name[-6:] == '.gcode':
-                return self.gcode_to_list(f.read())
-            else:
-                raise ValueError('Unrecognized file format%s' % (file_name))
-
-    def gcode_to_list(self, gcode):
-        gcode = gcode.rstrip().split('\n')
-        return gcode
+        super(FcodeBase, self).__init__()
