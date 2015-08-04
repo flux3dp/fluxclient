@@ -17,6 +17,7 @@ class LaserSvg(LaserBase):
         self.svgs = {}
         self.ready_svgs = {}
         self.param = None
+        self.pixel_per_mm = 16  # sample rate for each point
 
     def rect(self, thing):
         '''
@@ -81,6 +82,7 @@ class LaserSvg(LaserBase):
         data = []
         head = 0
         # split the path by alphabet
+        # print(thing.attrib['d'])
         for i in range(len(thing.attrib['d'])):
             if thing.attrib['d'][i].isalpha():
                 data.append(thing.attrib['d'][head:i])
@@ -95,6 +97,9 @@ class LaserSvg(LaserBase):
             tmp = [data[i][0]]
             tmp += map(float, data[i][1:].replace(',', ' ').replace('-', ' -').split())
             data[i] = tmp
+
+        # if len(data) == 0:
+        #     return []
 
         if data[0][0] == 'M':  # store init x,y for future use
             x_init, y_init = data[0][1], data[0][2]
@@ -311,8 +316,8 @@ class LaserSvg(LaserBase):
                 gcode += self.path(thing)
         return gcode
 
-    def compute(self, buf, name, params):
-        self.ready_svgs[name] = [buf] + params
+    def compute(self, name, data):
+        self.ready_svgs[name] = data
 
     def preprocess(self, buf, name):
         """
@@ -409,7 +414,7 @@ class LaserSvg(LaserBase):
         # viewBox: put all the points in viewBox
         # scale: go through and find x, y
         # transform: rotate the points
-        w, h, x1_real, y1_real, x2_real, y2_real, rotation, buf = params
+        w, h, x1_real, y1_real, x2_real, y2_real, rotation = params
         dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
         for path in range(len(path_data)):
             new_path = []
@@ -547,6 +552,7 @@ class LaserSvg(LaserBase):
         return path_data
 
     def gcode_generate(self, names):
+        self.reset_image()
         gcode = []
         gcode += self.header('laser svg')
 
@@ -557,8 +563,7 @@ class LaserSvg(LaserBase):
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
 
             path_data = self.elements_to_list(root)
-
-            path_data = self.process(path_data, ready_svg[1:], viewBox)
+            path_data = self.process(path_data, ready_svg[1:-3], viewBox)
 
             # TODO: y = -y
             for each_path in path_data:
@@ -574,7 +579,8 @@ class LaserSvg(LaserBase):
                     else:
                         moveTo = True
                         continue
-
+            self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
+        self.dump('./preview.png')
         ################ fake code ##############
         tmp = []
         for i in gcode:
@@ -584,6 +590,7 @@ class LaserSvg(LaserBase):
 
         with open('output.gcode', 'w') as f:
             print("\n".join(tmp) + "\n", file=f)
+        print(len("\n".join(tmp) + "\n"))
         return "\n".join(tmp) + "\n"
         ##########################################
 

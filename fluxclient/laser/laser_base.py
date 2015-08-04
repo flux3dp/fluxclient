@@ -1,7 +1,10 @@
 # !/usr/bin/env python3
-
 import os
-from math import pi, sin, cos, sqrt
+import io
+from math import pi, sin, cos, sqrt, degrees
+
+from PIL import Image
+import numpy as np
 
 
 class LaserBase(object):
@@ -18,6 +21,11 @@ class LaserBase(object):
         self.current_y = None
         self.current_z = None
 
+        self.pixel_per_mm = 16  # sample rate for each point
+        self.radius = 85  # laser max radius = 85mm
+        # list holding current image
+        self.reset_image()
+
         # speed F= mm/minute
 
         # machine indicate how you pass gcode into machine
@@ -29,6 +37,9 @@ class LaserBase(object):
             self.machine = 'pi'
 
         self.ratio = 1.
+
+    def reset_image(self):
+        self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
         """
@@ -105,7 +116,7 @@ class LaserBase(object):
         elif speed == 'move':
             speed = 600
             ending = ';Move to'
-        elif not speed:
+        elif speed is None:
             speed = 600
             ending = ';Move to'
 
@@ -178,3 +189,92 @@ class LaserBase(object):
             self.laser_power = int((100 - float(value)) / 100 * 255)   # pwm, int
         else:
             raise ValueError('undefine setting key')
+
+    def rotate(self, x, y, rotation, cx=0., cy=0.):
+        """
+        compute new (x, y) after rotate toward (cx, cy)
+        """
+        vx = (x - cx)
+        vy = (y - cy)
+        x = cx + vx * cos(rotation) - vy * sin(rotation)
+        y = cy + vx * sin(rotation) + vy * cos(rotation)
+        return x, y
+
+    def add_image(self, buffer_data, img_width, img_height, x1, y1, x2, y2, rotation, thres=255):
+        """
+        add image on top of current image i.e self.image_map
+          parameters:
+            buffer_data: image data in bytes array
+            img_width, img_height: trivial
+            x1, y1: absolute position of image's top-left corner after rotation
+            x2, y2: absolute position of image's button_right corner after rotation
+          return:
+            None
+        """
+        pix = Image.frombytes('L', (img_width, img_height), buffer_data)
+
+        # image center (rotation center)
+        cx = (x1 + x2) / 2.
+        cy = (y1 + y2) / 2.
+
+        # compute four original corner
+        ox1, oy1 = self.rotate(x1, y1, -rotation, cx, cy)
+        ox3, oy3 = self.rotate(x2, y2, -rotation, cx, cy)
+
+        ox2, oy2 = ox1, oy3
+        ox4, oy4 = ox3, oy1
+
+        # rotate four corner
+        ox1, oy1 = self.rotate(ox1, oy1, rotation, cx, cy)
+        ox2, oy2 = self.rotate(ox2, oy2, rotation, cx, cy)
+        ox3, oy3 = self.rotate(ox3, oy3, rotation, cx, cy)
+        ox4, oy4 = self.rotate(ox4, oy4, rotation, cx, cy)
+
+        # find upper-left corner after rotation(edge)
+        gx1 = min(ox1, ox2, ox3, ox4)
+        gy1 = max(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        gy1_on_map = round((gx1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        gx1_on_map = round(-(gy1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+
+        gx2 = max(ox1, ox2, ox3, ox4)
+        gy2 = min(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+        gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
+
+        # add white frame on each side
+        new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
+        new_pix.paste(pix, (1, 1))
+        new_pix = new_pix.rotate(degrees(rotation), expand=1)
+        new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
+
+        for h in range(new_pix.size[0]):
+            # using white frame to find starting and ending index
+            for find_s in range(new_pix.size[1]):
+                if new_pix.getpixel((h, find_s)) > 0:
+                    find_s += 1
+                    break
+            for find_e in range(new_pix.size[1] - 1, -1, -1):
+                if new_pix.getpixel((h, find_e)) > 0:
+                    break
+
+            for w in range(find_s, find_e):
+                if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
+                    if new_pix.getpixel((h, w)) <= thres:
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
+
+    def dump(self, file_name, mode='save'):
+        img = np.uint8(np.array(self.image_map))
+        img = Image.fromarray(img)
+        if mode == 'save':
+            img.save(file_name, 'png')
+            return
+        elif mode == 'preview':
+            img.resize(640, 640)
+
+            b = io.BytesIO()
+            img.save(b, 'png')
+            image_bytes = b.getvalue()
+            return image_bytes
+
+    def get_preview(self):
+        return self.dump('', mode='preview')
