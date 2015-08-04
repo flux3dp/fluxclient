@@ -91,91 +91,92 @@ class GcodeToFcode(FcodeBase):
             for line in f:
                 if ';' in line:
                     line = line[:line.index(';')].rstrip()
-                    line = line.split()
-                    if line:
-                        if line[0] == 'G28':
-                            self.writer(packer(1), fcode)
 
-                        elif line[0] == 'G90':
-                            self.writer(packer(2), fcode)
-                            self.absolute = True
-                        elif line[0] == 'G91':
-                            self.absolute = False
-                            self.writer(packer(3), fcode)
+                line = line.split()
 
-                        elif line[0] == 'M82':
-                            self.extrude_absolute = True
-                        elif line[0] == 'M83':
-                            self.extrude_absolute = False
+                if line:
+                    if line[0] == 'G28':
+                        self.writer(packer(1), fcode)
 
-                        elif line[0] == 'G92':
-                            command = 64
-                            sub_command, data = self.XYZEF(line)
-                            command |= sub_command
-                            self.writer(packer(command), fcode)
-                            for i in data:
-                                self.writer(struct.pack('<f', i), fcode)
+                    elif line[0] == 'G90':
+                        self.writer(packer(2), fcode)
+                        self.absolute = True
+                    elif line[0] == 'G91':
+                        self.absolute = False
+                        self.writer(packer(3), fcode)
 
-                        elif line[0] == 'G4':
-                            self.writer(packer(4), fcode)
-                            self.writer(struct.pack('<f', float(line[1].lstrip('P'))), fcode)
+                    elif line[0] == 'M82':
+                        self.extrude_absolute = True
+                    elif line[0] == 'M83':
+                        self.extrude_absolute = False
 
-                        elif line[0] == 'M104' or line[0] == 'M109':
-                            command = 16
-                            if line[0] == 'M109':
-                                command |= (1 << 3)
-                            for i in line:
-                                if i.startswith('S'):
-                                    temp = float(i.lstrip('S'))
-                                elif i.startswith('T'):
-                                    self.tool = int(i.lstrip('T'))
-                                    if self.tool > 7:
-                                        raise ValueError('too many extruder! %d' % self.tool)
-                            command |= self.tool
-                            self.writer(packer(command), fcode)
-                            self.writer(struct.pack('<f', temp), fcode)
+                    elif line[0] == 'G92':
+                        command = 64
+                        sub_command, data = self.XYZEF(line)
+                        command |= sub_command
+                        self.writer(packer(command), fcode)
+                        for i in data:
+                            self.writer(struct.pack('<f', i), fcode)
 
-                        elif line[0] == 'G20' or line[0] == 'G21':
-                            if line == 'G20':  # inch
-                                self.unit = 25.4
-                            elif line == 'G21':  # mm
-                                self.unit = 1
+                    elif line[0] == 'G4':
+                        self.writer(packer(4), fcode)
+                        self.writer(struct.pack('<f', float(line[1].lstrip('P'))), fcode)
 
-                        elif line[0] == 'G0' or line[0] == 'G1':
-                            command = 128
-                            subcommand, data = self.XYZEF(line)
-                            command |= subcommand
-                            self.writer(packer(command), fcode)
-                            for i in data:
-                                self.writer(struct.pack('<f', i), fcode)
+                    elif line[0] == 'M104' or line[0] == 'M109':
+                        command = 16
+                        if line[0] == 'M109':
+                            command |= (1 << 3)
+                        for i in line:
+                            if i.startswith('S'):
+                                temp = float(i.lstrip('S'))
+                            elif i.startswith('T'):
+                                self.tool = int(i.lstrip('T'))
+                                if self.tool > 7:
+                                    raise ValueError('too many extruder! %d' % self.tool)
+                        command |= self.tool
+                        self.writer(packer(command), fcode)
+                        self.writer(struct.pack('<f', temp), fcode)
 
-                        elif line[0] == 'T0' or line[0] == 'T1':
-                            if line[0] == 'T0':
-                                self.tool = 0
-                            if line[0] == 'T1':
-                                self.tool = 1
+                    elif line[0] == 'G20' or line[0] == 'G21':
+                        if line == 'G20':  # inch
+                            self.unit = 25.4
+                        elif line == 'G21':  # mm
+                            self.unit = 1
 
-                        elif line[0] == 'M107' or line[0] == 'M106':
-                            command = 48
-                            command |= 1  # TODO: change this part
-                            self.writer(packer(command), fcode)
-                            if line[0] == 'M107':
-                                self.writer(struct.pack('<f', 0.0), fcode)
-                            elif line[0] == 'M106':
-                                self.writer(struct.pack('<f', float(line[1].lstrip('S'))), fcode)
+                    elif line[0] == 'G0' or line[0] == 'G1':
+                        command = 128
+                        subcommand, data = self.XYZEF(line)
+                        command |= subcommand
+                        self.writer(packer(command), fcode)
+                        for i in data:
+                            self.writer(struct.pack('<f', i), fcode)
 
-                        elif line[0] == 'M84':  # loosen the motor
-                            pass  # should only appear when printing done
-                        else:
-                            pass
-                            # print(line)
+                    elif line[0] == 'T0' or line[0] == 'T1':
+                        if line[0] == 'T0':
+                            self.tool = 0
+                        if line[0] == 'T1':
+                            self.tool = 1
+
+                    elif line[0] == 'M107' or line[0] == 'M106':
+                        command = 48
+                        command |= 1  # TODO: change this part
+                        self.writer(packer(command), fcode)
+                        if line[0] == 'M107':
+                            self.writer(struct.pack('<f', 0.0), fcode)
+                        elif line[0] == 'M106':
+                            self.writer(struct.pack('<f', float(line[1].lstrip('S'))), fcode)
+
+                    elif line[0] == 'M84':  # loosen the motor
+                        pass  # should only appear when printing done
+                    else:
+                        print(line, file=sys.stderr)
+                        raise ValueError('Undefine gcode')
         fcode.write(struct.pack('<I', self.crc))
         fcode.seek(len(self.header()), 0)
-        print(self.script_length)
         fcode.write(struct.pack('<I', self.script_length))
         fcode.seek(0, 2)  # go back to file end
         # self.metadata(fcode)
 
 if __name__ == '__main__':
     m_GcodeToFcode = GcodeToFcode()
-    m_GcodeToFcode.process('tmp.gcode')
+    m_GcodeToFcode.process('hang.gcode')
