@@ -574,12 +574,13 @@ class LaserSvg(LaserBase):
                         if not moveTo:
                             gcode += self.drawTo(x, y)
                         else:
-                            gcode += self.closeTo(x, y)
+                            gcode += self.closeTo(x, y, self.travel_speed)
                             moveTo = False
                     else:
                         moveTo = True
                         continue
-            self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
+            if ready_svg[-1]:
+                self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         self.dump('./preview.png')
         ################ fake code ##############
         tmp = []

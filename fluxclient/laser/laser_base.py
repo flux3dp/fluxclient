@@ -12,9 +12,14 @@ class LaserBase(object):
     def __init__(self):
         self.laser_on = False
         self.focal_l = 11  # focal z coordinate
-        self.laser_speed = 600
+
         self.rotation = 0.0
-        self.laser_power = 0
+
+        self.laser_speed = 600
+        self.travel_speed = 900
+        self.draw_power = 0  # drawing
+        self.fram_power = 0  # indicating
+        self.obj_height = 0.
 
         self.split_thres = 999  # should be some small number
         self.current_x = None
@@ -65,7 +70,7 @@ class LaserBase(object):
 
         gcode.append(";G29")
 
-        gcode.append("G1 F5000 Z" + str(self.focal_l) + "")
+        gcode.append("G1 F5000 Z" + str(self.focal_l + self.obj_height))
         return gcode
 
     def turnOn(self):
@@ -73,25 +78,25 @@ class LaserBase(object):
             return []
         self.laser_on = True
         if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L%d" % self.laser_power, "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L%d" % self.draw_power, "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL%d" % self.laser_power, "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL%d" % self.draw_power, "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L0", "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL255", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL0", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
         if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L%d" % self.fram_power, "G4 P1"]
         elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL250", "G4 P1"]
+            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL%d" % self.fram_power, "G4 P1"]
 
     def moveTo(self, x, y, speed=None):
         """
@@ -109,17 +114,10 @@ class LaserBase(object):
         y = y2
 
         ending = ';Move to'
-
-        if speed == 'draw':
+        if speed is None:
             speed = self.laser_speed
-            ending = ';Draw to'
-        elif speed == 'move':
-            speed = 600
-            ending = ';Move to'
-        elif speed is None:
-            speed = 600
-            ending = ';Move to'
 
+        # NOTE: Deprecated!!
         # # split path to small step
         # # (vx, vy) : direction vector
         # vx = x - self.current_x
@@ -139,15 +137,19 @@ class LaserBase(object):
 
         return gcode + ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ending]
 
-    def drawTo(self, x, y, speed='draw'):
+    def drawTo(self, x, y, speed=None):
         """
             turn on, move to x, y
 
-            draw to position x,y with speed
+            draw to position x,y
         """
         gcode = []
         gcode += self.turnOn()
-        gcode += self.moveTo(x, y, speed)
+
+        if speed is None:
+            gcode += self.moveTo(x, y)
+        else:
+            gcode += self.moveTo(x, y, speed)
 
         return gcode
 
@@ -157,7 +159,11 @@ class LaserBase(object):
         """
         gcode = []
         gcode += self.turnOff()
-        gcode += self.moveTo(x, y, speed)
+
+        if speed is None:
+            gcode += self.moveTo(x, y)
+        else:
+            gcode += self.moveTo(x, y, speed)
         return gcode
 
     def to_image(self, buffer_data, img_width, img_height):
@@ -181,12 +187,13 @@ class LaserBase(object):
 
     def set_params(self, key, value):
         if key == 'object_height':
-            self.focal_l += float(value)
+            self.obj_height = float(value)
+
         elif key == 'laser_speed':
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
 
         elif key == 'power':
-            self.laser_power = int((100 - float(value)) / 100 * 255)   # pwm, int
+            self.draw_power = round(float(value) / 100 * 255)   # pwm, int
         else:
             raise ValueError('undefine setting key')
 

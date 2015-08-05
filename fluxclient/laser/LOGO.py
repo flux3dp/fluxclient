@@ -6,7 +6,7 @@ class logo(LaserBase):
     """drawing FLUX logo"""
     def __init__(self):
         super(logo, self).__init__()
-        self.ratio = 4
+        self.ratio = .5
         # self.ratio = 0.01
 
     def shift_move(self, x, y, shift_x=-50, shift_y=-50, speed=300):  # default 1
@@ -15,7 +15,8 @@ class logo(LaserBase):
 
         x += shift_x
         y += shift_y
-        return self.moveTo(x, y, speed)
+        self.laser_speed = speed
+        return self.moveTo(x, y)
         # print "G4 P10"
 
     def close_and_move_and_on(self, x, y, power=0):  # 0 max, 255 min
