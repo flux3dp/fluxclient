@@ -16,7 +16,7 @@ class LaserBase(object):
         self.rotation = 0.0
 
         self.laser_speed = 600
-        self.travel_speed = 900
+        self.travel_speed = 6000
         self.draw_power = 255  # drawing
         self.fram_power = 10  # indicating
         self.obj_height = 0.
