@@ -27,7 +27,7 @@ class RobotConsole(object):
             "kick": robot_obj.kick,
 
             "scan": robot_obj.begin_scan,
-            "scan_forword": robot_obj.scan_forword,
+            "scan_backward": robot_obj.scan_backward,
             "scan_next": robot_obj.scan_next,
 
             "maintain": robot_obj.begin_maintain,

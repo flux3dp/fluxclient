@@ -13,8 +13,8 @@ class DiscoverPrinter(object):
         self.discover = UpnpDiscover()
         self.found = {}
 
-        sys.stdout.write("%-25s %-10s %-8s %-8s %s\n" %
-                         ("Serial", "Model", "Password", "Version",
+        sys.stdout.write("%-25s %-20s %-10s %-8s %-3s %s\n" %
+                         ("Serial", "Name", "Model", "PWD", "Version",
                           "IP Address"))
         sys.stdout.write("=" * 79)
         sys.stdout.write("\n")
@@ -30,19 +30,20 @@ class DiscoverPrinter(object):
         sys.stdout.flush()
 
     def result_callback(self, discover_instance, serial, model_id, timestemp,
-                        protocol_version, has_password, ipaddrs):
+                        version, has_password, ipaddrs, name, **kw):
 
-        current = [model_id, protocol_version, has_password, ipaddrs]
+        current = [model_id, version, has_password, ipaddrs]
         if serial in self.found and current == self.found[serial]:
             return
 
         self.found[serial] = current
         ipaddrs_str = (("%s/%i" % tuple(i)) for i in ipaddrs)
-        sys.stdout.write("\r%-25s %-10s %-8s %-8s %s\n" %
+        sys.stdout.write("\r%-25s %-20s %-10s %-3s %-8s %s\n" %
                          (misc.uuid_to_short(serial),
+                          name,
                           model_id,
                           has_password and "YES" or "NO",
-                          protocol_version,
+                          version,
                           ", ".join(ipaddrs_str)))
         sys.stdout.flush()
 

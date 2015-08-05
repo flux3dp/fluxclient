@@ -59,8 +59,9 @@ class UpnpBase(object):
         return encryptor.get_public_key_der(self.keyobj)
 
     def _load_profile(self, discover_instance, serial, model_id, timestemp,
-                      version, has_password, ipaddrs):
+                      version, name, has_password, ipaddrs):
         if serial == self.serial.hex:
+            self.name = name
             self.model_id = model_id
             self.timedelta = timestemp - time()
             self.remote_version = StrictVersion(version)
@@ -70,8 +71,8 @@ class UpnpBase(object):
             discover_instance.stop()
 
     def _ensure_remote_ipaddr(self, discover_instance, serial, model_id,
-                              timestemp, protocol_version, has_password,
-                              ipaddrs):
+                              timestemp, version, has_password,
+                              ipaddrs, **kw):
         if serial == self.serial.hex:
             self.remote_addr = discover_instance.ipaddr
             discover_instance.stop()

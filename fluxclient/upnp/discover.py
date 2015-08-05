@@ -105,17 +105,17 @@ class UpnpDiscover(object):
 
     def on_recv_pong(self):
         buf, remote = self.sock.recvfrom(4096)
-        args = self._parse_response(buf)
-        return args
+        data = self._parse_response(buf)
+        return data
 
     def _receiving_pong(self, sock, callback, timeout=1.5):
         timeout_at = time() + timeout
 
         while timeout > 0:
             if select.select((sock, ), (), (), timeout)[0]:
-                args = self.on_recv_pong()
-                if args:
-                    callback(self, *args)
+                data = self.on_recv_pong()
+                if data:
+                    callback(self, **data)
 
             timeout = timeout_at - time()
 
@@ -127,11 +127,14 @@ class UpnpDiscover(object):
 
         payload = json.loads(buf[2:-1].decode("utf8"))
 
-        serial = payload.get("serial")
-        version = payload.get("ver")
-        model_id = payload.get("model")
-        timestemp = payload.get("time")
-        ipaddrs = payload.get("ip")
-        has_passwd = payload.get("pwd")
+        data = {
+            "serial": payload.get("serial"),
+            "name": payload.get("name", "My FLUX 3D Printer"),
+            "version": payload.get("ver"),
+            "model_id": payload.get("model"),
+            "timestemp": payload.get("time"),
+            "ipaddrs": payload.get("ip"),
+            "has_password": payload.get("pwd")
+        }
 
-        return serial, model_id, timestemp, version, has_passwd, ipaddrs
+        return data

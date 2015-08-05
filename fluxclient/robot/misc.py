@@ -27,8 +27,8 @@ def require_robot(target, logstream=sys.stdout):
         task = UpnpTask(target, lookup_callback=lookup_callback)
         ipaddr = select_ipaddr(task.remote_addrs)
         logstream.write(" OK\n")
-        logstream.write("Serial: %s\nModel: %s\nIP Addr: %s\n" %
-                        (task.serial.hex, task.model_id, ipaddr[0]))
+        logstream.write("Name: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
+                        (task.name, task.serial.hex, task.model_id, ipaddr[0]))
 
         while True:
             try:
