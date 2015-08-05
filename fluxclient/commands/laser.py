@@ -40,7 +40,7 @@ def process_svg(options, stream):
             buf = f.read()
 
         m_laser_svg.preprocess(buf, name)
-        tmp_buf, w, h = m_laser_svg.svgs[name]
+        tmp_buf, tmp_w, tmp_h = m_laser_svg.svgs[name]
 
         with open('pre.svg', 'wb') as f:
             f.write(tmp_buf)
