@@ -22,6 +22,10 @@ cdef extern from "scan_module.h":
     void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
     int get_item(PointCloudXYZRGBPtr cloud, int key, vector[float] point)
     int get_w(PointCloudXYZRGBPtr cloud)
+    int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2)
+    int clone(NormalPtr normalObj, NormalPtr normalObj2)
+    int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2)
+    int clone(MeshPtr meshobj, MeshPtr meshobj2)
 
     # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
 
@@ -56,10 +60,14 @@ cdef class PointCloudXYZRGBObj:
             raise RuntimeError("Load failed")
 
     cpdef PointCloudXYZRGBObj clone(self):
-        cdef PointCloudXYZRGBObj obj = PointCloudXYZRGBObj()
-        # TODO:
-        raise RuntimeError("Not implement clone yet")
-        # return obj
+        cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+        clone(self.obj, pc.obj)
+        clone(self.normalObj, pc.normalObj)
+        clone(self.bothobj, pc.bothobj)
+        clone(self.meshobj, pc.meshobj)
+        return pc
+
+
 
     cpdef dump(self, unicode filename):
         dumpPointCloudXYZRGB(filename.encode(), self.obj)

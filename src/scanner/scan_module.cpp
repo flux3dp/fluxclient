@@ -279,3 +279,19 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
   return 0;
 }
 
+int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2){
+  *obj2 = *obj;
+  return 0;
+}
+int clone(NormalPtr normalObj, NormalPtr normalObj2){
+  *normalObj = *normalObj2;
+  return 0;
+}
+int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2){
+  *bothobj = *bothobj2;
+  return 0;
+}
+int clone(MeshPtr meshobj, MeshPtr meshobj2){
+  *meshobj = *meshobj2;
+  return 0;
+}
