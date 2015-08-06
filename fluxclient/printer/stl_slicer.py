@@ -81,7 +81,8 @@ class StlSlicer(object):
                     config['first_layer_height'] = self.user_setting[key]
                     config['layer_height'] = self.user_setting[key]
                 elif key == 'infill':
-                    config['fill_density'] = self.user_setting[key]
+                    fill_density = float(self.user_setting[key]) * 100
+                    config['fill_density'] = str(fill_density)
                 elif key == 'traveling':
                     config['travel_speed'] = self.user_setting[key]
                 elif key == 'extruding':

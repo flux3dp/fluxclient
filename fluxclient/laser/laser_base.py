@@ -193,7 +193,7 @@ class LaserBase(object):
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
 
         elif key == 'power':
-            self.draw_power = round(float(value) / 100 * 255)   # pwm, int
+            self.draw_power = round(float(value) * 255)   # pwm, int
         else:
             raise ValueError('undefine setting key')
 
