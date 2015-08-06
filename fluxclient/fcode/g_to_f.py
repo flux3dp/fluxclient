@@ -32,17 +32,17 @@ class GcodeToFcode(FcodeBase):
         self.r = HW_PROFILE[model]["radius"]
 
         self.tool = 0  # set by T command
-        self.absolute = True
-        self.unit = 1
+        self.absolute = True  # whether using absolute position
+        self.unit = 1  # how many mm is one unit in gcode, might be mm or inch
 
-        self.crc = 0
+        self.crc = 0  # computing
 
-        self.current_speed = 1
-        self.image = None
-        self.current_pos = [None, None, None, None]  # X, Y, Z, E
-        self.time_need = 0.
-        self.filament = 0.
-        self.md = {'HEAD_TYPE': 'extruder'}
+        self.current_speed = 1  # current speed (set by F), mm/minute
+        self.image = None  # png image, should be a bytes obj
+        self.current_pos = [None, None, None, None, None, None]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.time_need = 0.  # recording time the printing process need, in sec
+        self.filament = [0., 0., 0.]  # recording the filament needed, in mm
+        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as
         # a = self.r[1:1 + 2]
         # x = x * 2 + 1
 
@@ -54,10 +54,9 @@ class GcodeToFcode(FcodeBase):
 
     def metadata(self, stream):
         """
-        deal with meta data
+        deal with meta data(a dict, and a png image)
         """
         md_join = '\n'.join([i + '=' + self.md[i] for i in self.md]).encode()
-        print (md_join)
 
         stream.write(struct.pack('<I', len(md_join)))
         stream.write(md_join)
@@ -71,12 +70,12 @@ class GcodeToFcode(FcodeBase):
 
     def XYZEF(self, input_list):
         """
-        parse data into a list: [F, X, Y, Z, E]
+        parse data into a list: [F, X, Y, Z, E1, E2, E3]
         element will be None if not setted
         and form the proper command
         """
         command = 0
-        number = [None for _ in range(5)]
+        number = [None for _ in range(7)]
         for i in input_list[1:]:
             if i.startswith('F'):
                 command |= (1 << 6)
@@ -92,26 +91,29 @@ class GcodeToFcode(FcodeBase):
                 number[3] = float(i[1:]) * self.unit
             elif i.startswith('E'):
                 command |= (1 << (2 - self.tool))
-                number[4] = float(i[1:]) * self.unit
+                number[4 + self.tool] = float(i[1:]) * self.unit
             else:
                 print(i)
         return command, number
 
     def analyze_metadata(self, input_list):
         """
-        input_list: [F, X, Y, Z, E]
+        input_list: [F, X, Y, Z, E1, E2, E3]
+        compute filament need for each extruder
+        compute time needed
         """
         self.current_pos[0]
         if input_list[0] is not None:
             self.current_speed = input_list[0]
 
-        if input_list[4] is not None:  # extruder
-            if self.absolute:
-                self.filament += input_list[4] - self.current_pos[3]
-                self.current_pos[3] = input_list[4]
-            else:
-                self.filament += input_list[4]
-                self.current_pos[3] += input_list[4]
+        for i in range(4, 7):  # extruder
+            if input_list[i] is not None:
+                if self.absolute:
+                    self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
+                    self.current_pos[i - 1] = input_list[i]
+                else:
+                    self.filament[i - 4] += input_list[i]
+                    self.current_pos[i - 1] += input_list[i]
 
         tmp_path = 0.
         for i in range(1, 4):  # position
@@ -122,8 +124,9 @@ class GcodeToFcode(FcodeBase):
                 else:
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
+
         tmp_path = sqrt(tmp_path)
-        self.time_need += tmp_path / self.current_speed  # TODO: figure out how time is compute
+        self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
 
     def writer(self, buf, stream):
         """
@@ -139,7 +142,8 @@ class GcodeToFcode(FcodeBase):
         fcode = open('GG.fcode', 'wb')
         fcode.write(self.header())
 
-        packer = lambda x: struct.pack('<B', x)  # due to appear so many times, use this as a alias for 'struct.pack('<B', x)'
+        packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
+        # TODO: make a packer for float?
 
         fcode.write(struct.pack('<I', 0))  # script length
         self.script_length = 0
@@ -172,9 +176,16 @@ class GcodeToFcode(FcodeBase):
                         self.extrude_absolute = False
 
                     elif line[0] == 'G92':  # set position
-                    # TODO:A G92 without coordinates will reset all axes to zero.
                         command = 64
                         sub_command, data = self.XYZEF(line)
+                        if any(data):
+                            pass
+                        else:  # A G92 without coordinates will reset all axes to zero.
+                            sub_command = 0
+                            for i in range(1, 7):
+                                sub_command |= (1 << (6 - i))
+                                data[i] = 0.0
+
                         command |= sub_command
                         self.writer(packer(command), fcode)
                         for i in range(len(data)):
@@ -243,10 +254,11 @@ class GcodeToFcode(FcodeBase):
         fcode.write(struct.pack('<I', self.script_length))
         fcode.seek(0, 2)  # go back to file end
 
-        self.md['FILAMENT_USED'] = str(self.filament)
+        self.md['FILAMENT_USED'] = str(list(filter(lambda x: x != 0.0, self.filament)))
         self.md['TIME_COST'] = str(self.time_need)
-        print(self.filament, self.time_need)
         self.metadata(fcode)
+        print(self.md['FILAMENT_USED'], self.md['TIME_COST'])
+
 if __name__ == '__main__':
     m_GcodeToFcode = GcodeToFcode()
     m_GcodeToFcode.process('tmp.gcode')
