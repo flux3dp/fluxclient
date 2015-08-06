@@ -223,8 +223,7 @@ PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangl
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
-  std::cout<<(*cloud).size()<<std::endl;
-
+  // std::cout<<(*cloud).size()<<std::endl;
   return cloud;
 }
 

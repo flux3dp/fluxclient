@@ -111,11 +111,9 @@ cdef class PointCloudXYZRGBObj:
 
     cpdef to_mesh(self):
         self.concatenatePointsNormal()
-
         new_c = PointCloudXYZRGBObj()
         new_c.obj = POS(self.bothobj, self.meshobj)
         return new_c
-
 
     cpdef STL_to_Faces(self):
         cdef vector[vector [int]] viewp
@@ -123,11 +121,8 @@ cdef class PointCloudXYZRGBObj:
         return viewp
 
 
-
-
 # reg part
 cdef extern from "scan_module.h":
-
     cdef cppclass PointNT:
         pass
     cdef cppclass M4f: # Eigen::Matrix4f (might cause namespace error)
