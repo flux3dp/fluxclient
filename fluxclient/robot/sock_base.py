@@ -18,13 +18,13 @@ class RobotSocketBase(object):
         return self.sock.getsockname(*args, **kw)
 
     def getsockopt(self, *args, **kw):
-        return self.getsockopt(*args, **kw)
+        return self.sock.getsockopt(*args, **kw)
 
     def gettimeout(self, *args, **kw):
-        return self.gettimeout(*args, **kw)
+        return self.sock.gettimeout(*args, **kw)
 
     def shutdown(self, *args, **kw):
-        return self.shutdown(*args, **kw)
+        return self.sock.shutdown(*args, **kw)
 
     def close(self):
-        return self._sock.close()
+        return self.sock.close()
