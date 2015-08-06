@@ -278,3 +278,6 @@ class FluxRobotV0002(object):
     def set_setting(self, key, value):
         cmd = "set %s %s" % (key, value)
         return self._make_cmd(cmd.encode())
+
+    def close(self):
+        self.sock.close()
