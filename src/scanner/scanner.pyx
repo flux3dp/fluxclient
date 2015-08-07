@@ -1,4 +1,5 @@
 import cython
+import sys
 from libcpp.vector cimport vector
 
 import fluxclient.scanner.scan_settings as scan_settings
@@ -30,7 +31,6 @@ cdef extern from "scan_module.h":
     # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
 
     int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float thresh)
-    int VG(PointCloudXYZRGBPtr cloud)
 
     int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius)
     int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius, vector[vector [float]] viewp, vector[int] step)
@@ -51,6 +51,7 @@ cdef class PointCloudXYZRGBObj:
         self.obj = createPointCloudXYZRGB()
         self.normalObj = createNormalPtr()
         self.meshobj = createMeshPtr()
+        self.bothobj = createPointXYZRGBNormalPtr()
 
     def get_w(self):
         return get_w(self.obj)
@@ -61,10 +62,12 @@ cdef class PointCloudXYZRGBObj:
 
     cpdef PointCloudXYZRGBObj clone(self):
         cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+
         clone(self.obj, pc.obj)
         clone(self.normalObj, pc.normalObj)
         clone(self.bothobj, pc.bothobj)
         clone(self.meshobj, pc.meshobj)
+
         return pc
 
 
@@ -84,9 +87,6 @@ cdef class PointCloudXYZRGBObj:
 
     cpdef int SOR(self, int neighbors, float threshold):
         return SOR(self.obj, neighbors, threshold)
-
-    cpdef int VG(self):
-        return VG(self.obj)
 
     cpdef int ne(self):
         return ne(self.obj, self.normalObj, 0.5)
@@ -141,6 +141,7 @@ cdef extern from "scan_module.h":
 
     int loadPointNT(const char* file, PointXYZRGBNormalPtr cloud)
     void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud)
+    FeatureCloudTPtr createFeatureCloudTPtr()
     int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius)
     int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf)
 
@@ -150,9 +151,19 @@ cdef class RegCloud:
     cdef FeatureCloudTPtr scene_f, obj_f
     cdef M4f transformation
 
-    def __init__(self):
+
+    def __init__(self, PointCloudXYZRGBObj obj, PointCloudXYZRGBObj scene):
+        obj.ne()
         self.obj = createPointXYZRGBNormalPtr()
+        clone(obj.bothobj, self.obj)
+
+        scene.ne()
         self.scene = createPointXYZRGBNormalPtr()
+        clone(scene.bothobj, self.scene)
+
+        self.obj_f = createFeatureCloudTPtr()
+        self.scene_f = createFeatureCloudTPtr()
+
 
     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
         if loadPointNT(filename_scene.encode(), self.scene) == -1:
@@ -170,8 +181,10 @@ cdef class RegCloud:
         self.dump_o(filename_1)
         self.dump_s(filename_2)
 
-    cpdef int FE(self, float radius):
-        return FE(self.scene, self.scene_f, radius) & FE(self.obj, self.obj_f, radius)
+    # cpdef int FE(self, float radius):
+    #     FE(self.scene, self.scene_f, radius)
+    #     FE(self.obj, self.obj_f, radius)
+    #     return 0
 
     cpdef int SCP(self, float leaf = 2.0):
         return SCP(self.obj, self.obj_f, self.scene, self.scene_f, self.transformation, leaf)

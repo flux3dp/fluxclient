@@ -10,8 +10,7 @@
 #include <pcl/surface/poisson.h>
 #include <pcl/conversions.h>
 
-// #include <pcl/io/vtk_lib_io.h>
-
+#include <pcl/console/print.h>
 
 PointCloudXYZRGBPtr createPointCloudXYZRGB() {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (
@@ -64,17 +63,6 @@ int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold) {
 
   return 0;
 }
-
-int VG(PointCloudXYZRGBPtr cloud) {
-    // voxel_grid
-  pcl::VoxelGrid<pcl::PointXYZRGB> vg;
-    vg.setMinimumPointsNumberPerVoxel(0); //set min points need to in a voxel
-    vg.setInputCloud (cloud);
-    vg.setLeafSize (0.5f, 0.5f, 0.5f);
-    vg.filter (*cloud);
-
-    return 0;
-  }
 
 NormalPtr createNormalPtr(){
   NormalPtr normals (new pcl::PointCloud<pcl::Normal>);
@@ -157,13 +145,26 @@ void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud){
   pcl::io::savePCDFileASCII(file, *cloud);
 }
 
+int downsample(PointXYZRGBNormalPtr cloud, PointXYZRGBNormalPtr cloud_clone, float leaf){
+  pcl::VoxelGrid<PointNT> grid;
+  grid.setLeafSize (leaf, leaf, leaf);
+  grid.setInputCloud (cloud);
+  grid.filter (*cloud_clone);
+  return 1;
+}
+
 int downsample(PointXYZRGBNormalPtr cloud, float leaf){
   pcl::VoxelGrid<PointNT> grid;
-  // const float leaf = 2.0f;
   grid.setLeafSize (leaf, leaf, leaf);
   grid.setInputCloud (cloud);
   grid.filter (*cloud);
   return 1;
+}
+
+
+FeatureCloudTPtr createFeatureCloudTPtr(){
+  FeatureCloudTPtr obj_f (new FeatureCloudT);
+  return obj_f;
 }
 
 int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius){
@@ -176,23 +177,37 @@ int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius
 }
 
 int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, Eigen::Matrix4f &transformation, float leaf){
-  pcl::SampleConsensusPrerejective<PointNT, PointNT, FeatureT> align;
 
-  align.setInputSource (object);
-  align.setSourceFeatures (object_features);
-  align.setInputTarget (scene);
-  align.setTargetFeatures (scene_features);
-  align.setMaximumIterations (15000); // Number of RANSAC iterations
-  align.setNumberOfSamples (3); // Number of points to sample for generating/prerejecting a pose
-  align.setCorrespondenceRandomness (10); // Number of nearest features to use
-  align.setSimilarityThreshold (0.9f); // Polygonal edge length similarity threshold
-  align.setMaxCorrespondenceDistance (1.5f * leaf); // Inlier threshold
-  align.setInlierFraction (0.3f); // Required inlier fraction for accepting a pose hypothesis
-  // {
-  //   pcl::ScopeTime t("Alignment");
-  //   align.align (*object_aligned);
-  // }
-  transformation = align.getFinalTransformation ();
+  pcl::SampleConsensusPrerejective<PointNT, PointNT, FeatureT> align;
+  PointXYZRGBNormalPtr object_aligned (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+
+  PointXYZRGBNormalPtr object_clone, scene_clone;
+
+  // Down sampling
+  downsample(object, object_clone, leaf);
+  downsample(scene, scene_clone, leaf);
+  pcl::console::print_info (" before-> cloud size:%d, cloud2 size:%d \n",object->points.size(), scene->points.size());
+  pcl::console::print_info (" after-> cloud size:%d, cloud2 size:%d \n",object_clone->points.size(), scene_clone->points.size());
+
+  FE(object_clone, object_features, 10);
+  FE(scene_clone, scene_features, 10);
+
+  align.setInputSource(object_clone);
+  align.setSourceFeatures(object_features);
+  align.setInputTarget(scene_clone);
+  align.setTargetFeatures(scene_features);
+  align.setMaximumIterations(15000); // Number of RANSAC iterations
+  align.setNumberOfSamples(3); // Number of points to sample for generating/prerejecting a pose
+  align.setCorrespondenceRandomness(10); // Number of nearest features to use
+  align.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
+  align.setMaxCorrespondenceDistance(1.5f * leaf); // Inlier threshold
+  align.setInlierFraction(0.3f); // Required inlier fraction for accepting a pose hypothesis
+
+  align.align (*object_aligned);
+
+  transformation = align.getFinalTransformation();
+  pcl::transformPointCloud (*scene, *scene, transformation);
+
   return align.hasConverged();
 }
 
@@ -284,14 +299,14 @@ int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2){
   return 0;
 }
 int clone(NormalPtr normalObj, NormalPtr normalObj2){
-  *normalObj = *normalObj2;
+  *normalObj2 = *normalObj;
   return 0;
 }
 int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2){
-  *bothobj = *bothobj2;
+  *bothobj2 = *bothobj;
   return 0;
 }
 int clone(MeshPtr meshobj, MeshPtr meshobj2){
-  *meshobj = *meshobj2;
+  *meshobj2 = *meshobj;
   return 0;
 }

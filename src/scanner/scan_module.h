@@ -18,7 +18,6 @@ int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point);
 int get_w(PointCloudXYZRGBPtr cloud);
 
 int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold);
-int VG(PointCloudXYZRGBPtr cloud);
 
 //normal estimation
 typedef pcl::PointCloud<pcl::Normal>::Ptr NormalPtr;
@@ -48,6 +47,7 @@ int loadPointNT(const char* file, PointXYZRGBNormalPtr cloud);
 void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud);
 
 int downsample(PointXYZRGBNormalPtr cloud, float leaf);
+FeatureCloudTPtr createFeatureCloudTPtr();
 int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius);
 int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf);
 

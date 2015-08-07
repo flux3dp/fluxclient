@@ -110,8 +110,9 @@ class PcProcess():
         if type(pc_both[0]) == list:
             pc_both = self.to_cpp(self.clouds[name_in])
         else:
+            logger.debug('%s' % str(type(pc_both[0])))
             pc_both = [i.clone() for i in pc_both]
-
+            logger.debug('%s' % str(type(pc_both[0])))
         for pc in pc_both:
             logger.debug('start with %d point' % pc.get_w())
             pc.SOR(50, stddev)  # TODO: put magic number away
@@ -167,7 +168,7 @@ class PcProcess():
             for pc in pc_both:
                 pc_size.append(pc.get_w())
                 for p_i in range(pc_size[-1]):
-                    p = pc_both.get_item(p_i)
+                    p = pc.get_item(p_i)
                     buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
                     # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
             buffer_data = b''.join(buffer_data)
@@ -193,6 +194,13 @@ class PcProcess():
             return self.to_mesh(name)
 
     def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+        return True
+
+    def auto_merge(self, name_base, name_2, name_out):
+        for i in range(1):  # fake code
+            reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
+            reg.SCP()
+
         return True
 
 
