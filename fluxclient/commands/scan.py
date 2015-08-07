@@ -5,9 +5,11 @@ import argparse
 import logging
 import sys
 import os
+import time
 
 from fluxclient.robot.misc import require_robot
 from fluxclient.robot import connect_robot
+from fluxclient.hw_profile import HW_PROFILE
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
@@ -36,7 +38,8 @@ def interactive(robot):
     logger.info("Type 'g' (go) to start progress")
     logger.info("Type 'L' (Left) toggle Left Laser")
     logger.info("Type 'R' (Right) toggle Right Laser")
-    logger.info("Type 'S' (Step) to mave a step")
+    logger.info("Type 'S[number]' (Step) to mave [number] step")
+    logger.info("Type 'C[length]' (Change) change step length for each step")
 
     laser_Left = False
     laser_Right = False
@@ -60,7 +63,27 @@ def interactive(robot):
 
         # TODO: make theese command available
         elif l.startswith('S'):
-            robot.scan_next()
+            l = l.rstrip('\n')
+            if len(l) == 1:
+                robot.scan_next()
+
+            else:
+                try:
+                    step = int(l[1:])
+                except:
+                    step = 1
+                for i in range(step):
+                    robot.scan_next()
+
+        elif l.startswith('C'):
+            l = l.rstrip('\n')
+            try:
+                step_len = float(l[1:])
+            except:
+                step_len = 180
+
+            robot.set_scanlen(step_len)
+
         elif l.startswith('L'):
             laser_Left = not laser_Left
             robot.scan_laser(laser_Left, laser_Right)
@@ -72,7 +95,8 @@ def interactive(robot):
             logger.info("Type 'g' (go) to start progress")
             logger.info("Type 'L' (Left) toggle Left Laser")
             logger.info("Type 'R' (Right) toggle Right Laser")
-            logger.info("Type 'S' (Step) to mave a step")
+            logger.info("Type 'S[number]' (Step) to mave [number] step")
+            logger.info("Type 'C[length]' (Change) change step length for each step")
 
 
 def print_progress(step, total):
@@ -106,24 +130,29 @@ def main():
 
     endpoint, server_key = require_robot(options.target)
     robot = prepare_robot(endpoint, server_key)
+    robot.set_scanlen(HW_PROFILE['model-1']['scan_full_len'] / 400.)
 
     if not options.auto:
         interactive(robot)
 
     filename_prefix = options.prefix or \
         datetime.datetime.now().strftime("scan_%Y%m%d_%H%M")
-
     filename_prefix = os.path.join(options.dist, filename_prefix)
+    filename_prefix = os.path.join(options.dist, '')
+    print(filename_prefix)
 
     logger.info("Image will save to %s*" % filename_prefix)
-
+    tmp = ['L', 'R', 'O']
+    # images = robot.scanimages()
     for step in range(400):
         print_progress(step, 400)
         images = robot.scanimages()
+        # time.sleep(0.1)
         robot.scan_next()
         for i in range(len(images)):
             mime, buf = images[i]
             filename = "%s_%03i_%i.jpg" % (filename_prefix, step, i)
+            filename = "%s%03i_%s.jpg" % (filename_prefix, step, tmp[i])
             with open(filename, "wb") as f:
                 f.write(buf)
 
