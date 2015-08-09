@@ -75,14 +75,12 @@ PointXYZRGBNormalPtr createPointXYZRGBNormalPtr(){
 }
 
 int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius){
-  puts("Normal computing");
   pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> nest;
   nest.setNumberOfThreads(4);
   nest.setRadiusSearch (radius);
  // nest.setViewPoint(0.0, 170.0, 90);
   nest.setInputCloud (cloud);
   nest.compute (*normals);
-
   return 1;
 }
 
@@ -146,21 +144,14 @@ void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud){
 }
 
 int downsample(PointXYZRGBNormalPtr cloud, PointXYZRGBNormalPtr cloud_clone, float leaf){
-  pcl::VoxelGrid<PointNT> grid;
-  grid.setLeafSize (leaf, leaf, leaf);
-  grid.setInputCloud (cloud);
-  grid.filter (*cloud_clone);
-  return 1;
-}
 
-int downsample(PointXYZRGBNormalPtr cloud, float leaf){
-  pcl::VoxelGrid<PointNT> grid;
-  grid.setLeafSize (leaf, leaf, leaf);
-  grid.setInputCloud (cloud);
-  grid.filter (*cloud);
-  return 1;
-}
+  pcl::VoxelGrid<pcl::PointXYZRGBNormal> grid;
+  grid.setLeafSize(leaf, leaf, leaf);
+  grid.setInputCloud(cloud);
+  grid.filter(*cloud_clone);
 
+  return 0;
+}
 
 FeatureCloudTPtr createFeatureCloudTPtr(){
   FeatureCloudTPtr obj_f (new FeatureCloudT);
@@ -173,40 +164,40 @@ int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius
   fest.setInputCloud (cloud);
   fest.setInputNormals (cloud);
   fest.compute (*cloud_features);
-  return 1;
+  return 0;
 }
 
-int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, Eigen::Matrix4f &transformation, float leaf){
-
+int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr aligned, float leaf){
   pcl::SampleConsensusPrerejective<PointNT, PointNT, FeatureT> align;
-  PointXYZRGBNormalPtr object_aligned (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 
-  PointXYZRGBNormalPtr object_clone, scene_clone;
+  PointXYZRGBNormalPtr scene_clone(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+  PointXYZRGBNormalPtr object_clone(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
 
   // Down sampling
-  downsample(object, object_clone, leaf);
   downsample(scene, scene_clone, leaf);
+  downsample(object, object_clone, leaf);
+
   pcl::console::print_info (" before-> cloud size:%d, cloud2 size:%d \n",object->points.size(), scene->points.size());
   pcl::console::print_info (" after-> cloud size:%d, cloud2 size:%d \n",object_clone->points.size(), scene_clone->points.size());
 
-  FE(object_clone, object_features, 10);
   FE(scene_clone, scene_features, 10);
+  FE(object_clone, object_features, 10);
 
   align.setInputSource(object_clone);
   align.setSourceFeatures(object_features);
   align.setInputTarget(scene_clone);
   align.setTargetFeatures(scene_features);
-  align.setMaximumIterations(15000); // Number of RANSAC iterations
+  align.setMaximumIterations(1500); // Number of RANSAC iterations
   align.setNumberOfSamples(3); // Number of points to sample for generating/prerejecting a pose
   align.setCorrespondenceRandomness(10); // Number of nearest features to use
   align.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
   align.setMaxCorrespondenceDistance(1.5f * leaf); // Inlier threshold
   align.setInlierFraction(0.3f); // Required inlier fraction for accepting a pose hypothesis
+  align.align (*aligned);
 
-  align.align (*object_aligned);
-
-  transformation = align.getFinalTransformation();
-  pcl::transformPointCloud (*scene, *scene, transformation);
+  M4f transformation = align.getFinalTransformation();
+  // M4f transformation = Eigen::Matrix4f::Identity();
+  pcl::transformPointCloud (*object, *aligned, transformation);
 
   return align.hasConverged();
 }
@@ -238,7 +229,6 @@ PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangl
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
-  // std::cout<<(*cloud).size()<<std::endl;
   return cloud;
 }
 
@@ -255,7 +245,6 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
   int v0, v1, v2;
 
   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-    std::cout << "  polygons[" << i << "]: " <<std::endl;
     v0 = triangles->polygons[i].vertices[0];
     v1 = triangles->polygons[i].vertices[1];
     v2 = triangles->polygons[i].vertices[2];
@@ -308,5 +297,10 @@ int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2){
 }
 int clone(MeshPtr meshobj, MeshPtr meshobj2){
   *meshobj2 = *meshobj;
+  return 0;
+}
+int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj){
+  copyPointCloud(*bothobj, *obj);
+  copyPointCloud(*bothobj, *normalObj);
   return 0;
 }

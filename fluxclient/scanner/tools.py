@@ -37,7 +37,7 @@ def write_pcd(points, file_name="model.pcd"):
                             (coordinate and color data for each point, in a list of points for a pointclooud)
     use StringsIO for output
     '''
-    if str(file_name) == str:
+    if type(file_name) == str:
         f = open(file_name, 'w')
     else:
         f = file_name
@@ -55,7 +55,7 @@ def write_pcd(points, file_name="model.pcd"):
     print('POINTS %d' % len(points), file=f)
     print('DATA ascii', file=f)
     for i in points:
-        print('%f %f %f %f' % (i[0], i[1], i[2], (i[3] << 16) | (i[4] << 8) | i[5]), file=f)
+        print('%f %f %f %f' % (i[0], i[1], i[2], (int(i[3]) << 16) | (int(i[4]) << 8) | int(i[5])), file=f)
 
     print('write', len(points), 'points into ' + file_name, file=sys.stderr)
 

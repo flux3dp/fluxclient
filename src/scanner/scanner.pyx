@@ -27,6 +27,7 @@ cdef extern from "scan_module.h":
     int clone(NormalPtr normalObj, NormalPtr normalObj2)
     int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2)
     int clone(MeshPtr meshobj, MeshPtr meshobj2)
+    int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj)
 
     # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
 
@@ -70,7 +71,9 @@ cdef class PointCloudXYZRGBObj:
 
         return pc
 
-
+    cpdef int split(self):
+        split(self.bothobj, self.obj, self.normalObj)
+        return 0
 
     cpdef dump(self, unicode filename):
         dumpPointCloudXYZRGB(filename.encode(), self.obj)
@@ -89,7 +92,7 @@ cdef class PointCloudXYZRGBObj:
         return SOR(self.obj, neighbors, threshold)
 
     cpdef int ne(self):
-        return ne(self.obj, self.normalObj, 0.5)
+        return ne(self.obj, self.normalObj, 10)
 
     cpdef int ne_viewpoint(self, viewp, step):
 
@@ -143,7 +146,8 @@ cdef extern from "scan_module.h":
     void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud)
     FeatureCloudTPtr createFeatureCloudTPtr()
     int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius)
-    int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf)
+    # int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf) except +
+    int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGBNormalPtr object_align, float leaf) except +
 
 
 cdef class RegCloud:
@@ -154,15 +158,19 @@ cdef class RegCloud:
 
     def __init__(self, PointCloudXYZRGBObj obj, PointCloudXYZRGBObj scene):
         obj.ne()
+        obj.concatenatePointsNormal()
         self.obj = createPointXYZRGBNormalPtr()
         clone(obj.bothobj, self.obj)
 
         scene.ne()
+        scene.concatenatePointsNormal()
         self.scene = createPointXYZRGBNormalPtr()
         clone(scene.bothobj, self.scene)
 
         self.obj_f = createFeatureCloudTPtr()
         self.scene_f = createFeatureCloudTPtr()
+
+        # self.object_align = createPointXYZRGBNormalPtr()
 
 
     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
@@ -186,5 +194,8 @@ cdef class RegCloud:
     #     FE(self.obj, self.obj_f, radius)
     #     return 0
 
-    cpdef int SCP(self, float leaf = 2.0):
-        return SCP(self.obj, self.obj_f, self.scene, self.scene_f, self.transformation, leaf)
+    cpdef SCP(self, float leaf = 2):
+        cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+        tmp = SCP(self.obj, self.obj_f, self.scene, self.scene_f, pc.bothobj, leaf)
+        pc.split()
+        return [tmp, pc]

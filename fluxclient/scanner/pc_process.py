@@ -3,6 +3,7 @@ import struct
 from operator import ge, le
 import logging
 import io
+import sys
 
 import fluxclient.scanner.scan_settings as scan_settings
 from fluxclient.scanner.tools import write_stl, write_pcd
@@ -194,13 +195,21 @@ class PcProcess():
             return self.to_mesh(name)
 
     def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+        self.clouds[name_out] = self.clouds[name_2]
+        # not done yet
         return True
 
     def auto_merge(self, name_base, name_2, name_out):
-        for i in range(1):  # fake code
+        for name in [name_base, name_2]:
+            if type(self.clouds[name][0]) == list:
+                self.clouds[name] = self.to_cpp(self.clouds[name])
+        pc_both = []
+        for i in range(1, 2):  # fake code
+        # TODO: should ignore avoid zero input point
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
-            reg.SCP()
-
+            result, pc = reg.SCP()
+            pc_both.append(pc)
+        self.clouds[name_out] = pc_both
         return True
 
 

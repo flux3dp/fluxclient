@@ -46,10 +46,11 @@ typedef Eigen::Matrix4f M4f;
 int loadPointNT(const char* file, PointXYZRGBNormalPtr cloud);
 void dumpPointNT(const char* file, PointXYZRGBNormalPtr cloud);
 
-int downsample(PointXYZRGBNormalPtr cloud, float leaf);
+int downsample(PointXYZRGBNormalPtr cloud, PointXYZRGBNormalPtr cloud_clone, float leaf);
 FeatureCloudTPtr createFeatureCloudTPtr();
 int FE(PointXYZRGBNormalPtr cloud, FeatureCloudTPtr cloud_features, float radius);
-int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf);
+// int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, M4f &transformation, float leaf);
+int SCP(PointXYZRGBNormalPtr object, FeatureCloudTPtr object_features, PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGBNormalPtr object_aligned, float leaf);
 
 typedef pcl::PolygonMesh::Ptr MeshPtr;
 MeshPtr createMeshPtr();
@@ -61,3 +62,4 @@ int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2);
 int clone(NormalPtr normalObj, NormalPtr normalObj2);
 int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2);
 int clone(MeshPtr meshobj, MeshPtr meshobj2);
+int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj);
