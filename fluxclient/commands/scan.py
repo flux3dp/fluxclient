@@ -5,7 +5,6 @@ import argparse
 import logging
 import sys
 import os
-import time
 
 from fluxclient.robot.misc import require_robot
 from fluxclient.robot import connect_robot
@@ -102,7 +101,7 @@ def interactive(robot):
 def print_progress(step, total):
     left = int((step / total) * 70)
     right = 70 - left
-    sys.stdout.write("\r[%s>%s] Step %3i\n" % ("=" * left, " " * right, step))
+    sys.stdout.write("\r[%s>%s] Step %3i" % ("=" * left, " " * right, step))
     sys.stdout.flush()
 
 
@@ -141,18 +140,17 @@ def main():
     filename_prefix = os.path.join(options.dist, '')
     print(filename_prefix)
 
-    logger.info("Image will save to %s*" % filename_prefix)
-    tmp = ['L', 'R', 'O']
-    # images = robot.scanimages()
+    logger.info("Image will save to %s*.jpg" % filename_prefix)
+    suffix = ['L', 'R', 'O']
+    images = robot.scanimages()
     for step in range(400):
         print_progress(step, 400)
         images = robot.scanimages()
-        # time.sleep(0.1)
         robot.scan_next()
         for i in range(len(images)):
             mime, buf = images[i]
             filename = "%s_%03i_%i.jpg" % (filename_prefix, step, i)
-            filename = "%s%03i_%s.jpg" % (filename_prefix, step, tmp[i])
+            filename = "%s%03i_%s.jpg" % (filename_prefix, step, suffix[i])
             with open(filename, "wb") as f:
                 f.write(buf)
 

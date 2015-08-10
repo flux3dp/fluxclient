@@ -57,9 +57,15 @@ MeshPtr createMeshPtr();
 PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles);
 int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data);
 int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data);
+int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float rx, float ry, float rz);
 
 int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2);
 int clone(NormalPtr normalObj, NormalPtr normalObj2);
 int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2);
 int clone(MeshPtr meshobj, MeshPtr meshobj2);
+
+PointCloudXYZRGBPtr add(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2);
+NormalPtr add(NormalPtr normalObj, NormalPtr normalObj2);
+PointXYZRGBNormalPtr add(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2);
+
 int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj);

@@ -115,9 +115,9 @@ class PcProcess():
             pc_both = [i.clone() for i in pc_both]
             logger.debug('%s' % str(type(pc_both[0])))
         for pc in pc_both:
-            logger.debug('start with %d point' % pc.get_w())
+            logger.debug('start with %d point' % len(pc))
             pc.SOR(50, stddev)  # TODO: put magic number away
-            logger.debug('finished with %d point' % pc.get_w())
+            logger.debug('finished with %d point' % len(pc))
 
         self.clouds[name_out] = pc_both
 
@@ -167,8 +167,8 @@ class PcProcess():
         else:
             pc_size = []
             for pc in pc_both:
-                pc_size.append(pc.get_w())
-                for p_i in range(pc_size[-1]):
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):  # ?????
                     p = pc.get_item(p_i)
                     buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
                     # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
@@ -184,7 +184,7 @@ class PcProcess():
                 pc_add = []
                 pc_size = []
                 for pc in pc_both:
-                    pc_size.append(pc.get_w())
+                    pc_size.append(len(pc))
                     for p_i in range(pc_size[-1]):
                         pc_add.append(pc_both.get_item(p_i))
             tmp = io.StringIO()
@@ -195,8 +195,16 @@ class PcProcess():
             return self.to_mesh(name)
 
     def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
-        self.clouds[name_out] = self.clouds[name_2]
-        # not done yet
+
+        logger.debug('merge %3f, %3f, %3f, %3f, %3f, %3f, %s' % (x, y, z, rx, ry, rz, name_out))
+        both_pc = []
+        for i in range(2):
+            pc = self.clouds[name_2][i].clone()
+            pc.apply_transform(x, y, z, rx, ry, rz)
+            pc = pc.add(self.clouds[name_base][i])  # change it self
+            both_pc.append(pc)
+
+        self.clouds[name_out] = both_pc
         return True
 
     def auto_merge(self, name_base, name_2, name_out):
@@ -204,11 +212,15 @@ class PcProcess():
             if type(self.clouds[name][0]) == list:
                 self.clouds[name] = self.to_cpp(self.clouds[name])
         pc_both = []
-        for i in range(1, 2):  # fake code
-        # TODO: should ignore avoid zero input point
+        for i in range(2):
+            if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
+                pc_both.append(self.clouds[name_2][i].clone())
+                continue
+
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
             result, pc = reg.SCP()
             pc_both.append(pc)
+
         self.clouds[name_out] = pc_both
         return True
 
