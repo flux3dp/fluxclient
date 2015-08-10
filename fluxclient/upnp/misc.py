@@ -59,8 +59,9 @@ def short_to_uuid(short, mapping=HEXMAP):
     return _uuid.UUID(int=n).hex
 
 
-def parse_network_config(method, ipaddr=None, mask=None, route=None, ns=None,
-                         ssid=None, security=None, wepkey=None, psk=None):
+def parse_network_config(method, wifi_mode=None, ipaddr=None, mask=None,
+                         route=None, ns=None, ssid=None, security=None,
+                         wepkey=None, psk=None):
     assert method in ["dhcp", "static"], "method must be dhcp or static"
 
     options = {"method": method}
@@ -75,6 +76,7 @@ def parse_network_config(method, ipaddr=None, mask=None, route=None, ns=None,
         })
 
     if ssid:
+        options["wifi_mode"] = wifi_mode
         options["ssid"] = ssid
 
         if security == "WEP":

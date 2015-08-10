@@ -24,8 +24,10 @@ class UsbTask(object):
     def __init__(self, port, baudrate=115200):
         self.s = Serial(port=port, baudrate=115200, timeout=0)
         self.keyobj = E.get_or_create_keyobj()
+        self._discover()
 
-        resp = self._make_request(CODE_DISCOVER)
+    def _discover(self):
+        resp = self._make_request(CODE_DISCOVER, timeout=0.25)
         info = {}
         for pair in resp.split(b"\x00"):
             spair = pair.decode("utf8", "ignore").split("=", 1)
@@ -38,7 +40,7 @@ class UsbTask(object):
         self.timedelta = time() - float(info["time"])
         self.remote_version = info["ver"]
         self.has_password = True if int(info["pwd"]) == 1 else False
-        self.nickname = info["name"]
+        self.name = info["name"]
         self.remote_addrs = None
 
         rsakey = self._make_request(CODE_RSAKEY)
@@ -103,6 +105,11 @@ class UsbTask(object):
 
         return self._make_request(CODE_AUTH, payload)
 
+    def config_general(self, options):
+        message = "\x00".join(("%s=%s" % i for i in options.items()))
+        ret = self._make_request(CODE_CONFIG_GENERAL, message.encode())
+        return ret.decode("ascii", "ignore")
+
     def config_network(self, options):
         message = "\x00".join(("%s=%s" % i for i in options.items()))
         ret = self._make_request(CODE_CONFIG_NETWORK, message.encode())
@@ -110,6 +117,9 @@ class UsbTask(object):
 
     def get_ssid(self):
         return self._make_request(CODE_GET_SSID).decode("utf8", "ignore")
+
+    def close(self):
+        self.s.close()
 
 
 class UsbTaskError(RuntimeError):
