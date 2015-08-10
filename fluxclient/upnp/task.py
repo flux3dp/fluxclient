@@ -105,19 +105,12 @@ class UpnpTask(UpnpBase):
     def require_auth(self, timeout=6):
         start_at = time()
         while timeout >= (time() - start_at):
-            try:
-                resp = self.auth_without_password()
-                if resp:
-                    if resp.get("status") == "ok":
-                        return resp
-                    else:
-                        raise RuntimeError("AUTH_ERROR", resp.get("status"))
-
-            except RuntimeError as err:
-                if err.args[0] == "AUTH_ERROR":
-                    # Miss payload
-                    continue
+            resp = self.auth_without_password()
+            if resp:
+                if resp.get("status") == "ok":
+                    return resp
+                elif resp.get("status") == "deny":
+                    raise RuntimeError("AUTH_ERROR", "deny")
                 else:
-                    raise
-
+                    raise RuntimeError("UNKNOW_ERROR", resp.get("status"))
         raise RuntimeError("TIMEOUT")
