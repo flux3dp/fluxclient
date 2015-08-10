@@ -23,10 +23,17 @@ cdef extern from "scan_module.h":
     void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
     int get_item(PointCloudXYZRGBPtr cloud, int key, vector[float] point)
     int get_w(PointCloudXYZRGBPtr cloud)
+    int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float rx, float ry, float rz)
+
     int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2)
     int clone(NormalPtr normalObj, NormalPtr normalObj2)
     int clone(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2)
     int clone(MeshPtr meshobj, MeshPtr meshobj2)
+
+    PointCloudXYZRGBPtr add(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2)
+    NormalPtr add(NormalPtr normalObj, NormalPtr normalObj2)
+    PointXYZRGBNormalPtr add(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr bothobj2)
+
     int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj)
 
     # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
@@ -39,7 +46,6 @@ cdef extern from "scan_module.h":
     PointXYZRGBNormalPtr createPointXYZRGBNormalPtr()
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
     PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles);
-
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
 
 cdef class PointCloudXYZRGBObj:
@@ -54,8 +60,15 @@ cdef class PointCloudXYZRGBObj:
         self.meshobj = createMeshPtr()
         self.bothobj = createPointXYZRGBNormalPtr()
 
-    def get_w(self):
+    def __len__(self):
         return get_w(self.obj)
+
+    cpdef add(self, PointCloudXYZRGBObj other):
+        cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+        pc.obj = add(self.obj, other.obj)
+        pc.normalObj = add(self.normalObj, other.normalObj)
+        pc.bothobj = add(self.bothobj, other.bothobj)
+        return pc
 
     cpdef loadFile(self, unicode filename):
         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:
@@ -71,6 +84,9 @@ cdef class PointCloudXYZRGBObj:
 
         return pc
 
+    cpdef apply_transform(self, x, y, z, rx, ry, rz):
+        apply_transform(self.obj, x, y, z, rx, ry, rz)
+
     cpdef int split(self):
         split(self.bothobj, self.obj, self.normalObj)
         return 0
@@ -84,7 +100,7 @@ cdef class PointCloudXYZRGBObj:
 
     cpdef get_item(self, key):
         cdef vector[float] point = [0., 0., 0., 0., 0., 0.]
-        assert key < self.get_w(), 'get index:%d out of range:%d' % (key, self.get_w())
+        assert key < len(self), 'get index:%d out of range:%d' % (key, len(self))
         get_item(self.obj, key, point)
         return point
 

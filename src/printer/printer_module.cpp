@@ -10,7 +10,7 @@ MeshPtr createMeshPtr(){
 
 int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-  for (int i = 0; i < points.size(); i += 1){
+  for (uint i = 0; i < points.size(); i += 1){
     pcl::PointXYZ p;
     p.x = points[i][0];
     p.y = points[i][1];
@@ -46,7 +46,7 @@ int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
     pcl::Vertices v;
     v.vertices.resize(3);
     // add faces, but shift the index for add on mesh
-    for (int i = 0; i < add_on_mesh->polygons.size(); i += 1){
+    for (uint i = 0; i < add_on_mesh->polygons.size(); i += 1){
         v.vertices[0] = add_on_mesh->polygons[i].vertices[0] + size_to_add_on;
         v.vertices[1] = add_on_mesh->polygons[i].vertices[1] + size_to_add_on;
         v.vertices[2] = add_on_mesh->polygons[i].vertices[2] + size_to_add_on;
@@ -63,7 +63,7 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
 
-  for (int i = 0; i < cloud->size(); i += 1){
+  for (uint i = 0; i < cloud->size(); i += 1){
     if((*cloud)[i].x > maxx){
       maxx = (*cloud)[i].x;
     }
@@ -100,7 +100,7 @@ int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
 
-  for (int i = 0; i < cloud->size(); i += 1){
+  for (uint i = 0; i < cloud->size(); i += 1){
     if((*cloud)[i].x > maxx){
       maxx = (*cloud)[i].x;
     }
@@ -146,7 +146,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   center.resize(3);
 
   // scale
-  for (int i = 0; i < cloud->size(); i += 1){
+  for (uint i = 0; i < cloud->size(); i += 1){
     (*cloud)[i].x *= sc_x;
     (*cloud)[i].y *= sc_y;
     (*cloud)[i].z *= sc_z;
@@ -197,7 +197,6 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   transform(2, 3) = z;
   pcl::transformPointCloud(*cloud, *cloud, transform);
 
-  // rotate first
   toPCLPointCloud2(*cloud, triangles->cloud);
   return 0;
   }
