@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import struct
 import io
+import sys
 
 import numpy as np
 from PIL import Image
 
 import fluxclient.scanner.freeless as freeless
 import fluxclient.scanner.scan_settings as scan_settings
+from fluxclient.scanner.tools import write_pcd
 
 
 class image_to_pc():
@@ -63,3 +65,35 @@ class image_to_pc():
         output format: check https://github.com/flux3dp/fluxghost/wiki/websocket-3dscan-control
         '''
         return [struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.) for p in points]
+
+
+def print_progress(step, total):
+    left = int((step / total) * 70)
+    right = 70 - left
+    sys.stdout.write("\r[%s>%s] Step %3i" % ("=" * left, " " * right, step))
+    sys.stdout.flush()
+
+
+def after(l):
+    return l
+    for i in range(-70, 70):
+        for j in range(-70, 70):
+            l.append([i, j, -10.0, 255, 0, 0])
+
+    for i in range(-250, 1000):
+        l.append([0, 0, i / 10, 0, 255, 0])
+    return l
+
+if __name__ == '__main__':
+    m_image_to_pc = image_to_pc()
+    img_location = '/Users/yen/' + sys.argv[1] + ''
+    print(img_location)
+
+    for i in range(400):
+        tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
+        m_image_to_pc.feed(*tmp, step=(i) % 400)
+        print_progress(i, 400)
+    print('')
+    "py ./pcd_to_js.py ~/0808.pcd > model.js"
+    # subprocess.call(["ls", "-l"])
+    write_pcd(after(m_image_to_pc.points_L), '../../../../' + sys.argv[1] + '.pcd')
