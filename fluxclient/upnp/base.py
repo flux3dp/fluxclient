@@ -1,5 +1,4 @@
 
-from distutils.version import StrictVersion
 from select import select
 from random import randint
 from time import time
@@ -8,6 +7,7 @@ import struct
 import socket
 import json
 
+from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
 from fluxclient.upnp import misc
 from fluxclient import encryptor
