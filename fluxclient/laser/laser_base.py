@@ -11,15 +11,15 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 11  # focal z coordinate
+        self.focal_l = 3.0  # focal z coordinate
 
         self.rotation = 0.0
 
         self.laser_speed = 600
         self.travel_speed = 6000
         self.draw_power = 255  # drawing
-        self.fram_power = 10  # indicating
-        self.obj_height = 0.
+        self.fram_power = 230  # indicating
+        self.obj_height = 3.21
 
         self.split_thres = 999  # should be some small number
         self.current_x = None
@@ -32,14 +32,6 @@ class LaserBase(object):
         self.reset_image()
 
         # speed F= mm/minute
-
-        # machine indicate how you pass gcode into machine
-        # choose marlin if you are using printrun
-        # self.machine = 'pi'
-        if "FLUXHW" in os.environ:
-            self.machine = os.environ["FLUXHW"]
-        else:
-            self.machine = 'pi'
 
         self.ratio = 1.
 
@@ -57,9 +49,7 @@ class LaserBase(object):
         for i in header.split('\n'):
             gcode.append(";" + i)
 
-        #  gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")
-        gcode.append("M666 X-1.95 Y-0.4 Z-2.1 R97.4 H241.2")  # new
-
+        self.laser_on = True
         gcode += self.turnOff()
         gcode.append("G28")
 
@@ -77,26 +67,17 @@ class LaserBase(object):
         if self.laser_on:
             return []
         self.laser_on = True
-        if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "@X9L%d" % self.draw_power, "G4 P1"]
-        elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P10", "HL%d" % self.draw_power, "G4 P1"]
+        return ["G4 P1", "G4 P1"] * 16 + ["G4 P10", "HL%d" % self.draw_power, "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
-        if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L0", "G4 P1"]
-        elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL0", "G4 P1"]
+        return ["G4 P1", "G4 P1"] * 16 + ["G4 P1", "HL0", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
-        if self.machine == 'marlin':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "@X9L%d" % self.fram_power, "G4 P1"]
-        elif self.machine == 'pi':
-            return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL%d" % self.fram_power, "G4 P1"]
+        return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL%d" % self.fram_power, "G4 P1"]
 
     def moveTo(self, x, y, speed=None):
         """
@@ -143,13 +124,13 @@ class LaserBase(object):
 
             draw to position x,y
         """
-        gcode = []
+        gcode = [';draw']
         gcode += self.turnOn()
 
         if speed is None:
             gcode += self.moveTo(x, y)
         else:
-            gcode += self.moveTo(x, y, speed)
+            gcode += self.moveTo(x, y, speed=speed)
 
         return gcode
 
