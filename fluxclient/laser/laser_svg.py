@@ -572,7 +572,7 @@ class LaserSvg(LaserBase):
                 for x, y in each_path:
                     if x != '\n':
                         if not moveTo:
-                            gcode += self.drawTo(x, y)
+                            gcode += self.drawTo(x, y, speed=300)
                         else:
                             gcode += self.closeTo(x, y, self.travel_speed)
                             moveTo = False

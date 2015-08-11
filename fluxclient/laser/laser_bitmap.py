@@ -49,11 +49,12 @@ class LaserBitmap(LaserBase):
         abs_shift = len(self.image_map) / 2
         for h in range(0, len(self.image_map)):
             #column iteration
-            itera = range(0, len(self.image_map))
-            final_x = len(self.image_map)
             if h % 2 == 1:
                 final_x = 0
                 itera = reversed(range(0, len(self.image_map)))
+            elif h % 2 == 0:
+                itera = range(0, len(self.image_map))
+                final_x = len(self.image_map)
 
             for w in itera:
                 if self.image_map[h][w] < self.thres:  # acturally meaningless self.thres=255 and only 0 or 255 on image_map
@@ -75,7 +76,7 @@ class LaserBitmap(LaserBase):
             if self.laser_on:
                 gcode += self.drawTo(final_x - abs_shift, h - abs_shift)
                 gcode += self.turnOff()
-
+        gcode += self.turnOff()
         gcode += ["G28"]
         gcode = "\n".join(gcode) + "\n"
         logger.debug("generate gcode done:%d bytes" % len(gcode))
