@@ -38,6 +38,7 @@ class RobotConsole(object):
         self.cmd_mapping = {
             "ls": self.list_file,
             "upload": self.upload_file,
+            "update_fw": self.update_fw,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
@@ -77,6 +78,11 @@ class RobotConsole(object):
     def upload_file(self, filename):
         self.robot_obj.upload_file(
             filename.rstrip(), progress_callback=self.log_progress_callback)
+
+    def update_fw(self, filename):
+        self.robot_obj.upload_file(
+            filename.rstrip(), cmd="update_fw",
+            progress_callback=self.log_progress_callback)
 
     def oneshot(self, filename=None):
         images = self.robot_obj.oneshot()
