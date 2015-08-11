@@ -2,6 +2,7 @@
 import struct
 import io
 import sys
+import subprocess
 
 import numpy as np
 from PIL import Image
@@ -52,6 +53,7 @@ class image_to_pc():
         self.points_R.extend(point_R_this)
 
         return [self.points_to_bytes(point_L_this), self.points_to_bytes(point_R_this)]
+        return [self.points_to_bytes(point_L_this), []]
 
     def points_to_bytes(self, points):
         '''
@@ -74,14 +76,48 @@ def print_progress(step, total):
     sys.stdout.flush()
 
 
-def after(l):
+def myrange(*args):
+    start = 0.
+    sep = 1
+    if len(args) == 2:
+        start, end = args
+    elif len(args) == 3:
+        start, end, sep = args
+    elif len(args) == 1:
+        end = args[0]
+    tmp = start
+    l = []
+    while tmp < end:
+        l.append(tmp)
+        tmp += sep
     return l
-    for i in range(-70, 70):
-        for j in range(-70, 70):
-            l.append([i, j, -10.0, 255, 0, 0])
+
+
+def after(l):
+    for i in range(-70, 70, 3):
+        for j in range(-70, 70, 3):
+            l.append([i, j, 0.0, 255, 0, 0])
 
     for i in range(-250, 1000):
         l.append([0, 0, i / 10, 0, 255, 0])
+
+    for i in myrange(0, 62, 0.3):
+        l.append([-18, -21, i, 255, 0, 0])
+        l.append([18, -21, i, 255, 0, 0])
+        l.append([-18, 21, i, 255, 0, 0])
+        l.append([18, 21, i, 255, 0, 0])
+
+    for i in myrange(-21, 21, 0.3):
+        l.append([18, i, 62, 255, 0, 0])
+        l.append([18, i, 0, 255, 0, 0])
+        l.append([-18, i, 62, 255, 0, 0])
+        l.append([-18, i, 0, 255, 0, 0])
+
+    for i in myrange(-18, 18, 0.3):
+        l.append([i, 21, 62, 255, 0, 0])
+        l.append([i, 21, 0, 255, 0, 0])
+        l.append([i, -21, 62, 255, 0, 0])
+        l.append([i, -21, 0, 255, 0, 0])
     return l
 
 if __name__ == '__main__':
@@ -91,9 +127,10 @@ if __name__ == '__main__':
 
     for i in range(400):
         tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
-        m_image_to_pc.feed(*tmp, step=(i) % 400)
+        m_image_to_pc.feed(*tmp, step=(i - 20) % 400)
         print_progress(i, 400)
     print('')
-    "py ./pcd_to_js.py ~/0808.pcd > model.js"
-    # subprocess.call(["ls", "-l"])
-    write_pcd(after(m_image_to_pc.points_L), '../../../../' + sys.argv[1] + '.pcd')
+    # "py ./pcd_to_js.py ~/0808.pcd > model.js"
+
+    write_pcd(after(m_image_to_pc.points_R), '../../../../' + sys.argv[1] + '.pcd')
+    subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', '../../../../' + sys.argv[1] + '.pcd'], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
