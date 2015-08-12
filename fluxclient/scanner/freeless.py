@@ -3,7 +3,6 @@ import sys
 import time
 import math
 
-
 import numpy
 
 import fluxclient.scanner.scan_settings as scan_settings
@@ -15,12 +14,11 @@ RED_HUE_UPPER_THRESHOLD = 5
 
 
 def normalize(v):
-    l = v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
-    l = math.sqrt(l)
-
-    v[0] /= l
-    v[1] /= l
-    v[2] /= l
+    """
+    normalize vector v
+    """
+    l = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+    list(map(lambda x: x / l, v))
     return v
 
 
@@ -29,11 +27,11 @@ def pre_cut(img, x=0, y=0, w=None, h=None):
 
 
 def point_dis_sq(a, b):
-    return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[1] - b[1]) ** 2
+    return sum((a[i] - b[i]) ** 2 for i in range(3))
 
 
 def dot(a, b):
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    return sum(a[i] * b[i] for i in range(3))
 
 
 def check_tri(tri, thres=25):
@@ -42,30 +40,26 @@ def check_tri(tri, thres=25):
       return True if each edge is smaller than thres, False otherwise
       tri = [[x, y, z], [x, y, z], [x, y, z]]
     '''
-    thres = thres ** 2
-    if (tri[0][0] - tri[1][0]) ** 2 + (tri[0][1] - tri[1][1]) ** 2 + (tri[0][2] - tri[1][2]) ** 2 > thres:
+    thres **= 2
+
+    if point_dis_sq(tri[0], tri[1]) > thres:
         return False
-    elif (tri[0][0] - tri[2][0]) ** 2 + (tri[0][1] - tri[2][1]) ** 2 + (tri[0][2] - tri[2][2]) ** 2 > thres:
+    if point_dis_sq(tri[0], tri[2]) > thres:
         return False
-    elif (tri[1][0] - tri[2][0]) ** 2 + (tri[1][1] - tri[2][1]) ** 2 + (tri[1][2] - tri[2][2]) ** 2 > thres:
+    if point_dis_sq(tri[1], tri[2]) > thres:
         return False
-    else:
-        return True
+
+    return True
 
 
 def normal(tri):
     '''
-      compute normal of a triangle
+      compute normal of a triangle surface
       tri = [[x, y, z], [x, y, z], [x, y, z]]
     '''
-    return (
-        (tri[1][1] - tri[1][0]) * (tri[2][2] - tri[2][0]) -
-        (tri[1][2] - tri[1][0]) * (tri[2][1] - tri[2][0]),
-        (tri[2][1] - tri[2][0]) * (tri[0][2] - tri[0][0]) -
-        (tri[0][1] - tri[0][0]) * (tri[2][2] - tri[2][0]),
-        (tri[0][1] - tri[0][0]) * (tri[1][2] - tri[1][0]) -
-        (tri[0][2] - tri[0][0]) * (tri[1][1] - tri[1][0])
-    )
+    a = [tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]]  # vector v0 -> v1
+    b = [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]  # vector v0 -> v2
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
 
 
 class freeless():
@@ -81,42 +75,47 @@ class freeless():
           RANGE_DISTANCE_THRESHOLD : two range will be merged if their distance is small than this variable
         '''
         self.m_laserRanges = []
-        self.m_maxLaserWidth = 120 * 2
+        self.m_maxLaserWidth = 50
         self.m_minLaserWidth = 3
-        self.MAX_MAGNITUDE_SQ = (255 * 255 * 3.0)
-        self.m_laserMagnitudeThreshold = .8
+        self.MAX_MAGNITUDE_SQ = (255 * 255 * 3.0)  # doesn't really matter(just for scaling)
+        self.m_laserMagnitudeThreshold = .8  # main threshold, diff value from 0.0 to 1.0
         self.firstRowLaserCol = 0.5 * scan_settings.img_width
         self.RANGE_DISTANCE_THRESHOLD = 2
         self.numSuspectedBadLaserLocations = 0
         self.results = []
         self.laser_plane = [[0, 0, 0], normalize([laserZ, 0, -1 * laserX])]
+        self.place = {}
 
     def img_to_points(self, img_o, img_red, indices, step, side, clock=False):
         '''
-          convert indices on the image into x-y-z-rgb points
-          return  [
+        convert indices on the image into x-y-z-rgb points
+        return  [
                                 p1[x-coordinate, y-coord, z-coord, r, g, b],
                                 p2[x-coordinate, y-coord, z-coord, r, g, b],
                                 p3[x-coordinate, y-coord, z-coord, r, g, b],
                                   ...
-                  ]
+                ]
+
+        warning coord change!!!!!!!!!!!
+        switch y, z
         '''
         points = []
-        MAX_DIST_XZ_SQ = 250 ** 2
-        MAX_DIST_Y = 999999
+
+        MAX_DIST_XZ_SQ = 70 ** 2
+        PLATE_Y = -20.0
+        MAX_DIST_Y = 50
 
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)
             f, point = self.intersectLaserPlane(ray)
 
             if f:
-                distXZSq = math.sqrt(point[0][0] ** 2 + point[0][2] ** 2)
+                distXZSq = point[0][0] ** 2 + point[0][2] ** 2
 
-                if point[0][1] >= 0.0 and distXZSq < MAX_DIST_XZ_SQ and point[0][1] < MAX_DIST_Y:
-                    point.append(
-                        [img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])
+                if point[0][1] >= PLATE_Y and distXZSq < MAX_DIST_XZ_SQ and point[0][1] < MAX_DIST_Y:
+                    point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])  # add color
                     points.append(point)
-                else:
+                else:  # points that out of bounding cylinder
                     pass
                     # print point[0][1] >= 0.0, distXZSq < MAX_DIST_XZ_SQ,
                     # point[0][1] < MAX_DIST_Y, step
@@ -126,14 +125,13 @@ class freeless():
         if clock:
             step = - step
 
+        # TODO: test on theta_a
         if side == 'L':
-            theta = math.pi * 2 * step / scan_settings.scan_step
-            # + scan_settings.theta_a
+            theta = math.pi * 2 * step / scan_settings.scan_step - scan_settings.theta_a
         elif side == 'R':
-            theta = math.pi * 2 * step / scan_settings.scan_step
-            # - scan_settings.theta_a
+            theta = math.pi * 2 * step / scan_settings.scan_step + scan_settings.theta_a
         else:
-            print ('shouldn\'t happen, input=' + side)
+            print('shouldn\'t happen, input=' + side, file=sys.stderr)
 
         c = math.cos(theta)
         s = math.sin(theta)
@@ -145,8 +143,7 @@ class freeless():
             p[0][2] = tmp2
 
         # points = [[p[0][0] * 10, p[0][2] * 10, p[0][1] * 10, p[2][0], p[2][1], p[2][2]] for p in points]
-        points = [[p[0][0], p[0][2], p[0][1] * 1.2, p[2][2], p[2][1], p[2][0]]
-                  for p in points]
+        points = [[p[0][0], p[0][2], p[0][1], p[2][2], p[2][1], p[2][0]] for p in points]
 
         return points
 
@@ -163,7 +160,7 @@ class freeless():
         # print denominator
 
         if abs(denominator) < 0.0000001:
-            print ('warning: < 0.0000001:', denominator)
+            print('warning: < 0.0000001:', denominator, file=sys.stderr)
             return False, None
 
         v = [self.laser_plane[0][0] - ray[0][0], self.laser_plane[0]
@@ -176,10 +173,8 @@ class freeless():
             # print 'warning: d < 0:', ray
             return False, None
 
-        point = [[ray[0][
-            0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
-        point.append([scan_settings.laserX_L - point[0][0],
-                      scan_settings.laserY_L - point[0][1], scan_settings.laserZ_L - point[0][2]])
+        point = [[ray[0][0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
+        point.append([scan_settings.laserX_L - point[0][0], scan_settings.laserY_L - point[0][1], scan_settings.laserZ_L - point[0][2]])
         # print point
 
         return True, point
@@ -189,22 +184,21 @@ class freeless():
           calculate a ray at x, y, z, direction from camera to x, y, z
           return ray : [[x,y,z], [direction_x, direction_y, direction_z]]
           warning coord change!!!!!!!!!!!
+          in image:y goes down, in realworld :y goes up
         '''
-        # if (x,y) in self.place.keys():
-        # return self.place[(x, y)]
+        if (x, y) in self.place:
+            return self.place[(x, y)]
 
-        # else:
         # portion, We subtract by one because the image is 0 indexed
         x = float(x) / (scan_settings.img_width - 1)
-        y = float(scan_settings.img_height - y) / (scan_settings.img_height - 1)
+        y = float(scan_settings.img_height - 1 - y) / (scan_settings.img_height - 1)
 
-        x = (x * scan_settings.sensorWidth) + scan_settings.cameraX - (scan_settings.sensorWidth * 0.5)
-        y = (y * scan_settings.sensorHeight) + scan_settings.cameraY - (scan_settings.sensorHeight * 0.5)
+        x = (x * scan_settings.sensorWidth) + scan_settings.cameraX - (scan_settings.sensorWidth * 0.5) + 0.125  # rule of thumb number
+        y = (y * scan_settings.sensorHeight) + scan_settings.cameraY - (scan_settings.sensorHeight * 0.5) + 0.31  # rule of thumb number
         z = scan_settings.cameraZ - scan_settings.focalLength
 
-        ray = [[x, y, z], normalize(
-            [x - scan_settings.cameraX, y - scan_settings.cameraY, z - scan_settings.cameraZ])]
-        # self.place[(x, y)] = ray
+        ray = [[x, y, z], normalize([x - scan_settings.cameraX, y - scan_settings.cameraY, z - scan_settings.cameraZ])]
+        self.place[(x, y)] = ray
         return ray
 
     def writeTrianglesForColumn(self, lastFrame, currentFrame, tri):
@@ -275,16 +269,16 @@ class freeless():
         numMerged = 0
         prevLaserCol = self.firstRowLaserCol
 
-        # diff two img, need set type to int to avoid overflow in uint8
+        # diff two img, need set type as 'int' to avoid overflow in uint8
         d = abs((img1.astype(int)) - (img2.astype(int)))
-        d = d.astype(int)
         # squre each element
+        d = d.astype(int)
         d = numpy.multiply(d, d)
-        # sum up r, g, b into one number
+        # sum up r, g, b diff number into one number
         d = numpy.sum(d, axis=2)
 
         # some transform
-        mag = 255.0 * d / self.MAX_MAGNITUDE_SQ
+        mag = 255.0 * d / self.MAX_MAGNITUDE_SQ  # 0.0 ~ 1.0
 
         for row in range(scan_settings.img_height):
             m_laserRanges = []
@@ -294,13 +288,14 @@ class freeless():
             for col in range(scan_settings.img_width):
                 # diff value is bigger than threshold
                 if mag[row][col] > self.m_laserMagnitudeThreshold:
-                    # store the beginning, if it's a new candidate, keep going
-                    # otherwise
+                    # new candidate appear: first time > threshold, record as starting index
                     if m_laserRanges[-1][0] == -1:
                         m_laserRanges[-1][0] = col
+                    # otherwise keep going
+                    else:
+                        pass
 
-                # ending point of the candidate appear! (diff value is no
-                # longer bigger than threshold)
+                # ending point of the candidate appear! (diff value is no longer bigger than threshold)
                 elif m_laserRanges[-1][0] != -1:
                     laserWidth = col - m_laserRanges[-1][0]
                     # laser width should within the constrain
@@ -308,24 +303,20 @@ class freeless():
                         wasMerged = False
                         # merge two candidate if they are very near
                         if len(m_laserRanges) > 1:
-                            rangeDistance = m_laserRanges[-
-                                                          1][0] - m_laserRanges[-2][1]
+                            rangeDistance = m_laserRanges[-1][0] - m_laserRanges[-2][1]
                             if rangeDistance < self.RANGE_DISTANCE_THRESHOLD:
                                 wasMerged = True
                                 m_laserRanges[-2][1] = col
-                                m_laserRanges[-2][2] = round(
-                                    (m_laserRanges[-2][0] + m_laserRanges[-2][1]) / 2.)
+                                m_laserRanges[-2][2] = round((m_laserRanges[-2][0] + m_laserRanges[-2][1]) / 2.)
                                 numMerged += 1
                                 m_laserRanges[-1][0] = -1
 
-                        if wasMerged is False:
+                        if not wasMerged:
                             m_laserRanges[-1][1] = col
-                            m_laserRanges[-1][2] = round(
-                                (m_laserRanges[-1][0] + m_laserRanges[-1][1]) / 2.)
+                            m_laserRanges[-1][2] = round((m_laserRanges[-1][0] + m_laserRanges[-1][1]) / 2.)
 
                             m_laserRanges.append([-1, -1, None])
-                    # laser width is not within the constrain, reinitialize the
-                    # point
+                    # laser width is not within the constrain, reinitialize the point
                     else:
                         m_laserRanges[-1][0] = -1
 
@@ -333,15 +324,13 @@ class freeless():
             #   print m_laserRanges
             #   input()
 
-            # find out the best candidate
+            # for each row, find out the best candidate
             if len(m_laserRanges) > 1:
-                rangeChoice = self.detectBestLaserRange(
-                    m_laserRanges, prevLaserCol)
+                rangeChoice = self.detectBestLaserRange(m_laserRanges, prevLaserCol)
 
                 prevLaserCol = m_laserRanges[rangeChoice][2]
 
-                centerCol = self.detectLaserRangeCenter(
-                    m_laserRanges[rangeChoice], img1, img2, row)
+                centerCol = self.detectLaserRangeCenter(m_laserRanges[rangeChoice], img1, img2, row)
                 laserLocations.append([row, centerCol])
 
                 # update self.firstRowLaserCol
@@ -358,11 +347,11 @@ class freeless():
         '''
           determine which is the best candidate from laserRanges
           i.e. the nearest one to the previous row's
-          return int
+          return index of the best one
         '''
         bestRange_index = 0
         dis_best = abs(laserRanges[0][2] - prevLaserCol)
-        for i in range(1, len(laserRanges) - 1):
+        for i in range(1, len(laserRanges) - 1):  # last one is [-1, -1, None]
             tmpdis = abs(laserRanges[i][2] - prevLaserCol)
             if tmpdis < dis_best:
                 dis_best = tmpdis
@@ -372,10 +361,10 @@ class freeless():
     def detectLaserRangeCenter(self, bestRange, img1, img2, row):
         '''
           find the Center of bestrange
+          use Weighted arithmetic mean
           return int
         '''
-        d = abs(
-            (img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
+        d = abs((img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
         d = d.astype(int)
         d = numpy.multiply(d, d)
         d = numpy.sum(d, axis=1)
