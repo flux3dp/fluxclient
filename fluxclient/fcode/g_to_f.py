@@ -22,14 +22,8 @@ class GcodeToFcode(FcodeBase):
       long path will split into many different command in order to support emergency stop
 
     """
-    def __init__(self, model='model-1'):
+    def __init__(self, version=1):
         super(GcodeToFcode, self).__init__()
-
-        if model not in HW_PROFILE:
-            logger.info("Undefine model:%d , using 'model-1'instead" % (model))
-            model = "model-1"
-
-        self.r = HW_PROFILE[model]["radius"]
 
         self.tool = 0  # set by T command
         self.absolute = True  # whether using absolute position
@@ -56,7 +50,7 @@ class GcodeToFcode(FcodeBase):
         """
         deal with meta data(a dict, and a png image)
         """
-        md_join = '\n'.join([i + '=' + self.md[i] for i in self.md]).encode()
+        md_join = '\x00'.join([i + '=' + self.md[i] for i in self.md]).encode()
 
         stream.write(struct.pack('<I', len(md_join)))
         stream.write(md_join)
@@ -137,128 +131,120 @@ class GcodeToFcode(FcodeBase):
         stream.write(buf)
         self.crc = crc32(buf, self.crc)
 
-    def process(self, file_name):
+    def process(self, input_stream, output_stream):
         # fcode = tempfile.NamedTemporaryFile(suffix='.fcode', delete=False)
-        fcode = open('GG.fcode', 'wb')
-        fcode.write(self.header())
+        output_stream.write(self.header())
 
         packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
         # TODO: make a packer for float?
 
-        fcode.write(struct.pack('<I', 0))  # script length
+        output_stream.write(struct.pack('<I', 0))  # script length
         self.script_length = 0
 
-        with open(file_name, 'r') as f:
-            if file_name[-6:] != '.gcode':
-                raise ValueError('Unrecognized file format%s' % (file_name))
-            for line in f:
-                if ';' in line:
-                    line = line[:line.index(';')].rstrip()
+        for line in input_stream:
+            if ';' in line:
+                line = line[:line.index(';')].rstrip()
 
-                line = line.split()
+            line = line.split()
 
-                if line:
-                    if line[0] == 'G28':  # home
-                        self.writer(packer(1), fcode)
-                        for tmp in range(3):
-                            self.current_pos[tmp] = 0
+            if line:
+                if line[0] == 'G28':  # home
+                    self.writer(packer(1), output_stream)
+                    for tmp in range(3):
+                        self.current_pos[tmp] = 0
 
-                    elif line[0] == 'G90':  # set to absolute
-                        self.writer(packer(2), fcode)
-                        self.absolute = True
-                    elif line[0] == 'G91':  # set to relative
-                        self.absolute = False
-                        self.writer(packer(3), fcode)
+                elif line[0] == 'G90':  # set to absolute
+                    self.writer(packer(2), output_stream)
+                    self.absolute = True
+                elif line[0] == 'G91':  # set to relative
+                    self.absolute = False
+                    self.writer(packer(3), output_stream)
 
-                    elif line[0] == 'M82':  # set extruder to absolute
-                        self.extrude_absolute = True
-                    elif line[0] == 'M83':  # set extruder to relative
-                        self.extrude_absolute = False
+                elif line[0] == 'M82':  # set extruder to absolute
+                    self.extrude_absolute = True
+                elif line[0] == 'M83':  # set extruder to relative
+                    self.extrude_absolute = False
 
-                    elif line[0] == 'G92':  # set position
-                        command = 64
-                        sub_command, data = self.XYZEF(line)
-                        if any(data):
-                            pass
-                        else:  # A G92 without coordinates will reset all axes to zero.
-                            sub_command = 0
-                            for i in range(1, 7):
-                                sub_command |= (1 << (6 - i))
-                                data[i] = 0.0
+                elif line[0] == 'G92':  # set position
+                    command = 64
+                    sub_command, data = self.XYZEF(line)
+                    if any(data):
+                        pass
+                    else:  # A G92 without coordinates will reset all axes to zero.
+                        sub_command = 0
+                        for i in range(1, 7):
+                            sub_command |= (1 << (6 - i))
+                            data[i] = 0.0
 
-                        command |= sub_command
-                        self.writer(packer(command), fcode)
-                        for i in range(len(data)):
-                            if data[i] is not None:
-                                self.writer(struct.pack('<f', i), fcode)
-                                self.current_pos[i - 1] = data[i]
+                    command |= sub_command
+                    self.writer(packer(command), output_stream)
+                    for i in range(len(data)):
+                        if data[i] is not None:
+                            self.writer(struct.pack('<f', i), output_stream)
+                            self.current_pos[i - 1] = data[i]
 
-                    elif line[0] == 'G4':  # dwell
-                        self.writer(packer(4), fcode)
-                        self.writer(struct.pack('<f', float(line[1].lstrip('P'))), fcode)
+                elif line[0] == 'G4':  # dwell
+                    self.writer(packer(4), output_stream)
+                    self.writer(struct.pack('<f', float(line[1].lstrip('P'))), output_stream)
 
-                    elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
-                        command = 16
-                        if line[0] == 'M109':
-                            command |= (1 << 3)
-                        for i in line:
-                            if i.startswith('S'):
-                                temp = float(i.lstrip('S'))
-                            elif i.startswith('T'):
-                                self.tool = int(i.lstrip('T'))
-                                if self.tool > 7:
-                                    raise ValueError('too many extruder! %d' % self.tool)
-                        command |= self.tool
-                        self.writer(packer(command), fcode)
-                        self.writer(struct.pack('<f', temp), fcode)
+                elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
+                    command = 16
+                    if line[0] == 'M109':
+                        command |= (1 << 3)
+                    for i in line:
+                        if i.startswith('S'):
+                            temp = float(i.lstrip('S'))
+                        elif i.startswith('T'):
+                            self.tool = int(i.lstrip('T'))
+                            if self.tool > 7:
+                                raise ValueError('too many extruder! %d' % self.tool)
+                    command |= self.tool
+                    self.writer(packer(command), output_stream)
+                    self.writer(struct.pack('<f', temp), output_stream)
 
-                    elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
-                        if line == 'G20':  # inch
-                            self.unit = 25.4
-                        elif line == 'G21':  # mm
-                            self.unit = 1
+                elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
+                    if line == 'G20':  # inch
+                        self.unit = 25.4
+                    elif line == 'G21':  # mm
+                        self.unit = 1
 
-                    elif line[0] == 'G0' or line[0] == 'G1':  # move
-                        command = 128
-                        subcommand, data = self.XYZEF(line)
-                        self.analyze_metadata(data)
+                elif line[0] == 'G0' or line[0] == 'G1':  # move
+                    command = 128
+                    subcommand, data = self.XYZEF(line)
+                    self.analyze_metadata(data)
 
-                        command |= subcommand
-                        self.writer(packer(command), fcode)
-                        for i in data:
-                            if i is not None:
-                                self.writer(struct.pack('<f', i), fcode)
+                    command |= subcommand
+                    self.writer(packer(command), output_stream)
+                    for i in data:
+                        if i is not None:
+                            self.writer(struct.pack('<f', i), output_stream)
 
-                    elif line[0] == 'T0' or line[0] == 'T1':  # change tool
-                        if line[0] == 'T0':
-                            self.tool = 0
-                        if line[0] == 'T1':
-                            self.tool = 1
+                elif line[0] == 'T0' or line[0] == 'T1':  # change tool
+                    if line[0] == 'T0':
+                        self.tool = 0
+                    if line[0] == 'T1':
+                        self.tool = 1
 
-                    elif line[0] == 'M107' or line[0] == 'M106':  # fan control
-                        command = 48
-                        command |= 1  # TODO: change this part
-                        self.writer(packer(command), fcode)
-                        if line[0] == 'M107':
-                            self.writer(struct.pack('<f', 0.0), fcode)
-                        elif line[0] == 'M106':
-                            self.writer(struct.pack('<f', float(line[1].lstrip('S'))), fcode)
+                elif line[0] == 'M107' or line[0] == 'M106':  # fan control
+                    command = 48
+                    command |= 1  # TODO: change this part
+                    self.writer(packer(command), output_stream)
+                    if line[0] == 'M107':
+                        self.writer(struct.pack('<f', 0.0), output_stream)
+                    elif line[0] == 'M106':
+                        self.writer(struct.pack('<f', float(line[1].lstrip('S'))), output_stream)
 
-                    elif line[0] == 'M84':  # loosen the motor
-                        pass  # should only appear when printing done
-                    else:
-                        print(line, file=sys.stderr)
-                        raise ValueError('Undefine gcode')
-        fcode.write(struct.pack('<I', self.crc))
-        fcode.seek(len(self.header()), 0)
-        fcode.write(struct.pack('<I', self.script_length))
-        fcode.seek(0, 2)  # go back to file end
+                elif line[0] in ['M84', 'M140']:  # loosen the motor
+                    pass  # should only appear when printing done
+                else:
+                    print(line, file=sys.stderr)
+                    raise ValueError('Undefine gcode', line)
+        output_stream.write(struct.pack('<I', self.crc))
+        output_stream.seek(len(self.header()), 0)
+        output_stream.write(struct.pack('<I', self.script_length))
+        output_stream.seek(0, 2)  # go back to file end
 
         self.md['FILAMENT_USED'] = str(list(filter(lambda x: x != 0.0, self.filament)))
         self.md['TIME_COST'] = str(self.time_need)
-        self.metadata(fcode)
-        print(self.md['FILAMENT_USED'], self.md['TIME_COST'])
+        self.metadata(output_stream)
 
-if __name__ == '__main__':
-    m_GcodeToFcode = GcodeToFcode()
-    m_GcodeToFcode.process('tmp.gcode')
