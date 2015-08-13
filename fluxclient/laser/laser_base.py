@@ -36,7 +36,9 @@ class LaserBase(object):
         self.ratio = 1.
 
     def reset_image(self):
-        self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
+        w = self.pixel_per_mm * self.radius * 2
+        self.image_map = np.ones((w, w), np.uint8) * 255
+        # self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
         """
@@ -251,8 +253,7 @@ class LaserBase(object):
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
     def dump(self, file_name, mode='save'):
-        img = np.uint8(np.array(self.image_map))
-        img = Image.fromarray(img)
+        img = Image.fromarray(self.image_map)
         if mode == 'save':
             img.save(file_name, 'png')
             return

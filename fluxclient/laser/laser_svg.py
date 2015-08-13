@@ -82,7 +82,6 @@ class LaserSvg(LaserBase):
         data = []
         head = 0
         # split the path by alphabet
-        # print(thing.attrib['d'])
         for i in range(len(thing.attrib['d'])):
             if thing.attrib['d'][i].isalpha():
                 data.append(thing.attrib['d'][head:i])
@@ -93,13 +92,14 @@ class LaserSvg(LaserBase):
         if data[0].strip() == '':
             data = data[1:]
 
-        for i in range(len(data)):  # parse each alphabet command
+        # parse each alphabet command
+        for i in range(len(data)):
             tmp = [data[i][0]]
             tmp += map(float, data[i][1:].replace(',', ' ').replace('-', ' -').split())
             data[i] = tmp
 
-        # if len(data) == 0:
-        #     return []
+        if len(data) == 0:
+            return [[]]
 
         if data[0][0] == 'M':  # store init x,y for future use
             x_init, y_init = data[0][1], data[0][2]
@@ -115,10 +115,14 @@ class LaserSvg(LaserBase):
 
         for i in data:
             if i[0] in 'Mm':
+
                 if i[0] == 'M':  # absolute move to
                     x, y = i[1], i[2]
                 elif i[0] == 'm':  # relative move to
-                    x, y = x + i[1], y + i[2]
+                    if x is None and y is None:
+                        x, y = i[1], i[2]
+                    else:
+                        x, y = x + i[1], y + i[2]
                 gcode.append(('\n', '\n'))
                 gcode.append((x, y))
 
@@ -365,7 +369,6 @@ class LaserSvg(LaserBase):
                 i.attrib = tmp_thing.attrib
             else:
                 pass
-                # print(thing.tag)
 
         path_data = self.elements_to_list(root)
 
@@ -395,12 +398,12 @@ class LaserSvg(LaserBase):
 
         viewBox[2] = viewBox[2] - viewBox[0]
         viewBox[3] = viewBox[3] - viewBox[1]
-
+        root.attrib = {}
         root.attrib['viewBox'] = " ".join(map(str, viewBox))
         # theese are optional
         root.attrib['width'] = str(viewBox[2])
         root.attrib['height'] = str(viewBox[3])
-        # root.attrib['style'] = "border:1px solid #ff0000;"
+        # root.attrib['style'] = "border:1px solid #ff0000;"  # for debug
 
         self.svgs[name] = [ET.tostring(root), viewBox[2], viewBox[3]]  # type: bytes
         # tree.write('preprocess.svg')
@@ -591,7 +594,7 @@ class LaserSvg(LaserBase):
 
         with open('output.gcode', 'w') as f:
             print("\n".join(tmp) + "\n", file=f)
-        print(len("\n".join(tmp) + "\n"))
+
         return "\n".join(tmp) + "\n"
         ##########################################
 
@@ -606,4 +609,3 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
         m_laser_svg.preprocess(f.read(), filename)
-        # print (m_laser_svg.gcode_generate())
