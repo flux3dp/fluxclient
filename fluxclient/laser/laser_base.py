@@ -1,4 +1,5 @@
 # !/usr/bin/env python3
+
 import os
 import io
 from math import pi, sin, cos, sqrt, degrees
@@ -13,9 +14,7 @@ class LaserBase(object):
         self.laser_on = False
         self.focal_l = 3.0  # focal z coordinate
 
-        self.rotation = 0.0
-
-        self.laser_speed = 600
+        self.laser_speed = 600  # speed F= mm/minute
         self.travel_speed = 6000
         self.draw_power = 255  # drawing
         self.fram_power = 230  # indicating
@@ -31,14 +30,13 @@ class LaserBase(object):
         # list holding current image
         self.reset_image()
 
-        # speed F= mm/minute
-
+        # warning global setting, don't use theese unless you 100% understand what you are doing
+        self.rotation = 0
         self.ratio = 1.
 
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
         self.image_map = np.ones((w, w), np.uint8) * 255
-        # self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
         """
@@ -51,17 +49,17 @@ class LaserBase(object):
         for i in header.split('\n'):
             gcode.append(";" + i)
 
+        # force close laser
         self.laser_on = True
         gcode += self.turnOff()
-        gcode.append("G28")
 
-        # TODO: this should be in config file
+        # home
+        gcode.append("G28")
         self.current_x = 0.
         self.current_y = 0.
-        self.current_z = 241.20
+        self.current_z = 241.20  # TODO: this should be in config file
 
-        gcode.append(";G29")
-
+        # move to proper height
         gcode.append("G1 F5000 Z" + str(self.focal_l + self.obj_height))
         return gcode
 
@@ -83,10 +81,8 @@ class LaserBase(object):
 
     def moveTo(self, x, y, speed=None):
         """
-            apply global rotation and scale
+            apply global "rotation" and "scale"
             move to position x,y
-            if distance need to move is larger than self.split_thres,
-            path will split into many different command in order to support emergency stop
         """
         gcode = []
 
@@ -160,10 +156,8 @@ class LaserBase(object):
         return image
 
     def gcode_generate(self):
-        """gcode_generate"""
-        gcode = self.header('laser svg')
-
-        return "\n".join(gcode) + "\n"
+        """Virtual function gcode_generate"""
+        raise NotImplementedError('Successor didn\'t implement "gcode_generate" method')
 
     def export_to_stream(self, stream, *args):
         stream.write(self.gcode_generate(*args))
@@ -253,6 +247,9 @@ class LaserBase(object):
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
     def dump(self, file_name, mode='save'):
+        """
+            dump the image of this laser class
+        """
         img = Image.fromarray(self.image_map)
         if mode == 'save':
             img.save(file_name, 'png')

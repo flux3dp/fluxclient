@@ -2,13 +2,20 @@
 
 import sys
 from math import sin, cos, pi, radians, sqrt, acos, copysign
-import xml.etree.ElementTree as ET  # cElementTree is the c implement of ElementTree, much faster and memory friendly
+# cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
+import xml.etree.ElementTree as ET
 
 from fluxclient.laser.laser_base import LaserBase
 
 
+logger = logging.getLogger(__name__)
+
+
 class LaserSvg(LaserBase):
-    """docstring for laser_svg"""
+    """
+    LaserSvg class:
+      generate gcode base on given svg file
+    """
     def __init__(self):
         super(LaserSvg, self).__init__()
         self.reset()
@@ -16,8 +23,6 @@ class LaserSvg(LaserBase):
     def reset(self):
         self.svgs = {}
         self.ready_svgs = {}
-        self.param = None
-        self.pixel_per_mm = 16  # sample rate for each point
 
     def rect(self, thing):
         '''
@@ -299,7 +304,7 @@ class LaserSvg(LaserBase):
         """
         return list-in-list indicate the coordinate the laser should go through
         each element in one list
-        in each list '\n' means it's a move to command not a line to
+        in each list '\n' means it's a move-to command not a line-to
         """
         # find the tag-header for each child element
         # because will look like this when parsing the data -> '{http://www.w3.org/2000/svg}polygon'
@@ -321,6 +326,10 @@ class LaserSvg(LaserBase):
         return gcode
 
     def compute(self, name, data):
+        """
+        setting params
+        and put in dict ready_svgs (svg without params is not ready yet)
+        """
         self.ready_svgs[name] = data
 
     def preprocess(self, buf, name):
@@ -553,7 +562,6 @@ class LaserSvg(LaserBase):
                     pass
 
             # make every points inside the boundary circle -> (cx, cy, r) = (0, 0, self.radius)
-            # print(new_path, file=sys.stderr)
             in_path = []
             for i in range(1, len(new_path)):
                 if new_path[i - 1][0] == '\n':
@@ -615,7 +623,6 @@ class LaserSvg(LaserBase):
                     if tmp[-1] != i:
                         tmp.append(i)
                 in_path = tmp
-            # print(in_path, file=sys.stderr)
             sys.stderr.flush()
 
             path_data[path] = in_path
@@ -636,9 +643,8 @@ class LaserSvg(LaserBase):
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
 
             # TODO: y = -y
-            for each_path in path_data:  # ['\n', '\n'], [poinit], ['\n'] case
-                # move to the first place
-                moveTo = True
+            for each_path in path_data:
+                moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
                     if x != '\n':
                         if not moveTo:
@@ -651,28 +657,24 @@ class LaserSvg(LaserBase):
                         continue
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
-        self.dump('./preview.png')
+
         ################ fake code ##############
+        self.dump('./preview.png')
         tmp = []
         for i in gcode:
             tmp.append(i)
-            # if i[:2] == 'G1':
-            #     tmp.append(i)
+            if i[:2] == 'G1':
+                tmp.append(i)
+        # return "\n".join(tmp) + "\n"
 
         with open('output.gcode', 'w') as f:
-            print("\n".join(tmp) + "\n", file=f)
-
-        return "\n".join(tmp) + "\n"
+            print("\n".join(gcode) + "\n", file=f)
         ##########################################
 
         return "\n".join(gcode) + "\n"
 
 if __name__ == '__main__':
     m_laser_svg = LaserSvg()
-
-    # filename = ('Rust.svg')
-    # filename = ('HTML5_LOGO.svg')
-    # filename = ('responsive-design.svg')
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
         m_laser_svg.preprocess(f.read(), filename)

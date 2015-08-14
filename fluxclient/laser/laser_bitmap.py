@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class LaserBitmap(LaserBase):
     """
-    laser_bitmap class:
+    LaserBitmap class:
       generate gcode base on given images
     """
     def __init__(self):
@@ -25,25 +25,15 @@ class LaserBitmap(LaserBase):
         """
         reset LaserBitmap class
         """
-        self.pixel_per_mm = 16  # sample rate for each point
-        self.front_end_radius = 250  # front-end input(250 px as r), doesn't matter ()
-        self.ratio = self.radius / self.front_end_radius  # ratio for actually moving head
-
-        self.edges = [0, len(self.image_map), 0, len(self.image_map[0])]  # up, down, left, right bound of the image
-
-        self.rotation = 0  # general rotation for final gcode
-        self.laser_on = False  # recording if laser is on
-
         # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
         self.thres = 255
-        self.ratio = 1 / self.pixel_per_mm
 
     def gcode_generate(self):
         """
         return gcode in string type, use method:export_to_stream to export gcode to stream
         """
         gcode = []
-        gcode += self.header('bitmap')
+        gcode += self.header('FLUX. Laser Bitmap.')
 
         #row iteration
         abs_shift = len(self.image_map) / 2
@@ -76,6 +66,7 @@ class LaserBitmap(LaserBase):
             if self.laser_on:
                 gcode += self.drawTo(final_x - abs_shift, h - abs_shift)
                 gcode += self.turnOff()
+
         gcode += self.turnOff()
         gcode += ["G28"]
         gcode = "\n".join(gcode) + "\n"
@@ -85,5 +76,4 @@ class LaserBitmap(LaserBase):
 
 
 if __name__ == '__main__':
-    a = laser_bitmap()
-    logger.info(a)
+    a = LaserBitmap()
