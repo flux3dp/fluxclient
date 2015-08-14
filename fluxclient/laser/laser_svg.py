@@ -537,6 +537,7 @@ class LaserSvg(LaserBase):
             vy = [0, -h]
             vy = [(vy[0] * cos(rotation) - vy[1] * sin(rotation)), (vy[0] * sin(rotation) + vy[1] * cos(rotation))]
 
+            # make points into real world coordinate
             for i in range(len(new_path)):
                 if new_path[i][0] != '\n':
                     new_path[i][0] -= viewBox[0]
@@ -551,7 +552,73 @@ class LaserSvg(LaserBase):
                 else:
                     pass
 
-            path_data[path] = new_path
+            # make every points inside the boundary circle -> (cx, cy, r) = (0, 0, self.radius)
+            # print(new_path, file=sys.stderr)
+            in_path = []
+            for i in range(1, len(new_path)):
+                if new_path[i - 1][0] == '\n':
+                    fake_x, fake_y = new_path[i]
+                else:
+                    fake_x, fake_y = new_path[i - 1]  # record where head should be as if there's no boundary
+                if new_path[i][0] != '\n':
+                    flag = 0
+                    if new_path[i][0] ** 2 + new_path[i][1] ** 2 > self.radius ** 2:
+                        flag += 1
+                    if fake_x ** 2 + fake_y ** 2 > self.radius ** 2:
+                        flag += 2
+
+                    if flag == 0:  # both inside the circle
+                        in_path.append(new_path[i - 1])
+                        in_path.append(new_path[i])
+                    else:
+                        # find the intersection point between vector a->b and circle
+                        # a = (x1, y1), b = (x2, y2), circle = (0, 0, r)
+                        # (x1 + t*(x2-x1))^2 + (y1 + t(y2-y1))^2 = r^2
+                        # solve t, and find the proper sign for it
+                        x1, y1 = fake_x, fake_y
+                        x2, y2 = new_path[i]
+                        if x1 == x2 and y1 == y2:
+                            continue
+                        a = (x2 - x1) ** 2 + (y2 - y1) ** 2
+                        b = 2 * ((x1 * x2) - (x1 ** 2) + (y1 * y2) - (y1 ** 2))
+                        c = (x1 ** 2) + (y1 ** 2) - (self.radius ** 2)
+
+                        if (b ** 2) - (4 * a * c) >= 0:  # solvable
+                            t_p = (-b + sqrt((b ** 2) - (4 * a * c))) / (2 * a)
+                            t_n = (-b - sqrt((b ** 2) - (4 * a * c))) / (2 * a)
+                            v = [x2 - x1, y2 - y1]
+                            if flag == 1:  # in to out
+                                in_path.append([fake_x, fake_y])
+                                t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
+                                in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
+                                in_path.append(['\n', '\n'])
+                            elif flag == 2:  # out to in
+                                t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
+                                in_path.append(['\n', '\n'])
+                                in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
+                                in_path.append([new_path[i][0], new_path[i][1]])
+                            elif flag == 3:  # both out
+                                if abs(t_p) < 1 and abs(t_n):  # must be inner division point
+                                    in_path.append(['\n', '\n'])
+                                    in_path.append([fake_x + t_n * v[0], fake_y + t_n * v[1]])
+                                    in_path.append([fake_x + t_p * v[0], fake_y + t_p * v[1]])
+                                    in_path.append(['\n', '\n'])
+                        else:  # insoluble
+                            pass
+                else:
+                    in_path.append(new_path[i])
+
+            # delete redundant points
+            if len(in_path) > 0:
+                tmp = [in_path[0]]
+                for i in in_path:
+                    if tmp[-1] != i:
+                        tmp.append(i)
+                in_path = tmp
+            # print(in_path, file=sys.stderr)
+            sys.stderr.flush()
+
+            path_data[path] = in_path
         return path_data
 
     def gcode_generate(self, names):
@@ -569,7 +636,7 @@ class LaserSvg(LaserBase):
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
 
             # TODO: y = -y
-            for each_path in path_data:
+            for each_path in path_data:  # ['\n', '\n'], [poinit], ['\n'] case
                 # move to the first place
                 moveTo = True
                 for x, y in each_path:
