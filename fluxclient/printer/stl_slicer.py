@@ -72,9 +72,9 @@ class StlSlicer(object):
 
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
-        command += ['--gcode-comments']
 
         config = self.my_ini_parser(self.slic3r_setting)
+        config['gcode_comments'] = '1'
         for key in self.user_setting:
             if self.user_setting[key] != "defaule":
                 if key == 'layer_height':
