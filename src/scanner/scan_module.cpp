@@ -198,20 +198,8 @@ int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGB
   align.align (*aligned);
 
   M4f transformation = align.getFinalTransformation();
-  // M4f transformation = Eigen::Matrix4f::Identity();
-  std::cout<< "1:"<<aligned->points.size() << std::endl;
-  std::cout<< "0810:" << std::endl;
-
   pcl::transformPointCloud (*object, *aligned, transformation);
-  ////////
-  pcl::PointXYZRGBNormal p;
-  p.x = 0.0;
-  p.y = 0.0;
-  p.z = 0.0;
-  p.rgb = 0.0;
-  aligned->push_back(p);
-  ////////
-  std::cout<< "2:"<<aligned->points.size() << std::endl;
+
   return align.hasConverged();
 }
 
@@ -426,13 +414,6 @@ PointXYZRGBNormalPtr add(PointXYZRGBNormalPtr bothobj, PointXYZRGBNormalPtr both
   *tmp += *bothobj2;
   return tmp;
 }
-// MeshPtr add(MeshPtr meshobj, MeshPtr meshobj2){
-//   MeshPtr tmp;
-//   clone(meshobj, tmp);
-//   *tmp += *meshobj2;
-//   return tmp;
-// }
-
 
 int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj){
   copyPointCloud(*bothobj, *obj);
@@ -443,7 +424,6 @@ int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr norma
 int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value){
   // mode:'x', 'y', 'z' ,'r' -> 0, 1, 2, 3
   // direction = True(>=), False(<=)
-  std::cout<< "cut: " << value << " direction "<< direction <<" mode " << mode<< std::endl;
   output -> clear();
   float v;
   value *= value;
@@ -463,7 +443,7 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
       v = (*input)[i].x * (*input)[i].x + (*input)[i].y * (*input)[i].y;
       break;
     }
-    // should use function pointer... but i don't know how...
+    // should use function pointer... but I don't know how...
     if(direction){
       if (v >= value)
       {
@@ -477,7 +457,6 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
       }
     }
   }
-  std::cout << "n "<< output->size() << "\n";
   return 0;
 }
 
