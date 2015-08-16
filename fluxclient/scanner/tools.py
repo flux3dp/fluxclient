@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import struct
 import sys
 
@@ -57,7 +58,7 @@ def write_pcd(points, file_name="model.pcd"):
     for i in points:
         print('%f %f %f %f' % (i[0], i[1], i[2], (int(i[3]) << 16) | (int(i[4]) << 8) | int(i[5])), file=f)
 
-    print('write', len(points), 'points into ' + file_name, file=sys.stderr)
+    print('write', len(points), 'points', file=sys.stderr)
 
 
 def write_stl(tri, output='model.stl', mode='binary'):

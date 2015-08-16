@@ -2,6 +2,7 @@
 
 import sys
 from math import sin, cos, pi, radians, sqrt, acos, copysign
+import logging
 # cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
 import xml.etree.ElementTree as ET
 

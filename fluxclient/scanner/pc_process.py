@@ -179,7 +179,7 @@ class PcProcess():
         if file_format == 'pcd':
             pc_both = self.clouds[name]
             if type(pc_both[0]) == list:
-                pc_add = pc_both[0] + pc_both[0]
+                pc_add = pc_both[0] + pc_both[1]
             else:
                 pc_add = []
                 pc_size = []
@@ -189,7 +189,7 @@ class PcProcess():
                         pc_add.append(pc_both.get_item(p_i))
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
-            return tmp.getvalue()
+            return tmp.getvalue().encode()
 
         elif file_format == 'stl':
             return self.to_mesh(name)
