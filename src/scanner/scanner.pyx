@@ -45,8 +45,9 @@ cdef extern from "scan_module.h":
     # int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, vector[float] viewp, vector[int] step)
     PointXYZRGBNormalPtr createPointXYZRGBNormalPtr()
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
-    PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles);
+    PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles)
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
+    int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value)
 
 cdef class PointCloudXYZRGBObj:
     cdef PointCloudXYZRGBPtr obj
@@ -73,6 +74,11 @@ cdef class PointCloudXYZRGBObj:
     cpdef loadFile(self, unicode filename):
         if loadPointCloudXYZRGB(filename.encode(), self.obj) == -1:
             raise RuntimeError("Load failed")
+
+    cpdef PointCloudXYZRGBObj cut(self, int mode, int direction, float value):
+        cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+        cut(self.obj, pc.obj, mode, direction, value);
+        return pc
 
     cpdef PointCloudXYZRGBObj clone(self):
         cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()

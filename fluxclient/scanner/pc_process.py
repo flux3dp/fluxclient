@@ -54,36 +54,13 @@ class PcProcess():
             TODO: transplant to cpp in future to spped up
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
-
         pc_both = self.clouds[name_in]
-        pc_both_o = []
+        if type(pc_both[0]) == list:
+            pc_both = self.to_cpp(self.clouds[name_in])
+
+        self.clouds[name_out] = []
         for pc in pc_both:
-            cropped_pc = []
-            if direction:  # ge = >=, le = <=
-                cmp_function = ge
-            else:
-                cmp_function = le
-
-            if mode == 'r':
-                for p in pc:
-                    if cmp_function(p[0] ** 2 + p[1] ** 2, value ** 2):
-                        cropped_pc.append(p)
-                pc_both_o.append(cropped_pc)
-                continue
-
-            elif mode == 'x':
-                index = 0
-            elif mode == 'y':
-                index = 1
-            elif mode == 'z':
-                index = 2
-            else:
-                raise ValueError('Undefine cutting mode: %s ' % mode)
-            for p in pc:
-                if cmp_function(p[index], value):
-                    cropped_pc.append(p)
-            pc_both_o.append(cropped_pc)
-        self.clouds[name_out] = pc_both_o
+            self.clouds[name_out].append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
 
     def to_cpp(self, pc_both):
         """
@@ -111,9 +88,8 @@ class PcProcess():
         if type(pc_both[0]) == list:
             pc_both = self.to_cpp(self.clouds[name_in])
         else:
-            logger.debug('%s' % str(type(pc_both[0])))
             pc_both = [i.clone() for i in pc_both]
-            logger.debug('%s' % str(type(pc_both[0])))
+
         for pc in pc_both:
             logger.debug('start with %d point' % len(pc))
             pc.SOR(50, stddev)  # TODO: put magic number away

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+// #include <functional>
 
 #include "scan_module.h"
 
@@ -438,3 +439,45 @@ int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr norma
   copyPointCloud(*bothobj, *normalObj);
   return 0;
 }
+
+int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value){
+  // mode:'x', 'y', 'z' ,'r' -> 0, 1, 2, 3
+  // direction = True(>=), False(<=)
+  std::cout<< "cut: " << value << " direction "<< direction <<" mode " << mode<< std::endl;
+  output -> clear();
+  float v;
+  value *= value;
+
+  for (int i = 0; i < input->size(); i += 1){
+    switch (mode){
+      case 0:
+      v = (*input)[i].x * (*input)[i].x;
+      break;
+      case 1:
+      v = (*input)[i].y * (*input)[i].y;
+      break;
+      case 2:
+      v = (*input)[i].z * (*input)[i].z;
+      break;
+      case 3:
+      v = (*input)[i].x * (*input)[i].x + (*input)[i].y * (*input)[i].y;
+      break;
+    }
+    // should use function pointer... but i don't know how...
+    if(direction){
+      if (v >= value)
+      {
+        output->push_back((*input)[i]);
+      }
+    }
+    else{
+      if (v <= value)
+      {
+        output->push_back((*input)[i]);
+      }
+    }
+  }
+  std::cout << "n "<< output->size() << "\n";
+  return 0;
+}
+
