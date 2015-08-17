@@ -94,11 +94,13 @@ inline int check(std::vector<float> normal, std::vector<float> position_v){
 
 int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius){
   ne(cloud, normals, radius);
+  float tmp;
   for (uint i = 0; i < cloud->points.size(); i += 1){
-    float tmp = 0.0;
-    tmp += cloud->points[i].x + (*normals).points[i].normal_x;
-    tmp += cloud->points[i].y + (*normals).points[i].normal_y;
-    tmp += cloud->points[i].z + (*normals).points[i].normal_z;
+    // dot
+    tmp = 0.0;
+    tmp += cloud->points[i].x * (*normals).points[i].normal_x;
+    tmp += cloud->points[i].y * (*normals).points[i].normal_y;
+    tmp += cloud->points[i].z * (*normals).points[i].normal_z;
     if(tmp < 0){
       (*normals).points[i].normal_x *= -1;
       (*normals).points[i].normal_y *= -1;
