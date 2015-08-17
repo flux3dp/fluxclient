@@ -26,8 +26,7 @@ typedef pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr PointXYZRGBNormalPtr;
 NormalPtr createNormalPtr();
 PointXYZRGBNormalPtr createPointXYZRGBNormalPtr();
 int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius);
-int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius,  std::vector<std::vector<float> >viewp, std::vector<int> step);
-// int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, std::vector< float > viewp, std::vector<int> step);
+int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius);
 PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals);
 
 // registration

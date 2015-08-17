@@ -80,7 +80,6 @@ int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius){
   pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> nest;
   nest.setNumberOfThreads(4);
   nest.setRadiusSearch (radius);
- // nest.setViewPoint(0.0, 170.0, 90);
   nest.setInputCloud (cloud);
   nest.compute (*normals);
   return 1;
@@ -93,39 +92,17 @@ inline int check(std::vector<float> normal, std::vector<float> position_v){
     return 0;
 }
 
-int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius,  std::vector<std::vector<float> >viewp, std::vector<int> step){
-// int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, std::vector< float > viewp, std::vector<int> step){
-// int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, std::vector<int> step){
-
-  pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> nest;
-  nest.setNumberOfThreads(4);
-  nest.setRadiusSearch (radius);
-  nest.compute (*normals);
-
-  std::vector<float> normal(3, 0);
-  std::vector<float> position_v(3, 0);
-
-  for (uint vp = 0; vp < viewp.size(); vp += 1){
-    for (uint i = 0; i < step.size() - 1; i += 1){
-      normal[0]  = (*normals).points[i].normal_x;
-      normal[1]  = (*normals).points[i].normal_y;
-      normal[2]  = (*normals).points[i].normal_z;
-
-      position_v[0] = viewp[vp][0] - cloud->points[i].x;
-      position_v[1] = viewp[vp][1] - cloud->points[i].y;
-      position_v[2] = viewp[vp][2] - cloud->points[i].z;
-      // position_v[0] = viewp[vp + 0] - cloud->points[i].x;
-      // position_v[1] = viewp[vp + 1] - cloud->points[i].y;
-      // position_v[2] = viewp[vp + 2] - cloud->points[i].z;
-
-      if (check(normal,position_v)){
-        continue;
-      }
-      else{
-        (*normals).points[i].normal_x *= -1;
-        (*normals).points[i].normal_y *= -1;
-        (*normals).points[i].normal_z *= -1;
-      }
+int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius){
+  ne(cloud, normals, radius);
+  for (uint i = 0; i < cloud->points.size(); i += 1){
+    float tmp = 0.0;
+    tmp += cloud->points[i].x + (*normals).points[i].normal_x;
+    tmp += cloud->points[i].y + (*normals).points[i].normal_y;
+    tmp += cloud->points[i].z + (*normals).points[i].normal_z;
+    if(tmp < 0){
+      (*normals).points[i].normal_x *= -1;
+      (*normals).points[i].normal_y *= -1;
+      (*normals).points[i].normal_z *= -1;
     }
   }
   return 1;
@@ -428,7 +405,7 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
   float v;
   value *= value;
 
-  for (int i = 0; i < input->size(); i += 1){
+  for (uint i = 0; i < input->size(); i += 1){
     switch (mode){
       case 0:
       v = (*input)[i].x * (*input)[i].x;
@@ -440,6 +417,9 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
       v = (*input)[i].z * (*input)[i].z;
       break;
       case 3:
+      v = (*input)[i].x * (*input)[i].x + (*input)[i].y * (*input)[i].y;
+      break;
+      default:
       v = (*input)[i].x * (*input)[i].x + (*input)[i].y * (*input)[i].y;
       break;
     }

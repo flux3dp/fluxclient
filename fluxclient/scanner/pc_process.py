@@ -110,8 +110,10 @@ class PcProcess():
             pc.add(pc_both[1])
 
         for pc in pc_both[1:]:
-            pc.ne()
-            # pc.ne_viewpoint()  # should use this one in the future
+            # pc.ne(10)  #  normal normal estimate
+            # normal estimate considering view point
+            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
+            pc.ne_viewpoint()
             pc_new = pc.to_mesh()
 
             self.clouds['wth'] = pc_new

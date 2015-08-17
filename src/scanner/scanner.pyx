@@ -36,15 +36,15 @@ cdef extern from "scan_module.h":
 
     int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj)
 
-    # void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z)
-
     int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float thresh)
 
     int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius)
-    int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius, vector[vector [float]] viewp, vector[int] step)
-    # int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, vector[float] viewp, vector[int] step)
+    int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius )
+
     PointXYZRGBNormalPtr createPointXYZRGBNormalPtr()
+
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
+
     PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles)
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
     int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value)
@@ -113,30 +113,11 @@ cdef class PointCloudXYZRGBObj:
     cpdef int SOR(self, int neighbors, float threshold):
         return SOR(self.obj, neighbors, threshold)
 
-    cpdef int ne(self):
-        return ne(self.obj, self.normalObj, 10)
+    cpdef int ne(self, float radius=10):
+        return ne(self.obj, self.normalObj, radius)
 
-    cpdef int ne_viewpoint(self, viewp, step):
-
-        cdef vector[vector[float]] vect1
-        cdef vector[float] vect2
-
-        for i in viewp:
-            vect2.clear()
-            # vect2 = new vector[int]()
-            for j in i:
-                vect2.push_back(j)
-            vect1.push_back(vect2)
-        viewp = vect1
-
-
-        cdef vector[int] vect
-        for i in step:
-            vect.push_back(i)
-        step = vect
-
-        return ne_viewpoint(self.obj, self.normalObj, 1.0, viewp, step)
-        # return ne_viewpoint(self.obj, self.normalObj, step)
+    cpdef int ne_viewpoint(self, float radius=10):
+        return ne_viewpoint(self.obj, self.normalObj, radius)
 
     cpdef int concatenatePointsNormal(self):
         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
@@ -179,12 +160,12 @@ cdef class RegCloud:
 
 
     def __init__(self, PointCloudXYZRGBObj obj, PointCloudXYZRGBObj scene):
-        obj.ne()
+        obj.ne_viewpoint()
         obj.concatenatePointsNormal()
         self.obj = createPointXYZRGBNormalPtr()
         clone(obj.bothobj, self.obj)
 
-        scene.ne()
+        scene.ne_viewpoint()
         scene.concatenatePointsNormal()
         self.scene = createPointXYZRGBNormalPtr()
         clone(scene.bothobj, self.scene)
@@ -193,7 +174,6 @@ cdef class RegCloud:
         self.scene_f = createFeatureCloudTPtr()
 
         # self.object_align = createPointXYZRGBNormalPtr()
-
 
     cpdef loadFile(self, unicode filename_scene, unicode filename_obj):
         if loadPointNT(filename_scene.encode(), self.scene) == -1:
