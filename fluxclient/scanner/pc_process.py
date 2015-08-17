@@ -110,19 +110,25 @@ class PcProcess():
             pc.add(pc_both[1])
 
         for pc in pc_both[1:]:
-            # pc.ne(10)  #  normal normal estimate
-            # normal estimate considering view point
+            # ne(): normal estimate
+            # ne_viewpoint() :normal estimate considering view point
             # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
             pc.ne_viewpoint()
             pc_new = pc.to_mesh()
 
             self.clouds['wth'] = pc_new
             a = pc.STL_to_Faces()
-            print(len(a))
             m_mesh = mesh('wth', a, self.clouds)
-        buf = io.StringIO()
-        write_stl(m_mesh, buf, 'ascii')
-        return buf.getvalue().encode()
+        # # ascii
+        # buf = io.StringIO()
+        # write_stl(m_mesh, buf, 'ascii')
+        # return buf.getvalue().encode()
+
+        # binary
+        buf = io.BytesIO()
+        write_stl(m_mesh, buf)
+        print(len(buf.getvalue()), file=sys.stderr)
+        return buf.getvalue()
 
     def dump(self, name):
         """
@@ -224,6 +230,7 @@ class mesh(object):
             self.cur += 1
             return face
         else:
+            self.cur = 0
             raise StopIteration
 
 
