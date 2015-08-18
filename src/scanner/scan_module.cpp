@@ -158,8 +158,8 @@ int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGB
   downsample(scene, scene_clone, leaf);
   downsample(object, object_clone, leaf);
 
-  pcl::console::print_info (" before-> cloud size:%d, cloud2 size:%d \n",object->points.size(), scene->points.size());
-  pcl::console::print_info (" after-> cloud size:%d, cloud2 size:%d \n",object_clone->points.size(), scene_clone->points.size());
+  // pcl::console::print_info (" before-> cloud size:%d, cloud2 size:%d \n",object->points.size(), scene->points.size());
+  // pcl::console::print_info (" after-> cloud size:%d, cloud2 size:%d \n",object_clone->points.size(), scene_clone->points.size());
 
   FE(scene_clone, scene_features, 10);
   FE(object_clone, object_features, 10);
@@ -168,7 +168,7 @@ int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGB
   align.setTargetFeatures(scene_features);
   align.setInputSource(object_clone);
   align.setSourceFeatures(object_features);
-  align.setMaximumIterations(1500); // Number of RANSAC iterations
+  align.setMaximumIterations(5000); // Number of RANSAC iterations
   align.setNumberOfSamples(3); // Number of points to sample for generating/prerejecting a pose
   align.setCorrespondenceRandomness(10); // Number of nearest features to use
   align.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
@@ -299,7 +299,9 @@ int bounding_box(PointCloudXYZRGBPtr cloud, std::vector<float> &b_box){
   return 0;
 }
 
-int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float rx, float ry, float rz){
+int apply_transform(PointCloudXYZRGBPtr cloud, NormalPtr normals, PointXYZRGBNormalPtr both, float x, float y, float z, float rx, float ry, float rz){
+  both = concatenatePointsNormal(cloud, normals);
+
   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
   std::vector<float> b_box;
   b_box.resize(3);
@@ -312,10 +314,10 @@ int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float 
     center[i] = (b_box[i] + b_box[i + 3]) / 2;
   }
   transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = - center[0];
-  transform(1, 3) = - center[1];
-  transform(2, 3) = - center[2];
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  transform(0, 3) = 0 - center[0];
+  transform(1, 3) = 0 - center[1];
+  transform(2, 3) = 0 - center[2];
+  pcl::transformPointCloudWithNormals(*both, *both, transform);
 
   // rotate
   transform = Eigen::Matrix4f::Identity();
@@ -343,18 +345,18 @@ int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float 
   tmpM(1, 0) = sin (theta);
   tmpM(1, 1) = cos (theta);
   transform *= tmpM;
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  pcl::transformPointCloudWithNormals(*both, *both, transform);
 
   // move to proper position
   transform = Eigen::Matrix4f::Identity();
   transform(0, 3) = x;
   transform(1, 3) = y;
   transform(2, 3) = z;
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  pcl::transformPointCloudWithNormals(*both, *both, transform);
 
+  split(both, cloud, normals);
 
   return 0;
-
 }
 
 int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2){

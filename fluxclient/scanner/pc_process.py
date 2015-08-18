@@ -71,7 +71,12 @@ class PcProcess():
             pc = _scanner.PointCloudXYZRGBObj()
             for i in pc_python:
                 pc.push_backPoint(i[0], i[1], i[2], (i[3] << 16) | (i[4] << 8) | i[5])
-                # pc.push_backPoint(i[0], i[1], i[2], (255 << 16))
+                # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
+
+            # ne(): normal estimate
+            # ne_viewpoint() :normal estimate considering view point
+            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
+            pc.ne_viewpoint()
             tmp.append(pc)
         logger.debug('to_cpp done')
         return tmp
@@ -110,12 +115,8 @@ class PcProcess():
             pc.add(pc_both[1])
 
         for pc in pc_both[1:]:
-            # ne(): normal estimate
-            # ne_viewpoint() :normal estimate considering view point
-            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
-            pc.ne_viewpoint()
-            pc_new = pc.to_mesh()
 
+            pc_new = pc.to_mesh()
             self.clouds['wth'] = pc_new
             a = pc.STL_to_Faces()
             m_mesh = mesh('wth', a, self.clouds)
@@ -127,14 +128,13 @@ class PcProcess():
         # binary
         buf = io.BytesIO()
         write_stl(m_mesh, buf)
-        print(len(buf.getvalue()), file=sys.stderr)
         return buf.getvalue()
 
     def dump(self, name):
         """
         dump the indicated(name) cloud
         """
-        logger.debug('dumping' + name)
+        logger.debug('dumping ' + name)
 
         pc_both = self.clouds[name]
         # print(len(pc_both), len(self.clouds[name][0]), len(self.clouds[name][1]))
@@ -192,6 +192,7 @@ class PcProcess():
         return True
 
     def auto_merge(self, name_base, name_2, name_out):
+        logger.debug('automerge %s, %s' % (name_base, name_2))
         for name in [name_base, name_2]:
             if type(self.clouds[name][0]) == list:
                 self.clouds[name] = self.to_cpp(self.clouds[name])
@@ -200,7 +201,6 @@ class PcProcess():
             if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
                 pc_both.append(self.clouds[name_2][i].clone())
                 continue
-
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
             result, pc = reg.SCP()
             pc_both.append(pc)

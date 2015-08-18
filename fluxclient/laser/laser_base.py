@@ -37,6 +37,7 @@ class LaserBase(object):
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
         self.image_map = np.ones((w, w), np.uint8) * 255
+        # self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
         """

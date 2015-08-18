@@ -23,7 +23,7 @@ cdef extern from "scan_module.h":
     void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
     int get_item(PointCloudXYZRGBPtr cloud, int key, vector[float] point)
     int get_w(PointCloudXYZRGBPtr cloud)
-    int apply_transform(PointCloudXYZRGBPtr cloud, float x, float y, float z, float rx, float ry, float rz)
+    int apply_transform(PointCloudXYZRGBPtr cloud, NormalPtr normals, PointXYZRGBNormalPtr both, float x, float y, float z, float rx, float ry, float rz)
 
     int clone(PointCloudXYZRGBPtr obj, PointCloudXYZRGBPtr obj2)
     int clone(NormalPtr normalObj, NormalPtr normalObj2)
@@ -91,7 +91,7 @@ cdef class PointCloudXYZRGBObj:
         return pc
 
     cpdef apply_transform(self, x, y, z, rx, ry, rz):
-        apply_transform(self.obj, x, y, z, rx, ry, rz)
+        apply_transform(self.obj, self.normalObj, self.bothobj, x, y, z, rx, ry, rz)
 
     cpdef int split(self):
         split(self.bothobj, self.obj, self.normalObj)
