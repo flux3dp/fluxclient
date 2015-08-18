@@ -44,13 +44,12 @@ int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point){
 int get_w(PointCloudXYZRGBPtr cloud){
   return (*cloud).size();
 }
-
-void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32_t rgb){
+void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32_t r, uint32_t g, uint32_t b){
   pcl::PointXYZRGB p;
   p.x = x;
   p.y = y;
   p.z = z;
-  p.rgb = rgb;
+  p.rgb = ((r << 16) | (g << 8) | b);
   cloud -> push_back(p);
 }
 

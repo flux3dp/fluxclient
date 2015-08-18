@@ -20,7 +20,7 @@ cdef extern from "scan_module.h":
     MeshPtr createMeshPtr()
     int loadPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
     void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud)
-    void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint rgb)
+    void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, cython.uint r, cython.uint g, cython.uint b)
     int get_item(PointCloudXYZRGBPtr cloud, int key, vector[float] point)
     int get_w(PointCloudXYZRGBPtr cloud)
     int apply_transform(PointCloudXYZRGBPtr cloud, NormalPtr normals, PointXYZRGBNormalPtr both, float x, float y, float z, float rx, float ry, float rz)
@@ -100,9 +100,9 @@ cdef class PointCloudXYZRGBObj:
     cpdef dump(self, unicode filename):
         dumpPointCloudXYZRGB(filename.encode(), self.obj)
 
-    cpdef push_backPoint(self, float x, float y, float z, cython.uint rgb):
+    cpdef push_backPoint(self, float x, float y, float z, r, g, b):
         # TODO: put r,g,b -> rgb in here
-        push_backPoint(self.obj, x, y, z, rgb)
+        push_backPoint(self.obj, x, y, z, r, g, b)
 
     cpdef get_item(self, key):
         cdef vector[float] point = [0., 0., 0., 0., 0., 0.]

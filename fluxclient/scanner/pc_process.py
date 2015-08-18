@@ -50,8 +50,6 @@ class PcProcess():
             manually cut the point cloud
             mode = 'x', 'y', 'z' ,'r'
             direction = True(>=), False(<=)
-
-            TODO: transplant to cpp in future to spped up
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
@@ -70,9 +68,7 @@ class PcProcess():
         for pc_python in pc_both:
             pc = _scanner.PointCloudXYZRGBObj()
             for i in pc_python:
-                pc.push_backPoint(i[0], i[1], i[2], (i[3] << 16) | (i[4] << 8) | i[5])
-                # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
-
+                pc.push_backPoint(*i)  # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
             # ne(): normal estimate
             # ne_viewpoint() :normal estimate considering view point
             # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
@@ -114,8 +110,8 @@ class PcProcess():
             pc = pc_both[0].clone()
             pc.add(pc_both[1])
 
-        for pc in pc_both[1:]:
-
+        for pc in pc_both[1:]:  # TODO:fix here, why 1???
+            # TODO: fix here, what the hell is wth
             pc_new = pc.to_mesh()
             self.clouds['wth'] = pc_new
             a = pc.STL_to_Faces()
@@ -260,7 +256,7 @@ class PcProcessNoPCL(PcProcess):
         return 0
 
     def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
-        self.clouds[name_out] = self.clouds[name_base]  # TODO: clone
+        self.clouds[name_out] = self.clouds[name_base]
         return True
 
     def export(self, name, file_format):
