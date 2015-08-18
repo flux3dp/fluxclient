@@ -21,12 +21,10 @@ class LaserBase(object):
         self.obj_height = 3.21
 
         self.split_thres = 999  # should be some small number
-        self.current_x = None
-        self.current_y = None
-        self.current_z = None
 
         self.pixel_per_mm = 16  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
+
         # list holding current image
         self.reset_image()
 
@@ -56,9 +54,6 @@ class LaserBase(object):
 
         # home
         gcode.append("G28")
-        self.current_x = 0.
-        self.current_y = 0.
-        self.current_z = 241.20  # TODO: this should be in config file
 
         # move to proper height
         gcode.append("G1 F5000 Z" + str(self.focal_l + self.obj_height))
@@ -217,12 +212,12 @@ class LaserBase(object):
 
         # find upper-left corner after rotation(edge)
         gx1 = min(ox1, ox2, ox3, ox4)
-        gy1 = max(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        gy1 = max(oy1, oy2, oy3, oy4)
         gy1_on_map = round((gx1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx1_on_map = round(-(gy1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
 
         gx2 = max(ox1, ox2, ox3, ox4)
-        gy2 = min(oy1, oy2, oy3, oy4)  # TODO: change max to min if change coordinate in the future
+        gy2 = min(oy1, oy2, oy3, oy4)
         gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
 
