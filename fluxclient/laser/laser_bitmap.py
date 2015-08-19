@@ -27,6 +27,7 @@ class LaserBitmap(LaserBase):
         """
         # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
         self.thres = 255
+        self.ratio *= 1 / self.pixel_per_mm
 
     def gcode_generate(self):
         """
@@ -50,7 +51,7 @@ class LaserBitmap(LaserBase):
                 if self.image_map[h][w] < self.thres:  # acturally meaningless self.thres=255 and only 0 or 255 on image_map
                     if not self.laser_on:
                         last_i = w
-                        gcode += self.closeTo(w - abs_shift, h - abs_shift)
+                        gcode += self.closeTo(w - abs_shift, abs_shift - h)
                         gcode += self.turnOn()
                 else:
                     if self.laser_on:
@@ -58,13 +59,13 @@ class LaserBitmap(LaserBase):
                             pass
                             gcode += ["G4 P100"]
                         elif final_x > 0:
-                            gcode += self.drawTo(w - abs_shift, h - abs_shift)
+                            gcode += self.drawTo(w - abs_shift, abs_shift - h)
                         else:
-                            gcode += self.drawTo(w - abs_shift, h - abs_shift)
+                            gcode += self.drawTo(w - abs_shift, abs_shift - h)
                         gcode += self.turnOff()
 
             if self.laser_on:
-                gcode += self.drawTo(final_x - abs_shift, h - abs_shift)
+                gcode += self.drawTo(final_x - abs_shift, abs_shift - h)
                 gcode += self.turnOff()
 
         gcode += self.turnOff()
