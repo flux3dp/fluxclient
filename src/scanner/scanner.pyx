@@ -101,7 +101,6 @@ cdef class PointCloudXYZRGBObj:
         dumpPointCloudXYZRGB(filename.encode(), self.obj)
 
     cpdef push_backPoint(self, float x, float y, float z, r, g, b):
-        # TODO: put r,g,b -> rgb in here
         push_backPoint(self.obj, x, y, z, r, g, b)
 
     cpdef get_item(self, key):
@@ -113,10 +112,10 @@ cdef class PointCloudXYZRGBObj:
     cpdef int SOR(self, int neighbors, float threshold):
         return SOR(self.obj, neighbors, threshold)
 
-    cpdef int ne(self, float radius=10):
+    cpdef int ne(self, float radius=scan_settings.NE_radius):
         return ne(self.obj, self.normalObj, radius)
 
-    cpdef int ne_viewpoint(self, float radius=10):
+    cpdef int ne_viewpoint(self, float radius=scan_settings.NE_radius):
         return ne_viewpoint(self.obj, self.normalObj, radius)
 
     cpdef int concatenatePointsNormal(self):

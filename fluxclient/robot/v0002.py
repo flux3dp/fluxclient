@@ -256,7 +256,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def scan_backward(self):
-        # TODO: change protocal, this actually means to go backward a step
+        # TODO: change protocol, this actually means to go backward a step
         return self._make_cmd(b"scan_forword")
 
     @ok_or_error

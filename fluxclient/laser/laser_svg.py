@@ -505,7 +505,7 @@ class LaserSvg(LaserBase):
                                 new_path.append(candidate[0])
                                 new_path.append(['\n', '\n'])
                             elif out == 3:
-                                # TODO
+                                raise ValueError('out == 3, happened only if math is broke')
                                 pass
 
                         elif len(candidate) == 2:
@@ -643,13 +643,12 @@ class LaserSvg(LaserBase):
             path_data = self.elements_to_list(root)
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
 
-            # TODO: y = -y
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
                     if x != '\n':
                         if not moveTo:
-                            gcode += self.drawTo(x, y, speed=200)
+                            gcode += self.drawTo(x, y, speed=self.laser_speed)
                         else:
                             gcode += self.closeTo(x, y, self.travel_speed)
                             moveTo = False

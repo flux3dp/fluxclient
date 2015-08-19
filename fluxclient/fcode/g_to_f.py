@@ -17,10 +17,9 @@ class GcodeToFcode(FcodeBase):
     fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
 
     this should done several thing:
-      check boundary problem
-      get metadata
-      long path will split into many different command in order to support emergency stop
-
+      transform gcode into fcode
+      analyze metadata
+      check boundary problem (?
     """
     def __init__(self, version=1):
         super(GcodeToFcode, self).__init__()
@@ -136,7 +135,7 @@ class GcodeToFcode(FcodeBase):
         output_stream.write(self.header())
 
         packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
-        # TODO: make a packer for float?
+        packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
 
         output_stream.write(struct.pack('<I', 0))  # script length
         self.script_length = 0
@@ -180,12 +179,12 @@ class GcodeToFcode(FcodeBase):
                     self.writer(packer(command), output_stream)
                     for i in range(len(data)):
                         if data[i] is not None:
-                            self.writer(struct.pack('<f', i), output_stream)
+                            self.writer(packer_f(i), output_stream)
                             self.current_pos[i - 1] = data[i]
 
                 elif line[0] == 'G4':  # dwell
                     self.writer(packer(4), output_stream)
-                    self.writer(struct.pack('<f', float(line[1].lstrip('P'))), output_stream)
+                    self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
 
                 elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
                     command = 16
@@ -200,7 +199,7 @@ class GcodeToFcode(FcodeBase):
                                 raise ValueError('too many extruder! %d' % self.tool)
                     command |= self.tool
                     self.writer(packer(command), output_stream)
-                    self.writer(struct.pack('<f', temp), output_stream)
+                    self.writer(packer_f(temp), output_stream)
 
                 elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
                     if line == 'G20':  # inch
@@ -217,7 +216,7 @@ class GcodeToFcode(FcodeBase):
                     self.writer(packer(command), output_stream)
                     for i in data:
                         if i is not None:
-                            self.writer(struct.pack('<f', i), output_stream)
+                            self.writer(packer_f(i), output_stream)
 
                 elif line[0] == 'T0' or line[0] == 'T1':  # change tool
                     if line[0] == 'T0':
@@ -227,18 +226,18 @@ class GcodeToFcode(FcodeBase):
 
                 elif line[0] == 'M107' or line[0] == 'M106':  # fan control
                     command = 48
-                    command |= 1  # TODO: change this part
+                    command |= 1  # TODO: change this part, consder fan control protocol
                     self.writer(packer(command), output_stream)
                     if line[0] == 'M107':
-                        self.writer(struct.pack('<f', 0.0), output_stream)
+                        self.writer(packer_f(0.0), output_stream)
                     elif line[0] == 'M106':
-                        self.writer(struct.pack('<f', float(line[1].lstrip('S'))), output_stream)
+                        self.writer(packer_f(float(line[1].lstrip('S'))), output_stream)
 
                 elif line[0] in ['M84', 'M140']:  # loosen the motor
-                    pass  # should only appear when printing done
+                    pass  # should only appear when printing done, not define in fcode yet
                 else:
-                    print(line, file=sys.stderr)
-                    raise ValueError('Undefine gcode', line)
+                    print('Undefine gcode', line, file=sys.stderr)
+                    # raise ValueError('Undefine gcode', line)
         output_stream.write(struct.pack('<I', self.crc))
         output_stream.seek(len(self.header()), 0)
         output_stream.write(struct.pack('<I', self.script_length))
@@ -248,3 +247,8 @@ class GcodeToFcode(FcodeBase):
         self.md['TIME_COST'] = str(self.time_need)
         self.metadata(output_stream)
 
+if __name__ == '__main__':
+    m_GcodeToFcode = GcodeToFcode()
+    with open(sys.argv[1], 'r') as input_stream:
+        with open(sys.argv[2], 'wb') as output_stream:
+            m_GcodeToFcode.process(input_stream, output_stream)

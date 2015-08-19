@@ -18,7 +18,9 @@ class LaserBase(object):
         self.travel_speed = 6000
         self.draw_power = 255  # drawing
         self.fram_power = 230  # indicating
-        self.obj_height = 3.21
+
+        self.obj_height = 10.9  # rubber
+        self.obj_height = 3.21  # wood
 
         self.split_thres = 999  # should be some small number
 

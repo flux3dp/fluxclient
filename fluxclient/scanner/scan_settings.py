@@ -50,3 +50,6 @@ laserZ_R = 76.47
 # laserY_R = 120.0
 # laserZ_R = 120
 ##############################################
+
+SOR_neighbors = 50
+NE_radius = 10

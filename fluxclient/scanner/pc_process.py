@@ -93,7 +93,7 @@ class PcProcess():
 
         for pc in pc_both:
             logger.debug('start with %d point' % len(pc))
-            pc.SOR(50, stddev)  # TODO: put magic number away
+            pc.SOR(scan_settings.SOR_neighbors, stddev)
             logger.debug('finished with %d point' % len(pc))
 
         self.clouds[name_out] = pc_both

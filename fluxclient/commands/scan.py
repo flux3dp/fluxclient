@@ -60,7 +60,6 @@ def interactive(robot):
             logger.info("Go!")
             return
 
-        # TODO: make theese command available
         elif l.startswith('S'):
             l = l.rstrip('\n')
             if len(l) == 1:
