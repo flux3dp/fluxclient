@@ -124,9 +124,9 @@ class LaserBase(object):
         gcode += self.turnOn()
 
         if speed is None:
-            gcode += self.moveTo(x, y)
+            gcode += self.moveTo(x, y, self.laser_speed)
         else:
-            gcode += self.moveTo(x, y, speed=speed)
+            gcode += self.moveTo(x, y, speed)
 
         return gcode
 
@@ -138,7 +138,7 @@ class LaserBase(object):
         gcode += self.turnOff()
 
         if speed is None:
-            gcode += self.moveTo(x, y)
+            gcode += self.moveTo(x, y, self.travel_speed)
         else:
             gcode += self.moveTo(x, y, speed)
         return gcode
