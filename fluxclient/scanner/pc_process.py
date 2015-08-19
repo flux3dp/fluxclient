@@ -101,30 +101,19 @@ class PcProcess():
         return 0
 
     def to_mesh(self, name_in):
+        logger.debug('to_mesh name:%s' % name_in)
         pc_both = self.clouds[name_in]
         if type(pc_both[0]) == list:
             pc_both = self.to_cpp(self.clouds[name_in])
         else:
-            pc_both = [i.clone() for i in pc_both]
+            pc_both = self.clouds[name_in]
 
-            pc = pc_both[0].clone()
-            pc.add(pc_both[1])
+        # warning merge L and R here!
+        pc = pc_both[0].clone()
+        pc = pc.add(pc_both[1])
+        pc.to_mesh()  # compute mesh
 
-        for pc in pc_both[1:]:  # TODO:fix here, why 1???
-            # TODO: fix here, what the hell is wth
-            pc_new = pc.to_mesh()
-            self.clouds['wth'] = pc_new
-            a = pc.STL_to_Faces()
-            m_mesh = mesh('wth', a, self.clouds)
-        # # ascii
-        # buf = io.StringIO()
-        # write_stl(m_mesh, buf, 'ascii')
-        # return buf.getvalue().encode()
-
-        # binary
-        buf = io.BytesIO()
-        write_stl(m_mesh, buf)
-        return buf.getvalue()
+        return pc
 
     def dump(self, name):
         """
@@ -155,9 +144,10 @@ class PcProcess():
             buffer_data = b''.join(buffer_data)
             return pc_size[0], pc_size[1], buffer_data
 
-    def export(self, name, file_format):
+    def export(self, name, file_format, mode='binary'):
         if file_format == 'pcd':
             pc_both = self.clouds[name]
+            # warning merge L and R here!
             if type(pc_both[0]) == list:
                 pc_add = pc_both[0] + pc_both[1]
             else:
@@ -172,7 +162,16 @@ class PcProcess():
             return tmp.getvalue().encode()
 
         elif file_format == 'stl':
-            return self.to_mesh(name)
+            pc_mesh = self.to_mesh(name)
+            if mode == 'ascii':
+                strbuf = io.StringIO()
+                write_stl(pc_mesh.STL_to_List(), strbuf, 'ascii')
+                return strbuf.getvalue().encode()
+
+            elif mode == 'binary':
+                buf = io.BytesIO()
+                write_stl(pc_mesh.STL_to_List(), buf)
+                return buf.getvalue()
 
     def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
 
@@ -195,6 +194,7 @@ class PcProcess():
         pc_both = []
         for i in range(2):
             if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
+                # if either pointcloud with zero point, return name_2 with no transform
                 pc_both.append(self.clouds[name_2][i].clone())
                 continue
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
@@ -203,31 +203,6 @@ class PcProcess():
 
         self.clouds[name_out] = pc_both
         return True
-
-
-class mesh(object):
-    """mesh"""
-    def __init__(self, cloud_name, index_list, clouds):
-        super(mesh, self).__init__()
-        self.cloud_name = cloud_name
-        self.faces = index_list
-        self.clouds = clouds
-        self.cur = 0
-
-    def __len__(self):
-        return len(self.faces)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.cur < len(self.faces):
-            face = [self.clouds[self.cloud_name].get_item(index) for index in self.faces[self.cur]]
-            self.cur += 1
-            return face
-        else:
-            self.cur = 0
-            raise StopIteration
 
 
 class PcProcessNoPCL(PcProcess):

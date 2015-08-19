@@ -45,8 +45,9 @@ cdef extern from "scan_module.h":
 
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
 
-    PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles)
+    int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
+    int STL_to_List(MeshPtr triangles, vector[vector[vector [float]]] &data)
     int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value)
 
 cdef class PointCloudXYZRGBObj:
@@ -125,13 +126,19 @@ cdef class PointCloudXYZRGBObj:
     cpdef to_mesh(self):
         self.concatenatePointsNormal()
         new_c = PointCloudXYZRGBObj()
-        new_c.obj = POS(self.bothobj, self.meshobj)
-        return new_c
+        POS(self.bothobj, self.meshobj, self.obj)
+        return 0
 
     cpdef STL_to_Faces(self):
         cdef vector[vector [int]] viewp
         STL_to_Faces(self.meshobj, viewp)
         return viewp
+
+    cpdef STL_to_List(self):
+        cdef vector[vector[vector [float]]] data
+        STL_to_List(self.meshobj, data)
+        return data
+
 
 
 # reg part
@@ -197,6 +204,6 @@ cdef class RegCloud:
 
     cpdef SCP(self, float leaf = 2):
         cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
-        tmp = SCP(self.obj, self.obj_f, self.scene, self.scene_f, pc.bothobj, leaf)
+        is_converge = SCP(self.obj, self.obj_f, self.scene, self.scene_f, pc.bothobj, leaf)
         pc.split()
-        return [tmp, pc]
+        return [is_converge, pc]

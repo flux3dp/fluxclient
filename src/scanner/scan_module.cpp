@@ -194,7 +194,7 @@ MeshPtr createMeshPtr(){
   return mesh;
 }
 
-PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles){
+int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud){
   puts("poisson computing");
 
   pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
@@ -206,9 +206,8 @@ PointCloudXYZRGBPtr POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangl
   poisson.setInputCloud (cloud_with_normals);
   poisson.performReconstruction (*triangles);
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
-  return cloud;
+  return 0;
 }
 
 int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data){
@@ -222,7 +221,13 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
   int v0, v1, v2;
-
+  data.resize(triangles->polygons.size());
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    data[i].resize(3);
+    for (int j = 0; j < 3; j += 1){
+      data[i][j].resize(3);
+    }
+  }
   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
     v0 = triangles->polygons[i].vertices[0];
     v1 = triangles->polygons[i].vertices[1];
@@ -241,7 +246,6 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
     data[i][2][2] = (*cloud)[v2].z;
   }
 
-  // return pcl::io::savePolygonFileSTL (file, *triangles);  // can't compile
   return 0;
 }
 
