@@ -76,24 +76,32 @@ class StlSlicer(object):
         config = self.my_ini_parser(self.slic3r_setting)
         config['gcode_comments'] = '1'
         for key in self.user_setting:
-            if self.user_setting[key] != "defaule":
-                if key == 'layer_height':
+            if self.user_setting[key] != "default":
+                if key == 'printSpeed':
+                    pass  # TODO
+                elif key == 'material':
+                    pass  # TODO
+                elif key == 'raft':
+                    if self.user_setting[key] == '0':
+                        config['raft_layers'] = '0'
+                    # TODO
+                    # elif self.user_setting[key] == '1':
+                    #     config['raft_layers'] =
+                elif key == 'support':
+                    config['support_material'] = self.user_setting[key]
+                elif key == 'layerHeight':
                     config['first_layer_height'] = self.user_setting[key]
                     config['layer_height'] = self.user_setting[key]
                 elif key == 'infill':
                     fill_density = float(self.user_setting[key]) * 100
                     config['fill_density'] = str(fill_density)
-                elif key == 'traveling':
+                elif key == 'travelingSpeed':
                     config['travel_speed'] = self.user_setting[key]
-                elif key == 'extruding':
+                elif key == 'extrudingSpeed':
                     config['perimeter_speed'] = self.user_setting[key]
                     config['infill_speed'] = self.user_setting[key]
                 elif key == 'temperature':
                     config['temperature'] = self.user_setting[key]
-                elif key == 'support_type':
-                    config['support_material'] = self.user_setting[key]
-                elif key == 'raft':
-                    config['raft_layers'] = self.user_setting[key]
 
         self.my_ini_writer(tmp_slic3r_setting_file, config)
         command += ['--load', tmp_slic3r_setting_file]
