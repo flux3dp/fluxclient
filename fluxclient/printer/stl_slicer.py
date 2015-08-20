@@ -42,7 +42,11 @@ class StlSlicer(object):
             raise ValueError("%s not upload yet" % (name))
 
     def set_params(self, key, value):
-        self.user_setting[key] = value
+        if key in ['printSpeed', 'material', 'raft', 'support', 'layerHeight', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
+            self.user_setting[key] = value
+            return True
+        else:
+            return False
 
     def generate_gcode(self, names):
         ## psudo code
