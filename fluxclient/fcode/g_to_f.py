@@ -245,7 +245,7 @@ class GcodeToFcode(FcodeBase):
         output_stream.seek(0, 2)  # go back to file end
 
         # warning: fileformat didn't consider multi-extruder, use first extruder instead
-        self.md['FILAMENT_USED'] = str(list(filter(lambda x: x != 0.0, self.filament))[0])
+        self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
         self.md['TIME_COST'] = str(self.time_need)
         self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
         self.write_metadata(output_stream)

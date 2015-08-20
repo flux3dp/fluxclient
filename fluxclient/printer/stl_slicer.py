@@ -124,7 +124,7 @@ class StlSlicer(object):
             m_GcodeToFcode = GcodeToFcode()
             m_GcodeToFcode.process(f, io.BytesIO())
             metadata = m_GcodeToFcode.md
-            metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'])]
+            metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
 
         ##################### fake code ###########################
         with open('output.gcode', 'w') as f:
