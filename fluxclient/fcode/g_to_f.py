@@ -4,6 +4,7 @@ import struct
 import sys
 from zlib import crc32
 from math import sqrt
+import time
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
@@ -45,7 +46,7 @@ class GcodeToFcode(FcodeBase):
         """
         return b'FC' + b'x0001' + b'\n'
 
-    def metadata(self, stream):
+    def write_metadata(self, stream):
         """
         deal with meta data(a dict, and a png image)
         """
@@ -243,9 +244,11 @@ class GcodeToFcode(FcodeBase):
         output_stream.write(struct.pack('<I', self.script_length))
         output_stream.seek(0, 2)  # go back to file end
 
-        self.md['FILAMENT_USED'] = str(list(filter(lambda x: x != 0.0, self.filament)))
+        # warning: fileformat didn't consider multi-extruder, use first extruder instead
+        self.md['FILAMENT_USED'] = str(list(filter(lambda x: x != 0.0, self.filament))[0])
         self.md['TIME_COST'] = str(self.time_need)
-        self.metadata(output_stream)
+        self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
+        self.write_metadata(output_stream)
 
 if __name__ == '__main__':
     m_GcodeToFcode = GcodeToFcode()
