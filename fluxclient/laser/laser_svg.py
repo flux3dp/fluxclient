@@ -74,6 +74,7 @@ class LaserSvg(LaserBase):
         '''
         gcode = []
         points = re.split('[^0-9.-]+', thing.attrib['points'])  # split into numbers
+        points = filter(lambda x: x != "", points)
         points = list(map(float, points))
 
         if len(points) % 2 == 1:  # odd number of coordinate shouldn't be here
