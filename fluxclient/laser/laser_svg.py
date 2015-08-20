@@ -5,6 +5,7 @@ from math import sin, cos, pi, radians, sqrt, acos, copysign
 import logging
 # cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
 import xml.etree.ElementTree as ET
+import re
 
 from fluxclient.laser.laser_base import LaserBase
 
@@ -72,11 +73,16 @@ class LaserSvg(LaserBase):
         drawing a polygon
         '''
         gcode = []
-        points = [list(map(float, i.split(','))) for i in thing.attrib['points'].split()]
-        gcode.append((points[0][0], points[0][1]))
-        for p in points:
-            gcode.append((p[0], p[1]))
-        gcode.append((points[0][0], points[0][1]))
+        points = re.split('[^0-9.-]+', thing.attrib['points'])  # split into numbers
+        points = list(map(float, points))
+
+        if len(points) % 2 == 1:  # odd number of coordinate shouldn't be here
+            points.pop()
+
+        if len(points) >= 6:  # polygon need more than 3 points
+            for i in range(len(points) // 2):
+                gcode.append((points[i], points[i + 1]))
+            gcode.append((points[0], points[1]))  # go back to the head
         return [gcode]
 
     def path(self, thing, sample_n=100):
