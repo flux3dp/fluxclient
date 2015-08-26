@@ -12,7 +12,7 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 3.0  # focal z coordinate
+        self.focal_l = 5.0  # focal z coordinate
 
         self.laser_speed = 600  # speed F= mm/minute
         self.travel_speed = 6000
@@ -22,7 +22,7 @@ class LaserBase(object):
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
 
-        self.split_thres = 999  # should be some small number
+        # self.split_thres = 999  # should be some small number # Deprecated
 
         self.pixel_per_mm = 16  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
@@ -37,6 +37,7 @@ class LaserBase(object):
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
         self.image_map = np.ones((w, w), np.uint8) * 255
+
         # self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
@@ -54,6 +55,9 @@ class LaserBase(object):
         self.laser_on = True
         gcode += self.turnOff()
 
+        # setting
+        gcode += ["X3F3", "X3F2", "X3F1"]
+
         # home
         gcode.append("G28")
 
@@ -65,24 +69,23 @@ class LaserBase(object):
         if self.laser_on:
             return []
         self.laser_on = True
-        return ["G4 P1", "G4 P1"] * 16 + ["G4 P10", "HL%d" % self.draw_power, "G4 P1"]
+        return ["M400", "X2O%d" % self.draw_power, "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
-        return ["G4 P1", "G4 P1"] * 16 + ["G4 P1", "HL0", "G4 P1"]
+        return ["M400", "X2O0", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
-        return ["G4 P1", "G4 P1", ] + ["G4 P1", "HL%d" % self.fram_power, "G4 P1"]
+        return ["M400", "X2O%d" % self.fram_power, "G4 P1"]
 
-    def moveTo(self, x, y, speed=None):
+    def moveTo(self, x, y, speed=None, z=None):
         """
             apply global "rotation" and "scale"
             move to position x,y
         """
-        gcode = []
 
         x2 = (x * cos(self.rotation) - y * sin(self.rotation)) * self.ratio
         y2 = (x * sin(self.rotation) + y * cos(self.rotation)) * self.ratio
@@ -111,10 +114,12 @@ class LaserBase(object):
 
         self.current_x = x
         self.current_y = y
+        if z is None:
+            return ["".join(["G1 F", str(speed), " X", str(x), " Y", str(y), ending])]
+        else:
+            return ["".join(["G1 F", str(speed), " X", str(x), " Y", str(y), " Z", str(z), ending])]
 
-        return gcode + ["G1 F" + str(speed) + " X" + str(x) + " Y" + str(y) + ending]
-
-    def drawTo(self, x, y, speed=None):
+    def drawTo(self, x, y, speed=None, z=None):
         """
             turn on, move to x, y
 
@@ -124,13 +129,13 @@ class LaserBase(object):
         gcode += self.turnOn()
 
         if speed is None:
-            gcode += self.moveTo(x, y, self.laser_speed)
+            gcode += self.moveTo(x, y, self.laser_speed, z)
         else:
-            gcode += self.moveTo(x, y, speed)
+            gcode += self.moveTo(x, y, speed, z)
 
         return gcode
 
-    def closeTo(self, x, y, speed=None):
+    def closeTo(self, x, y, speed=None, z=None):
         """
             turn off, move to x, y
         """
@@ -138,9 +143,9 @@ class LaserBase(object):
         gcode += self.turnOff()
 
         if speed is None:
-            gcode += self.moveTo(x, y, self.travel_speed)
+            gcode += self.moveTo(x, y, self.travel_speed, z)
         else:
-            gcode += self.moveTo(x, y, speed)
+            gcode += self.moveTo(x, y, speed, z)
         return gcode
 
     def to_image(self, buffer_data, img_width, img_height):

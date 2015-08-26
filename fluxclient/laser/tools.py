@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 from math import sqrt
-
+import sys
 
 from laser_base import LaserBase
 
@@ -135,8 +135,62 @@ class Grid(LaserBase):
         return '\n'.join(gcode)
 
 
+class FindFocal(LaserBase):
+    """find the facal length"""
+    def __init__(self):
+        super(FindFocal, self).__init__()
+
+    def gcode_generate(self):
+        gcode = self.header('FindFocal')
+        focal_max = 10
+        z_candidate = myrange(focal_max, 0.1, -0.02)
+        tmp_i = 0
+        tmp_y = 0
+        step = 50
+        length = 30
+        gcode += ["G1 F5000 Z" + str(focal_max + self.obj_height)]
+        while tmp_i + step < len(z_candidate):
+            gcode += self.closeTo(-15, tmp_y)
+            tmp = 0
+            for z in z_candidate[tmp_i:tmp_i + step]:
+                gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y, z=z)
+                gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y + 1, z=z)
+                gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y, z=z)
+                tmp += 1
+
+            tmp_i += step
+            tmp_y += 5
+            print(tmp_y, file=sys.stderr)
+        tmp = 0
+        for z in z_candidate[tmp_i:]:
+            gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y, z=z)
+            gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y + 1, z=z)
+            gcode += self.drawTo(-15 + 30 / step * tmp, tmp_y, z=z)
+            tmp += 1
+        gcode += self.turnOff()
+        gcode += ['G28']
+        return '\n'.join(gcode)
+
+
+def myrange(start, end, step):
+    R = 1000.  # for floating point error
+    start *= R
+    end *= R
+    step *= R
+    output = []
+    tmp = start
+    if step >= 0:
+        while tmp < end:
+            output.append(tmp / R)
+            tmp += step
+    else:
+        while tmp > end:
+            output.append(tmp / R)
+            tmp += step
+    return output
+
 if __name__ == '__main__':
-    # m_logo = Logo()
-    # print(m_logo.gcode_generate())
-    m_grid = Grid()
-    print(m_grid.gcode_generate())
+    # m_obj = Logo()
+    # m_obj = Grid()
+    m_obj = FindFocal()
+    print(m_obj.gcode_generate())
