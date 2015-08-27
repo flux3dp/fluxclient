@@ -82,7 +82,7 @@ class LaserSvg(LaserBase):
 
         if len(points) >= 6:  # polygon need more than 3 points
             for i in range(len(points) // 2):
-                gcode.append((points[i], points[i + 1]))
+                gcode.append((points[i * 2], points[i * 2 + 1]))
             gcode.append((points[0], points[1]))  # go back to the head
         return [gcode]
 
@@ -114,17 +114,30 @@ class LaserSvg(LaserBase):
         if len(data) == 0:
             return [[]]
 
+        # there can be several set of parameter using same command ex: L12,34,56,78 -> L12,34 L56,78
+        parameter_list = {'M': 2, 'm': 2, 'L': 2, 'l': 2, 'H': 1, 'h': 1, 'V': 1, 'v': 1, 'Z': 0, 'z': 0, 'C': 6, 'c': 6, 'S': 4, 's': 4, 'Q': 4, 'q': 4, 'T': 2, 't': 2, 'A': 7, 'a': 7}
+        tmp = []
+        for i in range(len(data)):
+            l = len(data[i]) - 1
+            if l == parameter_list[data[i][0]]:
+                tmp.append(data[i])
+            else:
+                counter = 1
+                while counter < l:
+                    tmp.append([data[i][0]] + data[i][counter:counter + parameter_list[data[i][0]]])
+                    counter += parameter_list[data[i][0]]
+        data = tmp
+
         if data[0][0] == 'M':  # store init x,y for future use
             x_init, y_init = data[0][1], data[0][2]
         else:
             x_init, y_init = 0., 0.
 
         # variable that use for 'Z' command aka 'close path'
-        x, y = x_init, y_init
-        Z_flag = False
+        Z_flag = True
 
         x, y = None, None  # current x, y position
-        prev_control = None
+        prev_control = None  # some command need to use previous points as control point
 
         for i in data:
             if i[0] in 'Mm':
@@ -649,7 +662,6 @@ class LaserSvg(LaserBase):
 
             path_data = self.elements_to_list(root)
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
-
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
@@ -664,7 +676,8 @@ class LaserSvg(LaserBase):
                         continue
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
-
+        gcode += self.turnOff()
+        gcode += ["G28"]
         ################ fake code ##############
         self.dump('./preview.png')
         tmp = []
