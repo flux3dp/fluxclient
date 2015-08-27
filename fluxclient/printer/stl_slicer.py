@@ -25,6 +25,8 @@ class StlSlicer(object):
         self.user_setting = {}  # slcing setting
         self.slic3r = '../Slic3r/slic3r.pl'
         self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+        self.config = self.my_ini_parser(self.slic3r_setting)
+        self.config['gcode_comments'] = '1'
 
     def upload(self, name, buf):
         self.models[name] = buf
@@ -46,6 +48,13 @@ class StlSlicer(object):
     def set_params(self, key, value):
         if key in ['printSpeed', 'material', 'raft', 'support', 'layerHeight', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
             self.user_setting[key] = value
+            return True
+        else:
+            return False
+
+    def advanced_setting(self, key, value):
+        if key in self.config:
+            self.config[key] = value
             return True
         else:
             return False
@@ -79,44 +88,48 @@ class StlSlicer(object):
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
 
-        config = self.my_ini_parser(self.slic3r_setting)
-        config['gcode_comments'] = '1'
         for key in self.user_setting:
             if self.user_setting[key] != "default":
                 if key == 'printSpeed':
                     pass  # TODO
                 elif key == 'material':
-                    pass
+                    pass  # TODO
                 elif key == 'raft':
                     if self.user_setting[key] == '0':
-                        config['raft_layers'] = '0'
-
-                    # TODO
-                    # elif self.user_setting[key] == '1':
-                    #     config['raft_layers'] =
+                        self.config['raft_layers'] = '0'
+                    elif self.user_setting[key] == '1':
+                        self.config['raft_layers'] = '4'  # TODO?
                 elif key == 'support':
-                    config['support_material'] = self.user_setting[key]
+                    self.config['support_material'] = self.user_setting[key]
                 elif key == 'layerHeight':
-                    config['first_layer_height'] = self.user_setting[key]
-                    config['layer_height'] = self.user_setting[key]
+                    self.config['first_layer_height'] = self.user_setting[key]
+                    self.config['layer_height'] = self.user_setting[key]
                 elif key == 'infill':
                     fill_density = float(self.user_setting[key]) * 100
-                    config['fill_density'] = str(fill_density)
+                    fill_density = max(min(fill_density, 99), 0)
+                    self.config['fill_density'] = str(fill_density) + '%'
                 elif key == 'travelingSpeed':
-                    config['travel_speed'] = self.user_setting[key]
+                    self.config['travel_speed'] = self.user_setting[key]
                 elif key == 'extrudingSpeed':
-                    config['perimeter_speed'] = self.user_setting[key]
-                    config['infill_speed'] = self.user_setting[key]
+                    self.config['perimeter_speed'] = self.user_setting[key]
+                    self.config['infill_speed'] = self.user_setting[key]
                 elif key == 'temperature':
-                    config['temperature'] = self.user_setting[key]
+                    self.config['temperature'] = self.user_setting[key]
 
-        self.my_ini_writer(tmp_slic3r_setting_file, config)
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config)
 
         command += ['--load', tmp_slic3r_setting_file]
         print('command:', ' '.join(command), file=sys.stderr)
-        slic3r_out = subprocess.check_output(command)
-        slic3r_out = slic3r_out.decode('utf8')
-        print(slic3r_out, file=sys.stderr)
+
+        try:
+            slic3r_out = subprocess.check_output(command, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            slic3r_out = e.output
+        except:
+            raise
+        finally:
+            print(slic3r_out.decode('utf8'), file=sys.stderr)
+            sys.stderr.flush()
 
         with open(tmp_gcode_file, 'r') as f:
             gcode = f.read()
