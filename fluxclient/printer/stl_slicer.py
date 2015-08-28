@@ -23,15 +23,21 @@ class StlSlicer(object):
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
-        self.slic3r = '../Slic3r/slic3r.pl'
+        self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
         self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
         self.config = self.my_ini_parser(self.slic3r_setting)
-        self.config['gcode_comments'] = '1'
+        self.config['gcode_comments'] = '1'  # force open comment in gcode generated
 
     def upload(self, name, buf):
+        """
+        upload a model's data in stl as bytes data
+        """
         self.models[name] = buf
 
     def delete(self, name):
+        """
+        delete [name]
+        """
         if name in self.models:
             del self.models[name]
             if name in self.parameter:
@@ -40,28 +46,47 @@ class StlSlicer(object):
             raise ValueError("%s not upload yet" % (name))
 
     def set(self, name, parameter):
+        """
+        set the position, scale, rotation... parameters
+        (just record it, didn't actually compute it)
+        """
         if name in self.models:
             self.parameter[name] = parameter
         else:
             raise ValueError("%s not upload yet" % (name))
 
     def set_params(self, key, value):
+        """
+        basic printing parameter in front end
+        """
         if key in ['printSpeed', 'material', 'raft', 'support', 'layerHeight', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
             self.user_setting[key] = value
             return True
         else:
             return False
 
-    def advanced_setting(self, key, value):
-        if key in self.config:
-            self.config[key] = value
-            return True
-        else:
-            return False
+    def advanced_setting(self, lines):
+        """
+        user input  setting content
+        use '#' as comment symbol (different from wiki's ini file standard)
+        return the line number of bad input
+        """
+        counter = 0
+        bad_line = []
+        for line in lines:
+            if '#' in line:  # clean up comement
+                line = line[:line.index('#')]
+            if '=' in line:
+                key, value = map(lambda x: x.strip(), line.split('=', 1))
+                if key in self.config:
+                    self.config[key] = value
+                    return True
+                else:
+                    bad_line.append(counter)
+            counter += 1
+        return bad_line
 
     def generate_gcode(self, names):
-        ## psudo code
-        ## self.mesh = Mesh(pcl mesh)
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
             points, faces = self.read_stl(self.models[n])
@@ -157,6 +182,10 @@ class StlSlicer(object):
 
     @classmethod
     def my_ini_parser(cls, file_path):
+        """
+        read-in .ini setting file as default settings
+        return a dict
+        """
         result = {}
         with open(file_path, 'r') as f:
             for i in f.readlines():
@@ -172,6 +201,9 @@ class StlSlicer(object):
 
     @classmethod
     def my_ini_writer(cls, file_path, content):
+        """
+        write to [file_path] with dict(content)
+        """
         with open(file_path, 'w') as f:
             for i in content:
                 print("%s=%s" % (i, content[i]), file=f)
@@ -194,6 +226,9 @@ class StlSlicer(object):
 
     @classmethod
     def read_stl(cls, file_data):
+        """
+        read in stl
+        """
         # https://en.wikipedia.org/wiki/STL_(file_format)
         if type(file_data) == str:
             with open(file_data, 'rb') as f:
