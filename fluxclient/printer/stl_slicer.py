@@ -73,19 +73,21 @@ class StlSlicer(object):
         return the line number of bad input
         """
         counter = 0
-        bad_line = []
+        bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement
                 line = line[:line.index('#')]
+            line = line.strip()
             if '=' in line:
                 key, value = map(lambda x: x.strip(), line.split('=', 1))
                 if key in self.config:
                     self.config[key] = value
-                    return True
                 else:
-                    bad_line.append(counter)
+                    bad_lines.append(counter)
+            elif line != '':
+                bad_lines.append(counter)
             counter += 1
-        return bad_line
+        return bad_lines
 
     def generate_gcode(self, names):
         m_mesh_merge = _printer.MeshObj([], [])

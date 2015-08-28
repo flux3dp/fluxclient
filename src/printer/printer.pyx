@@ -35,7 +35,7 @@ cdef class MeshObj:
     cpdef write_stl(self, file_name):
         cpdef vector[vector [vector [float]]] tri
         STL_to_List(self.meshobj, tri)
-        write_stl(tri, file_name, 'ascii')
+        write_stl(tri, file_name)
 
     cpdef bounding_box(self):
         cpdef vector[float] tmp_b_box
