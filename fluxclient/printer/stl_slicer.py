@@ -90,12 +90,24 @@ class StlSlicer(object):
         return bad_lines
 
     def generate_gcode(self, names):
+        """
+        input: names of stl that need to be sliced
+        output:
+            if success:
+                gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
+            else:
+                False, [error message]
+        """
+
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
-            points, faces = self.read_stl(self.models[n])
-            m_mesh = _printer.MeshObj(points, faces)
-            m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
+            if n in self.models and n in self.parameter:
+                points, faces = self.read_stl(self.models[n])
+                m_mesh = _printer.MeshObj(points, faces)
+                m_mesh.apply_transform(self.parameter[n])
+                m_mesh_merge.add_on(m_mesh)
+            else:
+                return False, '%s not set yet' % (n)
 
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
@@ -149,14 +161,18 @@ class StlSlicer(object):
         command += ['--load', tmp_slic3r_setting_file]
         print('command:', ' '.join(command), file=sys.stderr)
 
+        fail_flag = False
+
         try:
             slic3r_out = subprocess.check_output(command, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             slic3r_out = e.output
+            fail_flag = True
         except:
             raise
         finally:
-            print(slic3r_out.decode('utf8'), file=sys.stderr)
+            slic3r_out = slic3r_out.decode('utf8')
+            print(slic3r_out, file=sys.stderr)
             sys.stderr.flush()
 
         with open(tmp_gcode_file, 'r') as f:
@@ -180,8 +196,10 @@ class StlSlicer(object):
         os.remove(tmp_stl_file)
         os.remove(tmp_gcode_file)
         os.remove(tmp_slic3r_setting_file)
-
-        return gcode, metadata
+        if fail_flag:
+            return False, slic3r_out
+        else:
+            return gcode, metadata
 
     @classmethod
     def my_ini_parser(cls, file_path):
