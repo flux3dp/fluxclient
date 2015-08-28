@@ -429,15 +429,24 @@ class LaserSvg(LaserBase):
 
         viewBox[2] = viewBox[2] - viewBox[0]
         viewBox[3] = viewBox[3] - viewBox[1]
+
         root.attrib = {}
-        root.attrib['viewBox'] = " ".join(map(str, viewBox))
-        # theese are optional
+
         root.attrib['width'] = str(viewBox[2])
         root.attrib['height'] = str(viewBox[3])
-        # root.attrib['style'] = "border:1px solid #ff0000;"  # for debug
+
+        # stroke strip problem fake solution
+        # real solution ref: http://stackoverflow.com/questions/7241393/can-you-control-how-an-svgs-stroke-width-is-drawn
+        viewBox[0] -= .5
+        viewBox[1] -= .5
+        viewBox[2] += 1
+        viewBox[3] += 1
+
+        root.attrib['viewBox'] = " ".join(map(str, viewBox))
+        # root.attrib['style'] = "border: solid #ff0000;"  # for debug
 
         self.svgs[name] = [ET.tostring(root), viewBox[2], viewBox[3]]  # type: bytes
-        # tree.write('preprocess.svg')
+        tree.write('preprocess.svg')
 
     def process(self, path_data, params, viewBox):
         """
