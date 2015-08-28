@@ -27,9 +27,9 @@ class GcodeToFcode(FcodeBase):
 
         self.tool = 0  # set by T command
         self.absolute = True  # whether using absolute position
-        self.unit = 1  # how many mm is one unit in gcode, might be mm or inch
+        self.unit = 1  # how many mm is one unit in gcode, might be mm or inch(2.54)
 
-        self.crc = 0  # computing
+        self.crc = 0  # computing crc32
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
@@ -37,8 +37,7 @@ class GcodeToFcode(FcodeBase):
         self.time_need = 0.  # recording time the printing process need, in sec
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
         self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as
-        # a = self.r[1:1 + 2]
-        # x = x * 2 + 1
+        self.path = []  # recording the path extruder go through
 
     def header(self):
         """
@@ -90,13 +89,12 @@ class GcodeToFcode(FcodeBase):
                 print(i)
         return command, number
 
-    def analyze_metadata(self, input_list):
+    def analyze_metadata(self, input_list, comment):
         """
         input_list: [F, X, Y, Z, E1, E2, E3]
         compute filament need for each extruder
         compute time needed
         """
-        self.current_pos[0]
         if input_list[0] is not None:
             self.current_speed = input_list[0]
 
@@ -110,17 +108,21 @@ class GcodeToFcode(FcodeBase):
                     self.current_pos[i - 1] += input_list[i]
 
         tmp_path = 0.
+        moveflag = False  # record if position change in this command
         for i in range(1, 4):  # position
             if input_list[i] is not None:
+                moveflag = True
                 if self.absolute:
                     tmp_path += (input_list[i] - self.current_pos[i - 1]) ** 2
                     self.current_pos[i - 1] = input_list[i]
                 else:
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
-
         tmp_path = sqrt(tmp_path)
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
+
+        if moveflag:
+            self.path
 
     def writer(self, buf, stream):
         """
@@ -143,9 +145,8 @@ class GcodeToFcode(FcodeBase):
 
         for line in input_stream:
             if ';' in line:
-                line = line[:line.index(';')].rstrip()
-
-            line = line.split()
+                line, comment = line.split(';', 1)
+            line = line.rstrip().split()
 
             if line:
                 if line[0] == 'G28':  # home
@@ -211,7 +212,7 @@ class GcodeToFcode(FcodeBase):
                 elif line[0] == 'G0' or line[0] == 'G1':  # move
                     command = 128
                     subcommand, data = self.XYZEF(line)
-                    self.analyze_metadata(data)
+                    self.analyze_metadata(data, comment)
 
                     command |= subcommand
                     self.writer(packer(command), output_stream)

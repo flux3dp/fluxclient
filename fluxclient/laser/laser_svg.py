@@ -7,6 +7,7 @@ import logging
 import xml.etree.ElementTree as ET
 import re
 
+
 from fluxclient.laser.laser_base import LaserBase
 
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class LaserSvg(LaserBase):
     """
     LaserSvg class:
-      generate gcode base on given svg file
+      generate gcode base on given svg files
     """
     def __init__(self):
         super(LaserSvg, self).__init__()

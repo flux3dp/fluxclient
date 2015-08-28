@@ -94,6 +94,10 @@ def myrange(*args):
 
 
 def after(l):
+    """
+    add box
+    """
+    return l
     for i in range(-70, 70, 3):
         for j in range(-70, 70, 3):
             l.append([i, j, 0.0, 255, 0, 0])

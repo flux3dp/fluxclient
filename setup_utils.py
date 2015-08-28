@@ -1,3 +1,4 @@
+# !/usr/bin/env python3
 
 from pkgutil import walk_packages
 from setuptools import Extension
