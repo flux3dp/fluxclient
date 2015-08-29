@@ -42,6 +42,33 @@ class LaserSvg(LaserBase):
         gcode.append((x, y))
         return [gcode]
 
+    def line(self, thing):
+        '''
+        drawing a Line
+        '''
+        gcode = []
+        x1, y1, x2, y2 = float(thing.attrib['x1']), float(thing.attrib['y1']), float(thing.attrib['x2']), float(thing.attrib['y2'])
+
+        gcode.append((x1, y1))
+        gcode.append((x2, y2))
+        return [gcode]
+
+    def polyline(self, thing):
+        '''
+        drawing a polyline
+        '''
+        gcode = []
+        points = re.split('[^0-9.-]+', thing.attrib['points'])  # split into numbers
+        points = filter(lambda x: x != "", points)
+        points = list(map(float, points))
+
+        if len(points) % 2 == 1:  # odd number of coordinate shouldn't be here
+            points.pop()
+
+        for i in range(len(points) // 2):
+            gcode.append((points[i * 2], points[i * 2 + 1]))
+        return [gcode]
+
     def circle(self, thing, sample_n=100):
         '''
         drawing a circle, sample_n indicate the sample rate or the straight line
@@ -345,6 +372,10 @@ class LaserSvg(LaserBase):
                 gcode += self.polygon(thing)
             elif thing.tag == header + 'path':
                 gcode += self.path(thing)
+            elif thing.tag == header + 'line':
+                gcode += self.line(thing)
+            elif thing.tag == header + 'polyline':
+                gcode += self.polyline(thing)
         return gcode
 
     def compute(self, name, data):
@@ -392,7 +423,16 @@ class LaserSvg(LaserBase):
                 tmp_thing.attrib['rx'] = thing.attrib['rx']
                 tmp_thing.attrib['ry'] = thing.attrib['ry']
                 i.attrib = tmp_thing.attrib
+            elif thing.tag == header + 'line':
+                tmp_thing.attrib['x1'] = thing.attrib['x1']
+                tmp_thing.attrib['y1'] = thing.attrib['y1']
+                tmp_thing.attrib['x2'] = thing.attrib['x2']
+                tmp_thing.attrib['y2'] = thing.attrib['y2']
+                i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'polygon':
+                tmp_thing.attrib['points'] = thing.attrib['points']
+                i.attrib = tmp_thing.attrib
+            elif thing.tag == header + 'polyline':
                 tmp_thing.attrib['points'] = thing.attrib['points']
                 i.attrib = tmp_thing.attrib
             elif thing.tag == header + 'path':
@@ -424,7 +464,6 @@ class LaserSvg(LaserBase):
             viewBox = list(map(float, viewBox.replace(',', ' ').split()))
             viewBox[2] = viewBox[0] + viewBox[2]
             viewBox[3] = viewBox[1] + viewBox[3]
-
         viewBox = [max(viewBox[0], min_x), max(viewBox[1], min_y), min(viewBox[2], max_x), min(viewBox[3], max_y)]
 
         viewBox[2] = viewBox[2] - viewBox[0]
