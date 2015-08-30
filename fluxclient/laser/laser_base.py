@@ -16,7 +16,7 @@ class LaserBase(object):
 
         self.laser_speed = 600  # speed F= mm/minute
         self.travel_speed = 6000
-        self.draw_power = 255  # drawing
+        self.draw_power = 15  # drawing
         self.fram_power = 230  # indicating
 
         self.obj_height = 10.9  # rubber
@@ -62,7 +62,7 @@ class LaserBase(object):
         gcode.append("G28")
 
         # move to proper height
-        gcode.append("G1 F5000 Z" + str(self.focal_l + self.obj_height))
+        gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height))
         return gcode
 
     def turnOn(self):
@@ -75,7 +75,7 @@ class LaserBase(object):
         if not self.laser_on:
             return []
         self.laser_on = False
-        return ["M400", "X2O0", "G4 P1"]
+        return ["M400", "X2O255", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
@@ -115,9 +115,9 @@ class LaserBase(object):
         self.current_x = x
         self.current_y = y
         if z is None:
-            return ["".join(["G1 F", str(speed), " X", str(x), " Y", str(y), ending])]
+            return ["G1 F%.5f X%.5f Y%.5f %s" % (speed, x, y, ending)]
         else:
-            return ["".join(["G1 F", str(speed), " X", str(x), " Y", str(y), " Z", str(z), ending])]
+            return ["G1 F%.5f X%.5f Y%.5f Z%.5f %s" % (speed, x, y, z, ending)]
 
     def drawTo(self, x, y, speed=None, z=None):
         """
@@ -173,7 +173,7 @@ class LaserBase(object):
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
 
         elif key == 'power':
-            self.draw_power = round(float(value) * 255)   # pwm, int
+            self.draw_power = round(float(value) * 30 + (1.0 - float(value)) * 255)  # pwm, int
         else:
             raise ValueError('undefine setting key')
 
