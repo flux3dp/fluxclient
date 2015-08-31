@@ -102,7 +102,7 @@ class StlSlicer(object):
                 result.append('[' + ','.join(tmp) + ']\n')
             return '[' + ','.join(result) + ']'
 
-    def generate_gcode(self, names):
+    def generate_gcode(self, names, ws):
         """
         input: names of stl that need to be sliced
         output:
@@ -176,17 +176,17 @@ class StlSlicer(object):
 
         fail_flag = False
 
-        try:
-            slic3r_out = subprocess.check_output(command, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            slic3r_out = e.output
-            fail_flag = True
-        except:
-            raise
-        finally:
-            slic3r_out = slic3r_out.decode('utf8')
-            print(slic3r_out, file=sys.stderr)
+        p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        while p.poll() is None:
+            line = p.stdout.readline()
+            print(line, file=sys.stderr, end='')
             sys.stderr.flush()
+            if line:
+                if line.startswith('=> ') and not line.startswith('=> Exporting'):
+                    ws.send_text('{"status": "computing", "message": "%s"}' % line[3:])
+                slic3r_out = line
+        if p.poll() != 0:
+            fail_flag = True
 
         with open(tmp_gcode_file, 'r') as f:
             gcode = f.read()
