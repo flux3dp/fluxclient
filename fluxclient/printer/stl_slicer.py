@@ -28,6 +28,7 @@ class StlSlicer(object):
         self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
         self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
+        self.path = None
 
     def upload(self, name, buf):
         """
@@ -88,6 +89,18 @@ class StlSlicer(object):
                 bad_lines.append(counter)
             counter += 1
         return bad_lines
+
+    def get_path(self):
+        if self.path is None:
+            return ''
+        else:
+            result = []
+            for layer in self.path:
+                tmp = []
+                for p in layer:
+                    tmp.append('{t:%d, p:[%.5f, %.5f, %.5f]}' % (p[3], p[0], p[1], p[2]))
+                result.append('[' + ','.join(tmp) + ']\n')
+            return '[' + ','.join(result) + ']'
 
     def generate_gcode(self, names):
         """
@@ -177,11 +190,16 @@ class StlSlicer(object):
 
         with open(tmp_gcode_file, 'r') as f:
             gcode = f.read()
+
+        # analying gcode(even transform)
         with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode()
             m_GcodeToFcode.process(f, io.BytesIO())
+
+            self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+            del m_GcodeToFcode
 
         ##################### fake code ###########################
         with open('output.gcode', 'w') as f:

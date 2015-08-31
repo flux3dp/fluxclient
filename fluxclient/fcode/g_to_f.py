@@ -37,7 +37,10 @@ class GcodeToFcode(FcodeBase):
         self.time_need = 0.  # recording time the printing process need, in sec
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
         self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as
-        self.path = []  # recording the path extruder go through
+
+        self.record_path = True
+        self.record_z = 0.0
+        self.path = [[]]  # recording the path extruder go through
 
     def header(self):
         """
@@ -98,8 +101,10 @@ class GcodeToFcode(FcodeBase):
         if input_list[0] is not None:
             self.current_speed = input_list[0]
 
+        extrudeflag = False
         for i in range(4, 7):  # extruder
             if input_list[i] is not None:
+                extrudeflag = True
                 if self.absolute:
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
                     self.current_pos[i - 1] = input_list[i]
@@ -120,9 +125,9 @@ class GcodeToFcode(FcodeBase):
                     self.current_pos[i - 1] += input_list[i]
         tmp_path = sqrt(tmp_path)
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
-
-        if moveflag:
-            self.path
+        # fill in self.path
+        if self.record_path:
+            self.process_path(comment, moveflag, extrudeflag)
 
     def writer(self, buf, stream):
         """
