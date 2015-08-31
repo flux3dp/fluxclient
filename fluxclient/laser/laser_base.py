@@ -12,12 +12,12 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 5.0  # focal z coordinate
+        self.focal_l = 12.0  # focal z coordinate
 
         self.laser_speed = 600  # speed F= mm/minute
         self.travel_speed = 6000
-        self.draw_power = 15  # drawing
-        self.fram_power = 230  # indicating
+        self.draw_power = 255  # drawing
+        self.fram_power = 30  # indicating
 
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
@@ -69,19 +69,19 @@ class LaserBase(object):
         if self.laser_on:
             return []
         self.laser_on = True
-        return ["M400", "X2O%d" % self.draw_power, "G4 P1"]
+        return ["M400", "X2O%d ; turnOn" % self.draw_power, "G4 P1"]
 
     def turnOff(self):
         if not self.laser_on:
             return []
         self.laser_on = False
-        return ["M400", "X2O255", "G4 P1"]
+        return ["M400", "X2O0; turnOff", "G4 P1"]
 
     def turnHalf(self):
         self.laser_on = False
-        return ["M400", "X2O%d" % self.fram_power, "G4 P1"]
+        return ["M400", "X2O%d; turnHalf" % self.fram_power, "G4 P1"]
 
-    def moveTo(self, x, y, speed=None, z=None):
+    def moveTo(self, x, y, speed=None, z=None, ending=';move to'):
         """
             apply global "rotation" and "scale"
             move to position x,y
@@ -93,7 +93,6 @@ class LaserBase(object):
         x = x2
         y = y2
 
-        ending = ';Move to'
         if speed is None:
             speed = self.laser_speed
 
@@ -125,13 +124,13 @@ class LaserBase(object):
 
             draw to position x,y
         """
-        gcode = [';draw']
+        gcode = []
         gcode += self.turnOn()
 
         if speed is None:
-            gcode += self.moveTo(x, y, self.laser_speed, z)
+            gcode += self.moveTo(x, y, self.laser_speed, z, ending=';draw')
         else:
-            gcode += self.moveTo(x, y, speed, z)
+            gcode += self.moveTo(x, y, speed, z, ending=';draw')
 
         return gcode
 
@@ -173,7 +172,7 @@ class LaserBase(object):
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
 
         elif key == 'power':
-            self.draw_power = round(float(value) * 30 + (1.0 - float(value)) * 255)  # pwm, int
+            self.draw_power = (round(float(value) * 255))  # pwm, int
         else:
             raise ValueError('undefine setting key')
 
