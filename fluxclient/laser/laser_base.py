@@ -3,6 +3,8 @@
 import os
 import io
 from math import pi, sin, cos, sqrt, degrees
+import time
+import datetime
 
 from PIL import Image
 import numpy as np
@@ -47,7 +49,8 @@ class LaserBase(object):
         gcode = []
 
         # header part
-        gcode.append(";Flux Laser")
+        gcode.append(";Generate by Flux Studio %s" % (datetime.datetime.fromtimestamp(time.time()).strftime('on %Y-%m-%d at %H:%M:%S')))
+        gcode.append(";Laser Gcode")
         for i in header.split('\n'):
             gcode.append(";" + i)
 
