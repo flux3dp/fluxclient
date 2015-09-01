@@ -98,6 +98,7 @@ class Grid(LaserBase):
     """Draw a grid on plate"""
     def __init__(self):
         super(Grid, self).__init__()
+        self.obj_height = 0.0  # change if needed
 
     def gcode_generate(self):
         gcode = []
@@ -148,7 +149,6 @@ class FindFocal(LaserBase):
         tmp_y = 0
         step = 50
         length = 30
-        gcode += ["G1 F5000 Z" + str(focal_max + self.obj_height)]
         while tmp_i + step < len(z_candidate):
             gcode += self.closeTo(-15, tmp_y)
             tmp = 0

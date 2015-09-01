@@ -98,8 +98,8 @@ class StlSlicer(object):
             for layer in self.path:
                 tmp = []
                 for p in layer:
-                    tmp.append('{t:%d, p:[%.5f, %.5f, %.5f]}' % (p[3], p[0], p[1], p[2]))
-                result.append('[' + ','.join(tmp) + ']\n')
+                    tmp.append('{"t":%d, "p":[%.3f, %.3f, %.3f]}' % (p[3], p[0], p[1], p[2]))
+                result.append('[' + ','.join(tmp) + ']')
             return '[' + ','.join(result) + ']'
 
     def generate_gcode(self, names, ws):
@@ -111,7 +111,7 @@ class StlSlicer(object):
             else:
                 False, [error message]
         """
-
+        ws.send_progress('merging', 0.2)
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
             if n in self.models and n in self.parameter:
@@ -177,13 +177,15 @@ class StlSlicer(object):
         fail_flag = False
 
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        progress = 0.2
         while p.poll() is None:
             line = p.stdout.readline()
             print(line, file=sys.stderr, end='')
             sys.stderr.flush()
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
-                    ws.send_text('{"status": "computing", "message": "%s"}' % line[3:])
+                    progress += 0.12
+                    ws.send_progress((line.rstrip())[3:], progress)
                 slic3r_out = line
         if p.poll() != 0:
             fail_flag = True
@@ -192,9 +194,10 @@ class StlSlicer(object):
             gcode = f.read()
 
         # analying gcode(even transform)
-        with open(tmp_gcode_file, 'r') as f:
+        ws.send_progress('analying metadata', 0.99)
+        with open(tmp_gcode_file, 'r') as f, open(os.devnull, 'wb') as devnull:
             m_GcodeToFcode = GcodeToFcode()
-            m_GcodeToFcode.process(f, io.BytesIO())
+            m_GcodeToFcode.process(f, devnull)
 
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md

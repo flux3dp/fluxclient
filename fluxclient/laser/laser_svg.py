@@ -698,19 +698,33 @@ class LaserSvg(LaserBase):
             path_data[path] = in_path
         return path_data
 
-    def gcode_generate(self, names):
+    def gcode_generate(self, names, ws):
         self.reset_image()
         gcode = []
         gcode += self.header('laser svg')
-
+        progress = 0.1
+        offset = 4 * len(names) / 0.98
+        name_index = offset
         for name in names:
+            name_index += 1
             ready_svg = self.ready_svgs[name]
             svg_data = ready_svg[0].decode('utf8')
             root = ET.fromstring(svg_data)
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
 
+            progress += offset
+            ws.send_progress('converting svg %d' % name_index, progress)
+
             path_data = self.elements_to_list(root)
+
+            progress += offset
+            ws.send_progress('process svg %d' % name_index, progress)
+
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
+
+            progress += offset
+            ws.send_progress('generating gcode on svg %d' % name_index, progress)
+
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
@@ -723,6 +737,8 @@ class LaserSvg(LaserBase):
                     else:
                         moveTo = True
                         continue
+            progress += offset
+            ws.send_progress('preparing image %d' % name_index, progress)
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
