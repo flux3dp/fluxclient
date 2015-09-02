@@ -139,124 +139,130 @@ class GcodeToFcode(FcodeBase):
         self.crc = crc32(buf, self.crc)
 
     def process(self, input_stream, output_stream):
-        # fcode = tempfile.NamedTemporaryFile(suffix='.fcode', delete=False)
-        output_stream.write(self.header())
+        try:
+            # fcode = tempfile.NamedTemporaryFile(suffix='.fcode', delete=False)
+            output_stream.write(self.header())
 
-        packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
-        packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
+            packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
+            packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
 
-        output_stream.write(struct.pack('<I', 0))  # script length
-        self.script_length = 0
+            output_stream.write(struct.pack('<I', 0))  # script length
+            self.script_length = 0
 
-        for line in input_stream:
-            if ';' in line:
-                line, comment = line.split(';', 1)
-            else:
-                comment = ''
-            line = line.rstrip().split()
-
-            if line:
-                if line[0] == 'G28':  # home
-                    self.writer(packer(1), output_stream)
-                    for tmp in range(3):
-                        self.current_pos[tmp] = 0
-
-                elif line[0] == 'G90':  # set to absolute
-                    self.writer(packer(2), output_stream)
-                    self.absolute = True
-                elif line[0] == 'G91':  # set to relative
-                    self.absolute = False
-                    self.writer(packer(3), output_stream)
-
-                elif line[0] == 'M82':  # set extruder to absolute
-                    self.extrude_absolute = True
-                elif line[0] == 'M83':  # set extruder to relative
-                    self.extrude_absolute = False
-
-                elif line[0] == 'G92':  # set position
-                    command = 64
-                    sub_command, data = self.XYZEF(line)
-                    if any(data):
-                        pass
-                    else:  # A G92 without coordinates will reset all axes to zero.
-                        sub_command = 0
-                        for i in range(1, 7):
-                            sub_command |= (1 << (6 - i))
-                            data[i] = 0.0
-
-                    command |= sub_command
-                    self.writer(packer(command), output_stream)
-                    for i in range(len(data)):
-                        if data[i] is not None:
-                            self.writer(packer_f(i), output_stream)
-                            self.current_pos[i - 1] = data[i]
-
-                elif line[0] == 'G4':  # dwell
-                    self.writer(packer(4), output_stream)
-                    self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
-
-                elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
-                    command = 16
-                    if line[0] == 'M109':
-                        command |= (1 << 3)
-                    for i in line:
-                        if i.startswith('S'):
-                            temp = float(i.lstrip('S'))
-                        elif i.startswith('T'):
-                            self.tool = int(i.lstrip('T'))
-                            if self.tool > 7:
-                                raise ValueError('too many extruder! %d' % self.tool)
-                    command |= self.tool
-                    self.writer(packer(command), output_stream)
-                    self.writer(packer_f(temp), output_stream)
-
-                elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
-                    if line == 'G20':  # inch
-                        self.unit = 25.4
-                    elif line == 'G21':  # mm
-                        self.unit = 1
-
-                elif line[0] == 'G0' or line[0] == 'G1':  # move
-                    command = 128
-                    subcommand, data = self.XYZEF(line)
-                    self.analyze_metadata(data, comment)
-
-                    command |= subcommand
-                    self.writer(packer(command), output_stream)
-                    for i in data:
-                        if i is not None:
-                            self.writer(packer_f(i), output_stream)
-
-                elif line[0] == 'T0' or line[0] == 'T1':  # change tool
-                    if line[0] == 'T0':
-                        self.tool = 0
-                    if line[0] == 'T1':
-                        self.tool = 1
-
-                elif line[0] == 'M107' or line[0] == 'M106':  # fan control
-                    command = 48
-                    command |= 1  # TODO: change this part, consder fan control protocol
-                    self.writer(packer(command), output_stream)
-                    if line[0] == 'M107':
-                        self.writer(packer_f(0.0), output_stream)
-                    elif line[0] == 'M106':
-                        self.writer(packer_f(float(line[1].lstrip('S'))), output_stream)
-
-                elif line[0] in ['M84', 'M140']:  # loosen the motor
-                    pass  # should only appear when printing done, not define in fcode yet
+            for line in input_stream:
+                if ';' in line:
+                    line, comment = line.split(';', 1)
                 else:
-                    print('Undefine gcode', line, file=sys.stderr)
-                    # raise ValueError('Undefine gcode', line)
-        output_stream.write(struct.pack('<I', self.crc))
-        output_stream.seek(len(self.header()), 0)
-        output_stream.write(struct.pack('<I', self.script_length))
-        output_stream.seek(0, 2)  # go back to file end
+                    comment = ''
+                line = line.rstrip().split()
 
-        # warning: fileformat didn't consider multi-extruder, use first extruder instead
-        self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
-        self.md['TIME_COST'] = str(self.time_need)
-        self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
-        self.write_metadata(output_stream)
+                if line:
+                    if line[0] == 'G28':  # home
+                        self.writer(packer(1), output_stream)
+                        for tmp in range(3):
+                            self.current_pos[tmp] = 0
+
+                    elif line[0] == 'G90':  # set to absolute
+                        self.writer(packer(2), output_stream)
+                        self.absolute = True
+                    elif line[0] == 'G91':  # set to relative
+                        self.absolute = False
+                        self.writer(packer(3), output_stream)
+
+                    elif line[0] == 'M82':  # set extruder to absolute
+                        self.extrude_absolute = True
+                    elif line[0] == 'M83':  # set extruder to relative
+                        self.extrude_absolute = False
+
+                    elif line[0] == 'G92':  # set position
+                        command = 64
+                        sub_command, data = self.XYZEF(line)
+
+                        tmp = lambda x: x is None
+                        if all(tmp(i) for i in data):
+                            sub_command = 0
+                            for i in range(1, 7):
+                                sub_command |= (1 << (6 - i))
+                                data[i] = 0.0
+                        else:  # A G92 without coordinates will reset all axes to zero.
+                            pass
+
+                        command |= sub_command
+                        self.writer(packer(command), output_stream)
+                        for i in range(len(data)):
+                            if data[i] is not None:
+                                self.writer(packer_f(i), output_stream)
+                                self.current_pos[i - 1] = data[i]
+                        print('G92', command, sub_command, data)
+                    elif line[0] == 'G4':  # dwell
+                        self.writer(packer(4), output_stream)
+                        self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
+
+                    elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
+                        command = 16
+                        if line[0] == 'M109':
+                            command |= (1 << 3)
+                        for i in line:
+                            if i.startswith('S'):
+                                temp = float(i.lstrip('S'))
+                            elif i.startswith('T'):
+                                self.tool = int(i.lstrip('T'))
+                                if self.tool > 7:
+                                    raise ValueError('too many extruder! %d' % self.tool)
+                        command |= self.tool
+                        self.writer(packer(command), output_stream)
+                        self.writer(packer_f(temp), output_stream)
+
+                    elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
+                        if line == 'G20':  # inch
+                            self.unit = 25.4
+                        elif line == 'G21':  # mm
+                            self.unit = 1
+
+                    elif line[0] == 'G0' or line[0] == 'G1':  # move
+                        command = 128
+                        subcommand, data = self.XYZEF(line)
+                        self.analyze_metadata(data, comment)
+
+                        command |= subcommand
+                        self.writer(packer(command), output_stream)
+                        for i in data:
+                            if i is not None:
+                                self.writer(packer_f(i), output_stream)
+
+                    elif line[0] == 'T0' or line[0] == 'T1':  # change tool
+                        if line[0] == 'T0':
+                            self.tool = 0
+                        if line[0] == 'T1':
+                            self.tool = 1
+
+                    elif line[0] == 'M107' or line[0] == 'M106':  # fan control
+                        command = 48
+                        command |= 1  # TODO: change this part, consder fan control protocol
+                        self.writer(packer(command), output_stream)
+                        if line[0] == 'M107':
+                            self.writer(packer_f(0.0), output_stream)
+                        elif line[0] == 'M106':
+                            self.writer(packer_f(float(line[1].lstrip('S'))), output_stream)
+
+                    elif line[0] in ['M84', 'M140']:  # loosen the motor
+                        pass  # should only appear when printing done, not define in fcode yet
+                    else:
+                        print('Undefine gcode', line, file=sys.stderr)
+                        # raise ValueError('Undefine gcode', line)
+            output_stream.write(struct.pack('<I', self.crc))
+            output_stream.seek(len(self.header()), 0)
+            output_stream.write(struct.pack('<I', self.script_length))
+            output_stream.seek(0, 2)  # go back to file end
+
+            # warning: fileformat didn't consider multi-extruder, use first extruder instead
+            self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+            self.md['TIME_COST'] = str(self.time_need)
+            self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
+            self.write_metadata(output_stream)
+        except Exception as e:
+            print('FcodeError:')
+            raise e
 
 if __name__ == '__main__':
     m_GcodeToFcode = GcodeToFcode()
