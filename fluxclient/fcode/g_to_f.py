@@ -191,9 +191,8 @@ class GcodeToFcode(FcodeBase):
                         self.writer(packer(command), output_stream)
                         for i in range(len(data)):
                             if data[i] is not None:
-                                self.writer(packer_f(i), output_stream)
+                                self.writer(packer_f(data[i]), output_stream)
                                 self.current_pos[i - 1] = data[i]
-                        print('G92', command, sub_command, data)
                     elif line[0] == 'G4':  # dwell
                         self.writer(packer(4), output_stream)
                         self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
