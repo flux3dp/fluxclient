@@ -151,6 +151,8 @@ class GcodeToFcode(FcodeBase):
         for line in input_stream:
             if ';' in line:
                 line, comment = line.split(';', 1)
+            else:
+                comment = ''
             line = line.rstrip().split()
 
             if line:
