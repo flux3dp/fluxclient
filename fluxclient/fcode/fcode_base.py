@@ -32,7 +32,7 @@ class FcodeBase(object):
                     else:
                         line_type = 3
                 if self.current_pos[2] != self.record_z:
-                    if self.path[-1] != []:
-                        self.path.append([])
+                    if len(self.path[-1]) != 1:
+                        self.path.append([self.current_pos[:3] + [line_type]])
                 self.record_z = self.current_pos[2]
                 self.path[-1].append(self.current_pos[:3] + [line_type])
