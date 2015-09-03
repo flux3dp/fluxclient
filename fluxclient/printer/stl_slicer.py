@@ -116,16 +116,19 @@ class StlSlicer(object):
             else:
                 False, [error message]
         """
+
+        # check if names are all seted
+        for n in names:
+            if not (n in self.models and n in self.parameter):
+                return False, '%s not set yet' % (n)
+
         ws.send_progress('merging', 0.2)
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
-            if n in self.models and n in self.parameter:
-                points, faces = self.read_stl(self.models[n])
-                m_mesh = _printer.MeshObj(points, faces)
-                m_mesh.apply_transform(self.parameter[n])
-                m_mesh_merge.add_on(m_mesh)
-            else:
-                return False, '%s not set yet' % (n)
+            points, faces = self.read_stl(self.models[n])
+            m_mesh = _printer.MeshObj(points, faces)
+            m_mesh.apply_transform(self.parameter[n])
+            m_mesh_merge.add_on(m_mesh)
 
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
