@@ -29,12 +29,16 @@ class StlSlicer(object):
         self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
+        self.image = b''
 
     def upload(self, name, buf):
         """
         upload a model's data in stl as bytes data
         """
         self.models[name] = buf
+
+    def upload_image(self, buf):
+        self.image = buf
 
     def delete(self, name):
         """
@@ -44,8 +48,9 @@ class StlSlicer(object):
             del self.models[name]
             if name in self.parameter:
                 del self.parameter[name]
+            return True, 'OK'
         else:
-            raise ValueError("%s not upload yet" % (name))
+            return False, "%s not upload yet" % (name)
 
     def set(self, name, parameter):
         """
@@ -202,6 +207,7 @@ class StlSlicer(object):
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+            m_GcodeToFcode.image = self.image
             del m_GcodeToFcode
 
         ##################### fake code ###########################
