@@ -40,7 +40,7 @@ class GcodeToFcode(FcodeBase):
 
         self.record_path = True
         self.record_z = 0.0
-        self.path = [[]]  # recording the path extruder go through
+        self.path = [[[0.0, 0.0, 0.0, 3]]]  # recording the path extruder go through
 
     def header(self):
         """
