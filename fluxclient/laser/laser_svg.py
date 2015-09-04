@@ -729,6 +729,7 @@ class LaserSvg(LaserBase):
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
                     if x != '\n':
+                        y = -y
                         if not moveTo:
                             gcode += self.drawTo(x, y, speed=self.laser_speed)
                         else:
