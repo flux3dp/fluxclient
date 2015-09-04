@@ -35,7 +35,7 @@ class FcodeBase(object):
             if self.current_pos[2] != self.record_z:  # merge?
                 # TODO: clean magic number?
                 # a real model should >= 4, and deal with the case that spiral appear use 0.02 as a layer height
-                if len(self.path[-1]) > 4 and abs(self.path[-1][0][2] - self.current_pos[2]) > 0.02:
+                if len(self.path[-1]) > 4 and abs(self.path[-1][0][2] - self.current_pos[2]) > 0.5:
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
 
             self.path[-1].append(self.current_pos[:3] + [line_type])

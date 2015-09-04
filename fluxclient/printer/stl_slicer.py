@@ -342,17 +342,3 @@ class StlSlicer(object):
         for i in range(counter):
             points_list.append(points[i])
         return points_list, faces
-
-
-class StlSlicerNoPCL(StlSlicer):
-    """docstring for StlSlicerNoPCL"""
-    def __init__(self):
-        super(StlSlicerNoPCL, self).__init__()
-        self.reset()
-
-    def generate_gcode(self, names):
-        ############### fake code ###############
-        gcode = "Nothing to do here~~"
-        metadata = [1000., 300.0]
-        ############### fake code ###############
-        return gcode, metadata
