@@ -1,6 +1,7 @@
 # !/usr/bin/env python3
 
 import os
+import sys
 import io
 from math import pi, sin, cos, sqrt, degrees
 import time
@@ -230,6 +231,14 @@ class LaserBase(object):
         gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
 
+        # shrink size if image too big, to avoid white frame disappear
+        if pix.size[0] >= len(self.image_map) or pix.size[1] >= len(self.image_map):
+            if pix.size[0] >= pix.size[1]:
+                new_size = (len(self.image_map), len(self.image_map) * pix.size[1] // pix.size[0])
+            else:
+                new_size = (len(self.image_map) * pix.size[0] // pix.size[1], len(self.image_map))
+            pix = pix.resize(new_size)
+
         # add white frame on each side
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
         new_pix.paste(pix, (1, 1))
@@ -238,13 +247,21 @@ class LaserBase(object):
 
         for h in range(new_pix.size[0]):
             # using white frame to find starting and ending index
+            flag = False
             for find_s in range(new_pix.size[1]):
                 if new_pix.getpixel((h, find_s)) > 0:
                     find_s += 1
+                    flag = True
                     break
+            if not flag:
+                find_s = 0
+
+            flag = False
             for find_e in range(new_pix.size[1] - 1, -1, -1):
                 if new_pix.getpixel((h, find_e)) > 0:
                     break
+            if not flag:
+                find_e = new_pix.size[1]
 
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:

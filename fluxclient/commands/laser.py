@@ -3,6 +3,7 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 import logging
 import sys
+import os
 
 from PIL import Image
 
@@ -19,6 +20,7 @@ def process_svg(options, stream):
         if arg.startswith('@'):
             try:
                 w, h, x1, y1, x2, y2, rotation, filename = arg[1:].split(",")
+                filename = os.path.expanduser(filename)
                 w, h, x1, y1, x2, y2, rotation = float(w), float(h), float(x1), float(y1), float(x2), float(y2), float(rotation)
 
             except Exception:
@@ -28,7 +30,7 @@ def process_svg(options, stream):
                              "/home/flux/myimage.jpg")
                 logger.exception("Argument Error")
         else:
-            filename = arg
+            filename = os.path.expanduser(arg)
             w = 100.
             h = 100.
             x1 = -50.
@@ -49,15 +51,13 @@ def process_svg(options, stream):
         count += 1
 
     m_laser_svg.export_to_stream(stream, [name + '_ready'])
+    m_laser_svg.dump('tmp.png')
 
 
 def process_to_gray_bitmap(image):
     # image is a PIL image object
-    bands = image.getbands()
-    if bands == ('L', ):
-        return image.tobytes()
-    else:
-        return image.convert('L').tobytes()
+    image = image.convert('L')
+    return image.tobytes()
 
 
 def process_bitmaps(options, stream):
@@ -68,6 +68,7 @@ def process_bitmaps(options, stream):
         if arg.startswith('@'):
             try:
                 x1, y1, x2, y2, r, filename = arg[1:].split(",")
+                filename = os.path.expanduser(filename)
                 i = Image.open(filename)
                 w, h = i.size
                 lb.add_image(process_to_gray_bitmap(i), w, h,
@@ -80,6 +81,7 @@ def process_bitmaps(options, stream):
                              "/home/flux/myimage.jpg")
                 logger.exception("Argument Error")
         else:
+            filename = os.path.expanduser(arg)
             i = Image.open(arg)
             w, h = i.size
             lb.add_image(process_to_gray_bitmap(i), w, h,
