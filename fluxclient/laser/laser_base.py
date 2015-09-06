@@ -17,13 +17,15 @@ class LaserBase(object):
         self.laser_on = False
         self.focal_l = 12.0  # focal z coordinate
 
-        self.laser_speed = 600  # speed F= mm/minute
-        self.travel_speed = 6000
+        self.laser_speed = 300  # speed F= mm/minute
+        self.travel_speed = 1000
         self.draw_power = 255  # drawing
         self.fram_power = 30  # indicating
 
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
+        self.obj_height = 1.7  # pcb
+        self.obj_height = 0.0  # plate
 
         # self.split_thres = 999  # should be some small number # Deprecated
 
@@ -70,20 +72,24 @@ class LaserBase(object):
         return gcode
 
     def turnOn(self):
-        if self.laser_on:
+        if self.laser_on is True:
             return []
         self.laser_on = True
-        return ["M400", "X2O%d ; turnOn" % self.draw_power, "G4 P1"]
+        return ["M400", "X2O%d ; turnOn" % self.draw_power, "G4 P20"]
 
     def turnOff(self):
-        if not self.laser_on:
+        if self.laser_on is False:
             return []
         self.laser_on = False
-        return ["M400", "X2O0; turnOff", "G4 P1"]
+        return ["M400", "X2O0; turnOff", "G4 P20"]
 
-    def turnHalf(self):
-        self.laser_on = False
-        return ["M400", "X2O%d; turnHalf" % self.fram_power, "G4 P1"]
+    def turnTo(self, power=None):
+        self.laser_on = None
+        if power is None:
+            self.laser_on = False
+            return ["M400", "X2O%d; turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
+        else:
+            return ["M400", "X2O%d; turnTo %d" % (power, power), "G4 P20"]
 
     def moveTo(self, x, y, speed=None, z=None, ending=';move to'):
         """
@@ -202,6 +208,7 @@ class LaserBase(object):
             None
         """
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
+        pix.save('tmp.png')
 
         # image center (rotation center)
         cx = (x1 + x2) / 2.
@@ -266,7 +273,7 @@ class LaserBase(object):
             for w in range(find_s, find_e):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                     if new_pix.getpixel((h, w)) <= thres:
-                        self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
 
     def dump(self, file_name, mode='save'):
         """

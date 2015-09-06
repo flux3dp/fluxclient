@@ -36,7 +36,7 @@ class Logo(LaserBase):
         # print "G4 P50"  # pause when starting
 
         # frame for align
-        gcode += self.turnHalf()
+        gcode += self.turnTo()
         for i in range(1):
             gcode += self.close_and_move_and_on(50, 10, 253)
             gcode += self.shift_move(50, 10, speed=400)

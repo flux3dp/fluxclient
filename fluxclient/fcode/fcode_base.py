@@ -10,7 +10,7 @@ class FcodeBase(object):
         super(FcodeBase, self).__init__()
 
     def process_path(self, comment, moveflag, extrudeflag):
-        # TODO?: reconsider is theese two flag necessary
+        # TODO?: reconsider if theese two flag necessary
         if self.record_path and moveflag:  # pi need no to record_path
             line_type = None
             if 'infill' in comment:
@@ -24,7 +24,7 @@ class FcodeBase(object):
             elif 'skirt' in comment:
                 line_type = 4
             elif 'draw' in comment:
-                line_type = 1
+                line_type = 0
 
             if line_type is None:
                 if extrudeflag:
