@@ -439,7 +439,7 @@ class LaserSvg(LaserBase):
                 tmp_thing.attrib['d'] = thing.attrib['d']
                 i.attrib = tmp_thing.attrib
             else:
-                pass
+                i.attrib = {}
 
         path_data = self.elements_to_list(root)
 
