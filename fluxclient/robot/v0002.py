@@ -86,13 +86,7 @@ class FluxRobotV0002(object):
         else:
             return ret
 
-    def list_sd_files(self, path):
-        return self._list_files("SD", path)
-
-    def list_usb_files(self, path):
-        return self._list_files("USB", path)
-
-    def _list_files(self, entry, path):
+    def list_files(self, entry, path=""):
         self._send_cmd(b"ls " + entry.encode() + b" " + path.encode())
         resp = self.get_resp().decode("ascii", "ignore")
         if resp == "continue":
@@ -113,24 +107,11 @@ class FluxRobotV0002(object):
             raise_error(resp)
 
     @ok_or_error
-    def select_sd_file(self, path):
-        return self._select_file("SD", path)
-
-    @ok_or_error
-    def select_usb_file(self, path):
-        return self._select_file("USB", path)
-
-    def _select_file(self, entry, path):
+    def select_file(self, entry, path):
         self._send_cmd(b"select " + entry.encode() + b" " + path.encode())
         return self.get_resp()
 
-    def sd_fileinfo(self, path):
-        return self._fileinfo("SD", path)
-        
-    def usb_fileinfo(self, path):
-        return self._fileinfo("USB", path)
-
-    def _fileinfo(self, entry, path):
+    def fileinfo(self, entry, path):
         self._send_cmd(b"fileinfo " + entry.encode() + b" " + path.encode())
         resp = self.get_resp().decode("utf8", "ignore")
         if resp.startswith("ok "):
@@ -140,12 +121,14 @@ class FluxRobotV0002(object):
             raise_error(resp)
 
     @ok_or_error
-    def sd_mkdir(self, path):
-        return self._make_cmd(b"mkdir SD " + path.encode())
+    def mkdir(self, entry, path):
+        return self._make_cmd(
+            b"mkdir " + entry.encode() + b" " + path.encode())
 
     @ok_or_error
-    def sd_rmdir(self, path):
-        return self._make_cmd(b"rmdir SD " + path.encode())
+    def rmdir(self, entry, path):
+        return self._make_cmd(
+            b"rmdir " +  entry.encode() + b" "+ path.encode())
 
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
@@ -154,8 +137,8 @@ class FluxRobotV0002(object):
             + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
-    def sd_rmfile(self, path):
-        return self._make_cmd(b"rm SD " + path.encode())
+    def rmfile(self, entry, path):
+        return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
 
     @ok_or_error
     def start_play(self):

@@ -76,20 +76,11 @@ class RobotConsole(object):
     def simple_cmd(self, func_ptr, *args):
         logger.info(func_ptr(*args))
 
-    def list_file(self, path):
-        path = shlex.split(path)[0]
-        if path == "SD":
-            nodes = self.robot_obj.list_sd_files("")
-        elif path.startswith("SD/"):
-            nodes = self.robot_obj.list_sd_files(path[3:])
-        elif path == "USB":
-            nodes = self.robot_obj.list_usb_files("")
-        elif path == "USB/":
-            nodes = self.robot_obj.list_usb_files(path[4:])
-        else:
-            raise RuntimeError("NOT_FOUND")
+    def list_file(self, args):
+        path = shlex.split(args)[0]
+        params = path.split("/", 1)
 
-        for is_dir, node in nodes:
+        for is_dir, node in self.robot_obj.list_files(*params):
             if is_dir:
                 logger.info("DIR %s" % os.path.join(path, node))
             else:
@@ -98,42 +89,32 @@ class RobotConsole(object):
 
     def select_file(self, path):
         path = shlex.split(path)[0]
-        if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.select_sd_file, path[3:])
-            ret = self.robot_obj.select_sd_file(path[3:])
-        elif path.startswith("USB/"):
-            self.simple_cmd(self.robot_obj.select_usb_file, path[4:])
-        else:
-            raise RuntimeError("NOT_FOUND", "BAD_ENTRY")
+        entry, filename = path.split("/", 1)
+        self.simple_cmd(self.robot_obj.select_file, entry, filename)
 
     def fileinfo(self, path):
         path = shlex.split(path)[0]
-        if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.sd_fileinfo, path[3:])
-            ret = self.robot_obj.select_sd_file(path[3:])
-        elif path.startswith("USB/"):
-            self.simple_cmd(self.robot_obj.usb_fileinfo, path[4:])
-        else:
-            raise RuntimeError("NOT_FOUND", "BAD_ENTRY")
+        entry, filename = path.split("/", 1)
+        self.simple_cmd(self.robot_obj.fileinfo, entry, filename)
 
     def mkdir(self, path):
         path = shlex.split(path)[0]
         if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.sd_mkdir, path[3:])
+            self.simple_cmd(self.robot_obj.mkdir, "SD", path[3:])
         else:
             raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
 
     def rmdir(self, path):
         path = shlex.split(path)[0]
         if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.sd_rmdir, path[3:])
+            self.simple_cmd(self.robot_obj.rmdir, "SD", path[3:])
         else:
             raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
 
     def rmfile(self, path):
         path = shlex.split(path)[0]
         if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.sd_rmfile, path[3:])
+            self.simple_cmd(self.robot_obj.rmfile, "SD", path[3:])
         else:
             raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
 
