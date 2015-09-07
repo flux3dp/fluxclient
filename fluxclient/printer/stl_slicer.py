@@ -7,6 +7,8 @@ import tempfile
 import os
 import sys
 
+from PIL import Image
+
 try:
     import fluxclient.printer._printer as _printer
 except:
@@ -38,7 +40,19 @@ class StlSlicer(object):
         self.models[name] = buf
 
     def upload_image(self, buf):
-        self.image = buf
+        b = io.BytesIO()
+        b.write(buf)
+        img = Image.open(b)
+        img = img.resize((640, 640))  # resize preview image
+
+        b = io.BytesIO()
+        img.save(b, 'png')
+        image_bytes = b.getvalue()
+        self.image = image_bytes
+        ############################################################
+        with open('preview.png', 'wb') as f:
+            f.write(image_bytes)
+            ############################################################
 
     def delete(self, name):
         """

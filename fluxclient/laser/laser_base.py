@@ -274,6 +274,7 @@ class LaserBase(object):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                     if new_pix.getpixel((h, w)) <= thres:
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
+                        self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
     def dump(self, file_name, mode='save'):
         """
@@ -284,7 +285,7 @@ class LaserBase(object):
             img.save(file_name, 'png')
             return
         elif mode == 'preview':
-            img.resize(640, 640)
+            img = img.resize(640, 640)
 
             b = io.BytesIO()
             img.save(b, 'png')
