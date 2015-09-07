@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 from select import select
 import logging
 import socket
+import shlex
 import os
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,6 @@ class RobotConsole(object):
     def __init__(self, robot_obj):
         self.robot_obj = robot_obj
         self.simple_mapping = {
-            "select": robot_obj.select_file,
             "start": robot_obj.start_play,
             "pause": robot_obj.pause_play,
             "resume": robot_obj.resume_play,
@@ -32,11 +32,17 @@ class RobotConsole(object):
 
             "maintain": robot_obj.begin_maintain,
             "home": robot_obj.maintain_home,
-
+            "reset_mb": robot_obj.reset_mb,
         }
 
         self.cmd_mapping = {
             "ls": self.list_file,
+            "select": self.select_file,
+            "fileinfo": self.fileinfo,
+            "mkdir": self.mkdir,
+            "rmdir": self.rmdir,
+            "rmfile": self.rmfile,
+            "cp": self.cpfile,
             "upload": self.upload_file,
             "update_fw": self.update_fw,
             "oneshot": self.oneshot,
@@ -70,14 +76,92 @@ class RobotConsole(object):
     def simple_cmd(self, func_ptr, *args):
         logger.info(func_ptr(*args))
 
-    def list_file(self):
-        for f in self.robot_obj.list_file():
-            logger.info(f)
-        logger.info("ok")
+    def list_file(self, path):
+        path = shlex.split(path)[0]
+        if path == "SD":
+            nodes = self.robot_obj.list_sd_files("")
+        elif path.startswith("SD/"):
+            nodes = self.robot_obj.list_sd_files(path[3:])
+        elif path == "USB":
+            nodes = self.robot_obj.list_usb_files("")
+        elif path == "USB/":
+            nodes = self.robot_obj.list_usb_files(path[4:])
+        else:
+            raise RuntimeError("NOT_FOUND")
+
+        for is_dir, node in nodes:
+            if is_dir:
+                logger.info("DIR %s" % os.path.join(path, node))
+            else:
+                logger.info("FILE %s" % os.path.join(path, node))
+        logger.info("ls done.")
+
+    def select_file(self, path):
+        path = shlex.split(path)[0]
+        if path.startswith("SD/"):
+            self.simple_cmd(self.robot_obj.select_sd_file, path[3:])
+            ret = self.robot_obj.select_sd_file(path[3:])
+        elif path.startswith("USB/"):
+            self.simple_cmd(self.robot_obj.select_usb_file, path[4:])
+        else:
+            raise RuntimeError("NOT_FOUND", "BAD_ENTRY")
+
+    def fileinfo(self, path):
+        path = shlex.split(path)[0]
+        if path.startswith("SD/"):
+            self.simple_cmd(self.robot_obj.sd_fileinfo, path[3:])
+            ret = self.robot_obj.select_sd_file(path[3:])
+        elif path.startswith("USB/"):
+            self.simple_cmd(self.robot_obj.usb_fileinfo, path[4:])
+        else:
+            raise RuntimeError("NOT_FOUND", "BAD_ENTRY")
+
+    def mkdir(self, path):
+        path = shlex.split(path)[0]
+        if path.startswith("SD/"):
+            self.simple_cmd(self.robot_obj.sd_mkdir, path[3:])
+        else:
+            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+
+    def rmdir(self, path):
+        path = shlex.split(path)[0]
+        if path.startswith("SD/"):
+            self.simple_cmd(self.robot_obj.sd_rmdir, path[3:])
+        else:
+            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+
+    def rmfile(self, path):
+        path = shlex.split(path)[0]
+        if path.startswith("SD/"):
+            self.simple_cmd(self.robot_obj.sd_rmfile, path[3:])
+        else:
+            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+
+    def cpfile(self, args):
+        try:
+            source, target = shlex.split(args)
+            if source.startswith("SD/"):
+                source_target = "SD"
+                source = source[3:]
+            elif source.startswith("USB/"):
+                source_target = "USB"
+                source = source[4:]
+            else:
+                raise RuntimeError("NOT_SUPPORT", "BAD_ENTRY")
+
+            if target.startswith("SD/"):
+                target = target[3:]
+                self.simple_cmd(self.robot_obj.cpfile, source_target, source,
+                                "SD", target)
+            else:
+                raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+        except ValueError:
+            raise RuntimeError("BAD_PARAMS")
 
     def upload_file(self, filename):
+        filename = shlex.split(filename)[0]
         self.robot_obj.upload_file(
-            filename.rstrip(), progress_callback=self.log_progress_callback)
+            filename, progress_callback=self.log_progress_callback)
 
     def update_fw(self, filename):
         self.robot_obj.upload_file(

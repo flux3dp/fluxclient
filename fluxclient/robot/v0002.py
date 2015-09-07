@@ -86,25 +86,76 @@ class FluxRobotV0002(object):
         else:
             return ret
 
-    def list_file(self):
-        # TODO: TBC
-        self._send_cmd(b"ls")
-        files = []
-        while True:
-            line = self.get_resp()
-            if line.startswith(b"file "):
-                files.append(line[5:].decode("utf8", "ignore"))
-            elif line == b"ok":
-                return files
-            elif line.startswith(b"error "):
-                errarg = line.decode("ascii", "ignore").split(" ")[1:]
-                raise RuntimeError(*errarg)
-            else:
-                raise RuntimeError(line)
+    def list_sd_files(self, path):
+        return self._list_files("SD", path)
+
+    def list_usb_files(self, path):
+        return self._list_files("USB", path)
+
+    def _list_files(self, entry, path):
+        self._send_cmd(b"ls " + entry.encode() + b" " + path.encode())
+        resp = self.get_resp().decode("ascii", "ignore")
+        if resp == "continue":
+            files = self.get_resp().decode("utf8", "ignore")
+            last_resp = self.get_resp().decode("ascii", "ignore")
+            if last_resp != "ok":
+                raise_error("error PROTOCOL_ERROR NOT_OK")
+    
+            for node in files.split("\x00"):
+                if node.startswith("D"):
+                    # if name starts with "D", it is folder
+                    # note: yield is_folder, filename
+                    yield True, node[1:]
+                elif node.startswith("F"):
+                    # if name starts with "F", it is file
+                    yield False, node[1:]
+        else:
+            raise_error(resp)
 
     @ok_or_error
-    def select_file(self, fileid):
-        return self._make_cmd(b"select " + fileid.encode())
+    def select_sd_file(self, path):
+        return self._select_file("SD", path)
+
+    @ok_or_error
+    def select_usb_file(self, path):
+        return self._select_file("USB", path)
+
+    def _select_file(self, entry, path):
+        self._send_cmd(b"select " + entry.encode() + b" " + path.encode())
+        return self.get_resp()
+
+    def sd_fileinfo(self, path):
+        return self._fileinfo("SD", path)
+        
+    def usb_fileinfo(self, path):
+        return self._fileinfo("USB", path)
+
+    def _fileinfo(self, entry, path):
+        self._send_cmd(b"fileinfo " + entry.encode() + b" " + path.encode())
+        resp = self.get_resp().decode("utf8", "ignore")
+        if resp.startswith("ok "):
+            info = dict(pair.split("=", 1) for pair in resp[3:].split("\x00"))
+            return info
+        else:
+            raise_error(resp)
+
+    @ok_or_error
+    def sd_mkdir(self, path):
+        return self._make_cmd(b"mkdir SD " + path.encode())
+
+    @ok_or_error
+    def sd_rmdir(self, path):
+        return self._make_cmd(b"rmdir SD " + path.encode())
+
+    @ok_or_error
+    def cpfile(self, source_entry, source, target_entry, target):
+        return self._make_cmd(
+            b"cp " + source_entry.encode() + b" " + source.encode() + b"\x00" \
+            + target_entry.encode() + b" " + target.encode())
+
+    @ok_or_error
+    def sd_rmfile(self, path):
+        return self._make_cmd(b"rm SD " + path.encode())
 
     @ok_or_error
     def start_play(self):
@@ -266,6 +317,10 @@ class FluxRobotV0002(object):
     @ok_or_error
     def maintain_home(self):
         return self._make_cmd(b"home")
+
+    @ok_or_error
+    def reset_mb(self):
+        return self._make_cmd(b"reset_mb")
 
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
