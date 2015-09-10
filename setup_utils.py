@@ -119,7 +119,7 @@ def create_scanner_extention():
             include_dirs += [locate_includes("pcl_common-1.7")]
         else:
             raise RuntimeError("Can not locate pcl includes.")
-    except RuntimeError:
+    except (RuntimeError, FileNotFoundError):
         print("""
 *********************************************************************
 * Can not build scanner module, maybe you don't have pcl installed, *
