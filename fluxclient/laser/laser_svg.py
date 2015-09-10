@@ -676,7 +676,7 @@ class LaserSvg(LaserBase):
                                 in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
                                 in_path.append([new_path[i][0], new_path[i][1]])
                             elif flag == 3:  # both out
-                                if abs(t_p) < 1 and abs(t_n):  # must be inner division point
+                                if abs(t_p) < 1 and abs(t_n) < 1:  # must be inner division point
                                     in_path.append(['\n', '\n'])
                                     in_path.append([fake_x + t_n * v[0], fake_y + t_n * v[1]])
                                     in_path.append([fake_x + t_p * v[0], fake_y + t_p * v[1]])
