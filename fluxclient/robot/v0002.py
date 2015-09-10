@@ -191,6 +191,14 @@ class FluxRobotV0002(object):
             return self.upload_stream(f, size, mimetype, upload_to, cmd,
                                       progress_callback)
 
+    def begin_upload(self, length, cmd="upload"):
+        cmd = ("%s %s %i %s" % (cmd, "text/gcode", length, "#").encode()
+        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
+        if upload_ret == "continue":
+            return self.sock
+        else:
+            raise RuntimeError(upload_ret)
+
     def md5(self, filename):
         bresp = self._make_cmd(b"md5 " + filename.encode())
         resp = bresp.decode("ascii", "ignore")
