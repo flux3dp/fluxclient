@@ -7,7 +7,9 @@ import logging
 import socket
 import os
 
+from fluxclient.utils import mimetypes
 from fluxclient import encryptor as E
+
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
 
@@ -144,17 +146,10 @@ class FluxRobotV0002(object):
     def start_play(self):
         return self._make_cmd(b"start")
 
-    def begin_upload(self, length, cmd="upload"):
-        cmd = ("%s %i" % (cmd, length)).encode()
-        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
-        if upload_ret == "continue":
-            return self.sock
-        else:
-            raise RuntimeError(upload_ret)
-
-    def upload_stream(self, stream, length, cmd="upload",
+    def upload_stream(self, stream, length, mimetype, upload_to, cmd="upload",
                       progress_callback=None):
-        cmd = ("%s %i" % (cmd, length)).encode()
+        # cmd = [cmd] [mimetype] [length] [upload_to]
+        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
 
         upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
         if upload_ret == "continue":
@@ -183,13 +178,26 @@ class FluxRobotV0002(object):
         logger.debug("File uploaded")
 
         if final_ret != b"ok":
-            raise_error(final_ret)
+            raise_error(final_ret.decode("ascii", "ignore"))
 
-    def upload_file(self, filename, cmd="upload", progress_callback=None):
+    def upload_file(self, filename, upload_to="#", cmd="upload",
+                    progress_callback=None):
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
         with open(filename, "rb") as f:
             logger.debug("File opened")
             size = os.fstat(f.fileno()).st_size
-            return self.upload_stream(f, size, cmd, progress_callback)
+            return self.upload_stream(f, size, mimetype, upload_to, cmd,
+                                      progress_callback)
+
+    def md5(self, filename):
+        bresp = self._make_cmd(b"md5 " + filename.encode())
+        resp = bresp.decode("ascii", "ignore")
+        if resp.startswith("md5 "):
+            return resp[4:]
+        else:
+            raise_error(resp)
 
     @ok_or_error
     def begin_scan(self):

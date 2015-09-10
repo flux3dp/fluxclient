@@ -45,6 +45,7 @@ class RobotConsole(object):
             "cp": self.cpfile,
             "upload": self.upload_file,
             "update_fw": self.update_fw,
+            "md5": self.md5,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
@@ -122,32 +123,42 @@ class RobotConsole(object):
         try:
             source, target = shlex.split(args)
             if source.startswith("SD/"):
-                source_target = "SD"
+                source_entry = "SD"
                 source = source[3:]
             elif source.startswith("USB/"):
-                source_target = "USB"
+                source_entry = "USB"
                 source = source[4:]
             else:
                 raise RuntimeError("NOT_SUPPORT", "BAD_ENTRY")
 
             if target.startswith("SD/"):
                 target = target[3:]
-                self.simple_cmd(self.robot_obj.cpfile, source_target, source,
+                self.simple_cmd(self.robot_obj.cpfile, source_entry, source,
                                 "SD", target)
             else:
                 raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
-    def upload_file(self, filename):
-        filename = shlex.split(filename)[0]
+    def upload_file(self, args):
+        options = shlex.split(args)
+        source = options[0]
+        if len(options) >= 2:
+            upload_to = " ".join(options[1].split("/", 1))
+        else:
+            upload_to = "#"
+
         self.robot_obj.upload_file(
-            filename, progress_callback=self.log_progress_callback)
+            source, upload_to, progress_callback=self.log_progress_callback)
 
     def update_fw(self, filename):
         self.robot_obj.upload_file(
             filename.rstrip(), cmd="update_fw",
             progress_callback=self.log_progress_callback)
+
+    def md5(self, filename):
+        md5 = self.robot_obj.md5(" ".join(filename.split("/", 1)))
+        logger.info("MD5 %s %s", filename, md5)
 
     def oneshot(self, filename=None):
         images = self.robot_obj.oneshot()
