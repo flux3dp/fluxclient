@@ -274,10 +274,8 @@ class LaserSvg(LaserBase):
                 prev_control = [None, (p1[0], p1[1])]
             elif i[0] in 'Aa':
                 # implementation reference: http://www.w3.org/TR/SVG/implnote.html#ArcImplementationNotes
-
                 rx, ry = abs(i[1]), abs(i[2])
-                x_axis_rotation = i[3]  # degrees
-                phi = radians(x_axis_rotation)
+                phi = radians(i[3])
                 # None zero means true
                 large_arc_flag = i[4] != 0
                 sweep_flag = i[5] != 0
@@ -323,16 +321,16 @@ class LaserSvg(LaserBase):
                     cy = sp * cx_prime + cp * cy_prime + ((y + end_y) / 2)
 
                     # F.6.5.4 - F.6.5.6
-                    angle_between = lambda v1, v2: copysign(acos((v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)), v1[0] * v2[1] - v1[1] * v2[0])
-                    tmp_v = (x_prime - cx_prime) / rx, y_prime - cy_prime / ry
+                    angle_between = lambda v1, v2: self.angle_between(v1, v2)
+
+                    tmp_v = ((x_prime - cx_prime) / rx, (y_prime - cy_prime) / ry)
                     theta_1 = angle_between((1, 0), tmp_v)
                     delta_theta = angle_between(tmp_v, ((-x_prime - cx_prime) / rx, (-y_prime - cy_prime) / ry))
-
                     # might be buggy!!??
-                    if sweep_flag and delta_theta < 0:
-                        delta_theta += 2 * pi
-                    elif not sweep_flag and delta_theta > 0:
+                    if not sweep_flag and delta_theta > 0:
                         delta_theta -= 2 * pi
+                    elif sweep_flag and delta_theta < 0:
+                        delta_theta += 2 * pi
 
                     for j in range(sample_n + 1):
                         t = j / float(sample_n)
@@ -348,6 +346,12 @@ class LaserSvg(LaserBase):
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
         return [gcode]
+
+    def angle_between(self, v1, v2):
+        tmp = (v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)
+        if abs(tmp) - 1 < 1e-10:  # precision problem will cause error on Domain of a function
+            tmp = round(tmp)
+        return copysign(acos(tmp), v1[0] * v2[1] - v1[1] * v2[0])
 
     def elements_to_list(self, svg):
         """
@@ -698,7 +702,7 @@ class LaserSvg(LaserBase):
             path_data[path] = in_path
         return path_data
 
-    def gcode_generate(self, names, ws):
+    def gcode_generate(self, names, ws=None):
         self.reset_image()
         gcode = []
         gcode += self.header('laser svg')
@@ -713,17 +717,20 @@ class LaserSvg(LaserBase):
             viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
 
             progress += offset
-            ws.send_progress('converting svg %d' % name_index, progress)
+            if ws:
+                ws.send_progress('converting svg %d' % name_index, progress)
 
             path_data = self.elements_to_list(root)
 
             progress += offset
-            ws.send_progress('process svg %d' % name_index, progress)
+            if ws:
+                ws.send_progress('process svg %d' % name_index, progress)
 
             path_data = self.process(path_data, ready_svg[1:-3], viewBox)
 
             progress += offset
-            ws.send_progress('generating gcode on svg %d' % name_index, progress)
+            if ws:
+                ws.send_progress('generating gcode on svg %d' % name_index, progress)
 
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
@@ -738,7 +745,8 @@ class LaserSvg(LaserBase):
                         moveTo = True
                         continue
             progress += offset
-            ws.send_progress('preparing image %d' % name_index, progress)
+            if ws:
+                ws.send_progress('preparing image %d' % name_index, progress)
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
