@@ -16,7 +16,7 @@ from fluxclient import encryptor
 class UpnpBase(object):
     remote_addr = "255.255.255.255"
 
-    def __init__(self, serial, lookup_callback=None,
+    def __init__(self, serial, ipaddr=None, pubkey=None, lookup_callback=None,
                  port=misc.DEFAULT_PORT, forcus_broadcast=False,
                  lookup_timeout=float("INF")):
         self.port = port
@@ -29,7 +29,11 @@ class UpnpBase(object):
         self.keyobj = encryptor.get_or_create_keyobj()
         self._inited = False
 
-        d = UpnpDiscover(serial=self.serial)
+        if ipaddr:
+            d = UpnpDiscover(serial=self.serial, ipaddr=ipaddr)
+        else:
+            d = UpnpDiscover(serial=self.serial)
+
         d.discover(self._load_profile, lookup_callback, lookup_timeout)
         if not self._inited:
             raise RuntimeError("Can not find device")
@@ -39,17 +43,18 @@ class UpnpBase(object):
                 d.ipaddr = ipaddr[0]
                 d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
-        if self.remote_version < StrictVersion("0.9a1"):
+        if self.remote_version < StrictVersion("0.10a1"):
             raise RuntimeError("fluxmonitor version is too old")
-        elif self.remote_version >= StrictVersion("0.10"):
+        elif self.remote_version >= StrictVersion("0.12"):
             raise RuntimeError("fluxmonitor version is too new")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        pem = self.fetch_publickey()
-        self.remote_keyobj = encryptor.load_keyobj(pem)
+        if not pubkey:
+            pubkey = self.fetch_publickey()
+        self.remote_keyobj = encryptor.load_keyobj(pubkey)
 
     def create_timestemp(self):
         return time() + self.timedelta
