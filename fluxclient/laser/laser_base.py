@@ -27,8 +27,6 @@ class LaserBase(object):
         self.obj_height = 1.7  # pcb
         self.obj_height = 0.0  # plate
 
-        # self.split_thres = 999  # should be some small number # Deprecated
-
         self.pixel_per_mm = 16  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
 
@@ -42,8 +40,6 @@ class LaserBase(object):
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
         self.image_map = np.ones((w, w), np.uint8) * 255
-
-        # self.image_map = [[255 for w in range(self.pixel_per_mm * self.radius * 2)] for h in range(self.pixel_per_mm * self.radius * 2)]
 
     def header(self, header):
         """
@@ -105,21 +101,6 @@ class LaserBase(object):
 
         if speed is None:
             speed = self.laser_speed
-
-        # NOTE: Deprecated!!
-        # # split path to small step
-        # # (vx, vy) : direction vector
-        # vx = x - self.current_x
-        # vy = y - self.current_y
-        # len_v = sqrt(vx ** 2 + vy ** 2)
-        # if len_v > self.split_thres:
-        #     # convert to unit vector (as the smallest step length)
-        #     ux = vx / len_v
-        #     uy = vy / len_v
-        #     for _ in range(int(len_v / self.split_thres)):  # math.floor of (len_v / self.split_thres)
-        #         self.current_x += ux * self.split_thres
-        #         self.current_y += uy * self.split_thres
-        #         gcode += ["G1 F" + str(speed) + " X" + str(self.current_x) + " Y" + str(self.current_y) + ";Split draw to"]
 
         self.current_x = x
         self.current_y = y
@@ -279,18 +260,19 @@ class LaserBase(object):
     def dump(self, file_name, mode='save'):
         """
             dump the image of this laser class
+
         """
         img = Image.fromarray(self.image_map)
         if mode == 'save':
             img.save(file_name, 'png')
             return
         elif mode == 'preview':
+            # get the preview (640 * 640) png in bytes
             img = img.resize(640, 640)
 
             b = io.BytesIO()
             img.save(b, 'png')
             image_bytes = b.getvalue()
             return image_bytes
-
-    def get_preview(self):
-        return self.dump('', mode='preview')
+        else:
+            print("unsupport mode %s" % mode, file=sys.stderr)
