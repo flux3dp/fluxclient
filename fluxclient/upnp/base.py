@@ -54,6 +54,7 @@ class UpnpBase(object):
 
         if not pubkey:
             pubkey = self.fetch_publickey()
+        self.pubkey = pubkey
         self.remote_keyobj = encryptor.load_keyobj(pubkey)
 
     def create_timestemp(self):
