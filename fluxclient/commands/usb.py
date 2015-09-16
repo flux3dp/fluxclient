@@ -72,12 +72,11 @@ def do_network_config(task):
     task.config_network(options)
 
 def do_set_password(task):
-    pwd = getpass("Old password: ")
     new_pwd = getpass("New password: ")
     if getpass("Confirm new password: ") != new_pwd:
         raise RuntimeError("New password not match")
 
-    print(task.set_password(pwd, new_pwd))
+    print(task.set_password(new_pwd))
 
 def do_get_ssid(task):
     try:

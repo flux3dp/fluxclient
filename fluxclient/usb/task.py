@@ -115,6 +115,12 @@ class UsbTask(object):
         ret = self._make_request(CODE_CONFIG_NETWORK, message.encode())
         return ret.decode("ascii", "ignore")
 
+    def set_password(self, passwd):
+        ret = self._make_request(
+            CODE_SET_PASSWORD,
+            passwd.encode() + b"\x00" + E.get_public_key_pem(self.keyobj))
+        return ret.decode("utf8", "ignore")
+
     def get_ssid(self):
         return self._make_request(CODE_GET_SSID).decode("utf8", "ignore")
 
