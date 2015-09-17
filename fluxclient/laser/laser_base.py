@@ -80,11 +80,16 @@ class LaserBase(object):
         return ["M400", "X2O0; turnOff", "G4 P20"]
 
     def turnTo(self, power=None):
-        self.laser_on = None
+        if power != 0:
+            self.laser_on = None
+        else:
+            self.laser_on = False
+            return self.turnOff()
         if power is None:
             self.laser_on = False
             return ["M400", "X2O%d; turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
         else:
+
             return ["M400", "X2O%d; turnTo %d" % (power, power), "G4 P20"]
 
     def moveTo(self, x, y, speed=None, z=None, ending=';move to'):
@@ -164,6 +169,9 @@ class LaserBase(object):
 
         elif key == 'power':
             self.draw_power = (round(float(value) * 255))  # pwm, int
+
+        elif key == 'shading':
+            self.shading = int(value) == 1
         else:
             raise ValueError('undefine setting key')
 
@@ -189,7 +197,7 @@ class LaserBase(object):
             None
         """
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
-        pix.save('tmp.png')
+        pix.save('image_g.png')
 
         # image center (rotation center)
         cx = (x1 + x2) / 2.
@@ -255,7 +263,6 @@ class LaserBase(object):
                 if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                     if new_pix.getpixel((h, w)) <= thres:
                         self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
-                        self.image_map[gx1_on_map + w][gy1_on_map + h] = 0
 
     def dump(self, file_name, mode='save'):
         """

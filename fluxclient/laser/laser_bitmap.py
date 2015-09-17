@@ -20,6 +20,9 @@ class LaserBitmap(LaserBase):
     def __init__(self):
         super(LaserBitmap, self).__init__()
         self.reset()
+        ######################## fake code ####################################
+        self.shading = True
+        #######################################################################
 
     def reset(self):
         """
@@ -38,44 +41,53 @@ class LaserBitmap(LaserBase):
 
         #row iteration
         abs_shift = len(self.image_map) / 2
+
+        # apply threshold in a efficient way
+
+        t = np.vectorize(lambda x: x if x <= self.thres else 255)
+        self.image_map = t(self.image_map)
+        self.dump('./preview_la.png')
+
+        itera_o = list(range(0, len(self.image_map)))
+        itera_r = list(reversed(range(0, len(self.image_map))))
+
         for h in range(0, len(self.image_map)):
+            print(h, 'h')
+
             #column iteration
             if h % res != 0:
                 continue
 
             if h % 2 == 0:
-                itera = range(0, len(self.image_map))
+                itera = itera_o
                 final_x = len(self.image_map)
             elif h % 2 == 1:
                 final_x = 0
-                itera = reversed(range(0, len(self.image_map)))
+                itera = itera_r
 
-            for w in itera:
+            w = 0
+            gcode += self.turnTo(255 - self.image_map[h][itera[0]])
+            tmp = self.image_map[h][itera[0]]
+            while w < len(itera):
+                # print(w)
                 if w % res != 0:
                     continue
-                if self.image_map[h][w] < self.thres:  # acturally meaningless self.thres=255 and only 0 or 255 on image_map
-                    if not self.laser_on:
-                        last_i = w
-                        if final_x != 0:
-                            gcode += self.closeTo(w - 0.5 - abs_shift, abs_shift - h)
-                        else:
-                            gcode += self.closeTo(w + 0.5 - abs_shift, abs_shift - h)
-                        gcode += self.turnOn()
-                else:
-                    if self.laser_on:
-                        if abs(w - last_i) < 2:  # Single dot
-                            pass
-                            gcode += ["G4 P100"]
-
-                        elif final_x != 0:
-                            gcode += self.drawTo(w - abs_shift - 0.5, abs_shift - h)
-                        else:
-                            gcode += self.drawTo(w - abs_shift + 0.5, abs_shift - h)
+                # self.image_map[h][itera[w]]
+                gcode += self.turnTo(255 - self.image_map[h][itera[w]])
+                tmp = self.image_map[h][itera[w]]
+                while w < len(itera) and self.image_map[h][itera[w]] == tmp:
+                    # print(w)
+                    w += 1
+                if w == len(itera):
+                    if self.image_map[h][itera[-1]] != 255:
+                        gcode += self.moveTo(final_x - abs_shift, abs_shift - h)
                         gcode += self.turnOff()
-
-            if self.laser_on:
-                gcode += self.drawTo(final_x - abs_shift, abs_shift - h)
-                gcode += self.turnOff()
+                    break
+                else:
+                    if final_x != 0:
+                        gcode += self.moveTo(itera[w] - 0.5 - abs_shift, abs_shift - h)
+                    else:
+                        gcode += self.moveTo(itera[w] + 0.5 - abs_shift, abs_shift - h)
 
         gcode += self.turnOff()
         gcode += ["G28"]

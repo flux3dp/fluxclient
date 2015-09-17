@@ -1,8 +1,27 @@
 # !/usr/bin/env python3
-from math import sqrt
+from math import sqrt, pi, cos, sin
 import sys
 
 from laser_base import LaserBase
+
+
+class Circle(LaserBase):
+    """docstring for Circle"""
+    def __init__(self):
+        super(Circle, self).__init__()
+        self.speed = 100
+
+    def gcode_generate(self):
+        gcode = []
+        gcode += self.header('Circle')
+        sample_n = 1000
+        gcode += self.moveTo(self.radius, 0)
+        for i in range(sample_n + 1):
+            theta = (i / sample_n) * 2 * pi
+            gcode += self.drawTo(self.radius * cos(theta), self.radius * sin(theta), speed=self.speed)
+        gcode += self.turnOff()
+        gcode += ['G28']
+        return "\n".join(gcode) + "\n"
 
 
 class Logo(LaserBase):
@@ -133,6 +152,7 @@ class Grid(LaserBase):
         for i in path:
             gcode += self.closeTo(i[0], i[1])
             gcode += self.drawTo(i[2], i[3])
+        gcode += self.turnOff()
         return '\n'.join(gcode)
 
 
@@ -192,5 +212,6 @@ def myrange(start, end, step):
 if __name__ == '__main__':
     # m_obj = Logo()
     # m_obj = Grid()
-    m_obj = FindFocal()
+    # m_obj = FindFocal()
+    m_obj = Circle()
     print(m_obj.gcode_generate())
