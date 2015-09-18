@@ -66,8 +66,8 @@ class LaserBitmap(LaserBase):
                 itera = itera_r
 
             w = 0
-            gcode += self.turnTo(255 - self.image_map[h][itera[0]])
-            tmp = self.image_map[h][itera[0]]
+            # gcode += self.turnTo(255 - self.image_map[h][itera[0]])
+            # tmp = self.image_map[h][itera[0]]
             while w < len(itera):
                 # print(w)
                 if w % res != 0:
@@ -88,6 +88,7 @@ class LaserBitmap(LaserBase):
                         gcode += self.moveTo(itera[w] - 0.5 - abs_shift, abs_shift - h)
                     else:
                         gcode += self.moveTo(itera[w] + 0.5 - abs_shift, abs_shift - h)
+            gcode += self.turnOff()
 
         gcode += self.turnOff()
         gcode += ["G28"]
