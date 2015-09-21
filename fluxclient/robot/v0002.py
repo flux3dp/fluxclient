@@ -1,4 +1,5 @@
 
+from select import select
 from errno import EPIPE
 from io import BytesIO
 from time import time
@@ -69,7 +70,10 @@ class FluxRobotV0002(object):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
 
-    def get_resp(self, timeout=30.):
+    def get_resp(self, timeout=30.0):
+        rl = select((self.sock, ), (), (), timeout)[0]
+        if not rl:
+            raise TimeoutError("get resp timeout")
         bml = self.sock.recv(2, socket.MSG_WAITALL)
         if not bml:
             raise socket.error(EPIPE, "Broken pipe")
@@ -327,6 +331,20 @@ class FluxRobotV0002(object):
             return self.sock
         else:
             raise_error(ret.decode("ascii", "ignore"))
+
+    @ok_or_error
+    def quit_raw_mode(self):
+        self.sock.send(b"quit")
+        sync = 0
+        while True:
+            ret = ord(self.sock.recv(1))
+            if sync > 8:
+                if ret > 0:
+                    break
+            else:
+                if ret == 0:
+                    sync += 1
+        return self.get_resp()
 
     @ok_or_error
     def set_setting(self, key, value):

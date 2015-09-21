@@ -205,8 +205,8 @@ class RobotConsole(object):
         self._raw_sock = None
         if self._thread:
             self._thread.join()
-        sock.send(b"quit")
-        logger.info(self.robot_obj.get_resp().decode("ascii", "ignore"))
+
+        logger.info(self.robot_obj.quit_raw_mode())
 
     def log_progress_callback(self, robot, progress, total):
         logger.info("Processing %3.1f %% (%i of %i)" %

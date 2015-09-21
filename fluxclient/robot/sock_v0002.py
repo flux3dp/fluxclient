@@ -1,4 +1,5 @@
 
+import socket
 from Crypto.Cipher import AES
 
 from .sock_base import RobotSocketBase
@@ -11,6 +12,9 @@ class RobotSocketV2(RobotSocketBase):
         self.decoder = AES.new(key, AES.MODE_CFB, iv)
 
     def recv(self, size, flag=0):
+        if flag & socket.MSG_PEEK > 0:
+            raise RuntimeError("MSG_PEEK is not allowed here!")
+
         buf = self.sock.recv(size, flag)
         return self.decoder.decrypt(buf)
 
