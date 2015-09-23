@@ -63,7 +63,7 @@ def get_version():
 
 
 def get_install_requires():
-    return ['setuptools', 'pycrypto', 'pyserial', 'pillow']
+    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy']
 
 
 def get_packages():
@@ -89,7 +89,11 @@ def get_entry_points():
     }
 
 
-def create_scanner_extention():
+def create_common_extentions():
+    return []
+
+
+def create_scanner_extentions():
     try:
         # Process extra_compile_args
         extra_compile_args = []
@@ -128,8 +132,8 @@ def create_scanner_extention():
 """)
         raise
 
-    return_Extensions = []
-    return_Extensions.append(Extension(
+    extensions = []
+    extensions.append(Extension(
         'fluxclient.scanner._scanner',
         sources=[
             "src/scanner/scan_module.cpp",
@@ -139,9 +143,8 @@ def create_scanner_extention():
         libraries=libraries,
         extra_objects=[],
         include_dirs=include_dirs
-    )
-    )
-    return_Extensions.append(Extension(
+    ))
+    extensions.append(Extension(
         'fluxclient.printer._printer',
         sources=[
             "src/printer/printer_module.cpp",
@@ -151,7 +154,6 @@ def create_scanner_extention():
         libraries=libraries,
         extra_objects=[],
         include_dirs=include_dirs
-    )
-    )
+    ))
 
-    return return_Extensions
+    return extensions
