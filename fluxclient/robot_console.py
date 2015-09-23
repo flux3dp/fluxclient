@@ -1,6 +1,7 @@
 
 from tempfile import NamedTemporaryFile
 from select import select
+import mimetypes
 import logging
 import socket
 import shlex
@@ -31,8 +32,9 @@ class RobotConsole(object):
             "scan_next": robot_obj.scan_next,
 
             "maintain": robot_obj.begin_maintain,
+
             "home": robot_obj.maintain_home,
-            "reset_mb": robot_obj.reset_mb,
+            "reset_mb": robot_obj.maintain_reset_mb,
         }
 
         self.cmd_mapping = {
@@ -50,6 +52,8 @@ class RobotConsole(object):
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
             "set": self.set_setting,
+
+            "eadj": self.maintain_eadj,
         }
 
     def on_cmd(self, arguments):
@@ -96,7 +100,14 @@ class RobotConsole(object):
     def fileinfo(self, path):
         path = shlex.split(path)[0]
         entry, filename = path.split("/", 1)
-        self.simple_cmd(self.robot_obj.fileinfo, entry, filename)
+        info, data = self.robot_obj.fileinfo(entry, filename)
+        logger.info("%s" % info)
+
+        ext = mimetypes.guess_extension(data[0])
+        if ext:
+            ntf = NamedTemporaryFile(suffix=ext, delete=False)
+            ntf.write(data[1])
+            os.system("open " + ntf.name)
 
     def mkdir(self, path):
         path = shlex.split(path)[0]
@@ -164,9 +175,11 @@ class RobotConsole(object):
         images = self.robot_obj.oneshot()
         tempfiles = []
         for mime, buf in images:
-            ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
-            ntf.write(buf)
-            tempfiles.append(ntf)
+            ext = mimetypes.guess_extension(mime)
+            if ext:
+                ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
+                ntf.write(buf)
+                tempfiles.append(ntf)
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
@@ -174,9 +187,11 @@ class RobotConsole(object):
         images = self.robot_obj.scanimages()
         tempfiles = []
         for mime, buf in images:
-            ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
-            ntf.write(buf)
-            tempfiles.append(ntf)
+            ext = mimetypes.guess_extension(mime)
+            if ext:
+                ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
+                ntf.write(buf)
+                tempfiles.append(ntf)
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
@@ -188,6 +203,12 @@ class RobotConsole(object):
             )
         else:
             logger.info("BAD_PARAMS")
+
+    def maintain_eadj(self):
+        def callback(nav):
+            logger.info("Mainboard info: %s", nav)
+        self.robot_obj.maintain_eadj(navigate_callback=callback)
+        logger.info("ok")
 
     def raw_mode(self):
         import threading

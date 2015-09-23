@@ -84,6 +84,17 @@ class FluxRobotV0002(object):
         self._send_cmd(buf)
         return self.get_resp()
 
+    def recv_binary(self, binary_header):
+        mn, mimetype, ssize = binary_header.split(" ")
+        assert mn == "binary"
+        size = int(ssize)
+        logger.debug("Recv %s %i" % (mimetype, size))
+        buf = BytesIO()
+        left = size
+        while left > 0:
+            left -= buf.write(self.sock.recv(min(4096, left)))
+        return (mimetype, buf.getvalue())
+
     # Command Tasks
     def position(self):
         ret = self._make_cmd(b"position").decode("ascii", "ignore")
@@ -118,10 +129,16 @@ class FluxRobotV0002(object):
         return self.get_resp()
 
     def fileinfo(self, entry, path):
+        info = [None, None]
         self._send_cmd(b"fileinfo " + entry.encode() + b" " + path.encode())
+
         resp = self.get_resp().decode("utf8", "ignore")
+        if resp.startswith("binary "):
+            info[1] = self.recv_binary(resp)
+            resp = self.get_resp().decode("utf8", "ignore")
+
         if resp.startswith("ok "):
-            info = dict(pair.split("=", 1) for pair in resp[3:].split("\x00"))
+            info[0] = dict(pair.split("=", 1) for pair in resp[3:].split("\x00"))
             return info
         else:
             raise_error(resp)
@@ -258,20 +275,12 @@ class FluxRobotV0002(object):
         self._send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self.get_resp().decode("ascii", "ignore").split(" ")
+            resp = self.get_resp().decode("ascii", "ignore")
 
-            if resp[0] == "binary":
-                mime, length = resp[1], int(resp[2])
-                logger.debug("Recv image %s %i" % (mime, length))
+            if resp.startswith("binary "):
+                images.append(self.recv_binary(resp))
 
-                buf = BytesIO()
-                left = length
-                while left > 0:
-                    left -= buf.write(self.sock.recv(min(4096, left)))
-
-                images.append((mime, buf.getvalue()))
-
-            elif resp[0] == "ok":
+            elif resp == "ok":
                 return images
 
             else:
@@ -281,20 +290,12 @@ class FluxRobotV0002(object):
         self._send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self.get_resp().decode("ascii", "ignore").split(" ")
+            resp = self.get_resp().decode("ascii", "ignore")
 
-            if resp[0] == "binary":
-                mime, length = resp[1], int(resp[2])
-                logger.debug("Recv image %s %i" % (mime, length))
+            if resp.startswith("binary "):
+                images.append(self.recv_binary(resp))
 
-                buf = BytesIO()
-                left = length
-                while left > 0:
-                    left -= buf.write(self.sock.recv(min(4096, left)))
-
-                images.append((mime, buf.getvalue()))
-
-            elif resp[0] == "ok":
+            elif resp == "ok":
                 return images
 
             else:
@@ -322,8 +323,18 @@ class FluxRobotV0002(object):
         return self._make_cmd(b"home")
 
     @ok_or_error
-    def reset_mb(self):
+    def maintain_reset_mb(self):
         return self._make_cmd(b"reset_mb")
+
+    def maintain_eadj(self, navigate_callback):
+        ret = self._make_cmd(b"eadj")
+        if ret == b"continue":
+            nav = "continue"
+            while nav != "ok":
+                navigate_callback(nav)
+                nav = self.get_resp().decode("ascii", "ignore")
+        else:
+            raise_error(ret.decode("ascii", "ignore"))
 
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
