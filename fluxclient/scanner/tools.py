@@ -2,12 +2,58 @@
 
 import struct
 import sys
+from math import sqrt
 
 # PCL NOTE: http://docs.pointclouds.org/1.7.0/structpcl_1_1_point_x_y_z_r_g_b.html
 # uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
 # uint8_t r = (rgb >> 16) & 0x0000ff;
 # uint8_t g = (rgb >> 8)  & 0x0000ff;
 # uint8_t b = (rgb)       & 0x0000ff;
+
+
+def dot(a, b):
+    return sum(a[i] * b[i] for i in range(3))
+
+
+def normalize(v):
+    """
+    normalize vector v
+    """
+    l = sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+    if l != 0:
+        v = [i / l for i in v]
+    return v
+
+
+def normal(tri):
+    '''
+      compute normal of a triangle surface
+      tri = [[x, y, z], [x, y, z], [x, y, z]]
+    '''
+    a = [tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]]  # vector v0 -> v1
+    b = [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]  # vector v0 -> v2
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
+
+
+def point_dis_sq(a, b):
+    return sum((a[i] - b[i]) ** 2 for i in range(3))
+
+
+def check_tri(tri, thres=25):
+    '''
+      check if a triangle is valid
+      return True if each edge is smaller than thres, False otherwise
+      tri = [[x, y, z], [x, y, z], [x, y, z]]
+    '''
+    thres **= 2
+
+    if point_dis_sq(tri[0], tri[1]) > thres:
+        return False
+    if point_dis_sq(tri[0], tri[2]) > thres:
+        return False
+    if point_dis_sq(tri[1], tri[2]) > thres:
+        return False
+    return True
 
 
 def read_pcd(file_name):
@@ -96,6 +142,11 @@ def write_stl(tri, output='model.stl', mode='binary'):
 
         outstl.write(struct.pack("I", len(tri)))
         for i in tri:
+            # output normal?
+            # n = normal(i)
+            # my_normal = normalize(n)
+            # outstl.write(struct.pack("fff", my_normal[0], my_normal[1], my_normal[2]))
+
             outstl.write(struct.pack("fff", 0.0, 0.0, 0.0))
             for j in i:
                 for k in j[:3]:
@@ -106,9 +157,11 @@ def write_stl(tri, output='model.stl', mode='binary'):
     elif mode == 'ascii':
         print('solid ascii', file=outstl)
         for i in tri:
-            # tmp = normal(i)
-            # print(' facet normal ',tmp[0],tmp[1],tmp[2], file=outstl)
-            print(' facet normal 0 0 0', file=outstl)
+            # output normal?
+            # n = normal(i)
+            # my_normal = normalize(n)
+            my_normal = [0, 0, 0]
+            print(' facet normal %f %f %f' % (my_normal[0], my_normal[1], my_normal[2]), file=outstl)
 
             print('  outer loop', file=outstl)
             for j in i:

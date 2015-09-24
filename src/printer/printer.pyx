@@ -32,10 +32,14 @@ cdef class MeshObj:
     def add_on(self, MeshObj new_mesh):
         add_on(self.meshobj, new_mesh.meshobj)
 
-    cpdef write_stl(self, file_name):
+    cpdef write_stl(self, file_name, flag=None):
         cpdef vector[vector [vector [float]]] tri
         STL_to_List(self.meshobj, tri)
-        write_stl(tri, file_name)
+        if flag is None:
+            write_stl(tri, file_name)
+        else:
+            write_stl(tri, file_name, flag)
+
 
     cpdef bounding_box(self):
         cpdef vector[float] tmp_b_box

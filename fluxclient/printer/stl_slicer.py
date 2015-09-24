@@ -14,6 +14,7 @@ try:
 except:
     pass
 from fluxclient.fcode.g_to_f import GcodeToFcode
+from fluxclient.scanner.tools import dot, normal
 
 
 class StlSlicer(object):
@@ -217,14 +218,16 @@ class StlSlicer(object):
 
         # analying gcode(even transform)
         ws.send_progress('analying metadata', 0.99)
-        with open(tmp_gcode_file, 'r') as f, open(os.devnull, 'wb') as devnull:
+        with open(tmp_gcode_file, 'r') as f, open(os.devnull, 'wb') as fcode_output:
+        # with open(tmp_gcode_file, 'r') as f, open('output.fcode', 'wb') as fcode_output:
             m_GcodeToFcode = GcodeToFcode()
-            m_GcodeToFcode.process(f, devnull)
+            m_GcodeToFcode.image = self.image
+            m_GcodeToFcode.process(f, fcode_output)
 
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-            m_GcodeToFcode.image = self.image
+
             del m_GcodeToFcode
 
         ##################### fake code ###########################
@@ -314,10 +317,14 @@ class StlSlicer(object):
             while True:
                 t = instl.readline()  # read in: "facet normal 0 0 0"
                 if t[:8] != 'endsolid':  # end of file
+                    read_normal = tuple(map(float, (t.split()[-3:])))
                     instl.readline()   # outer loop
                     v0 = tuple(map(float, (instl.readline().split()[-3:])))
                     v1 = tuple(map(float, (instl.readline().split()[-3:])))
                     v2 = tuple(map(float, (instl.readline().split()[-3:])))
+                    right_hand_mormal = normal([v0, v1, v2])
+                    if dot(right_hand_mormal, read_normal) < 0:
+                        v1, v2 = v2, v1
 
                     instl.readline()  # read in: "endloop"
                     instl.readline()  # read in: "endfacet"
@@ -340,9 +347,14 @@ class StlSlicer(object):
 
             for i in range(length):
                 index = i * 50 + 84
+                read_normal = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
                 v0 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
                 v1 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
                 v2 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
+                right_hand_mormal = normal([v0, v1, v2])
+                if dot(right_hand_mormal, read_normal) < 0:
+                    v1, v2 = v2, v1
+
                 face = []
                 for v in [v0, v1, v2]:
                     if v not in points:

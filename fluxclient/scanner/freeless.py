@@ -6,60 +6,15 @@ import math
 import numpy
 
 import fluxclient.scanner.scan_settings as scan_settings
-import fluxclient.scanner.tools as tools
+from fluxclient.scanner.tools import write_stl, dot, normal, normalize, point_dis_sq
 
 
 NUM_LASER_RANGE_THRESHOLD = 3
 RED_HUE_UPPER_THRESHOLD = 5
 
 
-def normalize(v):
-    """
-    normalize vector v
-    """
-    l = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
-    list(map(lambda x: x / l, v))
-    return v
-
-
 def pre_cut(img, x=0, y=0, w=None, h=None):
     return img[y: y + h, x: x + w]  # x, y, w, h
-
-
-def point_dis_sq(a, b):
-    return sum((a[i] - b[i]) ** 2 for i in range(3))
-
-
-def dot(a, b):
-    return sum(a[i] * b[i] for i in range(3))
-
-
-def check_tri(tri, thres=25):
-    '''
-      check if a triangle is valid
-      return True if each edge is smaller than thres, False otherwise
-      tri = [[x, y, z], [x, y, z], [x, y, z]]
-    '''
-    thres **= 2
-
-    if point_dis_sq(tri[0], tri[1]) > thres:
-        return False
-    if point_dis_sq(tri[0], tri[2]) > thres:
-        return False
-    if point_dis_sq(tri[1], tri[2]) > thres:
-        return False
-
-    return True
-
-
-def normal(tri):
-    '''
-      compute normal of a triangle surface
-      tri = [[x, y, z], [x, y, z], [x, y, z]]
-    '''
-    a = [tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]]  # vector v0 -> v1
-    b = [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]  # vector v0 -> v2
-    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
 
 
 class freeless():
@@ -258,7 +213,7 @@ class freeless():
             self.writeTrianglesForColumn(lastFrame, firstFrame, tri)
 
         print ('tri:', len(tri), 'triangels')
-        tools.write_stl(tri, file_name)
+        write_stl(tri, file_name)
 
     def subProcess(self, img1, img2, maxNumLocations=scan_settings.img_height):
         '''
