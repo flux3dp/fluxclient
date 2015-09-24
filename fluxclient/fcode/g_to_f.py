@@ -247,7 +247,10 @@ class GcodeToFcode(FcodeBase):
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
                     else:
-                        print('Undefine gcode', line, file=sys.stderr)
+                        if line[0] in ['G4', 'M400'] or line[0].startswith('X2O'):
+                            pass
+                        else:
+                            print('Undefine gcode', line, file=sys.stderr)
                         # raise ValueError('Undefine gcode', line)
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)

@@ -71,28 +71,28 @@ class LaserBase(object):
         if self.laser_on is True:
             return []
         self.laser_on = True
-        return ["M400", "X2O%d ; turnOn" % self.draw_power, "G4 P20"]
+        return ["M400", "X2O%d;turnOn" % self.draw_power, "G4 P20"]
 
     def turnOff(self):
         if self.laser_on is False:
             return []
         self.laser_on = False
-        return ["M400", "X2O0; turnOff", "G4 P20"]
+        return ["M400", "X2O0;turnOff", "G4 P20"]
 
     def turnTo(self, power=None):
-        if power != 0:
-            self.laser_on = None
-        else:
+        if power is None:
+            self.laser_on = True
+            return ["M400", "X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
+
+        elif power != 0:
+            self.laser_on = True
+            return ["M400", "X2O%d;turnTo %d" % (power, power), "G4 P20"]
+
+        elif power == 0:
             self.laser_on = False
             return self.turnOff()
-        if power is None:
-            self.laser_on = False
-            return ["M400", "X2O%d; turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
-        else:
 
-            return ["M400", "X2O%d; turnTo %d" % (power, power), "G4 P20"]
-
-    def moveTo(self, x, y, speed=None, z=None, ending=';move to'):
+    def moveTo(self, x, y, speed=None, z=None, ending=None):
         """
             apply global "rotation" and "scale"
             move to position x,y
@@ -106,6 +106,12 @@ class LaserBase(object):
 
         if speed is None:
             speed = self.laser_speed
+
+        if ending is None:
+            if self.laser_on:
+                ending = ';draw'
+            else:
+                ending = ';move'
 
         self.current_x = x
         self.current_y = y

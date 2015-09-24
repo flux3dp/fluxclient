@@ -52,7 +52,7 @@ class LaserBitmap(LaserBase):
         itera_r = list(reversed(range(0, len(self.image_map))))
 
         for h in range(0, len(self.image_map)):
-            print(h, 'h')
+            # print(h, 'h')
 
             #column iteration
             if h % res != 0:
@@ -61,9 +61,11 @@ class LaserBitmap(LaserBase):
             if h % 2 == 0:
                 itera = itera_o
                 final_x = len(self.image_map)
+                abs_shift_x = len(self.image_map) / 2 + 0.5
             elif h % 2 == 1:
                 final_x = 0
                 itera = itera_r
+                abs_shift_x = len(self.image_map) / 2 - 0.5
 
             w = 0
             # gcode += self.turnTo(255 - self.image_map[h][itera[0]])
@@ -80,14 +82,14 @@ class LaserBitmap(LaserBase):
                     w += 1
                 if w == len(itera):
                     if self.image_map[h][itera[-1]] != 255:
-                        gcode += self.moveTo(final_x - abs_shift, abs_shift - h)
+                        gcode += self.moveTo(final_x - abs_shift_x, abs_shift - h)
                         gcode += self.turnOff()
                     break
                 else:
                     if final_x != 0:
-                        gcode += self.moveTo(itera[w] - 0.5 - abs_shift, abs_shift - h)
+                        gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
                     else:
-                        gcode += self.moveTo(itera[w] + 0.5 - abs_shift, abs_shift - h)
+                        gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
             gcode += self.turnOff()
 
         gcode += self.turnOff()
