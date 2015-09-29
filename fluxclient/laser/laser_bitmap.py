@@ -43,16 +43,13 @@ class LaserBitmap(LaserBase):
         abs_shift = len(self.image_map) / 2
 
         # apply threshold in a efficient way
-
         t = np.vectorize(lambda x: x if x <= self.thres else 255)
         self.image_map = t(self.image_map)
-        self.dump('./preview_la.png')
 
         itera_o = list(range(0, len(self.image_map)))
         itera_r = list(reversed(range(0, len(self.image_map))))
 
         for h in range(0, len(self.image_map)):
-            # print(h, 'h')
 
             #column iteration
             if h % res != 0:
@@ -68,17 +65,13 @@ class LaserBitmap(LaserBase):
                 abs_shift_x = len(self.image_map) / 2 - 0.5
 
             w = 0
-            # gcode += self.turnTo(255 - self.image_map[h][itera[0]])
-            # tmp = self.image_map[h][itera[0]]
             while w < len(itera):
-                # print(w)
+
                 if w % res != 0:
                     continue
-                # self.image_map[h][itera[w]]
                 gcode += self.turnTo(255 - self.image_map[h][itera[w]])
                 tmp = self.image_map[h][itera[w]]
                 while w < len(itera) and self.image_map[h][itera[w]] == tmp:
-                    # print(w)
                     w += 1
                 if w == len(itera):
                     if self.image_map[h][itera[-1]] != 255:

@@ -89,7 +89,6 @@ class LaserBase(object):
             return ["M400", "X2O%d;turnTo %d" % (power, power), "G4 P20"]
 
         elif power == 0:
-            self.laser_on = False
             return self.turnOff()
 
     def moveTo(self, x, y, speed=None, z=None, ending=None):
@@ -203,7 +202,6 @@ class LaserBase(object):
             None
         """
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
-        pix.save('image_g.png')
 
         # image center (rotation center)
         cx = (x1 + x2) / 2.

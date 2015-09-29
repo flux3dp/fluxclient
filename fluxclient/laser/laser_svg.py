@@ -634,7 +634,6 @@ class LaserSvg(LaserBase):
                     new_path[i] = [x, y]
                 else:
                     pass
-
             # make every points inside the boundary circle -> (cx, cy, r) = (0, 0, self.radius)
             in_path = []
             for i in range(1, len(new_path)):
@@ -697,7 +696,6 @@ class LaserSvg(LaserBase):
                     if tmp[-1] != i:
                         tmp.append(i)
                 in_path = tmp
-            sys.stderr.flush()
 
             path_data[path] = in_path
         return path_data
@@ -731,7 +729,6 @@ class LaserSvg(LaserBase):
             progress += offset
             if ws:
                 ws.send_progress('generating gcode on svg %d' % name_index, progress)
-
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
