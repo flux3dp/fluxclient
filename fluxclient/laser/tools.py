@@ -6,7 +6,7 @@ from laser_base import LaserBase
 
 
 class Circle(LaserBase):
-    """docstring for Circle"""
+    """draw a circle"""
     def __init__(self):
         super(Circle, self).__init__()
         self.speed = 100
@@ -193,6 +193,9 @@ class FindFocal(LaserBase):
 
 
 def myrange(start, end, step):
+    """
+    floating point range~
+    """
     R = 1000.  # for floating point error
     start *= R
     end *= R
@@ -209,9 +212,30 @@ def myrange(start, end, step):
             tmp += step
     return output
 
+
+def print_help():
+    help = [
+        '\tthis is a small tool for generating some simple gcode',
+        '\tuse -logo   / -l to draw a FLUX logo',
+        '\tuse -grid   / -g to draw grid on plate',
+        '\tuse -circle / -c to draw grid on plate',
+        '\tuse -help   / -h to see this help document'
+    ]
+    for i in help:
+        print(i, file=sys.stderr)
+
 if __name__ == '__main__':
-    # m_obj = Logo()
-    # m_obj = Grid()
-    # m_obj = FindFocal()
-    m_obj = Circle()
-    print(m_obj.gcode_generate())
+    if '-logo' in sys.argv or '-l' in sys.argv:
+        m_obj = Logo()
+        print(m_obj.gcode_generate())
+    elif '-grid' in sys.argv or '-g' in sys.argv:
+        m_obj = Grid()
+        print(m_obj.gcode_generate())
+    elif '-circle' in sys.argv or '-c' in sys.argv:
+        m_obj = Circle()
+        print(m_obj.gcode_generate())
+    elif '-find' in sys.argv or '-f' in sys.argv:
+        pass
+        # m_obj = FindFocal()
+    else:
+        print_help()
