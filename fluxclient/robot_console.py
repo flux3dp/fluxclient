@@ -238,9 +238,10 @@ class RobotConsole(object):
             while self._mode == "raw":
                 rl = select((self._raw_sock, ), (), (), 0.1)[0]
                 if rl:
-                    buf = rl[0].recv(4096).decode("utf8", "ignore")
+                    buf = rl[0].recv(4096)
                     if buf:
-                        for ln in buf.split("\n"):
+                        msg = buf.decode("utf8", "replace")
+                        for ln in msg.split("\n"):
                             logger.info(ln.rstrip("\r\x00"))
                     else:
                         logger.error("Connection closed")
