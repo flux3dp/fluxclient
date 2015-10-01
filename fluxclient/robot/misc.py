@@ -37,21 +37,32 @@ def require_robot(target, logstream=sys.stdout):
             except RuntimeError as e:
                 logstream.write("Error: %s, retry...\n" % e.args[0])
 
+
+        logstream.write("Wakeup Robot: ")
         while True:
             try:
                 resp = task.require_robot()
-                if resp is not None:
-                    logstream.write("Robot launching...\n")
-                    break
-            except RuntimeError as e:
-                if e.args[0] == "ALREADY_RUNNING":
-                    logstream.write("Robot already running\n")
-                    break
+                if resp:
+                    st = resp.get("status")
+                    if st == "initial":
+                        logstream.write("+")
+                        sleep(0.3)
+                    elif st == "launching":
+                        logstream.write(".")
+                        sleep(0.3)
+                    elif st == "launched":
+                        logstream.write(" :-)")
+                        if "info" in resp:
+                            logstream.write(" (%s)" % resp["info"])
+                        logstream.write("\n")
+                        return ipaddr, task.remote_keyobj
                 else:
-                    logstream.write("Error: %s\n" % e.args[0])
-            logstream.write("Retry require robot\n")
+                    logstream.write("?")
+            except RuntimeError as e:
+                logstream.write("Error: %s\n" % e.args[0])
+                sleep(3)
+                logstream.write("Retry require robot\n")
 
-        return ipaddr, task.remote_keyobj
     else:
         return parse_ipaddr(target), None
 
