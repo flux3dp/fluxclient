@@ -318,6 +318,8 @@ class freeless():
           find the Center of bestrange
           use Weighted arithmetic mean
           return int
+
+          [TODO] in freelss/src/ImageProcessor.cpp ImageProcessor::detectLaserRangeCenter: two more center algorithm to try
         '''
         d = abs((img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
         d = d.astype(int)
