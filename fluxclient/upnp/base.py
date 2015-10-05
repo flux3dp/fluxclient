@@ -92,7 +92,7 @@ class UpnpBase(object):
             if retry > 0:
                 return self.fetch_publickey(retry - 1)
             else:
-                raise RuntimeError("Remote did not return public key")
+                raise RuntimeError("TIMEOUT", "fetch public key")
 
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
