@@ -23,6 +23,15 @@ CODE_SET_PASSWORD = 0x06
 class UsbTask(object):
     def __init__(self, port, baudrate=115200):
         self.s = Serial(port=port, baudrate=115200, timeout=0)
+        self.s.write("\x00" * 16)
+
+        while True:
+            rl = select((self.s, ), (), (), 0.1)[0]
+            if rl:
+                self.s.readall()
+            else:
+                break
+
         self.keyobj = E.get_or_create_keyobj()
         self._discover()
 
