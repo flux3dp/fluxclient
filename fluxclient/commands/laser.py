@@ -51,7 +51,6 @@ def process_svg(options, stream):
         count += 1
 
     m_laser_svg.export_to_stream(stream, [name + '_ready'])
-    m_laser_svg.dump('tmp.png')
 
 
 def process_to_gray_bitmap(image):

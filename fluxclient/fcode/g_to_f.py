@@ -242,7 +242,7 @@ class GcodeToFcode(FcodeBase):
                         if line[0] == 'M107':
                             self.writer(packer_f(0.0), output_stream)
                         elif line[0] == 'M106':
-                            self.writer(packer_f(float(line[1].lstrip('S'))), output_stream)
+                            self.writer(packer_f(float(line[1].lstrip('S')) / 255.), output_stream)
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
