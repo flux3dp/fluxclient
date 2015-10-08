@@ -40,6 +40,7 @@ def interactive(robot):
     logger.info("Type 'S[number]' (Step) to mave [number] step")
     logger.info("Type 'C[length]' (Change) change step length for each step")
 
+    total_steps = None
     laser_Left = False
     laser_Right = False
     while True:
@@ -58,7 +59,7 @@ def interactive(robot):
             os.system("open " + " ".join([n.name for n in tempfiles]))
         elif l.startswith("g"):
             logger.info("Go!")
-            return
+            return total_steps
 
         elif l.startswith('S'):
             l = l.rstrip('\n')
@@ -72,6 +73,10 @@ def interactive(robot):
                     step = 1
                 for i in range(step):
                     robot.scan_next()
+
+        elif l.startswith('T'):
+            l = l.rstrip("\n")
+            total_steps = int(l)
 
         elif l.startswith('C'):
             l = l.rstrip('\n')
@@ -95,6 +100,7 @@ def interactive(robot):
             logger.info("Type 'R' (Right) toggle Right Laser")
             logger.info("Type 'S[number]' (Step) to mave [number] step")
             logger.info("Type 'C[length]' (Change) change step length for each step")
+            logger.info("Type 'T[steps]' Set total steps")
 
 
 def print_progress(step, total):
@@ -131,7 +137,7 @@ def main():
     robot.set_scanlen(HW_PROFILE['model-1']['scan_full_len'] / 400.)
 
     if not options.auto:
-        interactive(robot)
+        total_steps = interactive(robot)
 
     filename_prefix = options.prefix or \
         datetime.datetime.now().strftime("scan_%Y%m%d_%H%M")
@@ -142,8 +148,8 @@ def main():
     logger.info("Image will save to %s*.jpg" % filename_prefix)
     suffix = ['L', 'R', 'O']
     images = robot.scanimages()
-    for step in range(400):
-        print_progress(step, 400)
+    for step in range(total_steps):
+        print_progress(step, total_steps)
         images = robot.scanimages()
         robot.scan_next()
         for i in range(len(images)):
