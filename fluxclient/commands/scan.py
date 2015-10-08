@@ -76,7 +76,7 @@ def interactive(robot):
 
         elif l.startswith('T'):
             l = l.rstrip("\n")
-            total_steps = int(l)
+            total_steps = int(l[1:])
 
         elif l.startswith('C'):
             l = l.rstrip('\n')
