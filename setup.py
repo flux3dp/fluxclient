@@ -9,7 +9,7 @@ options = setup_utils.prepare_setup()
 
 ext_modules = []
 if options["pcl"]:
-    ext_modules += setup_utils.create_scanner_extention()
+    ext_modules += setup_utils.create_scanner_extentions()
 
 
 setup(
