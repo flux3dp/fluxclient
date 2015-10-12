@@ -122,7 +122,7 @@ class StlSlicer(object):
                 result.append('[' + ','.join(tmp) + ']')
             return '[' + ','.join(result) + ']'
 
-    def generate_gcode(self, names, ws):
+    def generate_gcode(self, names, ws, output_type):
         """
         input: names of stl that need to be sliced
         output:
@@ -213,13 +213,11 @@ class StlSlicer(object):
         if p.poll() != 0:
             fail_flag = True
 
-        with open(tmp_gcode_file, 'r') as f:
-            gcode = f.read()
-
         # analying gcode(even transform)
         ws.send_progress('analying metadata', 0.99)
-        with open(tmp_gcode_file, 'r') as f, open(os.devnull, 'wb') as fcode_output:
-        # with open(tmp_gcode_file, 'r') as f, open('output.fcode', 'wb') as fcode_output:
+
+        fcode_output = io.BytesIO()
+        with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode()
             m_GcodeToFcode.image = self.image
             m_GcodeToFcode.process(f, fcode_output)
@@ -230,23 +228,36 @@ class StlSlicer(object):
 
             del m_GcodeToFcode
 
+        if output_type == 'g':
+            with open(tmp_gcode_file, 'rb') as f:
+                output = f.read()
+        elif output_type == 'f':
+            output = fcode_output.getvalue()
+        else:
+            raise('wrong output type, only support gcode and fcode')
+
         ##################### fake code ###########################
-        with open('output.gcode', 'w') as f:
-            print(gcode, file=f, end='')
+        with open('output.gcode', 'wb') as f:
+            with open(tmp_gcode_file, 'rb') as f2:
+                f.write(f2.read())
 
         with open(tmp_stl_file, 'rb') as f:
             with open('merged.stl', 'wb') as f2:
                 f2.write(f.read())
+
+        with open('output.fcode', 'wb') as f:
+            f.write(fcode_output.getvalue())
         ###########################################################
 
         # clean up tmp files
+        fcode_output.close()
         os.remove(tmp_stl_file)
         os.remove(tmp_gcode_file)
         os.remove(tmp_slic3r_setting_file)
         if fail_flag:
             return False, slic3r_out
         else:
-            return gcode, metadata
+            return output, metadata
 
     @classmethod
     def my_ini_parser(cls, file_path):
