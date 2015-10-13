@@ -27,21 +27,8 @@ class UpnpBase(object):
             self.serial = _uuid.UUID(hex=serial)
 
         self.keyobj = encryptor.get_or_create_keyobj()
-        self._inited = False
-
-        if ipaddr:
-            d = UpnpDiscover(serial=self.serial, ipaddr=ipaddr)
-        else:
-            d = UpnpDiscover(serial=self.serial)
-
-        d.discover(self._load_profile, lookup_callback, lookup_timeout)
-        if not self._inited:
-            raise RuntimeError("Can not find device")
-
-        if not forcus_broadcast:
-            for ipaddr in self.remote_addrs:
-                d.ipaddr = ipaddr[0]
-                d.discover(self._ensure_remote_ipaddr, timeout=1.5)
+        self.update_remote_infomation(ipaddr, lookup_callback,
+                                      forcus_broadcast, lookup_timeout)
 
         if self.remote_version < StrictVersion("0.10a1"):
             raise RuntimeError("fluxmonitor version is too old")
@@ -57,12 +44,31 @@ class UpnpBase(object):
         self.pubkey = pubkey
         self.remote_keyobj = encryptor.load_keyobj(pubkey)
 
-    def create_timestemp(self):
-        return time() + self.timedelta
+    def update_remote_infomation(self, ipaddr=None, lookup_callback=None,
+                                 forcus_broadcast=False,
+                                 lookup_timeout=float("INF")):
+        self._inited = False
+
+        if ipaddr:
+            d = UpnpDiscover(serial=self.serial, ipaddr=ipaddr)
+        else:
+            d = UpnpDiscover(serial=self.serial)
+        d.discover(self._load_profile, lookup_callback, lookup_timeout)
+
+        if not self._inited:
+            raise RuntimeError("Can not find device")
+
+        if not forcus_broadcast:
+            for ipaddr in self.remote_addrs:
+                d.ipaddr = ipaddr[0]
+                d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
     @property
     def publickey_der(self):
         return encryptor.get_public_key_der(self.keyobj)
+
+    def create_timestemp(self):
+        return time() + self.timedelta
 
     def _load_profile(self, discover_instance, serial, model_id, timestemp,
                       version, name, has_password, ipaddrs):

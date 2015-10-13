@@ -34,6 +34,9 @@ class Console(object):
     def write(self, buf):
         self.append_log(buf)
 
+    def flush(self):
+        pass
+
     def read_cmd(self):
         lines, cols = self.stdscr.getmaxyx()
 

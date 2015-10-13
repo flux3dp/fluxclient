@@ -89,16 +89,10 @@ class UpnpTask(UpnpBase):
         start_at = time()
 
         while timeout >= (time() - start_at):
-            try:
-                request = self.sign_request(b"")
-                resp = self.make_request(req_code, resp_code, request)
-                if resp:
-                    return resp
-            except RuntimeError as err:
-                if err.args[0] == "AUTH_ERROR":
-                    continue
-                else:
-                    raise
+            request = self.sign_request(b"")
+            resp = self.make_request(req_code, resp_code, request)
+            if resp:
+                return resp
 
         raise RuntimeError("TIMEOUT")
 
