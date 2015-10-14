@@ -111,7 +111,7 @@ class FluxRobotV0002(object):
             last_resp = self.get_resp().decode("ascii", "ignore")
             if last_resp != "ok":
                 raise_error("error PROTOCOL_ERROR NOT_OK")
-    
+
             for node in files.split("\x00"):
                 if node.startswith("D"):
                     # if name starts with "D", it is folder
@@ -151,12 +151,12 @@ class FluxRobotV0002(object):
     @ok_or_error
     def rmdir(self, entry, path):
         return self._make_cmd(
-            b"rmdir " +  entry.encode() + b" "+ path.encode())
+            b"rmdir " + entry.encode() + b" " + path.encode())
 
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"cp " + source_entry.encode() + b" " + source.encode() + b"\x00" \
+            b"cp " + source_entry.encode() + b" " + source.encode() + b"\x00"
             + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
@@ -212,8 +212,8 @@ class FluxRobotV0002(object):
             return self.upload_stream(f, size, mimetype, upload_to, cmd,
                                       progress_callback)
 
-    def begin_upload(self, mimetype, length, cmd="upload"):
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, "#")).encode()
+    def begin_upload(self, mimetype, length, cmd="upload", uploadto="#"):
+        cmd = ("%s %s %i %s" % (cmd, mimetype, length, uploadto)).encode()
         upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
         if upload_ret == "continue":
             return self.sock

@@ -51,8 +51,8 @@ class freeless():
                                   ...
                 ]
 
-        warning coord change!!!!!!!!!!!
-        switch y, z
+        [WARNING] coordinate change here!!!!!!!!!!!
+                  switch y, z
         '''
         points = []
 
