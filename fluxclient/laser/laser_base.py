@@ -27,7 +27,7 @@ class LaserBase(object):
         self.obj_height = 1.7  # pcb
         self.obj_height = 0.0  # plate
 
-        self.pixel_per_mm = 16  # sample rate for each point
+        self.pixel_per_mm = 8  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
 
         # list holding current image
