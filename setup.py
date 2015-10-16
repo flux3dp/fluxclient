@@ -1,29 +1,28 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup, find_packages
-import platform
 import sys
 
-from fluxclient import VERSION as _VERSION
+import setup_utils
 
-if not sys.version_info >= (3, 3):
-    print("ERROR: fluxclient require Python version grather then 3.3\n")
-    sys.exit(1)
+options = setup_utils.prepare_setup()
 
-VERSION = ".".join([str(i) for i in _VERSION])
+ext_modules = []
+if options["pcl"]:
+    ext_modules += setup_utils.create_scanner_extentions()
 
-install_requires = ['setuptools', 'pycrypto']
 
 setup(
     name="fluxclient",
-    version=VERSION,
+    version=setup_utils.get_version(),
     author="Flux Crop.",
     author_email="cerberus@flux3dp.com",
     description="",
     license="?",
-    packages=find_packages(),
+    packages=setup_utils.get_packages(),
     test_suite="tests.main.everything",
-    scripts=["bin/flux_discover", "bin/flux_auth", "bin/flux_passwd",
-             "bin/flux_config_network", "bin/flux_robot"],
-    install_requires=install_requires,
+    entry_points=setup_utils.get_entry_points(),
+    install_requires=setup_utils.get_install_requires(),
+    cmdclass={'build_ext': setup_utils.build_ext},
+    ext_modules=ext_modules
 )
