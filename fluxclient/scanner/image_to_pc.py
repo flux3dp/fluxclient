@@ -10,6 +10,7 @@ from PIL import Image
 import fluxclient.scanner.freeless as freeless
 import fluxclient.scanner.scan_settings as scan_settings
 from fluxclient.scanner.tools import write_pcd
+from fluxclient.hw_profile import HW_PROFILE
 
 
 class image_to_pc():
@@ -26,6 +27,13 @@ class image_to_pc():
 
         self.step_counter = 0
 
+        self.ref_table = []
+        s = 0
+        self.steps = 400
+        for i in range(self.steps):
+            self.ref_table.append(s)
+            s = (s + HW_PROFILE['model-1']['step_setting'][self.steps][0]) % self.steps
+
     def to_image(self, buffer_data):
         '''
             convert buffer_data(bytes readin from jpg) into image -> (numpy.ndarray, uint8)
@@ -39,10 +47,15 @@ class image_to_pc():
         return im_array
 
     def feed(self, buffer_O, buffer_L, buffer_R, step):
+        '''
+            feed 3 picture buffer and a step index
+            note that this step index is the input
+        '''
 
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
+        step = self.ref_table[step]
 
         indices_L = self.fs_L.subProcess(img_O, img_L, scan_settings.img_height)
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', clock=True)
@@ -63,13 +76,35 @@ class image_to_pc():
                                     p2[x-coordinate, y-coord, z-coord, r, g, b],
                                     p3[x-coordinate, y-coord, z-coord, r, g, b],
                                       ...
-                     ]
+                      ]
         output format: check https://github.com/flux3dp/fluxghost/wiki/websocket-3dscan-control
         '''
         return [struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.) for p in points]
 
+    def merge(self):
+        """
+        merge left and right scanned points
+        use Left side as base
+        """
+        record = [set() for i in range(self.steps)]
+        for p in self.points_R:
+            record[p[6]].add(p[8])
+        self.points_M = self.points_R[:]
+
+        print(len(self.points_M), len(self.points_L), len(self.points_R))
+        # print(record)
+
+        for p in self.points_L:
+            if not p[8] in record[p[6]]:
+                self.points_M.append(p)
+
+        print(len(self.points_M), len(self.points_L), len(self.points_R))
+
 
 def print_progress(step, total):
+    """
+    print progress on screen
+    """
     left = int((step / total) * 70)
     right = 70 - left
     sys.stdout.write("\r[%s>%s] Step %3i" % ("=" * left, " " * right, step))
@@ -77,6 +112,9 @@ def print_progress(step, total):
 
 
 def myrange(*args):
+    """
+    range function that support float
+    """
     start = 0.
     sep = 1
     if len(args) == 2:
@@ -95,7 +133,7 @@ def myrange(*args):
 
 def after(l):
     """
-    add box
+    add fixed size box
     """
     return l
     for i in range(-70, 70, 3):
@@ -126,15 +164,15 @@ def after(l):
 
 if __name__ == '__main__':
     m_image_to_pc = image_to_pc()
-    img_location = '/Users/yen/' + sys.argv[1] + ''
+    img_location = sys.argv[1].rstrip('/')
     print(img_location)
 
     for i in range(400):
         tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
-        m_image_to_pc.feed(*tmp, step=(i - 20) % 400)
+        m_image_to_pc.feed(*tmp, step=i)
         print_progress(i, 400)
     print('')
-    # "py ./pcd_to_js.py ~/0808.pcd > model.js"
-
-    write_pcd(after(m_image_to_pc.points_R), '../../../../' + sys.argv[1] + '.pcd')
-    subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', '../../../../' + sys.argv[1] + '.pcd'], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
+    output = img_location + '.pcd'
+    m_image_to_pc.merge()
+    write_pcd(after(m_image_to_pc.points_M), output)
+    subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))

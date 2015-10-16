@@ -45,9 +45,9 @@ class freeless():
         '''
         convert indices on the image into x-y-z-rgb points
         return  [
-                                p1[x-coordinate, y-coord, z-coord, r, g, b],
-                                p2[x-coordinate, y-coord, z-coord, r, g, b],
-                                p3[x-coordinate, y-coord, z-coord, r, g, b],
+                                p1[x-coordinate, y-coord, z-coord, r, g, b, step],
+                                p2[x-coordinate, y-coord, z-coord, r, g, b, step],
+                                p3[x-coordinate, y-coord, z-coord, r, g, b, step],
                                   ...
                 ]
 
@@ -59,6 +59,7 @@ class freeless():
         MAX_DIST_XZ_SQ = 70 ** 2
         PLATE_Y = -20.0
         MAX_DIST_Y = 50
+        MAX_DIST_Y = 900
 
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)
@@ -69,6 +70,7 @@ class freeless():
 
                 if point[0][1] >= PLATE_Y and distXZSq < MAX_DIST_XZ_SQ and point[0][1] < MAX_DIST_Y:
                     point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])  # add color
+                    point.append([x, y])
                     points.append(point)
                 else:  # points that out of bounding cylinder
                     pass
@@ -98,7 +100,7 @@ class freeless():
             p[0][2] = tmp2
 
         # points = [[p[0][0] * 10, p[0][2] * 10, p[0][1] * 10, p[2][0], p[2][1], p[2][2]] for p in points]
-        points = [[p[0][0], p[0][2], p[0][1], p[2][2], p[2][1], p[2][0]] for p in points]
+        points = [[p[0][0], p[0][2], p[0][1], p[2][2], p[2][1], p[2][0], step, p[3][0], p[3][1]] for p in points]
 
         return points
 
