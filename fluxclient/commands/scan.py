@@ -4,6 +4,7 @@ import datetime
 import argparse
 import logging
 import sys
+from time import sleep
 import os
 
 from fluxclient.robot.misc import require_robot
@@ -39,6 +40,7 @@ def interactive(robot):
     logger.info("Type 'R' (Right) toggle Right Laser")
     logger.info("Type 'S[number]' (Step) to mave [number] step")
     logger.info("Type 'C[length]' (Change) change step length for each step")
+    logger.info("Type 'T[steps]' Set total steps")
 
     total_steps = None
     laser_Left = False
