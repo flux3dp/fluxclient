@@ -94,7 +94,7 @@ inline int check(std::vector<float> normal, std::vector<float> position_v){
 int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius){
   ne(cloud, normals, radius);
   float tmp;
-  for (uint i = 0; i < cloud->points.size(); i += 1){
+  for (uint32_t i = 0; i < cloud->points.size(); i += 1){
     // dot
     tmp = 0.0;
     tmp += cloud->points[i].x * (*normals).points[i].normal_x;
@@ -270,7 +270,7 @@ int bounding_box(PointCloudXYZRGBPtr cloud, std::vector<float> &b_box){
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
 
-  for (uint i = 0; i < cloud->size(); i += 1){
+  for (uint32_t i = 0; i < cloud->size(); i += 1){
     if((*cloud)[i].x > maxx){
       maxx = (*cloud)[i].x;
     }
@@ -412,7 +412,7 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
   float v;
   value *= value;
 
-  for (uint i = 0; i < input->size(); i += 1){
+  for (uint32_t i = 0; i < input->size(); i += 1){
     switch (mode){
       case 0:
       v = (*input)[i].x * (*input)[i].x;
