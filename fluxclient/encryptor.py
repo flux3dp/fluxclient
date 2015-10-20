@@ -21,18 +21,22 @@ def get_or_create_keyobj(path=None):
         try:
             with open(path, "rb") as f:
                 buf = f.read()
+                print("Read old key")
                 return RSA.importKey(buf)
         except Exception:
             raise
             os.unlink(path)
 
     keyobj = RSA.generate(1024)
+    print("New key")
     with open(path, "wb") as f:
         f.write(keyobj.exportKey("PEM"))
     return keyobj
 
 
 def rsa_encrypt(keyobj, message):
+    print("Encrypting")
+
     chip = PKCS1_OAEP.new(keyobj)
     size = ((keyobj.size() + 1) // 8) - 42
     in_buf = BytesIO(message)
@@ -43,6 +47,7 @@ def rsa_encrypt(keyobj, message):
         out_buf.write(chip.encrypt(buf))
         buf = in_buf.read(size)
 
+    print("Encrypted..")
     return out_buf.getvalue()
 
 
