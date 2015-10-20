@@ -76,9 +76,22 @@ class FluxRobotV0002(object):
             raise TimeoutError("get resp timeout")
         bml = self.sock.recv(2, socket.MSG_WAITALL)
         if not bml:
+            logger.error("Message payload recv error")
             raise socket.error(EPIPE, "Broken pipe")
+
         message_length = struct.unpack("<H", bml)[0]
-        return self.sock.recv(message_length, socket.MSG_WAITALL)
+
+        message = b""
+
+        while len(message) != message_length:
+            buf = self.sock.recv(message_length - len(message), socket.MSG_WAITALL)
+
+            if not buf:
+                logger.error("Recv empty message")
+                raise socket.error(EPIPE, "Broken pipe")
+            message += buf
+
+        return message
 
     def _make_cmd(self, buf):
         self._send_cmd(buf)
@@ -137,8 +150,11 @@ class FluxRobotV0002(object):
             info[1] = self.recv_binary(resp)
             resp = self.get_resp().decode("utf8", "ignore")
 
+        # TODO
+        fixmeta = lambda key, value=None: (key, value)
         if resp.startswith("ok "):
-            info[0] = dict(pair.split("=", 1) for pair in resp[3:].split("\x00"))
+            info[0] = dict(fixmeta(*pair.split("=", 1)) for pair in
+                           resp[3:].split("\x00"))
             return info
         else:
             raise_error(resp)
