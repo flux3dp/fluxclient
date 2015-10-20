@@ -95,16 +95,11 @@ def create_common_extentions():
 
 def create_scanner_extentions():
     try:
-        # Process extra_compile_args
-        extra_compile_args = []
-        if platform.platform().startswith("Darwin"):
-            extra_compile_args = ["--stdlib=libc++"]
-            extra_compile_args += ["-mmacosx-version-min=10.9"]
-        elif platform.platform().startswith("Linux"):
-            # os.environ['CC'] = 'g++'  # using g++ instead of gcc
-            extra_compile_args = ["-lstdc++"]  # flag that tells compiler compile a .cpp file
-        else:
-            raise RuntimeError("Unknow platform!!")
+
+        # Process include_dirs
+        include_dirs = [
+            locate_includes("eigen3"),
+        ]
 
         # Process libraries
         libraries = [
@@ -113,10 +108,31 @@ def create_scanner_extentions():
             "pcl_segmentation", "pcl_surface", "pcl_registration", "pcl_keypoints",
             "pcl_tracking", "pcl_recognition", "pcl_outofcore", "pcl_people", ]
 
-        # Process include_dirs
-        include_dirs = [
-            locate_includes("eigen3"),
-        ]
+        library_dirs = []
+
+        # Process extra_compile_args
+        extra_compile_args = []
+        if platform.platform().startswith("Darwin"):
+            extra_compile_args = ["--stdlib=libc++"]
+            extra_compile_args += ["-mmacosx-version-min=10.9"]
+        elif platform.platform().startswith("Linux"):
+            # os.environ['CC'] = 'g++'  # using g++ instead of gcc
+            extra_compile_args = ["-lstdc++"]  # flag that tells compiler compile a .cpp file
+        elif platform.platform().startswith("Windows"):
+            include_dirs = []
+            libraries = ["pcl_common_release", "pcl_octree_release", "pcl_io_release", "pcl_kdtree_release", "pcl_search_release",
+                         "pcl_sample_consensus_release", "pcl_filters_release", "pcl_features_release",
+                         "pcl_segmentation_release", "pcl_surface_release", "pcl_registration_release", "pcl_keypoints_release",
+                         "pcl_tracking_release", "pcl_recognition_release", "pcl_outofcore_release", "pcl_people_release"]
+            include_dirs += ["C:/Program Files (x86)/Eigen/include"]
+            include_dirs += ["C:/Program Files (x86)/flann/include"]
+            include_dirs += ["C:/Program Files/PCL 1.7.2/include/pcl-1.7"]
+            include_dirs += ["C:/Program Files/PCL 1.7.2/lib"]
+            include_dirs += ["C:/local/boost_1_59_0"]
+            library_dirs = ["C:\\Program Files\\PCL 1.7.2\\lib"]
+        else:
+            raise RuntimeError("Unknow platform!!")
+
         if has_package("pcl_common-1.8"):
             include_dirs += [locate_includes("pcl_common-1.8")]
         elif has_package("pcl_common-1.7"):
@@ -141,6 +157,7 @@ def create_scanner_extentions():
         language="c++",
         extra_compile_args=extra_compile_args,
         libraries=libraries,
+        library_dirs=library_dirs,
         extra_objects=[],
         include_dirs=include_dirs
     ))
@@ -152,6 +169,7 @@ def create_scanner_extentions():
         language="c++",
         extra_compile_args=extra_compile_args,
         libraries=libraries,
+        library_dirs=library_dirs,
         extra_objects=[],
         include_dirs=include_dirs
     ))
