@@ -18,7 +18,7 @@ except ImportError:
 """)
     raise
 
-from fluxclient import VERSION as _VERSION
+from fluxclient import __version__ as _VERSION
 
 
 build_ext.user_options.append(
@@ -59,7 +59,7 @@ def prepare_setup():
 
 
 def get_version():
-    return ".".join([str(i) for i in _VERSION])
+    return _VERSION
 
 
 def get_install_requires():

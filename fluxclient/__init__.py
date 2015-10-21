@@ -7,6 +7,6 @@ def check_pcl():
         return False
 
 
-VERSION = ("0", "6a1")
-
+VERSION = ("0", "6a2")
+__version__ = ".".join(VERSION)
 SUPPORT_PCL = check_pcl()
