@@ -5,6 +5,7 @@ import sys
 from zlib import crc32
 from math import sqrt
 import time
+from getpass import getuser
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
@@ -160,7 +161,7 @@ class GcodeToFcode(FcodeBase):
                     if line[0] == 'G28':  # home
                         self.writer(packer(1), output_stream)
                         for tmp in range(3):
-                            self.current_pos[tmp] = 0
+                            self.current_pos[tmp] = HW_PROFILE['model-1']['height']
 
                     elif line[0] == 'G90':  # set to absolute
                         self.writer(packer(2), output_stream)
@@ -261,6 +262,7 @@ class GcodeToFcode(FcodeBase):
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
             self.md['TIME_COST'] = str(self.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
+            self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:')

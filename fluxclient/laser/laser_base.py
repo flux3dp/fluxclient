@@ -15,7 +15,8 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 12.0  # focal z coordinate
+        self.focal_l = 11.225  # focal z coordinate
+        self.focal_l = 7.44  # focal z coordinate
 
         self.laser_speed = 300  # speed F= mm/minute
         self.travel_speed = 1000
@@ -25,7 +26,8 @@ class LaserBase(object):
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
         self.obj_height = 1.7  # pcb
-        self.obj_height = 0.0  # plate
+        # self.obj_height = 2.56  # wood?
+        # self.obj_height = 0.0  # plate
 
         self.pixel_per_mm = 8  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
@@ -245,8 +247,6 @@ class LaserBase(object):
         new_pix = new_pix.rotate(degrees(rotation), expand=1)
 
         new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
-        new_pix.save('GG.png', 'png')
-        print(new_pix.size)
         for h in range(new_pix.size[1]):
             # using white frame to find starting and ending index
             # find_start, find_end for each row
