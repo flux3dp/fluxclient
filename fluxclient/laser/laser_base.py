@@ -15,7 +15,8 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 12.0  # focal z coordinate
+        self.focal_l = 11.225  # focal z coordinate
+        self.focal_l = 7.44  # focal z coordinate
 
         self.laser_speed = 300  # speed F= mm/minute
         self.travel_speed = 1000
@@ -25,7 +26,8 @@ class LaserBase(object):
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
         self.obj_height = 1.7  # pcb
-        self.obj_height = 0.0  # plate
+        # self.obj_height = 2.56  # wood?
+        # self.obj_height = 0.0  # plate
 
         self.pixel_per_mm = 8  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
@@ -243,30 +245,32 @@ class LaserBase(object):
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
         new_pix.paste(pix, (1, 1))
         new_pix = new_pix.rotate(degrees(rotation), expand=1)
-        new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
 
-        for h in range(new_pix.size[0]):
+        new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
+        for h in range(new_pix.size[1]):
             # using white frame to find starting and ending index
-            flag = False
-            for find_s in range(new_pix.size[1]):
-                if new_pix.getpixel((h, find_s)) > 0:
-                    find_s += 1
+            # find_start, find_end for each row
+            flag = False  # whether find white frame
+            for find_s in range(new_pix.size[0]):
+                if new_pix.getpixel((find_s, h)) > 0:
+                    find_s = find_s + 1
                     flag = True
                     break
             if not flag:
-                find_s = 0
+                find_s = new_pix.size[0]
 
             flag = False
-            for find_e in range(new_pix.size[1] - 1, -1, -1):
-                if new_pix.getpixel((h, find_e)) > 0:
+            for find_e in range(new_pix.size[0] - 1, -1, -1):
+                if new_pix.getpixel((find_e, h)) > 0:
+                    flag = True
                     break
             if not flag:
-                find_e = new_pix.size[1]
+                find_e = 0
 
             for w in range(find_s, find_e):
-                if (gx1_on_map + w - len(self.image_map) / 2.) ** 2 + (gy1_on_map + h - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    if new_pix.getpixel((h, w)) <= thres:
-                        self.image_map[gx1_on_map + w][gy1_on_map + h] = new_pix.getpixel((h, w))
+                if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
+                    if new_pix.getpixel((w, h)) <= thres:
+                        self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
 
     def dump(self, file_name, mode='save'):
         """
