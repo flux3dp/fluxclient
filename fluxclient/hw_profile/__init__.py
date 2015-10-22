@@ -1,8 +1,8 @@
 HW_PROFILE = {
     'model-1': {
-        'radius': 17,
-        'scan_full_len': 360,
-        'height': 240,
+        'radius': 17.,
+        'scan_full_len': 360.,
+        'height': 240.,
         # 'step_setting': {400: (3, 2.7), 800: (7, 3.15)}
         'step_setting': {400: (1, 0.9), 800: (1, 0.45)}
         # {N: (alpha, step_len)}

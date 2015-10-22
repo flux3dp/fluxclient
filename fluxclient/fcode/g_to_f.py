@@ -41,7 +41,7 @@ class GcodeToFcode(FcodeBase):
 
         self.record_path = True
         self.record_z = 0.0
-        self.path = [[[0.0, 0.0, 0.0, 3]]]  # recording the path extruder go through
+        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
 
     def header(self):
         """
@@ -160,8 +160,9 @@ class GcodeToFcode(FcodeBase):
                 if line:
                     if line[0] == 'G28':  # home
                         self.writer(packer(1), output_stream)
-                        for tmp in range(3):
-                            self.current_pos[tmp] = HW_PROFILE['model-1']['height']
+                        for i in range(2):
+                            self.current_pos[i] = 0
+                        self.current_pos[2] = HW_PROFILE['model-1']['height']
 
                     elif line[0] == 'G90':  # set to absolute
                         self.writer(packer(2), output_stream)
@@ -264,6 +265,7 @@ class GcodeToFcode(FcodeBase):
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             self.write_metadata(output_stream)
+            print(self.path)
         except Exception as e:
             print('FcodeError:')
             raise e
