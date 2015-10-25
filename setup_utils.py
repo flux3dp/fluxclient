@@ -94,7 +94,6 @@ def create_common_extentions():
 
 def create_scanner_extentions():
     try:
-
         # Process include_dirs
         include_dirs = [
             locate_includes("eigen3"),

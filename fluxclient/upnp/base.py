@@ -12,12 +12,16 @@ from fluxclient.upnp.discover import UpnpDiscover
 from fluxclient.upnp import misc
 from fluxclient import encryptor
 
+# TODO: Temp compect with windows
+from platform import platform
+DEFAULT_BROADCAST = True if platform().startswith("Windows") else False
+
 
 class UpnpBase(object):
     remote_addr = "255.255.255.255"
 
     def __init__(self, serial, ipaddr=None, pubkey=None, lookup_callback=None,
-                 port=misc.DEFAULT_PORT, forcus_broadcast=False,
+                 port=misc.DEFAULT_PORT, forcus_broadcast=DEFAULT_BROADCAST,
                  lookup_timeout=float("INF")):
         self.port = port
 
