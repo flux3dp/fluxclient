@@ -13,8 +13,8 @@ from fluxclient.upnp import misc
 from fluxclient import encryptor
 
 # TODO: Temp compect with windows
-import platform
-DEFAULT_BROADCAST = True platform.startswith("Windows") else False
+from platform import platform
+DEFAULT_BROADCAST = True if platform().startswith("Windows") else False
 
 
 class UpnpBase(object):
