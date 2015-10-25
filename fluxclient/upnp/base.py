@@ -39,9 +39,8 @@ class UpnpBase(object):
         elif self.remote_version >= StrictVersion("0.12"):
             raise RuntimeError("fluxmonitor version is too new")
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                  socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         if not pubkey:
@@ -94,8 +93,7 @@ class UpnpBase(object):
             self.remote_addr = discover_instance.ipaddr
             discover_instance.stop()
 
-    def fetch_publickey(self, retry=20):
-        print("Fetching public key")
+    def fetch_publickey(self, retry=3):
         resp = self.make_request(misc.CODE_RSA_KEY,
                                  misc.CODE_RESPONSE_RSA_KEY, b"")
         if resp:
@@ -109,20 +107,16 @@ class UpnpBase(object):
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
         if message and encrypt:
-            print("Set encrypted message")
             message = encryptor.rsa_encrypt(self.remote_keyobj, message)
 
         payload = struct.pack('<4s16sB', b"FLUX", self.serial.bytes,
                               req_code) + message
-        print("Normal request to", (self.remote_addr, self.port))
-        self.sock.sendto(payload, ("255.255.255.255", self.port))
+
+        self.sock.sendto(payload, (self.remote_addr, self.port))
 
         while select((self.sock, ), (), (), timeout)[0]:
-            data, addr = self.sock.recvfrom(1024)
-            print(addr==self.remote_addr)
-            resp = self._parse_response(data, resp_code)
+            resp = self._parse_response(self.sock.recv(4096), resp_code)
             if resp:
-                print("Some resp")
                 return resp
 
     def sign_request(self, body):
