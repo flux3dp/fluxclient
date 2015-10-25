@@ -13,6 +13,7 @@ from fluxclient import encryptor as E
 
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
+from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +52,13 @@ class FluxRobotV0002(object):
 
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         sock.send(buf)
-        status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
+
+        # status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
+        status = msg_waitall(sock,16).rstrip(b"\x00").decode()
+
         if status == "OK":
-            aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
+            # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
+            aes_enc_init = msg_waitall(sock, E.rsa_size(rsakey))
             aes_init = E.rsa_decrypt(rsakey, aes_enc_init)
 
             self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
@@ -74,7 +79,8 @@ class FluxRobotV0002(object):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
             raise TimeoutError("get resp timeout")
-        bml = self.sock.recv(2, socket.MSG_WAITALL)
+        # bml = self.sock.recv(2, socket.MSG_WAITALL)
+        bml = msg_waitall(self.sock, 2)
         if not bml:
             logger.error("Message payload recv error")
             raise socket.error(EPIPE, "Broken pipe")
@@ -84,7 +90,7 @@ class FluxRobotV0002(object):
         message = b""
 
         while len(message) != message_length:
-            buf = self.sock.recv(message_length - len(message), socket.MSG_WAITALL)
+            buf = self.sock.recv(message_length - len(message))
 
             if not buf:
                 logger.error("Recv empty message")

@@ -106,3 +106,12 @@ def kill_robot(serial):
         print("Kill signal sent.")
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
+
+
+def msg_waitall(sock, length):
+    buf = b""
+
+    while len(buf) < length:
+        buf += sock.recv(length - len(buf))
+
+    return buf
