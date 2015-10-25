@@ -18,7 +18,7 @@ except ImportError:
 """)
     raise
 
-from fluxclient import VERSION as _VERSION
+from fluxclient import __version__ as _VERSION
 
 
 build_ext.user_options.append(
@@ -59,7 +59,7 @@ def prepare_setup():
 
 
 def get_version():
-    return ".".join([str(i) for i in _VERSION])
+    return _VERSION
 
 
 def get_install_requires():
@@ -82,7 +82,6 @@ def get_entry_points():
             "flux_robot=fluxclient.commands.robot:main",
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
-
             "flux_laser=fluxclient.commands.laser:main",
             "flux_fcode_conv=fluxclient.commands.fcode:conv"
         ]
@@ -95,8 +94,11 @@ def create_common_extentions():
 
 def create_scanner_extentions():
     try:
+        # Process include_dirs
+        include_dirs = [
+            locate_includes("eigen3"),
+        ]
 
-        library_dirs = []
         # Process libraries
         libraries = [
             "pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree", "pcl_search",
@@ -104,10 +106,7 @@ def create_scanner_extentions():
             "pcl_segmentation", "pcl_surface", "pcl_registration", "pcl_keypoints",
             "pcl_tracking", "pcl_recognition", "pcl_outofcore", "pcl_people", ]
 
-        # Process include_dirs
-        include_dirs = [
-            #locate_includes("eigen3"),
-        ]
+        library_dirs = []
 
         # Process extra_compile_args
         extra_compile_args = []
@@ -118,10 +117,11 @@ def create_scanner_extentions():
             # os.environ['CC'] = 'g++'  # using g++ instead of gcc
             extra_compile_args = ["-lstdc++"]  # flag that tells compiler compile a .cpp file
         elif platform.platform().startswith("Windows"):
+            include_dirs = []
             libraries = ["pcl_common_release", "pcl_octree_release", "pcl_io_release", "pcl_kdtree_release", "pcl_search_release",
-            "pcl_sample_consensus_release", "pcl_filters_release", "pcl_features_release",
-            "pcl_segmentation_release", "pcl_surface_release", "pcl_registration_release", "pcl_keypoints_release",
-            "pcl_tracking_release", "pcl_recognition_release", "pcl_outofcore_release", "pcl_people_release"]
+                         "pcl_sample_consensus_release", "pcl_filters_release", "pcl_features_release",
+                         "pcl_segmentation_release", "pcl_surface_release", "pcl_registration_release", "pcl_keypoints_release",
+                         "pcl_tracking_release", "pcl_recognition_release", "pcl_outofcore_release", "pcl_people_release"]
             include_dirs += ["C:/Program Files (x86)/Eigen/include"]
             include_dirs += ["C:/Program Files (x86)/flann/include"]
             include_dirs += ["C:/Program Files/PCL 1.7.2/include/pcl-1.7"]
@@ -155,7 +155,7 @@ def create_scanner_extentions():
         language="c++",
         extra_compile_args=extra_compile_args,
         libraries=libraries,
-        library_dirs = library_dirs,
+        library_dirs=library_dirs,
         extra_objects=[],
         include_dirs=include_dirs
     ))
@@ -167,7 +167,7 @@ def create_scanner_extentions():
         language="c++",
         extra_compile_args=extra_compile_args,
         libraries=libraries,
-        library_dirs = library_dirs,
+        library_dirs=library_dirs,
         extra_objects=[],
         include_dirs=include_dirs
     ))
