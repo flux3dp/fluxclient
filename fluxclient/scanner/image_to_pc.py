@@ -91,14 +91,14 @@ class image_to_pc():
             record[p[6]].add(p[8])
         self.points_M = self.points_R[:]
 
-        print(len(self.points_M), len(self.points_L), len(self.points_R))
+        print(len(self.points_M), len(self.points_L), len(self.points_R), file=sys.stderr)
         # print(record)
 
         for p in self.points_L:
             if not p[8] in record[p[6]]:
                 self.points_M.append(p)
 
-        print(len(self.points_M), len(self.points_L), len(self.points_R))
+        print(len(self.points_M), len(self.points_L), len(self.points_R), file=sys.stderr)
 
 
 def print_progress(step, total):

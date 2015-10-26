@@ -274,7 +274,7 @@ class StlSlicer(object):
                     tmp = i.rstrip().split('=')
                     result[tmp[0].rstrip()] = tmp[1].rstrip()
                 else:
-                    print(i)
+                    print(i, file=sys.stderr)
                     raise ValueError('not ini file?')
         return result
 

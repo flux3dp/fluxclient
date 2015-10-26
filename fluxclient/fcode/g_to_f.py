@@ -90,7 +90,7 @@ class GcodeToFcode(FcodeBase):
                 command |= (1 << (2 - self.tool))
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
-                print(i)
+                print(i, file=sys.stderr)
         return command, number
 
     def analyze_metadata(self, input_list, comment):
@@ -265,9 +265,8 @@ class GcodeToFcode(FcodeBase):
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             self.write_metadata(output_stream)
-            print(self.path)
         except Exception as e:
-            print('FcodeError:')
+            print('FcodeError:', file=sys.stderr)
             raise e
 
 if __name__ == '__main__':

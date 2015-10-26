@@ -15,7 +15,7 @@ except ImportError:
  * Cython must be installed before install fluxclient *
  * Use command `pip install cython` to fix it         *
  ******************************************************
-""")
+""", file=sys.stderr)
     raise
 
 from fluxclient import __version__ as _VERSION
@@ -44,7 +44,7 @@ def locate_includes(package_name):
 
 def prepare_setup():
     if not sys.version_info >= (3, 3):
-        print("ERROR: fluxclient require Python version grather then 3.3\n")
+        print("ERROR: fluxclient require Python version grather then 3.3\n", file=sys.stderr)
         sys.exit(1)
 
     # Ensure at correct working directory
@@ -143,7 +143,7 @@ def create_scanner_extentions():
 * Can not build scanner module, maybe you don't have pcl installed, *
 * use `--without-pcl` if you don't need pcl functions.              *
 *********************************************************************
-""")
+""", file=sys.stderr)
         raise
 
     extensions = []
