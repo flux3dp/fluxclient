@@ -95,6 +95,9 @@ def interactive(robot):
         elif l.startswith('R'):
             laser_Right = not laser_Right
             robot.scan_laser(laser_Left, laser_Right)
+        elif l.startswith('exit'):
+            robot.quit_task()
+            os._exit(0)
         else:
             logger.info("Type 'i' (image) to get a screenshot")
             logger.info("Type 'g' (go) to start progress")

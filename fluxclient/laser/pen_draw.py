@@ -5,12 +5,14 @@ import time
 from fluxclient.laser.laser_svg import LaserSvg
 
 
-class PenDraw(LaserSvg):
+class PenDraw(LaserBase, SVGParser):
     """docstring for PenDraw"""
     def __init__(self):
         super(PenDraw, self).__init__()
         self.lift_height = 100
         self.draw_height = 0
+        self.turnOn = self.draw
+        self.turnOff = self.lift
 
     def set_lift_height(self, h):
         self.lift_height = h
@@ -18,14 +20,14 @@ class PenDraw(LaserSvg):
     def set_draw_height(self, h):
         self.draw_height = h
 
-    def turnOn(self):
+    def draw(self):
         if self.laser_on is True:
             return []
         self.laser_on = True
         return ["G1 F5000 Z%.5f;down pen" % self.draw_height]
         # return ["M400", "X2O%d;turnOn" % self.draw_power, "G4 P20"]
 
-    def turnOff(self):
+    def lift(self):
         if self.laser_on is False:
             return []
         self.laser_on = False
