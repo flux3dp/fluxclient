@@ -274,7 +274,7 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'r') as input_stream:
         with open(sys.argv[2], 'wb') as output_stream:
             m_GcodeToFcode.process(input_stream, output_stream)
-    if sys.argv[3]:
+    if len(sys.argv) > 3:
         with open(sys.argv[3], 'w') as f:
             if m_GcodeToFcode.path is None:
                 print('', file=f)

@@ -54,7 +54,7 @@ class FluxRobotV0002(object):
         sock.send(buf)
 
         # status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
-        status = msg_waitall(sock,16).rstrip(b"\x00").decode()
+        status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
 
         if status == "OK":
             # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
@@ -292,6 +292,11 @@ class FluxRobotV0002(object):
     def set_scanlen(self, l):
         cmd = "set steplen %.5f" % l
         return self._make_cmd(cmd.encode())
+
+    def scan_check(self):
+        self._send_cmd(b"scan_check")
+        resp = self.get_resp().decode("ascii", "ignore")
+        return resp
 
     def oneshot(self):
         self._send_cmd(b"oneshot")
