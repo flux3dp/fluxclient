@@ -9,6 +9,7 @@ import datetime
 
 from PIL import Image
 import numpy as np
+from fluxclient.fcode.g_to_f import GcodeToFcode
 
 
 class LaserBase(object):
@@ -272,7 +273,7 @@ class LaserBase(object):
                     if new_pix.getpixel((w, h)) <= thres:
                         self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
 
-    def dump(self, file_name, mode='save'):
+    def dump(self, file_name='', mode='save'):
         """
             dump the image of this laser class
 
@@ -283,7 +284,7 @@ class LaserBase(object):
             return
         elif mode == 'preview':
             # get the preview (640 * 640) png in bytes
-            img = img.resize(640, 640)
+            img = img.resize((640, 640))
 
             b = io.BytesIO()
             img.save(b, 'png')
@@ -291,3 +292,14 @@ class LaserBase(object):
             return image_bytes
         else:
             print("unsupport mode %s" % mode, file=sys.stderr)
+
+    def fcode_generate(self, *args):
+        fcode_output = io.BytesIO()
+        m_GcodeToFcode = GcodeToFcode()
+        m_GcodeToFcode.image = self.dump(mode='preview')
+
+        f = io.StringIO()
+        f.write(self.gcode_generate(*args))
+        f.seek(0)
+        m_GcodeToFcode.process(f, fcode_output)
+        return fcode_output.getvalue()

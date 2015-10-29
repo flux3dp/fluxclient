@@ -122,7 +122,7 @@ class StlSlicer(object):
                 result.append('[' + ','.join(tmp) + ']')
             return '[' + ','.join(result) + ']'
 
-    def generate_gcode(self, names, ws, output_type):
+    def gcode_generate(self, names, ws, output_type):
         """
         input: names of stl that need to be sliced
         output:
