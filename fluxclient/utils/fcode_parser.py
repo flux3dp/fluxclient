@@ -41,10 +41,26 @@ class FcodeParser(object):
             raise RuntimeError(FILE_BROKEN, e.args[0] if e.args else "#")
 
     def get_img(self):
-        return self.data[28 + self.script_size + self.meta_size:28 + self.script_size + self.meta_size + self.image_size]
+        if self.data:
+            return self.data[28 + self.script_size + self.meta_size:28 + self.script_size + self.meta_size + self.image_size]
+        else:
+            return None
 
     def get_meta(self):
-        return self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
+        if self.data:
+
+            meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
+            metadata = {}
+            outstring = []
+            for item in meta_buf.split(b"\x00"):
+                sitem = item.split(b"=", 1)
+                if len(sitem) == 2:
+                    metadata[sitem[0].decode()] = sitem[1].decode()
+                    outstring.append('"%s": "%s"' % (sitem[0].decode(), sitem[1].decode()))
+            return '{' + ', '.join(outstring) + '}'
+
+        else:
+            return None
 
     def get_math():  # TODO
         pass
@@ -53,6 +69,7 @@ if __name__ == '__main__':
     m_FcodeParser = FcodeParser()
     with open(sys.argv[1], 'rb') as f:
         m_FcodeParser.upload_content(f.read())
+        print(m_FcodeParser.get_meta())
 
 
 
