@@ -1,3 +1,5 @@
+# !/usr/bin/env python3
+
 import logging
 import tempfile
 import struct
@@ -9,7 +11,6 @@ from getpass import getuser
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
-
 
 logger = logging.getLogger("g_to_f")
 
@@ -37,7 +38,7 @@ class GcodeToFcode(FcodeBase):
         self.current_pos = [None, None, None, None, None, None]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
-        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as
+        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as default
 
         self.record_path = True
         self.record_z = 0.0

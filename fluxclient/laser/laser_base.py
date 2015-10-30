@@ -297,6 +297,7 @@ class LaserBase(object):
         fcode_output = io.BytesIO()
         m_GcodeToFcode = GcodeToFcode()
         m_GcodeToFcode.image = self.dump(mode='preview')
+        m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
 
         f = io.StringIO()
         f.write(self.gcode_generate(*args))

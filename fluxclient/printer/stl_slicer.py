@@ -50,7 +50,7 @@ class StlSlicer(object):
         img.save(b, 'png')
         image_bytes = b.getvalue()
         self.image = image_bytes
-        ############################################################
+        ######################### fake code ###################################
         with open('preview.png', 'wb') as f:
             f.write(image_bytes)
         ############################################################
