@@ -15,6 +15,7 @@ except:
     pass
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
+from fluxclient.printer import ini_string
 
 
 class StlSlicer(object):
@@ -27,9 +28,11 @@ class StlSlicer(object):
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
+
         self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
-        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
-        self.config = self.my_ini_parser(self.slic3r_setting)
+        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+
+        self.config = self.my_ini_parser(ini_string.split('\n'))
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
@@ -260,22 +263,27 @@ class StlSlicer(object):
             return output, metadata
 
     @classmethod
-    def my_ini_parser(cls, file_path):
+    def my_ini_parser(cls, data):
         """
         read-in .ini setting file as default settings
         return a dict
         """
         result = {}
-        with open(file_path, 'r') as f:
-            for i in f.readlines():
-                if i[0] == '#':
-                    pass
-                elif '=' in i:
-                    tmp = i.rstrip().split('=')
-                    result[tmp[0].rstrip()] = tmp[1].rstrip()
-                else:
-                    print(i, file=sys.stderr)
-                    raise ValueError('not ini file?')
+        if type(data) == str:
+            # file path
+            f = open(data, 'r')
+            lines = f.readlines()
+        else:
+            lines = data
+        for i in lines:
+            if i[0] == '#':
+                pass
+            elif '=' in i:
+                tmp = i.rstrip().split('=')
+                result[tmp[0].rstrip()] = tmp[1].rstrip()
+            else:
+                print(i, file=sys.stderr)
+                raise ValueError('not ini file?')
         return result
 
     @classmethod
