@@ -20,16 +20,18 @@ from fluxclient.printer import ini_string
 
 class StlSlicer(object):
     """slicing objects"""
-    def __init__(self):
+    def __init__(self, slic3r):
         super(StlSlicer, self).__init__()
-        self.reset()
+        self.reset(slic3r)
 
-    def reset(self):
+    def reset(self, slic3r):
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
 
         self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
+        self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
+        self.slic3r = slic3r
         # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
 
         self.config = self.my_ini_parser(ini_string.split('\n'))
