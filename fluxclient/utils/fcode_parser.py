@@ -4,7 +4,6 @@ import struct
 import sys
 
 FILE_BROKEN = "FILE_BROKEN"
-# UINT_UNPACKER = lambda x: struct.Struct("<i").unpack(x)[0]
 UINT_UNPACKER = lambda x: struct.Struct("<I").unpack(x)[0]
 
 
@@ -58,11 +57,10 @@ class FcodeParser(object):
                     metadata[sitem[0].decode()] = sitem[1].decode()
                     outstring.append('"%s": "%s"' % (sitem[0].decode(), sitem[1].decode()))
             return '{' + ', '.join(outstring) + '}'
-
         else:
             return None
 
-    def get_math():  # TODO
+    def get_path():  # TODO
         pass
 
 if __name__ == '__main__':
@@ -70,7 +68,5 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'rb') as f:
         m_FcodeParser.upload_content(f.read())
         print(m_FcodeParser.get_meta())
-
-
 
         # m_FcodeParser.full_check()
