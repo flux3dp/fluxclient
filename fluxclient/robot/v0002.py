@@ -353,8 +353,11 @@ class FluxRobotV0002(object):
     def maintain_reset_mb(self):
         return self._make_cmd(b"reset_mb")
 
-    def maintain_eadj(self, navigate_callback):
-        ret = self._make_cmd(b"eadj")
+    def maintain_eadj(self, navigate_callback, clean=False):
+        if clean:
+            ret = self._make_cmd(b"eadj clean")
+        else:
+            ret = self._make_cmd(b"eadj")
         if ret == b"continue":
             nav = "continue"
             while nav != "ok":

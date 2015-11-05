@@ -204,10 +204,15 @@ class RobotConsole(object):
         else:
             logger.info("BAD_PARAMS")
 
-    def maintain_eadj(self):
+    def maintain_eadj(self, ext=None):
         def callback(nav):
             logger.info("Mainboard info: %s", nav)
-        self.robot_obj.maintain_eadj(navigate_callback=callback)
+
+        if ext == "clean":
+            self.robot_obj.maintain_eadj(navigate_callback=callback,
+                                         clean=True)
+        else:
+            self.robot_obj.maintain_eadj(navigate_callback=callback)
         logger.info("ok")
 
     def raw_mode(self):
