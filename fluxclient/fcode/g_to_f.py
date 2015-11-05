@@ -157,7 +157,7 @@ class GcodeToFcode(FcodeBase):
                     line, comment = line.split(';', 1)
                 else:
                     comment = ''
-                line = findall('[A-Z][0-9]+', line)  # split
+                line = findall('[A-Z][+-]?[0-9]+', line)  # split
 
                 if line:
                     if line[0] == 'G0' or line[0] == 'G1':  # move
