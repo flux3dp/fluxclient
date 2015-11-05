@@ -7,6 +7,7 @@ import sys
 from zlib import crc32
 from math import sqrt
 import time
+from re import findall
 from getpass import getuser
 
 from fluxclient.fcode.fcode_base import FcodeBase
@@ -156,10 +157,29 @@ class GcodeToFcode(FcodeBase):
                     line, comment = line.split(';', 1)
                 else:
                     comment = ''
-                line = line.rstrip().split()
+                line = findall('[A-Z][0-9]+', line)  # split
 
                 if line:
-                    if line[0] == 'G28':  # home
+                    if line[0] == 'G0' or line[0] == 'G1':  # move
+                        command = 128
+                        subcommand, data = self.XYZEF(line)
+                        self.analyze_metadata(data, comment)
+
+                        command |= subcommand
+                        self.writer(packer(command), output_stream)
+                        for i in data:
+                            if i is not None:
+                                self.writer(packer_f(i), output_stream)
+                    elif line[0] == 'X2':  # laser
+                        command = 32  # only use one laser
+                        self.writer(packer(command), output_stream)
+                        if line[1] == 'O':
+                            strength = float(line[1].lstrip('O'))
+                        else:  # bad gcode!!
+                            strength = 0
+                        self.writer(packer_f(strength), output_stream)
+
+                    elif line[0] == 'G28':  # home
                         self.writer(packer(1), output_stream)
                         for i in range(2):
                             self.current_pos[i] = 0
@@ -198,7 +218,13 @@ class GcodeToFcode(FcodeBase):
                                 self.current_pos[i - 1] = data[i]
                     elif line[0] == 'G4':  # dwell
                         self.writer(packer(4), output_stream)
-                        self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
+                        # P:ms or S:sec
+                        for sub_line in line[1:]:
+                            if sub_line.startswith('P'):
+                                ms = float(line[1].lstrip('P'))
+                            elif sub_line.startswith('S'):
+                                ms = float(line[1].lstrip('S')) * 1000
+                        self.writer(packer_f(ms), output_stream)
 
                     elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
                         command = 16
@@ -221,17 +247,6 @@ class GcodeToFcode(FcodeBase):
                         elif line == 'G21':  # mm
                             self.unit = 1
 
-                    elif line[0] == 'G0' or line[0] == 'G1':  # move
-                        command = 128
-                        subcommand, data = self.XYZEF(line)
-                        self.analyze_metadata(data, comment)
-
-                        command |= subcommand
-                        self.writer(packer(command), output_stream)
-                        for i in data:
-                            if i is not None:
-                                self.writer(packer_f(i), output_stream)
-
                     elif line[0] == 'T0' or line[0] == 'T1':  # change tool
                         if line[0] == 'T0':
                             self.tool = 0
@@ -249,8 +264,9 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
+
                     else:
-                        if line[0] in ['G4', 'M400'] or line[0].startswith('X2O'):
+                        if line[0] in ['M400']:
                             pass
                         else:
                             print('Undefine gcode', line, file=sys.stderr)
