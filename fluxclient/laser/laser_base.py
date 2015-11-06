@@ -10,6 +10,7 @@ import datetime
 from PIL import Image
 import numpy as np
 from fluxclient.fcode.g_to_f import GcodeToFcode
+from fluxclient.laser import Grid
 
 
 class LaserBase(object):
@@ -279,13 +280,17 @@ class LaserBase(object):
 
         """
         img = Image.fromarray(self.image_map)
+        tmp = io.BytesIO()
+        tmp.write(Grid)
+        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))  # TODO: change file path
+        img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
+        img = img_background
         if mode == 'save':
             img.save(file_name, 'png')
             return
         elif mode == 'preview':
             # get the preview (640 * 640) png in bytes
             img = img.resize((640, 640))
-
             b = io.BytesIO()
             img.save(b, 'png')
             image_bytes = b.getvalue()
