@@ -75,7 +75,7 @@ class FluxRobotV0002(object):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
 
-    def get_resp(self, timeout=30.0):
+    def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
             raise TimeoutError("get resp timeout")
@@ -358,10 +358,16 @@ class FluxRobotV0002(object):
             ret = self._make_cmd(b"eadj clean")
         else:
             ret = self._make_cmd(b"eadj")
+
         if ret == b"continue":
             nav = "continue"
-            while nav != "ok":
-                navigate_callback(nav)
+            while True:
+                if nav.startswith("ok "):
+                    return [float(item) for item in nav.split(" ")[1:]]
+                elif nav.startswith("error "):
+                    raise_error(nav)
+                else:
+                    navigate_callback(nav)
                 nav = self.get_resp().decode("ascii", "ignore")
         else:
             raise_error(ret.decode("ascii", "ignore"))

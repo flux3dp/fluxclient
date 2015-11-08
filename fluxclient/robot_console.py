@@ -209,10 +209,13 @@ class RobotConsole(object):
             logger.info("Mainboard info: %s", nav)
 
         if ext == "clean":
-            self.robot_obj.maintain_eadj(navigate_callback=callback,
-                                         clean=True)
+            ret = self.robot_obj.maintain_eadj(navigate_callback=callback,
+                                               clean=True)
         else:
-            self.robot_obj.maintain_eadj(navigate_callback=callback)
+            ret = self.robot_obj.maintain_eadj(navigate_callback=callback)
+
+        data_str = ", ".join(("%.4f" % i for i in ret))
+        logger.info("Data: %s, Error: %.4f", data_str, (max(*ret) - min(*ret)))
         logger.info("ok")
 
     def raw_mode(self):
