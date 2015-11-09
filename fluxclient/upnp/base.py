@@ -18,10 +18,10 @@ DEFAULT_BROADCAST = True if platform().startswith("Windows") else False
 
 
 class UpnpBase(object):
-    remote_addr = "255.255.255.255"
+    remote_addr = "239.255.255.250"
 
     def __init__(self, serial, ipaddr=None, pubkey=None, lookup_callback=None,
-                 port=misc.DEFAULT_PORT, forcus_broadcast=DEFAULT_BROADCAST,
+                 port=1901, forcus_broadcast=DEFAULT_BROADCAST,
                  lookup_timeout=float("INF")):
         self.port = port
 

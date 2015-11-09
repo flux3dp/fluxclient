@@ -1,6 +1,6 @@
 
-from collections import namedtuple
 from time import time, sleep
+from io import BytesIO
 import uuid as _uuid
 import logging
 import select
@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 
-DEFAULT_PORT = 3310
+from fluxclient import encryptor as E
+from .misc import DEFAULT_IPADDR, DEFAULT_PORT
 
 
 """Discover Flux 3D Printer
@@ -46,15 +47,19 @@ class UpnpDiscover(object):
     _last_sent = 0
     _send_freq = INIT_PING_FREQ
 
-    def __init__(self, serial=GLOBAL_SERIAL, ipaddr="255.255.255.255",
+    def __init__(self, serial=GLOBAL_SERIAL, ipaddr=DEFAULT_IPADDR,
                  port=DEFAULT_PORT):
-        self.ipaddr = ipaddr
         self.serial = serial
+        self.ipaddr = ipaddr
         self.port = port
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind(('', self.port))
+        mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
+                           socket.INADDR_ANY)
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
     def __del__(self):
         self.sock.close()
@@ -80,61 +85,65 @@ class UpnpDiscover(object):
                 self.stop()
                 break
 
-            self.ping()
-            self._receiving_pong(self.sock, callback, wait_time)
+            self.try_recive(self.sock, callback, wait_time)
 
             if lookup_callback:
                 lookup_callback(self)
-
 
     def stop(self):
         """Call this function to break discover task"""
         self._break = True
 
-    def ping(self):
-        if time() - self._last_sent > self._send_freq:
-            payload = struct.pack('<4s16sB', b"FLUX",
-                                  self.serial.bytes,
-                                  CODE_DISCOVER)
-
-            self.sock.sendto(payload, (self.ipaddr, self.port))
-            self._last_sent = time()
-
-            self._send_freq = min(self._send_freq * PING_RREQ_RATIO,
-                                  MAX_PING_FREQ)
-
-    def on_recv_pong(self):
-        buf, remote = self.sock.recvfrom(4096)
-        data = self._parse_response(buf)
-        return data
-
-    def _receiving_pong(self, sock, callback, timeout=1.5):
+    def try_recive(self, sock, callback, timeout=1.5):
         timeout_at = time() + timeout
 
         while timeout > 0:
             if select.select((sock, ), (), (), timeout)[0]:
-                data = self.on_recv_pong()
+                data = self._parse_response()
                 if data:
                     callback(self, **data)
 
             timeout = timeout_at - time()
 
-    def _parse_response(self, buf):
-        resp_code, status = struct.unpack("<BB", buf[:2])
+    def _parse_response(self):
+        buf, endpoint = self.sock.recvfrom(4096)
+        if len(buf) < 8:
+            # Message too short to be process
+            return
 
-        if resp_code != CODE_RESPONSE_DISCOVER:
-            return None
+        magic_num, proto_ver, action_id = struct.unpack("4sBB", buf[:6])
 
-        payload = json.loads(buf[2:-1].decode("utf8"))
+        if magic_num != b"FLUX":
+            # Bad magic number
+            return
 
-        data = {
-            "serial": payload.get("serial"),
-            "name": payload.get("name", "My FLUX 3D Printer"),
-            "version": payload.get("ver"),
-            "model_id": payload.get("model"),
-            "timestemp": payload.get("time"),
-            "ipaddrs": payload.get("ip"),
-            "has_password": payload.get("pwd")
-        }
+        if proto_ver == 1:
+            if action_id == 0:
+                self.unpack_v1_discover(buf[6:], endpoint)
+        else:
+            # Can not handle protocol version
+            return
 
-        return data
+    def unpack_v1_discover(self, payload, endpoint):
+        args = struct.unpack("<16s10sfHHHH", payload[:38])
+        uuid_bytes, sn, temp_ts = args[:3]
+        l_master_pkey, l_identify, l_tmp_pkey, l_sign = args[3:]
+
+        f = BytesIO(payload[38:])
+
+        try:
+            master_pkey = E.load_keyobj(f.read(l_master_pkey))
+            identify = f.read(l_identify)
+            temp_pkey = E.load_keyobj(f.read(l_tmp_pkey))
+            signature = f.read(l_sign)
+
+            sign_doc = struct.pack("<f", temp_ts) + temp_pkey.exportKey("DER")
+            if E.validate_signature(master_pkey, sign_doc, signature):
+                print(_uuid.UUID(bytes=uuid_bytes))
+                self.sock.sendto(b"FLUX", endpoint)
+            else:
+                logging.error("signature failed")
+
+        except ValueError:
+            # Data error
+            return
