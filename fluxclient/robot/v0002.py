@@ -6,6 +6,7 @@ from time import time
 import struct
 import logging
 import socket
+import json
 import os
 
 from fluxclient.utils import mimetypes
@@ -276,7 +277,12 @@ class FluxRobotV0002(object):
         return self._make_cmd(b"resume")
 
     def report_play(self):
-        return self._make_cmd(b"report").decode("utf8", "ignore")
+        # TODO
+        msg = self._make_cmd(b"report").decode("utf8", "ignore")
+        if msg.startswith("{")
+            return json.loads(msg, "ignore"))
+        else:
+            return msg
 
     @ok_or_error
     def scan_laser(self, left, right):
