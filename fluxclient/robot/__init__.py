@@ -13,7 +13,6 @@ def connect_robot(ipaddr, server_key, conn_callback):
     sock = _connect(ipaddr, conn_callback)
     sock.settimeout(8)
 
-    # version = sock.recv(8, socket.MSG_WAITALL)
     version = msg_waitall(sock, 8)
 
     if version[:4] != b"FLUX":

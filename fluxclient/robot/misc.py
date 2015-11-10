@@ -1,13 +1,15 @@
 
 from time import sleep
+from uuid import UUID
 import sys
+import re
 
 from fluxclient.upnp.task import UpnpTask
 from fluxclient.upnp.misc import is_serial
 
 
-def select_ipaddr(remote_addrs):
-    return (remote_addrs[0][0], 23811)
+def is_uuid(input):
+    return True if re.match("[0-9a-fA-F]{32}", input) else False
 
 
 def parse_ipaddr(target):
@@ -23,15 +25,15 @@ def require_robot(target, logstream=sys.stdout):
         logstream.write(".")
         logstream.flush()
 
-    if is_serial(target):
+    if is_uuid(target):
         logstream.write("Discover...")
         logstream.flush()
 
-        task = UpnpTask(target, lookup_callback=lookup_callback)
-        ipaddr = select_ipaddr(task.remote_addrs)
+        task = UpnpTask(UUID(hex=target), lookup_callback=lookup_callback)
+        ipaddr = task.endpoint[0]
         logstream.write(" OK\n")
-        logstream.write("Name: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
-                        (task.name, task.serial.hex, task.model_id, ipaddr[0]))
+        logstream.write("Name: %s\nUUID: %s\nModel: %s\nIP Addr: %s\n" %
+                        (task.name, task.uuid.hex, task.model_id, ipaddr))
         logstream.flush()
 
         while True:
@@ -64,7 +66,7 @@ def require_robot(target, logstream=sys.stdout):
                             logstream.write(" (%s)" % resp["info"])
                         logstream.write("\n")
                         logstream.flush()
-                        return ipaddr, task.remote_keyobj
+                        return (ipaddr, 23811), task.slave_key
                 else:
                     logstream.write("?")
             except RuntimeError as e:

@@ -1,4 +1,6 @@
 
+from uuid import UUID
+import argparse
 import sys
 
 from fluxclient.upnp import misc
@@ -9,8 +11,8 @@ class DiscoverPrinter(object):
     _running_chars = ["-", "\\", "|", "/"]
     _counter = 0
 
-    def __init__(self):
-        self.discover = UpnpDiscover()
+    def __init__(self, uuid=None):
+        self.discover = UpnpDiscover(uuid=uuid)
         self.found = {}
 
         sys.stdout.write("%-10s %-20s %-10s %-3s %-8s %s\n" %
@@ -49,7 +51,16 @@ class DiscoverPrinter(object):
 
 
 def main():
-    s = DiscoverPrinter()
+    parser = argparse.ArgumentParser(description='Discover Flux Device')
+    parser.add_argument(dest='uuid', type=str, default=None, nargs="?")
+    options = parser.parse_args()
+
+    if options.uuid:
+        uuid = UUID(hex=options.uuid)
+    else:
+        uuid = None
+
+    s = DiscoverPrinter(uuid=uuid)
     try:
         s.go()
     except KeyboardInterrupt:

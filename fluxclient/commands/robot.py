@@ -8,8 +8,7 @@ import re
 import os
 
 from fluxclient.robot_console import RobotConsole
-from fluxclient.robot.misc import parse_ipaddr, select_ipaddr, kill_robot, \
-    require_robot
+from fluxclient.robot.misc import parse_ipaddr, kill_robot, require_robot
 from fluxclient.robot import connect_robot
 from fluxclient.upnp.misc import is_serial
 
@@ -110,7 +109,7 @@ def main():
     parser = argparse.ArgumentParser(description='flux robot')
 
     parser.add_argument(dest='target', type=str,
-                        help="Printer connect with. It can be printer serial "
+                        help="Printer connect with. It can be printer uuid "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
     parser.add_argument('--kill', dest='do_kill', action='store_const',

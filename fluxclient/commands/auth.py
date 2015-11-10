@@ -1,5 +1,6 @@
 
 from time import time, sleep
+from uuid import UUID
 import argparse
 import getpass
 import sys
@@ -9,18 +10,22 @@ from fluxclient.upnp.task import UpnpTask
 
 def main():
     parser = argparse.ArgumentParser(description='flux printer config tool')
-    parser.add_argument(dest='serial', type=str, help='Printer Serial')
+    parser.add_argument(dest='uuid', type=str, help='Device UUID')
 
     options = parser.parse_args()
 
-    serial = options.serial
-    task = UpnpTask(serial)
+    uuid = UUID(hex=options.uuid)
+    task = UpnpTask(uuid)
 
-    sys.stdout.write("""Serial: %s
+    sys.stdout.write("""UUID: %s
+Serial: %s
 Model: %s
+Version: %s
 Has Password: %s
 Remote Addr: %s
-""" % (task.serial.hex, task.model_id, task.has_password and "YES" or "NO",
+""" % (task.uuid, task.serial, task.model_id,
+       task.remote_version,
+       task.has_password and "YES" or "NO",
        task.remote_addr))
     sys.stdout.flush()
 

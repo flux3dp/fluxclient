@@ -12,27 +12,19 @@ from fluxclient.upnp.discover import UpnpDiscover
 from fluxclient.upnp import misc
 from fluxclient import encryptor
 
-# TODO: Temp compect with windows
-from platform import platform
-DEFAULT_BROADCAST = True if platform().startswith("Windows") else False
-
 
 class UpnpBase(object):
     remote_addr = "239.255.255.250"
 
-    def __init__(self, serial, ipaddr=None, pubkey=None, lookup_callback=None,
-                 port=1901, forcus_broadcast=DEFAULT_BROADCAST,
-                 lookup_timeout=float("INF")):
+    def __init__(self, uuid, endpoint=None, pubkey=None, lookup_callback=None,
+                 port=1901, lookup_timeout=float("INF")):
         self.port = port
-
-        if len(serial) == 25:
-            self.serial = _uuid.UUID(hex=misc.short_to_uuid(serial))
-        else:
-            self.serial = _uuid.UUID(hex=serial)
+        self.uuid = uuid
+        self.buuid = uuid.bytes
 
         self.keyobj = encryptor.get_or_create_keyobj()
-        self.update_remote_infomation(ipaddr, lookup_callback,
-                                      forcus_broadcast, lookup_timeout)
+
+        self.update_remote_infomation(lookup_callback, lookup_timeout)
 
         if self.remote_version < StrictVersion("0.10a1"):
             raise RuntimeError("fluxmonitor version is too old")
@@ -41,31 +33,16 @@ class UpnpBase(object):
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        if not pubkey:
-            pubkey = self.fetch_publickey()
-        self.pubkey = pubkey
-        self.remote_keyobj = encryptor.load_keyobj(pubkey)
-
-    def update_remote_infomation(self, ipaddr=None, lookup_callback=None,
-                                 forcus_broadcast=False,
+    def update_remote_infomation(self, lookup_callback=None,
                                  lookup_timeout=float("INF")):
         self._inited = False
 
-        if ipaddr:
-            d = UpnpDiscover(serial=self.serial, ipaddr=ipaddr)
-        else:
-            d = UpnpDiscover(serial=self.serial)
+        d = UpnpDiscover(uuid=self.uuid)
         d.discover(self._load_profile, lookup_callback, lookup_timeout)
-
+    
         if not self._inited:
             raise RuntimeError("Can not find device")
-
-        if not forcus_broadcast:
-            for ipaddr in self.remote_addrs:
-                d.ipaddr = ipaddr[0]
-                d.discover(self._ensure_remote_ipaddr, timeout=1.5)
 
     @property
     def publickey_der(self):
@@ -74,45 +51,29 @@ class UpnpBase(object):
     def create_timestemp(self):
         return time() + self.timedelta
 
-    def _load_profile(self, discover_instance, serial, model_id, timestemp,
-                      version, name, has_password, ipaddrs):
-        if serial == self.serial.hex:
-            self.name = name
-            self.model_id = model_id
-            self.timedelta = timestemp - time()
-            self.remote_version = StrictVersion(version)
-            self.has_password = has_password
-            self.remote_addrs = ipaddrs
-            self._inited = True
-            discover_instance.stop()
-
-    def _ensure_remote_ipaddr(self, discover_instance, serial, model_id,
-                              timestemp, version, has_password,
-                              ipaddrs, **kw):
-        if serial == self.serial.hex:
-            self.remote_addr = discover_instance.ipaddr
-            discover_instance.stop()
-
-    def fetch_publickey(self, retry=3):
-        resp = self.make_request(misc.CODE_RSA_KEY,
-                                 misc.CODE_RESPONSE_RSA_KEY, b"")
-        if resp:
-            return resp
-        else:
-            if retry > 0:
-                return self.fetch_publickey(retry - 1)
-            else:
-                raise RuntimeError("TIMEOUT", "fetch public key")
+    def _load_profile(self, discover_instance, uuid, serial, model_id, version,
+                      timestemp, name, has_password, ipaddr, master_key,
+                      slave_key, **kw):
+        self.name = name
+        self.serial = serial
+        self.model_id = model_id
+        self.timedelta = timestemp - time()
+        self.remote_version = StrictVersion(version)
+        self.has_password = has_password
+        self.endpoint = ipaddr
+        self.master_key = master_key
+        self.slave_key = slave_key
+        self._inited = True
+        discover_instance.stop()
 
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
         if message and encrypt:
-            message = encryptor.rsa_encrypt(self.remote_keyobj, message)
+            message = encryptor.rsa_encrypt(self.slave_key, message)
 
-        payload = struct.pack('<4s16sB', b"FLUX", self.serial.bytes,
-                              req_code) + message
-
-        self.sock.sendto(payload, (self.remote_addr, self.port))
+        payload = struct.pack("<4sBB16s", b"FLUX", 1, req_code,
+                              self.uuid.bytes) + message
+        self.sock.sendto(payload, (self.endpoint))
 
         while select((self.sock, ), (), (), timeout)[0]:
             resp = self._parse_response(self.sock.recv(4096), resp_code)
@@ -124,27 +85,33 @@ class UpnpBase(object):
         ts = self.create_timestemp()
         message = struct.pack("<20sd4s", self.access_id, ts, salt) + body
         signature = encryptor.sign(self.keyobj,
-                                   self.serial.bytes + message)
+                                   self.uuid.bytes + message)
 
         return message + signature
 
     def _parse_response(self, buf, resp_code):
-        payload, signature = buf[2:].split(b"\x00", 1)
-
-        code, status = struct.unpack("<BB", buf[:2])
-        if code != resp_code:
+        if len(buf) < 24:
             return
 
-        if status != 0:
-            raise RuntimeError(payload.decode("utf8"))
+        mn, proto_ver, verb, buuid, l = struct.unpack("<4sBB16sH", buf[:24])
+        if mn != b"FLUX":
+            return
 
-        resp = json.loads(payload.decode("utf8"))
-        if resp_code == misc.CODE_RESPONSE_RSA_KEY:
-            remote_keyobj = encryptor.load_keyobj(resp)
-            if encryptor.validate_signature(remote_keyobj, payload,
-                                            signature):
-                return resp
-        else:
-            if encryptor.validate_signature(self.remote_keyobj, payload,
-                                            signature):
-                return resp
+        if proto_ver != 1:
+            return
+
+        if verb != resp_code:
+            return
+
+        if buuid != self.buuid:
+            return
+
+        body = buf[24:24 + l]
+        signature = buf[24 + l:]
+
+        if encryptor.validate_signature(self.slave_key, body, signature):
+            message = body.decode("utf8")
+            if message[0] == "E":
+                raise RuntimeError(message[1:])
+            else:
+                return json.loads(message)

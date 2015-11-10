@@ -47,11 +47,12 @@ class UpnpDiscover(object):
     _last_sent = 0
     _send_freq = INIT_PING_FREQ
 
-    def __init__(self, ipaddr=DEFAULT_IPADDR, port=DEFAULT_PORT):
+    def __init__(self, uuid=None, ipaddr=DEFAULT_IPADDR, port=DEFAULT_PORT):
         self.history = {}
 
         self.ipaddr = ipaddr
         self.port = port
+        self.uuid = uuid
 
         self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                        socket.IPPROTO_UDP)
@@ -72,9 +73,12 @@ class UpnpDiscover(object):
         self.touch_sock.close()
         self.touch_sock = None
 
-    # def fileno(self):
-    #     return self.disc_sock.fileno()
-    #
+    def limited_uuid(self, uuid):
+        if self.uuid:
+            return self.uuid == uuid
+        else:
+            return True
+
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
         Call this method to execute discover task
@@ -107,13 +111,13 @@ class UpnpDiscover(object):
 
         while timeout > 0:
             for sock in select.select(socks, (), (), timeout)[0]:
-                data = self._parse_response(sock)
+                data = self.on_recive(sock)
                 if data:
                     callback(self, **data)
 
             timeout = timeout_at - time()
 
-    def _parse_response(self, sock):
+    def on_recive(self, sock):
         buf, endpoint = sock.recvfrom(4096)
         if len(buf) < 8:
             # Message too short to be process
@@ -169,10 +173,10 @@ class UpnpDiscover(object):
             return
 
         uuid = UUID(bytes=uuid_bytes)
-
-        if not self.in_history(uuid, temp_ts):
-            self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
-            self.touch_v1_device(uuid, endpoint)
+        if self.limited_uuid(uuid):
+            if not self.in_history(uuid, temp_ts):
+                self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
+                self.touch_v1_device(uuid, endpoint)
 
     def touch_v1_device(self, uuid, endpoint):
         payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
@@ -184,6 +188,10 @@ class UpnpDiscover(object):
 
         buuid, temp_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
         uuid = UUID(bytes=buuid)
+
+        if not self.limited_uuid(uuid):
+            # Ingore this uuid
+            return
 
         try:
             temp_pkey_str = f.read(l1)
@@ -212,12 +220,13 @@ class UpnpDiscover(object):
                     data["version"] = rawdata.get("ver")
                     raw_has_password = rawdata.get("has_password", "F")
                     data["has_password"] = raw_has_password == "T"
+                    data["master_key"] = master_key
+                    data["slave_key"] = temp_pkey
                     data["ipaddr"] = endpoint
                     return data
                 else:
                     logger.error("Slave key signuture error (V1)")
             else:
                 logger.error("Master key signuture error (V1)")
-                print("SERR", len(signuture))
         except Exception:
             logger.exception("Unhandle Error")
