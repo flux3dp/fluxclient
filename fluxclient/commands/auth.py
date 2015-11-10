@@ -1,6 +1,7 @@
 
 from time import time, sleep
 from uuid import UUID
+from binascii import b2a_hex
 import argparse
 import getpass
 import sys
@@ -64,7 +65,9 @@ def auth_nopasswd(task, timegap=1.0):
                 return False
 
             elif status == "ok":
-                sys.stdout.write("\n\nAuth successed\n")
+                access_id = b2a_hex(task.access_id).decode()
+                sys.stdout.write("\n\nAccess ID: %s\n" % access_id)
+                sys.stdout.write("Auth successed\n")
                 sys.stdout.flush()
                 return True
 

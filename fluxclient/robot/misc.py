@@ -96,12 +96,13 @@ def require_robot(target, logstream=sys.stdout):
         return parse_ipaddr(target), None
 
 
-def kill_robot(serial):
-    if is_serial(serial):
-        task = UpnpTask(serial)
-        ipaddr = select_ipaddr(task.remote_addrs)
-        print("Serial: %s\nModel: %s\nIP Addr: %s\n" %
-              (task.serial.hex, task.model_id, ipaddr[0]))
+def kill_robot(target):
+    if is_uuid(target):
+        uuid = UUID(hex=target)
+        task = UpnpTask(uuid)
+        ipaddr = task.endpoint[0]
+        print("UUID: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
+              (task.uuid.hex, task.serial, task.model_id, ipaddr))
 
         task.require_auth()
         task.kill_control()

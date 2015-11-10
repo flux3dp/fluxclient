@@ -218,7 +218,7 @@ class UpnpDiscover(object):
                     data["name"] = rawdata.get("name", "NONAME")
                     data["timestemp"] = float(rawdata.get("time", 0))
                     data["version"] = rawdata.get("ver")
-                    raw_has_password = rawdata.get("has_password", "F")
+                    raw_has_password = rawdata.get("pwd", "F")
                     data["has_password"] = raw_has_password == "T"
                     data["master_key"] = master_key
                     data["slave_key"] = temp_pkey
