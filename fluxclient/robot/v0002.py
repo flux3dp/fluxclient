@@ -279,8 +279,8 @@ class FluxRobotV0002(object):
     def report_play(self):
         # TODO
         msg = self._make_cmd(b"report").decode("utf8", "ignore")
-        if msg.startswith("{")
-            return json.loads(msg, "ignore"))
+        if msg.startswith("{"):
+            return json.loads(msg, "ignore")
         else:
             return msg
 
