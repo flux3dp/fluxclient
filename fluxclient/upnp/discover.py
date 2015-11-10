@@ -1,7 +1,7 @@
 
 from time import time, sleep
 from io import BytesIO
-import uuid as _uuid
+from uuid import UUID
 import logging
 import select
 import socket
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
+MULTICAST_VERSION = 1
 
 from fluxclient import encryptor as E
 from .misc import DEFAULT_IPADDR, DEFAULT_PORT
@@ -36,7 +37,6 @@ d = UpnpDiscover()
 d.discover(my_callback)
 """
 
-GLOBAL_SERIAL = _uuid.UUID(int=0)
 INIT_PING_FREQ = 0.5
 PING_RREQ_RATIO = 1.3
 MAX_PING_FREQ = 3.0
@@ -47,27 +47,34 @@ class UpnpDiscover(object):
     _last_sent = 0
     _send_freq = INIT_PING_FREQ
 
-    def __init__(self, serial=GLOBAL_SERIAL, ipaddr=DEFAULT_IPADDR,
-                 port=DEFAULT_PORT):
-        self.serial = serial
+    def __init__(self, ipaddr=DEFAULT_IPADDR, port=DEFAULT_PORT):
+        self.history = {}
+
         self.ipaddr = ipaddr
         self.port = port
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                  socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind(('', self.port))
+        self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                       socket.IPPROTO_UDP)
+        self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.disc_sock.bind((DEFAULT_IPADDR, self.port))
         mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
                            socket.INADDR_ANY)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                                  mreq)
+
+        self.touch_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                        socket.IPPROTO_UDP)
+        self.touch_sock.bind(('', 0))
 
     def __del__(self):
-        self.sock.close()
-        self.sock = None
+        self.disc_sock.close()
+        self.disc_sock = None
+        self.touch_sock.close()
+        self.touch_sock = None
 
-    def fileno(self):
-        return self.sock.fileno()
-
+    # def fileno(self):
+    #     return self.disc_sock.fileno()
+    #
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
         Call this method to execute discover task
@@ -85,7 +92,8 @@ class UpnpDiscover(object):
                 self.stop()
                 break
 
-            self.try_recive(self.sock, callback, wait_time)
+            self.try_recive((self.disc_sock, self.touch_sock), callback,
+                             wait_time)
 
             if lookup_callback:
                 lookup_callback(self)
@@ -94,19 +102,19 @@ class UpnpDiscover(object):
         """Call this function to break discover task"""
         self._break = True
 
-    def try_recive(self, sock, callback, timeout=1.5):
+    def try_recive(self, socks, callback, timeout=1.5):
         timeout_at = time() + timeout
 
         while timeout > 0:
-            if select.select((sock, ), (), (), timeout)[0]:
-                data = self._parse_response()
+            for sock in select.select(socks, (), (), timeout)[0]:
+                data = self._parse_response(sock)
                 if data:
                     callback(self, **data)
 
             timeout = timeout_at - time()
 
-    def _parse_response(self):
-        buf, endpoint = self.sock.recvfrom(4096)
+    def _parse_response(self, sock):
+        buf, endpoint = sock.recvfrom(4096)
         if len(buf) < 8:
             # Message too short to be process
             return
@@ -120,30 +128,96 @@ class UpnpDiscover(object):
         if proto_ver == 1:
             if action_id == 0:
                 self.unpack_v1_discover(buf[6:], endpoint)
+            elif action_id == 3:
+                return self.process_v1_touch(buf[6:], endpoint)
         else:
             # Can not handle protocol version
             return
 
+    def add_master_key(self, uuid, sn, master_key):
+        if uuid in self.history:
+            self.history[uuid]["master_key"] = master_key
+            self.history[uuid]["serial"] = sn
+        else:
+            self.history[uuid] = {"master_key": master_key,
+                                  "serial": sn}
+
+    def get_master_key(self, uuid):
+        return self.history[uuid]["master_key"]
+
+    def get_serial(self, uuid):
+        return self.history[uuid]["serial"]
+
+    def in_history(self, uuid, ts):
+        if uuid in self.history:
+            return ts <= self.history[uuid].get("temp_ts", 0)
+        else:
+            return False
+
     def unpack_v1_discover(self, payload, endpoint):
-        args = struct.unpack("<16s10sfHHHH", payload[:38])
+        args = struct.unpack("<16s10sfHH", payload[:34])
         uuid_bytes, sn, temp_ts = args[:3]
-        l_master_pkey, l_identify, l_tmp_pkey, l_sign = args[3:]
+        l_master_pkey, l_identify = args[3:]
 
-        f = BytesIO(payload[38:])
-
+        f = BytesIO(payload[34:])
         try:
             master_pkey = E.load_keyobj(f.read(l_master_pkey))
             identify = f.read(l_identify)
-            temp_pkey = E.load_keyobj(f.read(l_tmp_pkey))
-            signature = f.read(l_sign)
-
-            sign_doc = struct.pack("<f", temp_ts) + temp_pkey.exportKey("DER")
-            if E.validate_signature(master_pkey, sign_doc, signature):
-                print(_uuid.UUID(bytes=uuid_bytes))
-                self.sock.sendto(b"FLUX", endpoint)
-            else:
-                logging.error("signature failed")
 
         except ValueError:
             # Data error
             return
+
+        uuid = UUID(bytes=uuid_bytes)
+
+        if not self.in_history(uuid, temp_ts):
+            self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
+            self.touch_v1_device(uuid, endpoint)
+
+    def touch_v1_device(self, uuid, endpoint):
+        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
+            2, uuid.bytes)
+        self.touch_sock.sendto(payload, endpoint)
+
+    def process_v1_touch(self, payload, endpoint):
+        f = BytesIO(payload)
+
+        buuid, temp_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
+        uuid = UUID(bytes=buuid)
+
+        try:
+            temp_pkey_str = f.read(l1)
+            temp_pkey = E.load_keyobj(temp_pkey_str)
+            temp_pkey_ca = f.read(l2)
+
+            bmeta = f.read(struct.unpack("<H", f.read(2))[0])
+            signuture = f.read()
+
+            master_key = self.get_master_key(uuid)
+            if E.validate_signature(master_key,
+                                    payload[16:20] + temp_pkey_str,
+                                    temp_pkey_ca):
+                if E.validate_signature(temp_pkey, bmeta, signuture):
+                    meta_str = bmeta.decode("utf8")
+                    rawdata = {}
+                    for item in meta_str.split("\x00"):
+                        if "=" in item:
+                            k, v = item.split("=", 1)
+                            rawdata[k] = v
+
+                    data = {"uuid": uuid, "serial": self.get_serial(uuid)}
+                    data["model_id"] = rawdata.get("model", "UNKNOW")
+                    data["name"] = rawdata.get("name", "NONAME")
+                    data["timestemp"] = float(rawdata.get("time", 0))
+                    data["version"] = rawdata.get("ver")
+                    raw_has_password = rawdata.get("has_password", "F")
+                    data["has_password"] = raw_has_password == "T"
+                    data["ipaddr"] = endpoint
+                    return data
+                else:
+                    logger.error("Slave key signuture error (V1)")
+            else:
+                logger.error("Master key signuture error (V1)")
+                print("SERR", len(signuture))
+        except Exception:
+            logger.exception("Unhandle Error")
