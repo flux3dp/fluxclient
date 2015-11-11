@@ -134,11 +134,11 @@ class UsbTask(object):
 
     def get_ssid(self):
         return self._make_request(CODE_GET_SSID,
-                                  timeout=3.0).decode("utf8", "ignore")
+                                  timeout=30.0).decode("utf8", "ignore")
 
     def get_ipaddr(self):
         ret = self._make_request(CODE_GET_IPADDR,
-                                 timeout=15.0).decode("utf8", "ignore")
+                                 timeout=30.0).decode("utf8", "ignore")
         if ret:
             return ret.split(" ")
         else:
