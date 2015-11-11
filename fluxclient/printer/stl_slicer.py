@@ -15,21 +15,26 @@ except:
     pass
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
+from fluxclient.printer import ini_string
 
 
 class StlSlicer(object):
     """slicing objects"""
-    def __init__(self):
+    def __init__(self, slic3r):
         super(StlSlicer, self).__init__()
-        self.reset()
+        self.reset(slic3r)
 
-    def reset(self):
+    def reset(self, slic3r):
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
+
         self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
-        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
-        self.config = self.my_ini_parser(self.slic3r_setting)
+        self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
+        self.slic3r = slic3r
+        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+
+        self.config = self.my_ini_parser(ini_string.split('\n'))
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
@@ -50,7 +55,7 @@ class StlSlicer(object):
         img.save(b, 'png')
         image_bytes = b.getvalue()
         self.image = image_bytes
-        ############################################################
+        ######################### fake code ###################################
         with open('preview.png', 'wb') as f:
             f.write(image_bytes)
         ############################################################
@@ -122,7 +127,7 @@ class StlSlicer(object):
                 result.append('[' + ','.join(tmp) + ']')
             return '[' + ','.join(result) + ']'
 
-    def generate_gcode(self, names, ws, output_type):
+    def gcode_generate(self, names, ws, output_type):
         """
         input: names of stl that need to be sliced
         output:
@@ -260,22 +265,27 @@ class StlSlicer(object):
             return output, metadata
 
     @classmethod
-    def my_ini_parser(cls, file_path):
+    def my_ini_parser(cls, data):
         """
         read-in .ini setting file as default settings
         return a dict
         """
         result = {}
-        with open(file_path, 'r') as f:
-            for i in f.readlines():
-                if i[0] == '#':
-                    pass
-                elif '=' in i:
-                    tmp = i.rstrip().split('=')
-                    result[tmp[0].rstrip()] = tmp[1].rstrip()
-                else:
-                    print(i)
-                    raise ValueError('not ini file?')
+        if type(data) == str:
+            # file path
+            f = open(data, 'r')
+            lines = f.readlines()
+        else:
+            lines = data
+        for i in lines:
+            if i[0] == '#':
+                pass
+            elif '=' in i:
+                tmp = i.rstrip().split('=')
+                result[tmp[0].rstrip()] = tmp[1].rstrip()
+            else:
+                print(i, file=sys.stderr)
+                raise ValueError('not ini file?')
         return result
 
     @classmethod

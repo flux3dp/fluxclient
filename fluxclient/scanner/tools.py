@@ -63,7 +63,7 @@ def read_pcd(file_name):
         for _ in range(11):
             pcd.readline()  # read the header
         for line in pcd:
-            point = [float(j) for j in line.rstrip().split(' ')]
+            point = [float(j) for j in line.rstrip().split()]
             rgb = int(point.pop())
             b, g, r = rgb & 0x0000ff, (rgb >> 8) & 0x0000ff, (rgb >> 16) & 0x0000ff
             point += [r, g, b]

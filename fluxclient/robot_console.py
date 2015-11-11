@@ -3,7 +3,6 @@ from tempfile import NamedTemporaryFile
 from select import select
 import mimetypes
 import logging
-import socket
 import shlex
 import os
 
@@ -204,10 +203,18 @@ class RobotConsole(object):
         else:
             logger.info("BAD_PARAMS")
 
-    def maintain_eadj(self):
+    def maintain_eadj(self, ext=None):
         def callback(nav):
             logger.info("Mainboard info: %s", nav)
-        self.robot_obj.maintain_eadj(navigate_callback=callback)
+
+        if ext == "clean":
+            ret = self.robot_obj.maintain_eadj(navigate_callback=callback,
+                                               clean=True)
+        else:
+            ret = self.robot_obj.maintain_eadj(navigate_callback=callback)
+
+        data_str = ", ".join(("%.4f" % i for i in ret))
+        logger.info("Data: %s, Error: %.4f", data_str, (max(*ret) - min(*ret)))
         logger.info("ok")
 
     def raw_mode(self):
@@ -222,7 +229,6 @@ class RobotConsole(object):
 
     def quit_raw_mode(self):
         self._mode = "standard"
-        sock = self._raw_sock
         self._raw_sock = None
         if self._thread:
             self._thread.join()

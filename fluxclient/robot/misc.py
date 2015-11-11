@@ -1,13 +1,14 @@
 
 from time import sleep
+from uuid import UUID
 import sys
+import re
 
 from fluxclient.upnp.task import UpnpTask
-from fluxclient.upnp.misc import is_serial
 
 
-def select_ipaddr(remote_addrs):
-    return (remote_addrs[0][0], 23811)
+def is_uuid(input):
+    return True if re.match("[0-9a-fA-F]{32}", input) else False
 
 
 def parse_ipaddr(target):
@@ -23,15 +24,15 @@ def require_robot(target, logstream=sys.stdout):
         logstream.write(".")
         logstream.flush()
 
-    if is_serial(target):
+    if is_uuid(target):
         logstream.write("Discover...")
         logstream.flush()
 
-        task = UpnpTask(target, lookup_callback=lookup_callback)
-        ipaddr = select_ipaddr(task.remote_addrs)
+        task = UpnpTask(UUID(hex=target), lookup_callback=lookup_callback)
+        ipaddr = task.endpoint[0]
         logstream.write(" OK\n")
-        logstream.write("Name: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
-                        (task.name, task.serial.hex, task.model_id, ipaddr[0]))
+        logstream.write("Name: %s\nUUID: %s\nModel: %s\nIP Addr: %s\n" %
+                        (task.name, task.uuid.hex, task.model_id, ipaddr))
         logstream.flush()
 
         while True:
@@ -40,7 +41,6 @@ def require_robot(target, logstream=sys.stdout):
                 break
             except RuntimeError as e:
                 logstream.write("Error: %s, retry...\n" % e.args[0])
-
 
         logstream.write("Wakeup Robot: ")
         logstream.flush()
@@ -64,7 +64,7 @@ def require_robot(target, logstream=sys.stdout):
                             logstream.write(" (%s)" % resp["info"])
                         logstream.write("\n")
                         logstream.flush()
-                        return ipaddr, task.remote_keyobj
+                        return (ipaddr, 23811), task.slave_key
                 else:
                     logstream.write("?")
             except RuntimeError as e:
@@ -77,7 +77,7 @@ def require_robot(target, logstream=sys.stdout):
                         logstream.write("Auth error, try fix time delta\n")
                         logstream.flush()
                         old_td = task.timedelta
-                        task.update_remote_infomation(
+                        task.reload_remote_profile(
                             lookup_timeout=30.,
                             lookup_callback=lookup_callback)
                         if task.timedelta - old_td < 0.5:
@@ -86,7 +86,7 @@ def require_robot(target, logstream=sys.stdout):
                             # Fix timedelta issue let's retry
                             continue
                     else:
-                        logstream.write("Nothing can do: %s\n" % task.timedelta)
+                        logstream.write("AUTH ERROR(td=%s)\n" % task.timedelta)
                         logstream.flush()
                     raise
 
@@ -94,15 +94,25 @@ def require_robot(target, logstream=sys.stdout):
         return parse_ipaddr(target), None
 
 
-def kill_robot(serial):
-    if is_serial(serial):
-        task = UpnpTask(serial)
-        ipaddr = select_ipaddr(task.remote_addrs)
-        print("Serial: %s\nModel: %s\nIP Addr: %s\n" %
-              (task.serial.hex, task.model_id, ipaddr[0]))
+def kill_robot(target):
+    if is_uuid(target):
+        uuid = UUID(hex=target)
+        task = UpnpTask(uuid)
+        ipaddr = task.endpoint[0]
+        print("UUID: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
+              (task.uuid.hex, task.serial, task.model_id, ipaddr))
 
         task.require_auth()
         task.kill_control()
         print("Kill signal sent.")
     else:
         raise RuntimeError("Kill must give serial, not IP addr")
+
+
+def msg_waitall(sock, length):
+    buf = b""
+
+    while len(buf) < length:
+        buf += sock.recv(length - len(buf))
+
+    return buf

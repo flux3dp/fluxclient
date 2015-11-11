@@ -122,7 +122,6 @@ class PcProcess():
         logger.debug('dumping ' + name)
 
         pc_both = self.clouds[name]
-        # print(len(pc_both), len(self.clouds[name][0]), len(self.clouds[name][1]))
         buffer_data = []
 
         if type(pc_both[0]) == list:

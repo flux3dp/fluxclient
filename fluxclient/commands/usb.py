@@ -35,6 +35,7 @@ def do_general_config(task):
     name = input("Device Name: ")
     task.config_general({"name": name})
 
+
 def do_network_config(task):
     kw = {}
     ret = input("Wifi Mode (0=host,1=client)[1]: ").strip("\n")
@@ -71,6 +72,7 @@ def do_network_config(task):
     options = parse_network_config(**kw)
     task.config_network(options)
 
+
 def do_set_password(task):
     new_pwd = getpass("New password: ")
     if getpass("Confirm new password: ") != new_pwd:
@@ -78,11 +80,13 @@ def do_set_password(task):
 
     print(task.set_password(new_pwd))
 
+
 def do_get_ssid(task):
     try:
         print(task.get_ssid())
     except UsbTaskError:
         print("Wifi not connected")
+
 
 def cmdline(task):
     while True:
@@ -100,6 +104,7 @@ def cmdline(task):
             do_set_password(task)
         else:
             print("Unknow command id: %s" % cmd)
+
 
 def main():
     parser = argparse.ArgumentParser(description='flux usb tool')

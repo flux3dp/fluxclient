@@ -1,13 +1,13 @@
 
 from select import select
 from time import time
+from uuid import UUID
 import logging
 import struct
 
 from serial import Serial
 
 from fluxclient import encryptor as E
-from fluxclient.upnp.misc import uuid_to_short
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,8 @@ class UsbTask(object):
                 logger.error("Can not parse device info: %s" % pair)
             info[spair[0]] = spair[1]
 
-        self.serial = uuid_to_short(info["serial"])
+        self.uuid = UUID(hex=info["uuid"])
+        self.serial = info["serial"]
         self.model_id = info["model"]
         self.timedelta = time() - float(info["time"])
         self.remote_version = info["ver"]

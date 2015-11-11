@@ -4,7 +4,6 @@ import datetime
 import argparse
 import logging
 import sys
-from time import sleep
 import os
 
 from fluxclient.robot.misc import require_robot
@@ -33,7 +32,7 @@ def prepare_robot(endpoint, server_key):
     return robot
 
 
-def interactive(robot):
+def logger_info(logger):
     logger.info("Type 'i' (image) to get a screenshot")
     logger.info("Type 'g' (go) to start progress")
     logger.info("Type 'L' (Left) toggle Left Laser")
@@ -41,7 +40,12 @@ def interactive(robot):
     logger.info("Type 'S[number]' (Step) to mave [number] step")
     logger.info("Type 'C[length]' (Change) change step length for each step")
     logger.info("Type 'T[steps]' Set total steps")
+    logger.info("Type 'check' to check proper camera setting")
+    logger.info("Type 'quit', 'exit' to leave")
 
+
+def interactive(robot):
+    logger_info(logger)
     total_steps = None
     laser_Left = False
     laser_Right = False
@@ -95,14 +99,15 @@ def interactive(robot):
         elif l.startswith('R'):
             laser_Right = not laser_Right
             robot.scan_laser(laser_Left, laser_Right)
+        elif l.startswith('q') or l.startswith('e'):
+            robot.quit_task()
+            robot.close()
+            os._exit(0)
+        elif l.startswith('c'):
+            res = robot.scan_check()
+            print(res)
         else:
-            logger.info("Type 'i' (image) to get a screenshot")
-            logger.info("Type 'g' (go) to start progress")
-            logger.info("Type 'L' (Left) toggle Left Laser")
-            logger.info("Type 'R' (Right) toggle Right Laser")
-            logger.info("Type 'S[number]' (Step) to mave [number] step")
-            logger.info("Type 'C[length]' (Change) change step length for each step")
-            logger.info("Type 'T[steps]' Set total steps")
+            logger_info(logger)
 
 
 def print_progress(step, total):
@@ -124,7 +129,7 @@ def main():
     parser.add_argument('--prefix', dest='prefix', type=str, default=None,
                         help="Image filename prefix")
     parser.add_argument(dest='target', type=str,
-                        help="Printer connect with. It can be printer serial "
+                        help="Printer connect with. It can be printer UUID "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
     options = parser.parse_args()

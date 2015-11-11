@@ -6,6 +6,7 @@ from time import time
 import struct
 import logging
 import socket
+import json
 import os
 
 from fluxclient.utils import mimetypes
@@ -13,6 +14,7 @@ from fluxclient import encryptor as E
 
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
+from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,7 @@ class FluxRobotV0002(object):
     def __init__(self, sock, server_key=None):
         sock.settimeout(300)
         buf = sock.recv(4096)
+        # TODO: check sign
         sign, randbytes = buf[8:-128], buf[-128:]
 
         if server_key:
@@ -51,9 +54,13 @@ class FluxRobotV0002(object):
 
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         sock.send(buf)
-        status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
+
+        # status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
+        status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
+
         if status == "OK":
-            aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
+            # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
+            aes_enc_init = msg_waitall(sock, E.rsa_size(rsakey))
             aes_init = E.rsa_decrypt(rsakey, aes_enc_init)
 
             self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
@@ -70,11 +77,12 @@ class FluxRobotV0002(object):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
 
-    def get_resp(self, timeout=30.0):
+    def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
             raise TimeoutError("get resp timeout")
-        bml = self.sock.recv(2, socket.MSG_WAITALL)
+        # bml = self.sock.recv(2, socket.MSG_WAITALL)
+        bml = msg_waitall(self.sock, 2)
         if not bml:
             logger.error("Message payload recv error")
             raise socket.error(EPIPE, "Broken pipe")
@@ -84,7 +92,7 @@ class FluxRobotV0002(object):
         message = b""
 
         while len(message) != message_length:
-            buf = self.sock.recv(message_length - len(message), socket.MSG_WAITALL)
+            buf = self.sock.recv(message_length - len(message))
 
             if not buf:
                 logger.error("Recv empty message")
@@ -270,7 +278,12 @@ class FluxRobotV0002(object):
         return self._make_cmd(b"resume")
 
     def report_play(self):
-        return self._make_cmd(b"report").decode("utf8", "ignore")
+        # TODO
+        msg = self._make_cmd(b"report").decode("utf8", "ignore")
+        if msg.startswith("{"):
+            return json.loads(msg, "ignore")
+        else:
+            return msg
 
     @ok_or_error
     def scan_laser(self, left, right):
@@ -286,6 +299,11 @@ class FluxRobotV0002(object):
     def set_scanlen(self, l):
         cmd = "set steplen %.5f" % l
         return self._make_cmd(cmd.encode())
+
+    def scan_check(self):
+        self._send_cmd(b"scan_check")
+        resp = self.get_resp().decode("ascii", "ignore")
+        return resp
 
     def oneshot(self):
         self._send_cmd(b"oneshot")
@@ -342,12 +360,21 @@ class FluxRobotV0002(object):
     def maintain_reset_mb(self):
         return self._make_cmd(b"reset_mb")
 
-    def maintain_eadj(self, navigate_callback):
-        ret = self._make_cmd(b"eadj")
+    def maintain_eadj(self, navigate_callback, clean=False):
+        if clean:
+            ret = self._make_cmd(b"eadj clean")
+        else:
+            ret = self._make_cmd(b"eadj")
+
         if ret == b"continue":
             nav = "continue"
-            while nav != "ok":
-                navigate_callback(nav)
+            while True:
+                if nav.startswith("ok "):
+                    return [float(item) for item in nav.split(" ")[1:]]
+                elif nav.startswith("error "):
+                    raise_error(nav)
+                else:
+                    navigate_callback(nav)
                 nav = self.get_resp().decode("ascii", "ignore")
         else:
             raise_error(ret.decode("ascii", "ignore"))

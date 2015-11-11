@@ -9,6 +9,8 @@ import datetime
 
 from PIL import Image
 import numpy as np
+from fluxclient.fcode.g_to_f import GcodeToFcode
+from fluxclient.laser import Grid
 
 
 class LaserBase(object):
@@ -272,22 +274,38 @@ class LaserBase(object):
                     if new_pix.getpixel((w, h)) <= thres:
                         self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
 
-    def dump(self, file_name, mode='save'):
+    def dump(self, file_name='', mode='save'):
         """
             dump the image of this laser class
 
         """
         img = Image.fromarray(self.image_map)
+        tmp = io.BytesIO()
+        tmp.write(Grid)
+        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))  # TODO: change file path
+        img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
+        img = img_background
         if mode == 'save':
             img.save(file_name, 'png')
             return
         elif mode == 'preview':
             # get the preview (640 * 640) png in bytes
-            img = img.resize(640, 640)
-
+            img = img.resize((640, 640))
             b = io.BytesIO()
             img.save(b, 'png')
             image_bytes = b.getvalue()
             return image_bytes
         else:
             print("unsupport mode %s" % mode, file=sys.stderr)
+
+    def fcode_generate(self, *args):
+        fcode_output = io.BytesIO()
+        m_GcodeToFcode = GcodeToFcode()
+        m_GcodeToFcode.image = self.dump(mode='preview')
+        m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
+
+        f = io.StringIO()
+        f.write(self.gcode_generate(*args))
+        f.seek(0)
+        m_GcodeToFcode.process(f, fcode_output)
+        return fcode_output.getvalue()

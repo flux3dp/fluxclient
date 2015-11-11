@@ -8,15 +8,19 @@ from time import sleep
 import argparse
 import logging
 import sys
+import re
 
 from fluxclient.upnp.misc import parse_network_config as parse_network
-from fluxclient.upnp.misc import is_serial as is_serial_id
 from fluxclient.usb.misc import is_serial_port
 from fluxclient.upnp.task import UpnpTask
 from fluxclient.usb.task import UsbTask, UsbTaskError
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
 logger = logging.getLogger('')
+
+
+def is_uuid(input):
+    return True if re.match("[0-9a-fA-F]{32}", input) else False
 
 
 def try_lan_config(task, config):
@@ -71,7 +75,7 @@ def main():
                       ssid=opt.ssid, security=opt.security,
                       wepkey=opt.wepkey, psk=opt.psk)
     try:
-        if is_serial_id(opt.target):
+        if is_uuid(opt.target):
             logger.info("Config network over LAN...")
 
             task = UpnpTask(opt.target)

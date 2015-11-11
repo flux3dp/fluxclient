@@ -1,3 +1,5 @@
+# !/usr/bin/env python3
+
 import logging
 import tempfile
 import struct
@@ -5,11 +7,11 @@ import sys
 from zlib import crc32
 from math import sqrt
 import time
+from re import findall
 from getpass import getuser
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
-
 
 logger = logging.getLogger("g_to_f")
 
@@ -37,11 +39,11 @@ class GcodeToFcode(FcodeBase):
         self.current_pos = [None, None, None, None, None, None]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
-        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as
+        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as default
 
         self.record_path = True
         self.record_z = 0.0
-        self.path = [[[0.0, 0.0, 0.0, 3]]]  # recording the path extruder go through
+        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
 
     def header(self):
         """
@@ -90,7 +92,7 @@ class GcodeToFcode(FcodeBase):
                 command |= (1 << (2 - self.tool))
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
-                print(i)
+                print(i, file=sys.stderr)
         return command, number
 
     def analyze_metadata(self, input_list, comment):
@@ -155,13 +157,33 @@ class GcodeToFcode(FcodeBase):
                     line, comment = line.split(';', 1)
                 else:
                     comment = ''
-                line = line.rstrip().split()
+                line = findall('[A-Z][+-]?[0-9]+', line)  # split
 
                 if line:
-                    if line[0] == 'G28':  # home
+                    if line[0] == 'G0' or line[0] == 'G1':  # move
+                        command = 128
+                        subcommand, data = self.XYZEF(line)
+                        self.analyze_metadata(data, comment)
+
+                        command |= subcommand
+                        self.writer(packer(command), output_stream)
+                        for i in data:
+                            if i is not None:
+                                self.writer(packer_f(i), output_stream)
+                    elif line[0] == 'X2':  # laser
+                        command = 32  # only use one laser
+                        self.writer(packer(command), output_stream)
+                        if line[1] == 'O':
+                            strength = float(line[1].lstrip('O'))
+                        else:  # bad gcode!!
+                            strength = 0
+                        self.writer(packer_f(strength), output_stream)
+
+                    elif line[0] == 'G28':  # home
                         self.writer(packer(1), output_stream)
-                        for tmp in range(3):
-                            self.current_pos[tmp] = HW_PROFILE['model-1']['height']
+                        for i in range(2):
+                            self.current_pos[i] = 0
+                        self.current_pos[2] = HW_PROFILE['model-1']['height']
 
                     elif line[0] == 'G90':  # set to absolute
                         self.writer(packer(2), output_stream)
@@ -196,7 +218,13 @@ class GcodeToFcode(FcodeBase):
                                 self.current_pos[i - 1] = data[i]
                     elif line[0] == 'G4':  # dwell
                         self.writer(packer(4), output_stream)
-                        self.writer(packer_f(float(line[1].lstrip('P'))), output_stream)
+                        # P:ms or S:sec
+                        for sub_line in line[1:]:
+                            if sub_line.startswith('P'):
+                                ms = float(line[1].lstrip('P'))
+                            elif sub_line.startswith('S'):
+                                ms = float(line[1].lstrip('S')) * 1000
+                        self.writer(packer_f(ms), output_stream)
 
                     elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
                         command = 16
@@ -219,17 +247,6 @@ class GcodeToFcode(FcodeBase):
                         elif line == 'G21':  # mm
                             self.unit = 1
 
-                    elif line[0] == 'G0' or line[0] == 'G1':  # move
-                        command = 128
-                        subcommand, data = self.XYZEF(line)
-                        self.analyze_metadata(data, comment)
-
-                        command |= subcommand
-                        self.writer(packer(command), output_stream)
-                        for i in data:
-                            if i is not None:
-                                self.writer(packer_f(i), output_stream)
-
                     elif line[0] == 'T0' or line[0] == 'T1':  # change tool
                         if line[0] == 'T0':
                             self.tool = 0
@@ -247,8 +264,9 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
+
                     else:
-                        if line[0] in ['G4', 'M400'] or line[0].startswith('X2O'):
+                        if line[0] in ['M400']:
                             pass
                         else:
                             print('Undefine gcode', line, file=sys.stderr)
@@ -265,7 +283,7 @@ class GcodeToFcode(FcodeBase):
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             self.write_metadata(output_stream)
         except Exception as e:
-            print('FcodeError:')
+            print('FcodeError:', file=sys.stderr)
             raise e
 
 if __name__ == '__main__':
@@ -273,7 +291,7 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'r') as input_stream:
         with open(sys.argv[2], 'wb') as output_stream:
             m_GcodeToFcode.process(input_stream, output_stream)
-    if sys.argv[3]:
+    if len(sys.argv) > 3:
         with open(sys.argv[3], 'w') as f:
             if m_GcodeToFcode.path is None:
                 print('', file=f)
