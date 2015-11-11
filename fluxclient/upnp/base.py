@@ -55,6 +55,7 @@ class UpnpBase(object):
                       timestemp, name, has_password, ipaddr, master_key,
                       slave_key, **kw):
         self.name = name
+        self.uuid = uuid
         self.serial = serial
         self.model_id = model_id
         self.timedelta = timestemp - time()
