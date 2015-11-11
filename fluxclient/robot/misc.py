@@ -78,7 +78,7 @@ def require_robot(target, logstream=sys.stdout):
                         logstream.write("Auth error, try fix time delta\n")
                         logstream.flush()
                         old_td = task.timedelta
-                        task.update_remote_infomation(
+                        task.reload_remote_profile(
                             lookup_timeout=30.,
                             lookup_callback=lookup_callback)
                         if task.timedelta - old_td < 0.5:

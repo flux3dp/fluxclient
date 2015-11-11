@@ -16,33 +16,51 @@ from fluxclient import encryptor
 class UpnpBase(object):
     remote_addr = "239.255.255.250"
 
-    def __init__(self, uuid, endpoint=None, pubkey=None, lookup_callback=None,
-                 port=1901, lookup_timeout=float("INF")):
-        self.port = port
+    def __init__(self, uuid, remote_profile=None, lookup_callback=None,
+                 lookup_timeout=float("INF")):
         self.uuid = uuid
-        self.buuid = uuid.bytes
-
         self.keyobj = encryptor.get_or_create_keyobj()
 
-        self.update_remote_infomation(lookup_callback, lookup_timeout)
+        if remote_profile:
+            self.update_remote_profile(**remote_profile)
+        else:
+            self.reload_remote_profile(lookup_callback, lookup_timeout)
 
-        if self.remote_version < StrictVersion("0.10a1"):
+        if self.remote_version < StrictVersion("0.12a1"):
             raise RuntimeError("fluxmonitor version is too old")
-        elif self.remote_version >= StrictVersion("0.12"):
+        elif self.remote_version >= StrictVersion("0.13a1"):
             raise RuntimeError("fluxmonitor version is too new")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
 
-    def update_remote_infomation(self, lookup_callback=None,
-                                 lookup_timeout=float("INF")):
+    def reload_remote_profile(self, lookup_callback=None,
+                              lookup_timeout=float("INF")):
         self._inited = False
 
         d = UpnpDiscover(uuid=self.uuid)
         d.discover(self._load_profile, lookup_callback, lookup_timeout)
-    
+
         if not self._inited:
             raise RuntimeError("Can not find device")
+
+    def _load_profile(self, discover_instance, **kw):
+        self.update_remote_profile(**kw)
+        discover_instance.stop()
+
+    def update_remote_profile(self, name, serial, model_id, timedelta,
+                                 version, has_password, ipaddr, master_key,
+                                 slave_key, **kw):
+        self.name = name
+        self.serial = serial
+        self.model_id = model_id
+        self.timedelta = timedelta
+        self.remote_version = StrictVersion(version)
+        self.has_password = has_password
+        self.endpoint = ipaddr
+        self.master_key = master_key
+        self.slave_key = slave_key
+        self._inited = True
 
     @property
     def publickey_der(self):
@@ -50,22 +68,6 @@ class UpnpBase(object):
 
     def create_timestemp(self):
         return time() + self.timedelta
-
-    def _load_profile(self, discover_instance, uuid, serial, model_id, version,
-                      timestemp, name, has_password, ipaddr, master_key,
-                      slave_key, **kw):
-        self.name = name
-        self.uuid = uuid
-        self.serial = serial
-        self.model_id = model_id
-        self.timedelta = timestemp - time()
-        self.remote_version = StrictVersion(version)
-        self.has_password = has_password
-        self.endpoint = ipaddr
-        self.master_key = master_key
-        self.slave_key = slave_key
-        self._inited = True
-        discover_instance.stop()
 
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
@@ -104,7 +106,7 @@ class UpnpBase(object):
         if verb != resp_code:
             return
 
-        if buuid != self.buuid:
+        if buuid != self.uuid.bytes:
             return
 
         body = buf[24:24 + l]
