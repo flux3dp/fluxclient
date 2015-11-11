@@ -1,5 +1,6 @@
 
 from getpass import getpass
+from uuid import UUID
 import argparse
 import sys
 
@@ -8,17 +9,19 @@ from fluxclient.upnp.task import UpnpTask
 
 def main():
     parser = argparse.ArgumentParser(description='flux printer config tool')
-    parser.add_argument(dest='serial', type=str, help='Printer Serial')
+    parser.add_argument(dest='uuid', type=str, help='Printer UUID')
 
     options = parser.parse_args()
 
-    serial = options.serial
-    task = UpnpTask(serial)
+    uuid = UUID(hex=options.uuid)
+    task = UpnpTask(uuid)
 
-    sys.stdout.write("""Serial: %s
+    sys.stdout.write("""UUID: %s
+Serial: %s
 Model: %s
 Has Password: %s
-""" % (task.serial.hex, task.model_id, task.has_password and "YES" or "NO"))
+""" % (task.uuid.hex, task.serial, task.model_id,
+       task.has_password and "YES" or "NO"))
     sys.stdout.flush()
 
     task.require_auth()
@@ -36,13 +39,9 @@ Has Password: %s
 
     for i in range(3):
         resp = task.passwd(new_password, old_password)
-        if resp:
-            if resp.get("status") == "ok":
-                print("Password changed.")
-                return 0
-            else:
-                print("Password change failed: %s" % resp.get("message", ""))
-                return 1
+        if "ts" in resp:
+            print("Password changed.")
+            return 0
 
     print("Remote no response")
     return 2

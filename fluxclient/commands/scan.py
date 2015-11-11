@@ -4,7 +4,6 @@ import datetime
 import argparse
 import logging
 import sys
-from time import sleep
 import os
 
 from fluxclient.robot.misc import require_robot
@@ -130,7 +129,7 @@ def main():
     parser.add_argument('--prefix', dest='prefix', type=str, default=None,
                         help="Image filename prefix")
     parser.add_argument(dest='target', type=str,
-                        help="Printer connect with. It can be printer serial "
+                        help="Printer connect with. It can be printer UUID "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
     options = parser.parse_args()

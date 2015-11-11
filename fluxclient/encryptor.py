@@ -9,8 +9,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA as CryptoSHA
 
 
-def load_keyobj(pem):
-    return RSA.importKey(pem)
+def load_keyobj(pem_or_der):
+    return RSA.importKey(pem_or_der)
 
 
 def get_or_create_keyobj(path=None):

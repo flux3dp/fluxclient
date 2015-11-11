@@ -3,7 +3,6 @@ from tempfile import NamedTemporaryFile
 from select import select
 import mimetypes
 import logging
-import socket
 import shlex
 import os
 
@@ -230,7 +229,6 @@ class RobotConsole(object):
 
     def quit_raw_mode(self):
         self._mode = "standard"
-        sock = self._raw_sock
         self._raw_sock = None
         if self._thread:
             self._thread.join()

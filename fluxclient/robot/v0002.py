@@ -40,6 +40,7 @@ class FluxRobotV0002(object):
     def __init__(self, sock, server_key=None):
         sock.settimeout(300)
         buf = sock.recv(4096)
+        # TODO: check sign
         sign, randbytes = buf[8:-128], buf[-128:]
 
         if server_key:
