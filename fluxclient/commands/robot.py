@@ -10,7 +10,6 @@ import os
 from fluxclient.robot_console import RobotConsole
 from fluxclient.robot.misc import parse_ipaddr, kill_robot, require_robot
 from fluxclient.robot import connect_robot
-from fluxclient.upnp.misc import is_serial
 
 
 def setup_logger(stdout=sys.stderr, level=logging.DEBUG):

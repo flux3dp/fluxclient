@@ -224,7 +224,7 @@ class UpnpDiscover(object):
                     raw_has_password = rawdata.get("pwd", "F")
 
                     data["timestemp"] = float(rawdata.get("time", 0))
-                    data["timedelta"] = time() - data["timestemp"]
+                    data["timedelta"] = data["timestemp"] - time()
 
                     data["name"] = rawdata.get("name", "NONAME")
                     data["has_password"] = raw_has_password == "T"
