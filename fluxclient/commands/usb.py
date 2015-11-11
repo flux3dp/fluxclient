@@ -28,7 +28,8 @@ def printhelp():
     3 - Modify general settings
     4 - Modify network settings
     5 - Check current wifi SSID
-    6 - Set password""")
+    6 - Set password
+    7 - Get IP Address""")
 
 
 def do_general_config(task):
@@ -82,10 +83,11 @@ def do_set_password(task):
 
 
 def do_get_ssid(task):
-    try:
-        print(task.get_ssid())
-    except UsbTaskError:
-        print("Wifi not connected")
+    print(task.get_ssid())
+
+
+def do_get_ipaddr(task):
+    print(task.get_ipaddr())
 
 
 def cmdline(task):
@@ -102,6 +104,8 @@ def cmdline(task):
             do_get_ssid(task)
         elif cmd == "6":
             do_set_password(task)
+        elif cmd == "7":
+            do_get_ipaddr(task)
         else:
             print("Unknow command id: %s" % cmd)
 
@@ -125,8 +129,9 @@ def main():
     logger.info("""Device:
     Nickname: %(name)s
     Serial: %(serial)s
+    UUID: %(uuid)s
     Has Password: %(pwd)s
-    """ % {"name": task.name, "serial": task.serial,
+    """ % {"name": task.name, "serial": task.serial, "uuid": task.uuid.hex,
            "pwd": task.has_password})
 
     resp = do_auth(task).decode("ascii", "ignore")

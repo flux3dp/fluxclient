@@ -17,6 +17,7 @@ CODE_AUTH = 0x02
 CODE_CONFIG_GENERAL = 0x03
 CODE_CONFIG_NETWORK = 0x04
 CODE_GET_SSID = 0x05
+CODE_GET_IPADDR = 0x07
 CODE_SET_PASSWORD = 0x06
 
 
@@ -133,6 +134,10 @@ class UsbTask(object):
 
     def get_ssid(self):
         return self._make_request(CODE_GET_SSID).decode("utf8", "ignore")
+
+    def get_ipaddr(self):
+        ret = self._make_request(CODE_GET_IPADDR).decode("utf8", "ignore")
+        return ret.split(" ")
 
     def close(self):
         self.s.close()
