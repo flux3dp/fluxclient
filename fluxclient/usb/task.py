@@ -139,6 +139,8 @@ class UsbTask(object):
         ret = self._make_request(CODE_GET_IPADDR).decode("utf8", "ignore")
         if ret:
             return ret.split(" ")
+        else:
+            return []
 
     def close(self):
         self.s.close()
