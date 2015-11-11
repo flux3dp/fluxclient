@@ -1,12 +1,11 @@
 
-from time import time, sleep
+from time import time
 from io import BytesIO
 from uuid import UUID
 import logging
 import select
 import socket
 import struct
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +98,7 @@ class UpnpDiscover(object):
                 break
 
             self.try_recive((self.disc_sock, self.touch_sock), callback,
-                             wait_time)
+                            wait_time)
 
             if lookup_callback:
                 lookup_callback(self)
@@ -168,7 +167,8 @@ class UpnpDiscover(object):
         f = BytesIO(payload[34:])
         try:
             master_pkey = E.load_keyobj(f.read(l_master_pkey))
-            identify = f.read(l_identify)
+            # TODO: validate identify
+            # identify = f.read(l_identify)
 
         except ValueError:
             # Data error
@@ -181,7 +181,7 @@ class UpnpDiscover(object):
             else:
                 self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
                 payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-                    2, uuid.bytes)
+                                      2, uuid.bytes)
                 self.touch_sock.sendto(payload, endpoint)
 
     def process_v1_touch(self, payload, endpoint):

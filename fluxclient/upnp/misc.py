@@ -1,7 +1,4 @@
 
-import uuid as _uuid
-import re
-
 DEFAULT_IPADDR = "239.255.255.250"
 DEFAULT_PORT = 1901
 

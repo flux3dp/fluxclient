@@ -2,14 +2,12 @@
 from select import select
 from random import randint
 from time import time
-import uuid as _uuid
 import struct
 import socket
 import json
 
 from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
-from fluxclient.upnp import misc
 from fluxclient import encryptor
 
 
@@ -48,9 +46,9 @@ class UpnpBase(object):
         self.update_remote_profile(**kw)
         discover_instance.stop()
 
-    def update_remote_profile(self, name, serial, model_id, timedelta,
-                                 version, has_password, ipaddr, master_key,
-                                 slave_key, **kw):
+    def update_remote_profile(self, name, serial, model_id, timedelta, version,
+                              has_password, ipaddr, master_key, slave_key,
+                              **kw):
         self.name = name
         self.serial = serial
         self.model_id = model_id

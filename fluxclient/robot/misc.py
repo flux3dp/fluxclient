@@ -42,7 +42,6 @@ def require_robot(target, logstream=sys.stdout):
             except RuntimeError as e:
                 logstream.write("Error: %s, retry...\n" % e.args[0])
 
-
         logstream.write("Wakeup Robot: ")
         logstream.flush()
 
@@ -87,7 +86,7 @@ def require_robot(target, logstream=sys.stdout):
                             # Fix timedelta issue let's retry
                             continue
                     else:
-                        logstream.write("Nothing can do: %s\n" % task.timedelta)
+                        logstream.write("AUTH ERROR(td=%s)\n" % task.timedelta)
                         logstream.flush()
                     raise
 

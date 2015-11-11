@@ -44,7 +44,6 @@ class UsbTask(object):
                 logger.error("Can not parse device info: %s" % pair)
             info[spair[0]] = spair[1]
 
-
         self.uuid = UUID(hex=info["uuid"])
         self.serial = info["serial"]
         self.model_id = info["model"]

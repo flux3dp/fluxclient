@@ -3,7 +3,6 @@ from uuid import UUID
 import argparse
 import sys
 
-from fluxclient.upnp import misc
 from fluxclient.upnp.discover import UpnpDiscover
 
 

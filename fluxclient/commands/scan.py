@@ -4,7 +4,6 @@ import datetime
 import argparse
 import logging
 import sys
-from time import sleep
 import os
 
 from fluxclient.robot.misc import require_robot
