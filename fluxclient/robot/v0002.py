@@ -379,6 +379,25 @@ class FluxRobotV0002(object):
         else:
             raise_error(ret.decode("ascii", "ignore"))
 
+    def maintain_hadj(self, navigate_callback, manual_h=None):
+        if manual_h:
+            ret = self._make_cmd(("cor_h %.4f" % manual_h).encode())
+        else:
+            ret = self._make_cmd(b"cor_h")
+
+        if ret == b"continue":
+            nav = "continue"
+            while True:
+                if nav.startswith("ok "):
+                    return float(nav[3:])
+                elif nav.startswith("error "):
+                    raise_error(nav)
+                else:
+                    navigate_callback(nav)
+                nav = self.get_resp().decode("ascii", "ignore")
+        else:
+            raise_error(ret.decode("ascii", "ignore"))
+
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
         if ret == b"continue":
