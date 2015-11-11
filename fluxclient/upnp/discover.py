@@ -67,6 +67,8 @@ class UpnpDiscover(object):
                                         socket.IPPROTO_UDP)
         self.touch_sock.bind(('', 0))
 
+        self.socks = (self.disc_sock, self.touch_sock)
+
     def __del__(self):
         self.disc_sock.close()
         self.disc_sock = None
@@ -131,7 +133,7 @@ class UpnpDiscover(object):
 
         if proto_ver == 1:
             if action_id == 0:
-                self.unpack_v1_discover(buf[6:], endpoint)
+                return self.unpack_v1_discover(buf[6:], endpoint)
             elif action_id == 3:
                 return self.process_v1_touch(buf[6:], endpoint)
         else:
@@ -152,15 +154,15 @@ class UpnpDiscover(object):
     def get_serial(self, uuid):
         return self.history[uuid]["serial"]
 
-    def in_history(self, uuid, ts):
+    def in_history(self, uuid, master_ts):
         if uuid in self.history:
-            return ts <= self.history[uuid].get("temp_ts", 0)
+            return master_ts <= self.history[uuid].get("master_ts", 0)
         else:
             return False
 
     def unpack_v1_discover(self, payload, endpoint):
         args = struct.unpack("<16s10sfHH", payload[:34])
-        uuid_bytes, sn, temp_ts = args[:3]
+        uuid_bytes, sn, master_ts = args[:3]
         l_master_pkey, l_identify = args[3:]
 
         f = BytesIO(payload[34:])
@@ -174,19 +176,18 @@ class UpnpDiscover(object):
 
         uuid = UUID(bytes=uuid_bytes)
         if self.limited_uuid(uuid):
-            if not self.in_history(uuid, temp_ts):
+            if self.in_history(uuid, master_ts):
+                return self.history[uuid]
+            else:
                 self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
-                self.touch_v1_device(uuid, endpoint)
-
-    def touch_v1_device(self, uuid, endpoint):
-        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-            2, uuid.bytes)
-        self.touch_sock.sendto(payload, endpoint)
+                payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
+                    2, uuid.bytes)
+                self.touch_sock.sendto(payload, endpoint)
 
     def process_v1_touch(self, payload, endpoint):
         f = BytesIO(payload)
 
-        buuid, temp_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
+        buuid, master_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
         uuid = UUID(bytes=buuid)
 
         if not self.limited_uuid(uuid):
@@ -214,15 +215,22 @@ class UpnpDiscover(object):
                             rawdata[k] = v
 
                     data = {"uuid": uuid, "serial": self.get_serial(uuid)}
-                    data["model_id"] = rawdata.get("model", "UNKNOW")
-                    data["name"] = rawdata.get("name", "NONAME")
-                    data["timestemp"] = float(rawdata.get("time", 0))
-                    data["version"] = rawdata.get("ver")
-                    raw_has_password = rawdata.get("pwd", "F")
-                    data["has_password"] = raw_has_password == "T"
                     data["master_key"] = master_key
                     data["slave_key"] = temp_pkey
+                    data["master_ts"] = master_ts
+
+                    data["model_id"] = rawdata.get("model", "UNKNOW")
+                    data["version"] = rawdata.get("ver")
+                    raw_has_password = rawdata.get("pwd", "F")
+
+                    data["timestemp"] = float(rawdata.get("time", 0))
+                    data["timedelta"] = time() - data["timestemp"]
+
+                    data["name"] = rawdata.get("name", "NONAME")
+                    data["has_password"] = raw_has_password == "T"
                     data["ipaddr"] = endpoint
+                    self.history[uuid] = data
+
                     return data
                 else:
                     logger.error("Slave key signuture error (V1)")

@@ -23,41 +23,6 @@ CODE_RESPONSE_CHANGE_PWD = 0x09
 CODE_SET_NETWORK = 0x0a
 CODE_RESPONSE_SET_NETWORK = 0x0b
 
-GLOBAL_SERIAL = _uuid.UUID(int=0)
-HEXMAP = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-
-def is_serial(input):
-    return True if re.match("[0-9A-Z]{25}", input) else False
-
-
-def uuid_to_short(uuid_hex, mapping=HEXMAP):
-    u = _uuid.UUID(uuid_hex)
-    l = len(mapping)
-    n = u.int
-    a_short = []
-    while n > 0:
-        c = mapping[n % l]
-        n = n // l
-        a_short.append(c)
-
-    while len(a_short) < 25:
-        a_short.append(mapping[0])
-
-    return "".join(a_short)
-
-
-def short_to_uuid(short, mapping=HEXMAP):
-    n = 0
-    offset = 1
-    l = len(mapping)
-
-    for c in short:
-        n += mapping.index(c) * offset
-        offset *= l
-
-    return _uuid.UUID(int=n).hex
-
 
 def parse_network_config(method, wifi_mode=None, ipaddr=None, mask=None,
                          route=None, ns=None, ssid=None, security=None,

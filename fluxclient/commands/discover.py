@@ -15,9 +15,10 @@ class DiscoverPrinter(object):
         self.discover = UpnpDiscover(uuid=uuid)
         self.found = {}
 
-        sys.stdout.write("%-10s %-20s %-10s %-3s %-8s %s\n" %
-                         ("Serial", "Name", "Model", "PWD", "Version",
-                          "IP Address"))
+        sys.stdout.write("%32s %-10s %-9s ## %s\n" % ("UUID", "Serial", "PWD",
+                                                      "Name"))
+        sys.stdout.write("%32s %-10s %-10s\n" % ("IP Addr", "Version",
+                                                 "Model", ))
         sys.stdout.write("=" * 79)
         sys.stdout.write("\n")
         sys.stdout.flush()
@@ -34,19 +35,14 @@ class DiscoverPrinter(object):
     def result_callback(self, discover_instance, uuid, serial, model_id,
                         timestemp, version, has_password, ipaddr, name, **kw):
 
-        current = [model_id, version, has_password, ipaddr]
-        if serial in self.found and current == self.found[serial]:
+        if uuid in self.found and timestemp == self.found[uuid]:
             return
+        else:
+            self.found[uuid] = timestemp
 
-        self.found[serial] = current
-        sys.stdout.write("\r%10s %-20s %-10s %-3s %-8s %s\n" %
-                         (serial,
-                          name,
-                          model_id,
-                          has_password and "YES" or "NO",
-                          version,
-                          ":".join("%s" % _ for _ in ipaddr)))
-        sys.stdout.write("UUID: %s\n" % uuid.hex)
+        sys.stdout.write("\r%s %-10s %-9s ## %s\n" % (
+            uuid.hex, serial, has_password and "YES" or "NO", name))
+        sys.stdout.write("%32s %-10s %-10s\n" % (ipaddr[0], version, model_id,))
         sys.stdout.flush()
 
 

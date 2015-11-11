@@ -5,7 +5,6 @@ import sys
 import re
 
 from fluxclient.upnp.task import UpnpTask
-from fluxclient.upnp.misc import is_serial
 
 
 def is_uuid(input):
