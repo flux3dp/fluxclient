@@ -15,7 +15,7 @@ except:
     pass
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
-from fluxclient.printer import ini_string
+from fluxclient.printer import ini_string, ini_constraint
 
 
 class StlSlicer(object):
@@ -30,11 +30,12 @@ class StlSlicer(object):
         self.user_setting = {}  # slcing setting
 
         self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
-        self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
-        self.slic3r = slic3r
-        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+        # self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
+        # self.slic3r = slic3r
+        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
 
-        self.config = self.my_ini_parser(ini_string.split('\n'))
+        # self.config = self.my_ini_parser(ini_string.split('\n'))
+        self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
@@ -96,22 +97,23 @@ class StlSlicer(object):
         """
         user input  setting content
         use '#' as comment symbol (different from wiki's ini file standard)
-        return the line number of bad input
+        return error message of bad input
+
         """
         counter = 0
         bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement
-                line = line[:line.index('#')]
-            line = line.strip()
+                line = line[:line.index('#')].strip()
             if '=' in line:
                 key, value = map(lambda x: x.strip(), line.split('=', 1))
-                if key in self.config:
+                result = self.ini_value_check(key, value)
+                if result == 'ok':
                     self.config[key] = value
                 else:
-                    bad_lines.append(counter)
+                    bad_lines.append((counter, result))
             elif line != '':
-                bad_lines.append(counter)
+                bad_lines.append((counter, 'syntax error: %s' % line))
             counter += 1
         return bad_lines
 
@@ -233,10 +235,10 @@ class StlSlicer(object):
 
             del m_GcodeToFcode
 
-        if output_type == 'g':
+        if output_type == '-g':
             with open(tmp_gcode_file, 'rb') as f:
                 output = f.read()
-        elif output_type == 'f':
+        elif output_type == '-f':
             output = fcode_output.getvalue()
         else:
             raise('wrong output type, only support gcode and fcode')
@@ -287,6 +289,15 @@ class StlSlicer(object):
                 print(i, file=sys.stderr)
                 raise ValueError('not ini file?')
         return result
+
+    def ini_value_check(self, key, value):
+        if key in self.config:
+            if ini_constraint[key]:
+                return ini_constraint[key](key, value, *ini_constraint[key][1:])
+            else:
+                return 'ok'
+        else:
+            return 'key not exist: %s' % key
 
     @classmethod
     def my_ini_writer(cls, file_path, content):
