@@ -77,8 +77,12 @@ def interactive(robot):
                     step = int(l[1:])
                 except:
                     step = 1
-                for i in range(step):
-                    robot.scan_next()
+                if step > 0:
+                    for i in range(step):
+                        robot.scan_next()
+                else:
+                    for i in range(abs(step)):
+                        robot.scan_backward()
 
         elif l.startswith('T'):
             l = l.rstrip("\n")
@@ -105,6 +109,10 @@ def interactive(robot):
             os._exit(0)
         elif l.startswith('c'):
             res = robot.scan_check()
+            print(res)
+
+        elif l.startswith('b'):
+            res = robot.calibrate()
             print(res)
         else:
             logger_info(logger)
@@ -155,6 +163,7 @@ def main():
     logger.info("Image will save to %s*.jpg" % filename_prefix)
     suffix = ['L', 'R', 'O']
     images = robot.scanimages()
+    total_steps = 400
     for step in range(total_steps):
         print_progress(step, total_steps)
         images = robot.scanimages()
