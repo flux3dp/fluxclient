@@ -34,8 +34,8 @@ class StlSlicer(object):
         # self.slic3r = slic3r
         self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
 
-        # self.config = self.my_ini_parser(ini_string.split('\n'))
-        self.config = self.my_ini_parser(self.slic3r_setting)
+        self.config = self.my_ini_parser(ini_string.split('\n'))
+        # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
@@ -292,6 +292,8 @@ class StlSlicer(object):
 
     def ini_value_check(self, key, value):
         if key in self.config:
+            if value.strip() == 'default':
+                return 'ok'
             if ini_constraint[key]:
                 return ini_constraint[key](key, value, *ini_constraint[key][1:])
             else:
