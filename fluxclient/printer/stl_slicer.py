@@ -112,7 +112,7 @@ class StlSlicer(object):
                     self.config[key] = value
                 else:
                     bad_lines.append((counter, result))
-            elif line != '':
+            elif line != '' and line != 'default':
                 bad_lines.append((counter, 'syntax error: %s' % line))
             counter += 1
         return bad_lines
@@ -295,7 +295,7 @@ class StlSlicer(object):
             if value.strip() == 'default':
                 return 'ok'
             if ini_constraint[key]:
-                return ini_constraint[key](key, value, *ini_constraint[key][1:])
+                return ini_constraint[key][0](key, value, *ini_constraint[key][1:])
             else:
                 return 'ok'
         else:
