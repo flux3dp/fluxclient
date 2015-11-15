@@ -1,5 +1,5 @@
 
-from time import sleep
+from time import time, sleep
 from uuid import UUID
 import sys
 import re
@@ -47,17 +47,19 @@ def require_robot(target, logstream=sys.stdout):
 
         while True:
             try:
+                t1 = time()
                 resp = task.require_robot()
                 if resp:
                     st = resp.get("status")
                     if st == "initial":
                         logstream.write("+")
                         logstream.flush()
-                        sleep(0.3)
+                        td = 3 - time() + t1
+                        sleep(1.5)
                     elif st == "launching":
                         logstream.write(".")
                         logstream.flush()
-                        sleep(0.3)
+                        sleep(1.5)
                     elif st == "launched":
                         logstream.write(" :-)")
                         if "info" in resp:
