@@ -56,7 +56,7 @@ class UpnpDiscover(object):
         self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                        socket.IPPROTO_UDP)
         self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.disc_sock.bind((DEFAULT_IPADDR, self.port))
+        self.disc_sock.bind(('', self.port))
         mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
                            socket.INADDR_ANY)
         self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
