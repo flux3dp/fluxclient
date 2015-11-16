@@ -111,6 +111,7 @@ class PcProcess():
         # warning merge L and R here!
         pc = pc_both[0].clone()
         pc = pc.add(pc_both[1])
+        pc.ne_viewpoint()
         pc.to_mesh()  # compute mesh
 
         return pc
@@ -155,7 +156,7 @@ class PcProcess():
                 for pc in pc_both:
                     pc_size.append(len(pc))
                     for p_i in range(pc_size[-1]):
-                        pc_add.append(pc_both.get_item(p_i))
+                        pc_add.append(pc.get_item(p_i))
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
