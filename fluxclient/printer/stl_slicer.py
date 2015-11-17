@@ -29,11 +29,11 @@ class StlSlicer(object):
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
 
-        self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
+        # self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
         # self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
-        # self.slic3r = slic3r
-        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+        self.slic3r = slic3r
 
+        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
         self.config = self.my_ini_parser(ini_string.split('\n'))
         # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
