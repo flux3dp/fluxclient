@@ -2,27 +2,29 @@
 import math
 
 scan_step = 400  # steps
-theta_a = math.pi / 6 * 2 / 2  # radius between center and laser
+theta_a = math.pi / 6  # radius between center and laser
+
 img_width = 640
 img_height = 480
 
 sensorWidth = 3.67
-sensorHeight = 2.74
+sensorHeight = 2.74 + 0.3
 focalLength = 3.6
 
 # ######### mockup 2, measure by solidwork###
 cameraX = 0.0
 cameraY = 22.28
-cameraZ = 174.70
+cameraZ = -174.70
 
 laserX_L = -53.61
 laserY_L = 31.62
-laserZ_L = 76.47
+laserZ_L = -76.47
 
 laserX_R = 53.61
 laserY_R = 31.62
-laserZ_R = 76.47
+laserZ_R = -76.47
 
+theta_a = math.atan(laserX_L / laserZ_L)
 # ######### mockup 1, hand measured #########
 # cameraX = 0.0
 # cameraY = 90
