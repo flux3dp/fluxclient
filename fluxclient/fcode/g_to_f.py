@@ -44,6 +44,7 @@ class GcodeToFcode(FcodeBase):
         self.record_path = True
         self.record_z = 0.0
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
+        # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
     def header(self):
         """
@@ -93,6 +94,7 @@ class GcodeToFcode(FcodeBase):
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
                 print(i, file=sys.stderr)
+
         return command, number
 
     def analyze_metadata(self, input_list, comment):
@@ -157,10 +159,10 @@ class GcodeToFcode(FcodeBase):
                     line, comment = line.split(';', 1)
                 else:
                     comment = ''
-                line = findall('[A-Z][+-]?[0-9]+', line)  # split
+                line = findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', line)  # split
 
                 if line:
-                    if line[0] == 'G0' or line[0] == 'G1':  # move
+                    if line[0] == 'G1' or line[0] == 'G0':  # move
                         command = 128
                         subcommand, data = self.XYZEF(line)
                         self.analyze_metadata(data, comment)
