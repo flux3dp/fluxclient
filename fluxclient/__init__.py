@@ -1,12 +1,11 @@
 
 def check_pcl():
     try:
-        # from fluxclient.scanner import _scaner
+        from .scanner import _scanner
         return True
     except ImportError:
         return False
 
 
-VERSION = ("0", "7a2")
-__version__ = ".".join(VERSION)
+__version__ = "0.7a3"
 SUPPORT_PCL = check_pcl()
