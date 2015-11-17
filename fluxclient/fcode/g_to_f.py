@@ -43,8 +43,11 @@ class GcodeToFcode(FcodeBase):
 
         self.record_path = True
         self.record_z = 0.0
+        self.layer_now = 0
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
+
+        self.config = None
 
     def header(self):
         """
@@ -166,6 +169,9 @@ class GcodeToFcode(FcodeBase):
                         command = 128
                         subcommand, data = self.XYZEF(line)
                         self.analyze_metadata(data, comment)
+                        # fix on slic3r bug slowing down in raft but not in real printing
+                        if self.config is not None and self.layer_now == int(self.config['raft_layers']):
+                            data[0] = float(self.config['first_layer_speed'])
 
                         command |= subcommand
                         self.writer(packer(command), output_stream)

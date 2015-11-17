@@ -1,4 +1,5 @@
 import sys
+from re import findall
 
 
 class FcodeBase(object):
@@ -24,6 +25,8 @@ class FcodeBase(object):
             elif 'move' in comment:
                 line_type = 3
                 if 'to next layer' in comment:
+                    tmp = findall('[0-9]+', comment)[-1]
+                    self.layer_now = int(tmp)
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
             elif 'skirt' in comment:
                 line_type = 4

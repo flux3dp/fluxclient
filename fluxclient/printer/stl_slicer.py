@@ -198,6 +198,7 @@ class StlSlicer(object):
                     self.config['infill_speed'] = self.user_setting[key]
                 elif key == 'temperature':
                     self.config['temperature'] = self.user_setting[key]
+                    self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
         self.my_ini_writer(tmp_slic3r_setting_file, self.config)
 
@@ -226,6 +227,7 @@ class StlSlicer(object):
         fcode_output = io.BytesIO()
         with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode()
+            m_GcodeToFcode.config = self.config
             m_GcodeToFcode.image = self.image
             m_GcodeToFcode.process(f, fcode_output)
 
