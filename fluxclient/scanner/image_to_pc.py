@@ -2,7 +2,6 @@
 import struct
 import io
 import sys
-import subprocess
 
 import numpy as np
 from PIL import Image
@@ -11,6 +10,10 @@ import fluxclient.scanner.freeless as freeless
 import fluxclient.scanner.scan_settings as scan_settings
 from fluxclient.scanner.tools import write_pcd
 from fluxclient.hw_profile import HW_PROFILE
+try:
+    import fluxclient.scanner._scanner as _scanner
+except:
+    pass
 
 
 class image_to_pc():
@@ -46,7 +49,7 @@ class image_to_pc():
         im_array[:, :, [0, 2]] = im_array[:, :, [2, 0]]
         return im_array
 
-    def feed(self, buffer_O, buffer_L, buffer_R, step):
+    def feed(self, buffer_O, buffer_L, buffer_R, step, l_cab, r_cab):
         '''
             feed 3 picture buffer and a step index
             note that this step index is the input
@@ -58,15 +61,19 @@ class image_to_pc():
         step = self.ref_table[step]
 
         indices_L = self.fs_L.subProcess(img_O, img_L, scan_settings.img_height)
-        point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', clock=True)
+        indices_L = [[p[0], p[1] + l_cab]for p in indices_L]
+        # indices_L = [[i, step] for i in range(scan_settings.img_height)]
+        point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', l_cab, clock=True)
         self.points_L.extend(point_L_this)
+        # return [self.points_to_bytes(point_L_this), []]
 
         indices_R = self.fs_R.subProcess(img_O, img_R, scan_settings.img_height)
-        point_R_this = self.fs_R.img_to_points(img_O, img_R, indices_R, step, 'R', clock=True)
+        indices_R = [[p[0], p[1] + r_cab]for p in indices_R]
+        point_R_this = self.fs_R.img_to_points(img_O, img_R, indices_R, step, 'R', r_cab, clock=True)
         self.points_R.extend(point_R_this)
+        # return [[], self.points_to_bytes(point_R_this)]
 
         return [self.points_to_bytes(point_L_this), self.points_to_bytes(point_R_this)]
-        return [self.points_to_bytes(point_L_this), []]
 
     def points_to_bytes(self, points):
         '''
@@ -86,6 +93,8 @@ class image_to_pc():
         merge left and right scanned points
         use Left side as base
         """
+        self.points_M = self.points_R + self.points_L
+        return
         record = [set() for i in range(self.steps)]
         for p in self.points_R:
             record[p[6]].add(p[8])
@@ -136,12 +145,12 @@ def after(l):
     add fixed size box
     """
     return l
+    for i in range(-250, 1000):
+        l.append([0, 0, i / 10, 255, 0, 0])
+
     for i in range(-70, 70, 3):
         for j in range(-70, 70, 3):
             l.append([i, j, 0.0, 255, 0, 0])
-
-    for i in range(-250, 1000):
-        l.append([0, 0, i / 10, 0, 255, 0])
 
     for i in myrange(0, 62, 0.3):
         l.append([-18, -21, i, 255, 0, 0])
@@ -163,13 +172,14 @@ def after(l):
     return l
 
 if __name__ == '__main__':
+    import subprocess
     m_image_to_pc = image_to_pc()
     img_location = sys.argv[1].rstrip('/')
     print(img_location)
 
     for i in range(400):
         tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
-        m_image_to_pc.feed(*tmp, step=i)
+        m_image_to_pc.feed(*tmp, step=i, l_cab=-10, r_cab=-10)
         print_progress(i, 400)
     print('')
     output = img_location + '.pcd'

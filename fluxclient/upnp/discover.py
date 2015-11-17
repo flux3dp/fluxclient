@@ -2,6 +2,7 @@
 from time import time
 from io import BytesIO
 from uuid import UUID
+import platform
 import logging
 import select
 import socket
@@ -56,11 +57,14 @@ class UpnpDiscover(object):
         self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                        socket.IPPROTO_UDP)
         self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.disc_sock.bind((DEFAULT_IPADDR, self.port))
         mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
                            socket.INADDR_ANY)
         self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
                                   mreq)
+        if platform.system() == "Windows":
+            self.disc_sock.bind(("", self.port))
+        else:
+            self.disc_sock.bind((DEFAULT_IPADDR, self.port))
 
         self.touch_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                         socket.IPPROTO_UDP)

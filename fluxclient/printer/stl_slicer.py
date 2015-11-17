@@ -29,13 +29,13 @@ class StlSlicer(object):
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
 
-        self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
+        # self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
         # self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
-        # self.slic3r = slic3r
-        self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+        self.slic3r = slic3r
 
-        # self.config = self.my_ini_parser(ini_string.split('\n'))
-        self.config = self.my_ini_parser(self.slic3r_setting)
+        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
+        self.config = self.my_ini_parser(ini_string.split('\n'))
+        # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
@@ -112,7 +112,7 @@ class StlSlicer(object):
                     self.config[key] = value
                 else:
                     bad_lines.append((counter, result))
-            elif line != '':
+            elif line != '' and line != 'default':
                 bad_lines.append((counter, 'syntax error: %s' % line))
             counter += 1
         return bad_lines
@@ -292,8 +292,10 @@ class StlSlicer(object):
 
     def ini_value_check(self, key, value):
         if key in self.config:
+            if value.strip() == 'default':
+                return 'ok'
             if ini_constraint[key]:
-                return ini_constraint[key](key, value, *ini_constraint[key][1:])
+                return ini_constraint[key][0](key, value, *ini_constraint[key][1:])
             else:
                 return 'ok'
         else:

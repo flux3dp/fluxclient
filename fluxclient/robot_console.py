@@ -53,6 +53,7 @@ class RobotConsole(object):
             "set": self.set_setting,
 
             "eadj": self.maintain_eadj,
+            "cor_h": self.maintain_hadj,
         }
 
     def on_cmd(self, arguments):
@@ -215,6 +216,19 @@ class RobotConsole(object):
 
         data_str = ", ".join(("%.4f" % i for i in ret))
         logger.info("Data: %s, Error: %.4f", data_str, (max(*ret) - min(*ret)))
+        logger.info("ok")
+
+    def maintain_hadj(self, h=None):
+        def callback(nav):
+            logger.info("Mainboard info: %s", nav)
+
+        if h is None:
+            ret = self.robot_obj.maintain_hadj(navigate_callback=callback)
+        else:
+            ret = self.robot_obj.maintain_hadj(navigate_callback=callback,
+                                               manual_h=float(h))
+
+        logger.info("Data: %s", ret)
         logger.info("ok")
 
     def raw_mode(self):
