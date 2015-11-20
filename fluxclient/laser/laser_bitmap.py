@@ -6,7 +6,7 @@ import logging
 import numpy as np
 from PIL import Image
 
-from fluxclient.laser.laser_base import LaserBase
+from .laser_base import LaserBase
 
 
 logger = logging.getLogger(__name__)

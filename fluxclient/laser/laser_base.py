@@ -10,7 +10,7 @@ import datetime
 from PIL import Image
 import numpy as np
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.laser import Grid
+from . import Grid
 
 
 class LaserBase(object):

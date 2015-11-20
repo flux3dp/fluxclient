@@ -10,7 +10,7 @@ import sys
 from PIL import Image
 
 try:
-    import fluxclient.printer._printer as _printer
+    from . import _printer
 except:
     pass
 from fluxclient.fcode.g_to_f import GcodeToFcode

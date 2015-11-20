@@ -2,7 +2,7 @@ import logging
 import datetime
 import time
 
-from fluxclient.laser.laser_svg import LaserSvg
+from .laser_svg import LaserSvg
 
 
 class PenDraw(LaserBase, SVGParser):

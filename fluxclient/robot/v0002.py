@@ -101,9 +101,9 @@ class FluxRobotV0002(object):
 
         return message
 
-    def _make_cmd(self, buf):
+    def _make_cmd(self, buf, timeout=30.0):
         self._send_cmd(buf)
-        return self.get_resp()
+        return self.get_resp(timeout)
 
     def recv_binary(self, binary_header):
         mn, mimetype, ssize = binary_header.split(" ")
@@ -302,6 +302,16 @@ class FluxRobotV0002(object):
 
     def scan_check(self):
         self._send_cmd(b"scan_check")
+        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        return resp
+
+    def calibrate(self):
+        self._send_cmd(b"calib")
+        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        return resp
+
+    def get_calibrate(self):
+        self._send_cmd(b"get_cab")
         resp = self.get_resp().decode("ascii", "ignore")
         return resp
 
@@ -345,8 +355,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def scan_backward(self):
-        # TODO: change protocol, this actually means to go backward a step
-        return self._make_cmd(b"scan_forword")
+        return self._make_cmd(b"scan_backward")
 
     @ok_or_error
     def begin_maintain(self):
