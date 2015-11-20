@@ -100,7 +100,7 @@ class StlSlicer(object):
         return error message of bad input
 
         """
-        counter = 0
+        counter = 1
         bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement

@@ -169,6 +169,7 @@ class GcodeToFcode(FcodeBase):
                         command = 128
                         subcommand, data = self.XYZEF(line)
                         self.analyze_metadata(data, comment)
+
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.config is not None and self.layer_now == int(self.config['raft_layers']):
                             data[0] = float(self.config['first_layer_speed'])

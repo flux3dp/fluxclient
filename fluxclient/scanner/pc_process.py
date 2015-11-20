@@ -5,8 +5,8 @@ import logging
 import io
 import sys
 
-import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_stl, write_pcd
+from . import scan_settings
+from .tools import write_stl, write_pcd
 
 try:
     import fluxclient.scanner._scanner as _scanner

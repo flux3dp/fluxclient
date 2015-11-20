@@ -6,12 +6,12 @@ import sys
 import numpy as np
 from PIL import Image
 
-import fluxclient.scanner.freeless as freeless
-import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_pcd
+from . import freeless
+from . import scan_settings
+from .tools import write_pcd
 from fluxclient.hw_profile import HW_PROFILE
 try:
-    import fluxclient.scanner._scanner as _scanner
+    from . import _scanner
 except:
     pass
 

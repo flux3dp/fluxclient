@@ -5,8 +5,8 @@ import math
 
 import numpy
 
-import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_stl, dot, normal, normalize, point_dis_sq
+from . import scan_settings
+from .tools import write_stl, dot, normal, normalize, point_dis_sq
 
 
 NUM_LASER_RANGE_THRESHOLD = 3
