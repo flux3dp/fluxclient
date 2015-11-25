@@ -14,7 +14,7 @@ class FcodeParser(object):
         self.data = None
 
     def upload_content(self, buf):
-        if type(buf) == bytes:  # TODO:what about use file name
+        if type(buf) == bytes:
             tmp_data = self.data
             self.data = buf
             if self.full_check():
@@ -22,6 +22,9 @@ class FcodeParser(object):
             else:
                 self.data = tmp_data
                 return False
+        elif type(buf) == str:
+            with open(sys.argv[1], 'rb') as f:
+                return self.upload_content(f.read())
 
     def full_check(self):
         try:

@@ -18,10 +18,10 @@ except:
 
 class image_to_pc():
     """docstring for image_to_pc"""
-    def __init__(self):
-        self.reset()
+    def __init__(self, steps):
+        self.reset(steps)
 
-    def reset(self):
+    def reset(self, steps):
         self.points_L = []
         self.fs_L = freeless.freeless(scan_settings.laserX_L, scan_settings.laserZ_L)
 
@@ -29,13 +29,7 @@ class image_to_pc():
         self.fs_R = freeless.freeless(scan_settings.laserX_R, scan_settings.laserZ_R)
 
         self.step_counter = 0
-
-        self.ref_table = []
-        s = 0
-        self.steps = 400
-        for i in range(self.steps):
-            self.ref_table.append(s)
-            s = (s + HW_PROFILE['model-1']['step_setting'][self.steps][0]) % self.steps
+        self.steps = steps
 
     def to_image(self, buffer_data):
         '''
@@ -58,7 +52,6 @@ class image_to_pc():
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
-        step = self.ref_table[step]
 
         indices_L = self.fs_L.subProcess(img_O, img_L, scan_settings.img_height)
         indices_L = [[p[0], p[1] + l_cab]for p in indices_L]

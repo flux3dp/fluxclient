@@ -177,6 +177,10 @@ class PcProcess():
 
         logger.debug('merge %3f, %3f, %3f, %3f, %3f, %3f, %s' % (x, y, z, rx, ry, rz, name_out))
         both_pc = []
+        for name in [name_base, name_2]:
+            if type(self.clouds[name][0]) == list:
+                self.clouds[name] = self.to_cpp(self.clouds[name])
+
         for i in range(2):
             pc = self.clouds[name_2][i].clone()
             pc.apply_transform(x, y, z, rx, ry, rz)

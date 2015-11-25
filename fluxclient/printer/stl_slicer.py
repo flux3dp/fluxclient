@@ -87,7 +87,7 @@ class StlSlicer(object):
         """
         basic printing parameter in front end
         """
-        if key in ['printSpeed', 'material', 'raft', 'support', 'layerHeight', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
+        if key in ['printSpeed', 'material', 'raft', 'support', 'layer_height', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
             self.user_setting[key] = value
             return True
         else:

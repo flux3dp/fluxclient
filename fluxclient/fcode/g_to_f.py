@@ -23,7 +23,6 @@ class GcodeToFcode(FcodeBase):
     this should done several thing:
       transform gcode into fcode
       analyze metadata
-      check boundary problem (?
     """
     def __init__(self, version=1):
         super(GcodeToFcode, self).__init__()
