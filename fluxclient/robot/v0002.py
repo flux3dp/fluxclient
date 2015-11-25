@@ -180,7 +180,7 @@ class FluxRobotV0002(object):
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"cp " + source_entry.encode() + b" " + source.encode() + b"\x00"
+            b"cp " + source_entry.encode() + b" " + source.encode() + b" "
             + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error

@@ -26,7 +26,7 @@ class UpnpBase(object):
 
         if self.remote_version < StrictVersion("0.12a1"):
             raise RuntimeError("fluxmonitor version is too old")
-        elif self.remote_version >= StrictVersion("0.13a1"):
+        elif self.remote_version >= StrictVersion("0.14a1"):
             raise RuntimeError("fluxmonitor version is too new")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
