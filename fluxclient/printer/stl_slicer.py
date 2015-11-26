@@ -87,7 +87,7 @@ class StlSlicer(object):
         """
         basic printing parameter in front end
         """
-        if key in ['printSpeed', 'material', 'raft', 'support', 'layer_height', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
+        if key in ['print_speed', 'material', 'raft', 'support', 'layer_height', 'infill', 'traveling_speed', 'extruding_speed', 'temperature']:
             self.user_setting[key] = value
             return True
         else:
@@ -176,7 +176,7 @@ class StlSlicer(object):
 
         for key in self.user_setting:
             if self.user_setting[key] != "default":
-                if key == 'printSpeed':
+                if key == 'print_peed':
                     pass  # TODO
                 elif key == 'material':
                     pass  # TODO
@@ -187,16 +187,16 @@ class StlSlicer(object):
                         self.config['raft_layers'] = '4'  # TODO?
                 elif key == 'support':
                     self.config['support_material'] = self.user_setting[key]
-                elif key == 'layerHeight':
+                elif key == 'layer_height':
                     self.config['first_layer_height'] = self.user_setting[key]
                     self.config['layer_height'] = self.user_setting[key]
                 elif key == 'infill':
                     fill_density = float(self.user_setting[key]) * 100
                     fill_density = max(min(fill_density, 99), 0)
                     self.config['fill_density'] = str(fill_density) + '%'
-                elif key == 'travelingSpeed':
+                elif key == 'traveling_speed':
                     self.config['travel_speed'] = self.user_setting[key]
-                elif key == 'extrudingSpeed':
+                elif key == 'extruding_speed':
                     self.config['perimeter_speed'] = self.user_setting[key]
                     self.config['infill_speed'] = self.user_setting[key]
                 elif key == 'temperature':

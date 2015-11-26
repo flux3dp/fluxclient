@@ -6,9 +6,15 @@ import sys
 import numpy as np
 from PIL import Image
 
-from . import freeless
-from . import scan_settings
-from .tools import write_pcd
+try:
+    from . import freeless
+    from . import scan_settings
+    from .tools import write_pcd
+except:
+    import freeless
+    import scan_settings
+    from tools import write_pcd
+
 from fluxclient.hw_profile import HW_PROFILE
 try:
     from . import _scanner
@@ -166,7 +172,7 @@ def after(l):
 
 if __name__ == '__main__':
     import subprocess
-    m_image_to_pc = image_to_pc()
+    m_image_to_pc = image_to_pc(400)
     img_location = sys.argv[1].rstrip('/')
     print(img_location)
 
