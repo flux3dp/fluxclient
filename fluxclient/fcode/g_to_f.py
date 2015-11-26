@@ -35,7 +35,8 @@ class GcodeToFcode(FcodeBase):
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
-        self.current_pos = [None, None, None, None, None, None]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.current_pos = [None, None, None, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.distance = 0.  # recording distance go through
         self.max_range = [0., 0., 0.]  # recording max coordinate
@@ -133,7 +134,8 @@ class GcodeToFcode(FcodeBase):
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
                 if abs(self.current_pos[i - 1]) > self.max_range[i - 1]:
-                    self.max_range[i - 1] = abs(self.current_pos[i - 1])
+                    # self.max_range[i - 1] = abs(self.current_pos[i - 1])
+                    self.max_range[i - 1] = self.current_pos[i - 1]
         tmp_path = sqrt(tmp_path)
         self.distance += tmp_path
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
@@ -172,17 +174,23 @@ class GcodeToFcode(FcodeBase):
                     if line[0] == 'G1' or line[0] == 'G0':  # move
                         command = 128
                         subcommand, data = self.XYZEF(line)
-                        self.analyze_metadata(data, comment)
 
-                        # fix on slic3r bug slowing down in raft but not in real printing
+                        if self.absolute:  # deal with previous G92 command
+                            for i in range(1, 7):
+                                if data[i] is not None:
+                                    data[i] += self.G92_delta[i - 1]
+                                                # fix on slic3r bug slowing down in raft but not in real printing
                         if self.config is not None and self.layer_now == int(self.config['raft_layers']):
                             data[0] = float(self.config['first_layer_speed'])
 
+                        self.analyze_metadata(data, comment)
                         command |= subcommand
                         self.writer(packer(command), output_stream)
+
                         for i in data:
                             if i is not None:
                                 self.writer(packer_f(i), output_stream)
+
                     elif line[0] == 'X2':  # laser
                         command = 32  # only use one laser
                         self.writer(packer(command), output_stream)
@@ -211,24 +219,16 @@ class GcodeToFcode(FcodeBase):
                         self.extrude_absolute = False
 
                     elif line[0] == 'G92':  # set position
-                        command = 64
+                    # this command will not write into fcode
+                    # but using self.G92_delta to record the position
                         sub_command, data = self.XYZEF(line)
-
-                        tmp = lambda x: x is None
-                        if all(tmp(i) for i in data):
-                            sub_command = 0
+                        if all(i is None for i in data):  # A G92 without coordinates will reset all axes to zero.
                             for i in range(1, 7):
-                                sub_command |= (1 << (6 - i))
                                 data[i] = 0.0
-                        else:  # A G92 without coordinates will reset all axes to zero.
-                            pass
-
-                        command |= sub_command
-                        self.writer(packer(command), output_stream)
-                        for i in range(len(data)):
+                        for i in range(1, len(data)):
                             if data[i] is not None:
-                                self.writer(packer_f(data[i]), output_stream)
-                                self.current_pos[i - 1] = data[i]
+                                self.G92_delta[i - 1] = self.current_pos[i - 1] - data[i]
+
                     elif line[0] == 'G4':  # dwell
                         self.writer(packer(4), output_stream)
                         # P:ms or S:sec
@@ -308,6 +308,7 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'r') as input_stream:
         with open(sys.argv[2], 'wb') as output_stream:
             m_GcodeToFcode.process(input_stream, output_stream)
+            print(m_GcodeToFcode.md)
     if len(sys.argv) > 3:
         with open(sys.argv[3], 'w') as f:
             if m_GcodeToFcode.path is None:
