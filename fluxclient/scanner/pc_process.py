@@ -9,7 +9,7 @@ from . import scan_settings
 from .tools import write_stl, write_pcd
 
 try:
-    import fluxclient.scanner._scanner as _scanner
+    from . import _scanner
 except:
     pass
 
@@ -23,10 +23,12 @@ class PcProcess():
         self.meshs = {}
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
-        self.clouds[name] = (self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R))
-        logger.debug('upload %s,L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
-        logger.debug('all:' + " ".join(self.clouds.keys()))
+        """
         # upload [name] [point count L] [point count R]
+        """
+        self.clouds[name] = self.to_cpp((self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R)))
+        logger.debug('upload %s, L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
+        logger.debug('all:' + " ".join(self.clouds.keys()))
 
     def unpack_data(self, buffer_data):
         """
@@ -42,8 +44,22 @@ class PcProcess():
             pc.append(tmp_point)
         return pc
 
-    # def base(self, name):
-    #     self.current_name = name
+    def to_cpp(self, pc_both):
+        """
+        convert python style pc into cpp style pc object
+        """
+        c_both = []
+        for pc_python in pc_both:
+            pc = _scanner.PointCloudXYZRGBObj()
+            for i in pc_python:
+                pc.push_backPoint(*i)  # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
+            # ne(): normal estimate
+            # ne_viewpoint() :normal estimate considering view point
+            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
+            # pc.ne_viewpoint()
+            c_both.append(pc)
+        logger.debug('to_cpp done')
+        return c_both
 
     def cut(self, name_in, name_out, mode, direction, value):
         """
@@ -53,29 +69,10 @@ class PcProcess():
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
 
         self.clouds[name_out] = []
         for pc in pc_both:
             self.clouds[name_out].append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
-
-    def to_cpp(self, pc_both):
-        """
-        convert python style pc into cpp style pc object
-        """
-        tmp = []
-        for pc_python in pc_both:
-            pc = _scanner.PointCloudXYZRGBObj()
-            for i in pc_python:
-                pc.push_backPoint(*i)  # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
-            # ne(): normal estimate
-            # ne_viewpoint() :normal estimate considering view point
-            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
-            pc.ne_viewpoint()
-            tmp.append(pc)
-        logger.debug('to_cpp done')
-        return tmp
 
     def delete_noise(self, name_in, name_out, stddev):
         """
@@ -84,12 +81,7 @@ class PcProcess():
 
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = self.clouds[name_in]
-
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
-        else:
-            pc_both = [i.clone() for i in pc_both]
+        pc_both = [i.clone() for i in self.clouds[name_in]]
 
         for pc in pc_both:
             logger.debug('start with %d point' % len(pc))
@@ -98,22 +90,15 @@ class PcProcess():
 
         self.clouds[name_out] = pc_both
 
-        return 0
-
     def to_mesh(self, name_in):
         logger.debug('to_mesh name:%s' % name_in)
         pc_both = self.clouds[name_in]
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
-        else:
-            pc_both = self.clouds[name_in]
 
-        # warning merge L and R here!
-        pc = pc_both[0].clone()
-        pc = pc.add(pc_both[1])
+        # WARNING: merge L and R here!
+        # pc = pc_both[0].clone()
+        pc = pc_both[0].add(pc_both[1])
         pc.ne_viewpoint()
         pc.to_mesh()  # compute mesh
-
         return pc
 
     def dump(self, name):
@@ -125,42 +110,31 @@ class PcProcess():
         pc_both = self.clouds[name]
         buffer_data = []
 
-        if type(pc_both[0]) == list:
-            for pc in pc_both:
-                for p in pc:
-                    buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
-            buffer_data = b''.join(buffer_data)
-            assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
-            return len(pc_both[0]), len(pc_both[1]), buffer_data
-
-        else:
-            pc_size = []
-            for pc in pc_both:
-                pc_size.append(len(pc))
-                for p_i in range(pc_size[-1]):  # ?????
-                    p = pc.get_item(p_i)
-                    buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
-                    # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
-            buffer_data = b''.join(buffer_data)
-            return pc_size[0], pc_size[1], buffer_data
+        pc_size = []
+        for pc in pc_both:
+            l = len(pc)
+            pc_size.append(l)
+            for p_i in range(l):  # ?????
+                p = pc.get_item(p_i)
+                buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
+                # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
+        buffer_data = b''.join(buffer_data)
+        return pc_size[0], pc_size[1], buffer_data
 
     def export(self, name, file_format, mode='binary'):
         if file_format == 'pcd':
             pc_both = self.clouds[name]
-            # warning merge L and R here!
-            if type(pc_both[0]) == list:
-                pc_add = pc_both[0] + pc_both[1]
-            else:
-                pc_add = []
-                pc_size = []
-                for pc in pc_both:
-                    pc_size.append(len(pc))
-                    for p_i in range(pc_size[-1]):
-                        pc_add.append(pc.get_item(p_i))
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
-
+    # below not reviewed yet
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
             if mode == 'ascii':
