@@ -172,7 +172,7 @@ class UpnpDiscover(object):
         try:
             master_pkey = E.load_keyobj(f.read(l_master_pkey))
             # TODO: validate identify
-            # identify = f.read(l_identify)
+            identify = f.read(l_identify)
 
         except ValueError:
             # Data error
@@ -183,15 +183,18 @@ class UpnpDiscover(object):
             if self.in_history(uuid, master_ts):
                 try:
                     stbuf = f.read(64)
-                    st_ts, st_id, st_prog, head_module, error_label = \
+                    st_ts, st_id, st_prog, st_head, st_err = \
                         struct.unpack("dif16s32s", stbuf)
 
+                    head_module = st_head.decode("ascii", 
+                                                 "ignore").strip("\x00")
+                    error_label = st_err.decode("ascii",
+                                                "ignore").strip("\x00")
                     dataset = self.history[uuid]
                     dataset.update({
                         "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
-                        "st_ts": st_ts,
-                        "head_module": head_module.decode("ascii", "ignore"),
-                        "error_label": error_label.decode("ascii", "ignore")})
+                        "st_ts": st_ts, "head_module": head_module,
+                        "error_label": error_label})
                     return dataset
                 except Exception:
                     logger.exception("Error unpack status")
