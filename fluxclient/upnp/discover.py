@@ -181,7 +181,20 @@ class UpnpDiscover(object):
         uuid = UUID(bytes=uuid_bytes)
         if self.limited_uuid(uuid):
             if self.in_history(uuid, master_ts):
-                return self.history[uuid]
+                try:
+                    stbuf = f.read(64)
+                    st_ts, st_id, st_prog, head_module, error_label = \
+                        struct.unpack("dif16s32s", stbuf)
+
+                    dataset = self.history[uuid]
+                    dataset.update({
+                        "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
+                        "st_ts": st_ts,
+                        "head_module": head_module.decode("ascii", "ignore"),
+                        "error_label": error_label.decode("ascii", "ignore")})
+                    return dataset
+                except Exception:
+                    logger.exception("Error unpack status")
             else:
                 self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
                 payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
