@@ -173,7 +173,7 @@ int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGB
   align.setSimilarityThreshold(0.9f); // Polygonal edge length similarity threshold
   align.setMaxCorrespondenceDistance(1.5f * leaf); // Inlier threshold
   align.setInlierFraction(0.3f); // Required inlier fraction for accepting a pose hypothesis
-  align.align (*aligned);
+  align.align(*aligned);
 
   M4f transformation = align.getFinalTransformation();
   pcl::transformPointCloud (*object, *aligned, transformation);

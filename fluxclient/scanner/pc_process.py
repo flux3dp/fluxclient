@@ -134,49 +134,51 @@ class PcProcess():
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
-    # below not reviewed yet
+
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
+
             if mode == 'ascii':
-                strbuf = io.StringIO()
-                write_stl(pc_mesh.STL_to_List(), strbuf, 'ascii')
+                buf = io.StringIO()
+                write_stl(pc_mesh.STL_to_List(), buf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
                 buf = io.BytesIO()
-                write_stl(pc_mesh.STL_to_List(), buf)
+                write_stl(pc_mesh.STL_to_List(), buf, mode)
                 return buf.getvalue()
 
-    def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
-
-        logger.debug('merge %3f, %3f, %3f, %3f, %3f, %3f, %s' % (x, y, z, rx, ry, rz, name_out))
+    def apply_transform(name_in, x, y, z, rx, ry, rz, name_out):
         both_pc = []
-        for name in [name_base, name_2]:
-            if type(self.clouds[name][0]) == list:
-                self.clouds[name] = self.to_cpp(self.clouds[name])
-
-        for i in range(2):
-            pc = self.clouds[name_2][i].clone()
-            pc.apply_transform(x, y, z, rx, ry, rz)
-            pc = pc.add(self.clouds[name_base][i])  # change it self
-            both_pc.append(pc)
+        for pc in self.clouds[name_in]:
+            pc_new = pc.clone()
+            pc_new.apply_transform(x, y, z, rx, ry, rz)
+            both_pc.append(pc_new)
 
         self.clouds[name_out] = both_pc
-        return True
 
+    def merge(self, name_base, name_2, name_out):
+        logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
+        both_pc = []
+        for i in range(2):
+            pc = self.clouds[name_2][i].clone()
+            pc_new = self.clouds[name_base][i].add(pc)
+            both_pc.append(pc_new)
+
+        self.clouds[name_out] = both_pc
+
+    # below not reviewed yet
     def auto_merge(self, name_base, name_2, name_out):
         logger.debug('automerge %s, %s' % (name_base, name_2))
-        for name in [name_base, name_2]:
-            if type(self.clouds[name][0]) == list:
-                self.clouds[name] = self.to_cpp(self.clouds[name])
         pc_both = []
         for i in range(2):
             if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
-                # if either pointcloud with zero point, return name_2 with no transform
+                # if either pointcloud with zero point, return name_2 without transform
                 pc_both.append(self.clouds[name_2][i].clone())
                 continue
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
             result, pc = reg.SCP()
+            # TODO:result?
             pc_both.append(pc)
 
         self.clouds[name_out] = pc_both
@@ -208,7 +210,7 @@ class PcProcessNoPCL(PcProcess):
         self.clouds[name_out] = pc_both_o
         return 0
 
-    def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+    def merge(self, name_base, name_2, name_out):
         self.clouds[name_out] = self.clouds[name_base]
         return True
 
