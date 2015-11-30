@@ -61,8 +61,8 @@ class freeless():
         points = []
 
         MAX_DIST_XZ_SQ = 70 ** 2
-        PLATE_Y = -5.0
-        MAX_DIST_Y = 100
+        PLATE_Y = -0.5
+        MAX_DIST_Y = 90
 
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)

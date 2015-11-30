@@ -40,6 +40,7 @@ def logger_info(logger):
     logger.info("Type 'S[number]' (Step) to mave [number] step")
     logger.info("Type 'C[length]' (Change) change step length for each step")
     logger.info("Type 'T[steps]' Set total steps")
+    logger.info("Type 'B' show calibration")
     logger.info("Type 'check' to check proper camera setting")
     logger.info("Type 'quit', 'exit' to leave")
 
@@ -114,6 +115,11 @@ def interactive(robot):
         elif l.startswith('b'):
             res = robot.calibrate()
             print(res)
+
+        elif l.startswith('B'):
+            res = robot.get_calibrate()
+            print(res)
+
         else:
             logger_info(logger)
 

@@ -46,6 +46,7 @@ cdef extern from "scan_module.h":
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
 
     int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
+    int GPT(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
     int STL_to_List(MeshPtr triangles, vector[vector[vector [float]]] &data)
     int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value)
@@ -127,6 +128,7 @@ cdef class PointCloudXYZRGBObj:
         self.concatenatePointsNormal()
         new_c = PointCloudXYZRGBObj()
         POS(self.bothobj, self.meshobj, self.obj)
+        # GPT(self.bothobj, self.meshobj, self.obj)
         return 0
 
     cpdef STL_to_Faces(self):
@@ -202,7 +204,7 @@ cdef class RegCloud:
     #     FE(self.obj, self.obj_f, radius)
     #     return 0
 
-    cpdef SCP(self, float leaf = 2):
+    cpdef SCP(self, float leaf = 3):
         cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
         is_converge = SCP(self.obj, self.obj_f, self.scene, self.scene_f, pc.bothobj, leaf)
         pc.split()

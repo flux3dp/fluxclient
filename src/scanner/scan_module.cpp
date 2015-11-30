@@ -14,6 +14,9 @@
 
 #include <pcl/console/print.h>
 
+#include <pcl/features/normal_3d.h>
+#include <pcl/surface/gp3.h>
+
 PointCloudXYZRGBPtr createPointCloudXYZRGB() {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (
     new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -303,61 +306,145 @@ int bounding_box(PointCloudXYZRGBPtr cloud, std::vector<float> &b_box){
 }
 
 int apply_transform(PointCloudXYZRGBPtr cloud, NormalPtr normals, PointXYZRGBNormalPtr both, float x, float y, float z, float rx, float ry, float rz){
-  both = concatenatePointsNormal(cloud, normals);
+  if (normals -> size() != cloud -> size()){
+      Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+      std::vector<float> b_box;
+      b_box.resize(3);
+      std::vector<float> center;
+      center.resize(3);
 
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-  std::vector<float> b_box;
-  b_box.resize(3);
-  std::vector<float> center;
-  center.resize(3);
+      // move to origin
+      bounding_box(cloud, b_box);
+      for (int i = 0; i < 3; i += 1){
+        center[i] = (b_box[i] + b_box[i + 3]) / 2;
+      }
+      transform = Eigen::Matrix4f::Identity();
+      transform(0, 3) = 0 - center[0];
+      transform(1, 3) = 0 - center[1];
+      transform(2, 3) = 0 - center[2];
+      pcl::transformPointCloud(*cloud, *cloud, transform);
 
-  // move to origin
-  bounding_box(cloud, b_box);
-  for (int i = 0; i < 3; i += 1){
-    center[i] = (b_box[i] + b_box[i + 3]) / 2;
+      // rotate
+      transform = Eigen::Matrix4f::Identity();
+      Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
+      float theta;
+      theta = rx; // The angle of rotation in radians
+      tmpM(1, 1) = cos (theta); //x
+      tmpM(1, 2) = -sin(theta);
+      tmpM(2, 1) = sin (theta);
+      tmpM(2, 2) = cos (theta);
+      transform *= tmpM;
+
+      tmpM = Eigen::Matrix4f::Identity();
+      theta = ry;
+      tmpM(0, 0) = cos (theta); //y
+      tmpM(2, 0) = -sin(theta);
+      tmpM(0, 2) = sin (theta);
+      tmpM(2, 2) = cos (theta);
+      transform *= tmpM;
+
+      tmpM = Eigen::Matrix4f::Identity();
+      theta = rz;
+      tmpM(0, 0) = cos (theta); //z
+      tmpM(0, 1) = -sin(theta);
+      tmpM(1, 0) = sin (theta);
+      tmpM(1, 1) = cos (theta);
+      transform *= tmpM;
+      pcl::transformPointCloud(*cloud, *cloud, transform);
+
+      // move to proper position
+      transform = Eigen::Matrix4f::Identity();
+      transform(0, 3) = x;
+      transform(1, 3) = y;
+      transform(2, 3) = z;
+      pcl::transformPointCloud(*cloud, *cloud, transform);
+
+      // split(both, cloud, normals);
   }
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = 0 - center[0];
-  transform(1, 3) = 0 - center[1];
-  transform(2, 3) = 0 - center[2];
-  pcl::transformPointCloudWithNormals(*both, *both, transform);
+  else{
+      both = concatenatePointsNormal(cloud, normals);
 
-  // rotate
-  transform = Eigen::Matrix4f::Identity();
-  Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
-  float theta;
-  theta = rx; // The angle of rotation in radians
-  tmpM(1, 1) = cos (theta); //x
-  tmpM(1, 2) = -sin(theta);
-  tmpM(2, 1) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  transform *= tmpM;
+      Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+      std::vector<float> b_box;
+      b_box.resize(3);
+      std::vector<float> center;
+      center.resize(3);
 
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = ry;
-  tmpM(0, 0) = cos (theta); //y
-  tmpM(2, 0) = -sin(theta);
-  tmpM(0, 2) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  transform *= tmpM;
+      // move to origin
+      bounding_box(cloud, b_box);
+      for (int i = 0; i < 3; i += 1){
+        center[i] = (b_box[i] + b_box[i + 3]) / 2;
+      }
+      transform = Eigen::Matrix4f::Identity();
+      transform(0, 3) = 0 - center[0];
+      transform(1, 3) = 0 - center[1];
+      transform(2, 3) = 0 - center[2];
+      pcl::transformPointCloudWithNormals(*both, *both, transform);
 
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = rz;
-  tmpM(0, 0) = cos (theta); //z
-  tmpM(0, 1) = -sin(theta);
-  tmpM(1, 0) = sin (theta);
-  tmpM(1, 1) = cos (theta);
-  transform *= tmpM;
-  pcl::transformPointCloudWithNormals(*both, *both, transform);
+      // rotate
+      transform = Eigen::Matrix4f::Identity();
+      Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
+      float theta;
+      theta = rx; // The angle of rotation in radians
+      tmpM(1, 1) = cos (theta); //x
+      tmpM(1, 2) = -sin(theta);
+      tmpM(2, 1) = sin (theta);
+      tmpM(2, 2) = cos (theta);
+      transform *= tmpM;
 
-  // move to proper position
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = x;
-  transform(1, 3) = y;
-  transform(2, 3) = z;
-  pcl::transformPointCloudWithNormals(*both, *both, transform);
+      tmpM = Eigen::Matrix4f::Identity();
+      theta = ry;
+      tmpM(0, 0) = cos (theta); //y
+      tmpM(2, 0) = -sin(theta);
+      tmpM(0, 2) = sin (theta);
+      tmpM(2, 2) = cos (theta);
+      transform *= tmpM;
 
-  split(both, cloud, normals);
+      tmpM = Eigen::Matrix4f::Identity();
+      theta = rz;
+      tmpM(0, 0) = cos (theta); //z
+      tmpM(0, 1) = -sin(theta);
+      tmpM(1, 0) = sin (theta);
+      tmpM(1, 1) = cos (theta);
+      transform *= tmpM;
+      pcl::transformPointCloudWithNormals(*both, *both, transform);
+
+      // move to proper position
+      transform = Eigen::Matrix4f::Identity();
+      transform(0, 3) = x;
+      transform(1, 3) = y;
+      transform(2, 3) = z;
+      pcl::transformPointCloudWithNormals(*both, *both, transform);
+
+      split(both, cloud, normals);
+    }
+
+  return 0;
+}
+
+int GPT(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud){
+// int GPT(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normals, pcl::PolygonMesh &triangles){
+  puts("GreedyProjectionTriangulation computing");
+
+  pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+
+  pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
+  tree2->setInputCloud (cloud_with_normals);
+
+
+  gp3.setSearchRadius (100);
+  gp3.setMu (2.5);
+  gp3.setMaximumNearestNeighbors (300);
+  gp3.setMaximumSurfaceAngle(M_PI/4); // 45 degrees
+  // gp3.setMinimumAngle(M_PI/18); // 10 degrees
+  gp3.setMinimumAngle(0); // 10 degrees
+  gp3.setMaximumAngle(2*M_PI/3); // 120 degrees
+  gp3.setNormalConsistency(true);
+
+  gp3.setInputCloud (cloud_with_normals);
+  gp3.setSearchMethod (tree2);
+  gp3.reconstruct (*triangles);
+  fromPCLPointCloud2(triangles->cloud, *cloud);
 
   return 0;
 }

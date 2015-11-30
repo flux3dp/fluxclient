@@ -97,7 +97,8 @@ class PcProcess():
         # WARNING: merge L and R here!
         # pc = pc_both[0].clone()
         pc = pc_both[0].add(pc_both[1])
-        pc.ne_viewpoint()
+        # pc.ne_viewpoint()
+        pc.ne()
         pc.to_mesh()  # compute mesh
         return pc
 
@@ -148,7 +149,7 @@ class PcProcess():
                 write_stl(pc_mesh.STL_to_List(), buf, mode)
                 return buf.getvalue()
 
-    def apply_transform(name_in, x, y, z, rx, ry, rz, name_out):
+    def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
         both_pc = []
         for pc in self.clouds[name_in]:
             pc_new = pc.clone()
