@@ -146,6 +146,8 @@ class PcProcess():
 
             elif mode == 'binary':
                 buf = io.BytesIO()
+                write_stl(pc_mesh.STL_to_List(), './output.stl', mode)
+
                 write_stl(pc_mesh.STL_to_List(), buf, mode)
                 return buf.getvalue()
 
