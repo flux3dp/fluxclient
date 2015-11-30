@@ -197,7 +197,9 @@ class UpnpDiscover(object):
                         "error_label": error_label})
                     return dataset
                 except Exception:
-                    logger.exception("Error unpack status")
+                    basic_info = self.history[uuid]
+                    if basic_info["version"] > "0.13a":
+                        logger.exception("Unpack status failed")
             else:
                 self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
                 payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,

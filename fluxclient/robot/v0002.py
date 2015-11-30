@@ -55,7 +55,6 @@ class FluxRobotV0002(object):
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         sock.send(buf)
 
-        # status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
         status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
 
         if status == "OK":
@@ -283,7 +282,7 @@ class FluxRobotV0002(object):
         if msg.startswith("{"):
             return json.loads(msg, "ignore")
         else:
-            return msg
+            raise_error(msg)
 
     @ok_or_error
     def scan_laser(self, left, right):
