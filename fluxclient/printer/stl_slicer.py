@@ -9,10 +9,7 @@ import sys
 
 from PIL import Image
 
-try:
-    from . import _printer
-except:
-    pass
+from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
 from fluxclient.printer import ini_string, ini_constraint
@@ -206,6 +203,8 @@ class StlSlicer(object):
         self.my_ini_writer(tmp_slic3r_setting_file, self.config)
 
         command += ['--load', tmp_slic3r_setting_file]
+        # command += ['--load', '/Users/yen/Documents/config.ini']
+
         print('command:', ' '.join(command), file=sys.stderr)
 
         fail_flag = False
