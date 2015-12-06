@@ -52,8 +52,6 @@ class UpnpTask(UpnpBase):
 
         resp = self.make_request(req_code, resp_code, msg,
                                  encrypt=False, timeout=timeout)
-        if resp and resp.get("status") == "ok":
-            self.access_id = binascii.a2b_hex(resp.get("access_id"))
         return resp
 
     def passwd(self, password, old_password=""):

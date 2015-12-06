@@ -42,9 +42,26 @@ def locate_includes(package_name):
         raise RuntimeError("Looking for package error: %s" % package_name)
 
 
+def is_winsows():
+    return platform.platform().startswith("Windows")
+
+
+def is_posix():
+    return not is_winsows()
+
+
+def is_linux():
+    platform.platform().startswith("Linux")
+
+
+def is_darwin():
+    platform.platform().startswith("Darwin")
+
+
 def prepare_setup():
     if not sys.version_info >= (3, 3):
-        print("ERROR: fluxclient require Python version grather then 3.3\n", file=sys.stderr)
+        print("ERROR: fluxclient require Python version grather then 3.3\n",
+              file=sys.stderr)
         sys.exit(1)
 
     # Ensure at correct working directory
@@ -93,50 +110,53 @@ def create_common_extentions():
 
 
 def create_scanner_extentions():
+    # Process include_dirs
+    include_dirs = []
+    # Process libraries
+    libraries = []
+    # Process extra_compile_args
+    extra_compile_args = []
+    library_dirs = []
+
     try:
-        # Process include_dirs
-        include_dirs = [
-            locate_includes("eigen3"),
-        ]
+        if is_posix():
+            include_dirs += [locate_includes("eigen3"), ]
+            libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
+                          "pcl_search", "pcl_sample_consensus", "pcl_filters",
+                          "pcl_features", "pcl_segmentation", "pcl_surface",
+                          "pcl_registration", "pcl_keypoints", "pcl_tracking",
+                          "pcl_recognition", "pcl_outofcore", "pcl_people", ]
+            if has_package("pcl_common-1.8"):
+                include_dirs += [locate_includes("pcl_common-1.8")]
+            elif has_package("pcl_common-1.7"):
+                include_dirs += [locate_includes("pcl_common-1.7")]
+            else:
+                raise RuntimeError("Can not locate pcl includes.")
 
-        # Process libraries
-        libraries = [
-            "pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree", "pcl_search",
-            "pcl_sample_consensus", "pcl_filters", "pcl_features",
-            "pcl_segmentation", "pcl_surface", "pcl_registration", "pcl_keypoints",
-            "pcl_tracking", "pcl_recognition", "pcl_outofcore", "pcl_people", ]
-
-        library_dirs = []
-
-        # Process extra_compile_args
-        extra_compile_args = []
         if platform.platform().startswith("Darwin"):
-            extra_compile_args = ["--stdlib=libc++"]
-            extra_compile_args += ["-mmacosx-version-min=10.9"]
+            extra_compile_args += ["--stdlib=libc++",
+                                   "-mmacosx-version-min=10.9"]
         elif platform.platform().startswith("Linux"):
-            # os.environ['CC'] = 'g++'  # using g++ instead of gcc
-            extra_compile_args = ["-lstdc++"]  # flag that tells compiler compile a .cpp file
+            extra_compile_args += ["-lstdc++"]
+
         elif platform.platform().startswith("Windows"):
-            include_dirs = []
-            libraries = ["pcl_common_release", "pcl_octree_release", "pcl_io_release", "pcl_kdtree_release", "pcl_search_release",
-                         "pcl_sample_consensus_release", "pcl_filters_release", "pcl_features_release",
-                         "pcl_segmentation_release", "pcl_surface_release", "pcl_registration_release", "pcl_keypoints_release",
-                         "pcl_tracking_release", "pcl_recognition_release", "pcl_outofcore_release", "pcl_people_release"]
-            include_dirs += ["C:/Program Files (x86)/Eigen/include"]
-            include_dirs += ["C:/Program Files (x86)/flann/include"]
-            include_dirs += ["C:/Program Files/PCL 1.7.2/include/pcl-1.7"]
-            include_dirs += ["C:/Program Files/PCL 1.7.2/lib"]
-            include_dirs += ["C:/local/boost_1_59_0"]
-            library_dirs = ["C:\\Program Files\\PCL 1.7.2\\lib"]
+            libraries += ["pcl_common_release", "pcl_octree_release",
+                          "pcl_io_release", "pcl_kdtree_release",
+                          "pcl_search_release", "pcl_sample_consensus_release",
+                          "pcl_filters_release", "pcl_features_release",
+                          "pcl_segmentation_release", "pcl_surface_release",
+                          "pcl_registration_release", "pcl_keypoints_release",
+                          "pcl_tracking_release", "pcl_recognition_release",
+                          "pcl_outofcore_release", "pcl_people_release"]
+            include_dirs += ["C:/Program Files (x86)/Eigen/include",
+                             "C:/Program Files (x86)/flann/include",
+                             "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
+                             "C:/Program Files/PCL 1.7.2/lib",
+                             "C:/local/boost_1_59_0"]
+            library_dirs += ["C:/Program Files/PCL 1.7.2/lib"]
         else:
             raise RuntimeError("Unknow platform!!")
 
-        if has_package("pcl_common-1.8"):
-            include_dirs += [locate_includes("pcl_common-1.8")]
-        elif has_package("pcl_common-1.7"):
-            include_dirs += [locate_includes("pcl_common-1.7")]
-        else:
-            raise RuntimeError("Can not locate pcl includes.")
     except (RuntimeError, FileNotFoundError):
         print("""
 *********************************************************************
