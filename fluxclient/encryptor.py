@@ -83,11 +83,9 @@ def validate_signature(keyobj, message, signature):
 
 
 def get_access_id(keyobj, binary=False):
-    pem = keyobj.publickey().exportKey("PEM")
-    if pem[-1] != 10:
-        pem += b'\n'
+    der = keyobj.publickey().exportKey("DER")
 
     if binary:
-        return sha1(pem).digest()
+        return sha1(der).digest()
     else:
-        return sha1(pem).hexdigest()
+        return sha1(der).hexdigest()
