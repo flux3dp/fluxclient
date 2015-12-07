@@ -42,6 +42,7 @@ def logger_info(logger):
     logger.info("Type 'T[steps]' Set total steps")
     logger.info("Type 'B' show calibration")
     logger.info("Type 'check' to check proper camera setting")
+    logger.info("Type 'do calibrate' to do calibrate")
     logger.info("Type 'quit', 'exit' to leave")
 
 
@@ -112,7 +113,7 @@ def interactive(robot):
             res = robot.scan_check()
             print(res)
 
-        elif l.startswith('b'):
+        elif l.startswith('d'):
             res = robot.calibrate()
             print(res)
 

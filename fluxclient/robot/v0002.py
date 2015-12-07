@@ -305,7 +305,7 @@ class FluxRobotV0002(object):
         return resp
 
     def calibrate(self):
-        self._send_cmd(b"calib")
+        self._send_cmd(b"calibrate")
         resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
         return resp
 

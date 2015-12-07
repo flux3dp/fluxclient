@@ -180,10 +180,10 @@ class GcodeToFcode(FcodeBase):
                                 if data[i] is not None:
                                     data[i] += self.G92_delta[i - 1]
 
-                        # fix on slic3r bug slowing down in raft but not in real printing
-                        if self.config is not None and self.layer_now == int(self.config['raft_layers']):
-                            data[0] = float(self.config['first_layer_speed']) * 60
-                            subcommand |= (1 << 6)
+                        # # fix on slic3r bug slowing down in raft but not in real printing
+                        # if self.config is not None and self.layer_now == int(self.config['raft_layers']):
+                        #     data[0] = float(self.config['first_layer_speed']) * 60
+                        #     subcommand |= (1 << 6)
 
                         self.analyze_metadata(data, comment)
                         command |= subcommand

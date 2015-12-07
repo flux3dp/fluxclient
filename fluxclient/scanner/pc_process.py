@@ -8,10 +8,9 @@ import sys
 from . import scan_settings
 from .tools import write_stl, write_pcd
 
-try:
-    from . import _scanner
-except:
-    pass
+
+from . import _scanner
+
 
 logger = logging.getLogger(__name__)
 
