@@ -136,23 +136,23 @@ def write_stl(tri, output='model.stl', mode='binary'):
 
         for i in range(80):
             if i < len(Header):
-                outstl.write(struct.pack('c', Header[i:i + 1]))
+                outstl.write(struct.pack('@c', Header[i:i + 1]))
             else:
-                outstl.write(struct.pack("c", b' '))
+                outstl.write(struct.pack("@c", b' '))
 
-        outstl.write(struct.pack("I", len(tri)))
+        outstl.write(struct.pack("@I", len(tri)))
         for i in tri:
             # output normal?
             # n = normal(i)
             # my_normal = normalize(n)
-            # outstl.write(struct.pack("fff", my_normal[0], my_normal[1], my_normal[2]))
+            # outstl.write(struct.pack("@fff", my_normal[0], my_normal[1], my_normal[2]))
 
-            outstl.write(struct.pack("fff", 0.0, 0.0, 0.0))
+            outstl.write(struct.pack("@fff", 0.0, 0.0, 0.0))
             for j in i:
                 for k in j[:3]:
-                    outstl.write(struct.pack("f", k))
+                    outstl.write(struct.pack("@f", k))
             for j in range(2):
-                outstl.write(struct.pack("?", False))
+                outstl.write(struct.pack("@?", False))
 
     elif mode == 'ascii':
         print('solid ascii', file=outstl)
@@ -165,6 +165,7 @@ def write_stl(tri, output='model.stl', mode='binary'):
 
             print('  outer loop', file=outstl)
             for j in i:
+            # for j in [i[0], i[2], i[1]]:
                 print('   vertex', j[0], j[1], j[2], file=outstl)
             print('  endloop', file=outstl)
             print(' endfacet', file=outstl)

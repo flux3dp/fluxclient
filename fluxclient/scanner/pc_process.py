@@ -96,8 +96,8 @@ class PcProcess():
         # WARNING: merge L and R here!
         # pc = pc_both[0].clone()
         pc = pc_both[0].add(pc_both[1])
-        # pc.ne_viewpoint()
-        pc.ne()
+        pc.ne_viewpoint()
+        # pc.ne()
         pc.to_mesh()  # compute mesh
         return pc
 
@@ -134,20 +134,20 @@ class PcProcess():
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
-
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
-
+            mesh_l = pc_mesh.STL_to_List()
             if mode == 'ascii':
-                buf = io.StringIO()
-                write_stl(pc_mesh.STL_to_List(), buf, mode)
+                strbuf = io.StringIO()
+                write_stl(mesh_l, './output.stl', mode)
+                write_stl(mesh_l, strbuf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
                 buf = io.BytesIO()
-                write_stl(pc_mesh.STL_to_List(), './output.stl', mode)
+                write_stl(mesh_l, './output.stl', mode)
 
-                write_stl(pc_mesh.STL_to_List(), buf, mode)
+                write_stl(mesh_l, buf, mode)
                 return buf.getvalue()
 
     def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
