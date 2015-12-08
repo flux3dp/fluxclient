@@ -162,10 +162,11 @@ class GcodeToFcode(FcodeBase):
 
             output_stream.write(struct.pack('<I', 0))  # script length
             self.script_length = 0
-
+            comment_list = []
             for line in input_stream:
                 if ';' in line:
                     line, comment = line.split(';', 1)
+                    comment_list.append(comment)
                 else:
                     comment = ''
                 line = findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', line)  # split
@@ -300,6 +301,7 @@ class GcodeToFcode(FcodeBase):
             self.md['TIME_COST'] = str(self.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
+            self.md['SETTING'] = str(comment_list[-130:])
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)
