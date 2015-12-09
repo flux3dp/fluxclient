@@ -35,7 +35,7 @@ class GcodeToFcode(FcodeBase):
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
-        self.current_pos = [None, None, None, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
         self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.distance = 0.  # recording distance go through
@@ -280,6 +280,9 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
+                    elif line[0] == 'M25':
+                        command = 5
+                        self.writer(packer(command), output_stream)
 
                     else:
                         if line[0] in ['M400']:
