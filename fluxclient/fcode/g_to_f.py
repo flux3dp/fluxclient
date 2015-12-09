@@ -197,8 +197,8 @@ class GcodeToFcode(FcodeBase):
                     elif line[0] == 'X2':  # laser
                         command = 32  # only use one laser
                         self.writer(packer(command), output_stream)
-                        if line[1] == 'O':
-                            strength = float(line[1].lstrip('O'))
+                        if line[1].startswith('O'):
+                            strength = float(line[1].lstrip('O')) / 255.
                         else:  # bad gcode!!
                             strength = 0
                         self.writer(packer_f(strength), output_stream)

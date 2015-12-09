@@ -303,6 +303,8 @@ class LaserBase(object):
         m_GcodeToFcode = GcodeToFcode()
         m_GcodeToFcode.image = self.dump(mode='preview')
         m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
+        m_GcodeToFcode.md['CORRECTION'] = 'N'
+        m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
         f = io.StringIO()
