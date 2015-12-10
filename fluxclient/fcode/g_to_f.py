@@ -24,7 +24,7 @@ class GcodeToFcode(FcodeBase):
       transform gcode into fcode
       analyze metadata
     """
-    def __init__(self, version=1):
+    def __init__(self, version=1, head_type="EXTRUDER", ext_metadata={}):
         super(GcodeToFcode, self).__init__()
 
         self.tool = 0  # set by T command
@@ -41,7 +41,8 @@ class GcodeToFcode(FcodeBase):
         self.distance = 0.  # recording distance go through
         self.max_range = [0., 0., 0.]  # recording max coordinate
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
-        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as default
+        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        self.md.update(ext_metadata)
 
         self.record_path = True
         self.record_z = 0.0

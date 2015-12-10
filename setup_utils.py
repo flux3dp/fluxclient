@@ -100,7 +100,8 @@ def get_entry_points():
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
-            "flux_fcode_conv=fluxclient.commands.fcode:conv"
+            "flux_fcode_conv=fluxclient.commands.fcode:gcode_2_fcode",
+            "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
         ]
     }
 
