@@ -281,7 +281,7 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
-                    elif line[0] == 'M25':
+                    elif line[0] == 'M25':  # pause by gcode
                         command = 5
                         self.writer(packer(command), output_stream)
 

@@ -3,6 +3,7 @@
 import struct
 import sys
 from math import sqrt
+import io
 
 # PCL NOTE: http://docs.pointclouds.org/1.7.0/structpcl_1_1_point_x_y_z_r_g_b.html
 # uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
@@ -56,18 +57,27 @@ def check_tri(tri, thres=25):
     return True
 
 
-def read_pcd(file_name):
-    assert file_name[-4:] == '.pcd', '%s is not a pcd file?' % file_name
+def read_pcd(data):
+    if type(data) == str:
+        file_name = data
+        assert file_name[-4:] == '.pcd', '%s is not a pcd file?' % file_name
+        pcd = open(file_name, 'r')
+
+    elif type(data) == bytes:
+        pcd = io.StringsIO()
+        pcd.write(data.decode())
+        pcd.seek(0)
+
     pc = []
-    with open(file_name, 'r') as pcd:
-        for _ in range(11):
-            pcd.readline()  # read the header
-        for line in pcd:
-            point = [float(j) for j in line.rstrip().split()]
-            rgb = int(point.pop())
-            b, g, r = rgb & 0x0000ff, (rgb >> 8) & 0x0000ff, (rgb >> 16) & 0x0000ff
-            point += [r, g, b]
-            pc.append(point)
+    for _ in range(11):
+        pcd.readline()  # read the header
+
+    for line in pcd:
+        point = [float(j) for j in line.rstrip().split()]
+        rgb = int(point.pop())
+        b, g, r = rgb & 0x0000ff, (rgb >> 8) & 0x0000ff, (rgb >> 16) & 0x0000ff
+        point += [r, g, b]
+        pc.append(point)
     return pc
 
 

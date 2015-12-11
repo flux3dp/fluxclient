@@ -6,7 +6,7 @@ import io
 import sys
 
 from . import scan_settings
-from .tools import write_stl, write_pcd
+from .tools import write_stl, write_pcd, read_pcd
 
 
 from . import _scanner
@@ -28,6 +28,15 @@ class PcProcess():
         self.clouds[name] = self.to_cpp((self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R)))
         logger.debug('upload %s, L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
         logger.debug('all:' + " ".join(self.clouds.keys()))
+
+    def import_file(name, buf, filetype):
+        if filetype == 'pcd':
+            tmp = read_pcd(buf)
+            tmp = self.to_cpp((tmp, []))
+            self.clouds[name] = tmp
+        else:
+            print("can't parse {} file".format(filetype), file=sys.stderr)
+            raise NotImplementedError
 
     def unpack_data(self, buffer_data):
         """
@@ -134,6 +143,17 @@ class PcProcess():
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
+
+        elif file_format == 'ply':
+            pc_both = self.clouds[name]
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
+
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
             mesh_l = pc_mesh.STL_to_List()
