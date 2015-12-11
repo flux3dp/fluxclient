@@ -54,7 +54,26 @@ class RobotConsole(object):
 
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
+            "play": {
+                "info": self.play_info
+            },
         }
+
+    def call_command(self, ref, args, wrapper=None):
+        if not args:
+            return False
+        cmd = args[0]
+        if cmd in ref:
+            obj = ref[cmd]
+            if isinstance(obj, dict):
+                return self.call_command(obj, args[1:], wrapper)
+            else:
+                if wrapper:
+                    wrapper(obj, *args[1:])
+                else:
+                    obj(*args[1:])
+                return True
+        return False
 
     def on_cmd(self, arguments):
         if self._mode == "raw":
@@ -63,17 +82,16 @@ class RobotConsole(object):
             else:
                 self._raw_sock.send(arguments.encode() + b"\n")
         else:
-            args = arguments.split(" ", 1)
-            cmd = args[0]
+            args = shlex.split(arguments)
 
             try:
-                if cmd in self.simple_mapping:
-                    self.simple_cmd(self.simple_mapping[cmd], *args[1:])
-                elif cmd in self.cmd_mapping:
-                    func_ptr = self.cmd_mapping[cmd]
-                    func_ptr(*args[1:])
+                if self.call_command(self.simple_mapping, args,
+                                     self.simple_cmd):
+                    pass
+                elif self.call_command(self.cmd_mapping, args):
+                    pass
                 else:
-                    logger.error("Unknow Command Q")
+                    logger.error("Unknow Command: %s", arguments)
 
             except RuntimeError as e:
                 logger.error("RuntimeError%s" % repr(e.args))
@@ -170,6 +188,21 @@ class RobotConsole(object):
     def md5(self, filename):
         md5 = self.robot_obj.md5(" ".join(filename.split("/", 1)))
         logger.info("MD5 %s %s", filename, md5)
+
+    def play_info(self):
+        metadata, images = self.robot_obj.play_info()
+        logger.info("Metadata:")
+        for k, v in metadata.items():
+            logger.info("  %s=%s", k, v)
+        tempfiles = []
+        if images:
+            for mime, buf in images:
+                ext = mimetypes.guess_extension(mime)
+                if ext:
+                    ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
+                    ntf.write(buf)
+                    tempfiles.append(ntf)
+            os.system("open " + " ".join([n.name for n in tempfiles]))
 
     def oneshot(self, filename=None):
         images = self.robot_obj.oneshot()

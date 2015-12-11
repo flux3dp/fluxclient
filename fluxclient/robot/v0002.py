@@ -109,6 +109,8 @@ class FluxRobotV0002(object):
         assert mn == "binary"
         size = int(ssize)
         logger.debug("Recv %s %i" % (mimetype, size))
+        if size == 0:
+            return (mimetype, b"")
         buf = BytesIO()
         left = size
         while left > 0:
@@ -189,6 +191,27 @@ class FluxRobotV0002(object):
     @ok_or_error
     def start_play(self):
         return self._make_cmd(b"start")
+
+    def play_info(self):
+        self._send_cmd(b"play_info")
+        metadata = imgbuf = None
+
+        resp = self.get_resp().decode("ascii", "ignore")
+        if resp.startswith("binary text/json"):
+            _, bm = self.recv_binary(resp)
+            metadata = json.loads(bm.decode("utf8", "ignore"))
+        else:
+            raise_error(resp)
+
+        images = []
+        while True:
+            resp = self.get_resp().decode("ascii", "ignore")
+            if resp.startswith("binary "):
+                images.append(self.recv_binary(resp))
+            elif resp == "ok":
+                return metadata, images
+            else:
+                raise RuntimeError(resp)
 
     def upload_stream(self, stream, length, mimetype, upload_to, cmd="upload",
                       progress_callback=None):
