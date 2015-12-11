@@ -76,22 +76,22 @@ class LaserBase(object):
         if self.laser_on is True:
             return []
         self.laser_on = True
-        return ["M400", "X2O%d;turnOn" % self.draw_power, "G4 P20"]
+        return ["X2O%d;turnOn" % self.draw_power, "G4 P20"]
 
     def turnOff(self):
         if self.laser_on is False:
             return []
         self.laser_on = False
-        return ["M400", "X2O0;turnOff", "G4 P20"]
+        return ["X2O0;turnOff", "G4 P20"]
 
     def turnTo(self, power=None):
         if power is None:
             self.laser_on = True
-            return ["M400", "X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
+            return ["X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
 
         elif power != 0:
             self.laser_on = True
-            return ["M400", "X2O%d;turnTo %d" % (power, power), "G4 P20"]
+            return ["X2O%d;turnTo %d" % (power, power), "G4 P20"]
 
         elif power == 0:
             return self.turnOff()
@@ -298,8 +298,6 @@ class LaserBase(object):
             return image_bytes
         else:
             print("unsupport mode %s" % mode, file=sys.stderr)
-
-
 
     def fcode_generate(self, *args):
         fcode_output = io.BytesIO()
