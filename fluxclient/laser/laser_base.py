@@ -40,6 +40,7 @@ class LaserBase(object):
         # warning global setting, don't use theese unless you 100% understand what you are doing
         self.rotation = 0
         self.ratio = 1.
+        self.ext_metadata = {}
 
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
@@ -298,9 +299,11 @@ class LaserBase(object):
         else:
             print("unsupport mode %s" % mode, file=sys.stderr)
 
+
+
     def fcode_generate(self, *args):
         fcode_output = io.BytesIO()
-        m_GcodeToFcode = GcodeToFcode()
+        m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
         m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
         m_GcodeToFcode.md['CORRECTION'] = 'N'

@@ -36,6 +36,7 @@ class StlSlicer(object):
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
+        self.ext_metadata = {}
 
     def upload(self, name, buf):
         """
@@ -224,11 +225,11 @@ class StlSlicer(object):
             fail_flag = True
 
         # analying gcode(even transform)
-        ws.send_progress('analying metadata', 0.99)
+        ws.send_progress('analyzing metadata', 0.99)
 
         fcode_output = io.BytesIO()
         with open(tmp_gcode_file, 'r') as f:
-            m_GcodeToFcode = GcodeToFcode()
+            m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
             m_GcodeToFcode.config = self.config
             m_GcodeToFcode.image = self.image
             m_GcodeToFcode.process(f, fcode_output)
