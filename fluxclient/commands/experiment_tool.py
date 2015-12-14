@@ -5,6 +5,7 @@ import logging
 from re import findall
 from time import time
 import datetime
+import numpy as np
 
 from fluxclient.scanner.pc_process import PcProcess
 from fluxclient.scanner.tools import read_pcd, write_stl, write_pcd
@@ -45,14 +46,18 @@ def main(in_file, out_file, command=''):
         elif i.startswith('A'):
             if i[1] == 'f':
                 import bisect
+                import copy
                 from math import sqrt, asin, pi, radians, cos, sin
 
                 floor = -10
                 steps = 400
                 print('adding floor')
                 a = []
-
-                for z in range(len(_PcProcess.clouds['in'][0]) - 1):
+                # print(len(_PcProcess.clouds['in'][0]))
+                _PcProcess.cut('in', 'in', 'z', True, floor)
+                print(len(_PcProcess.clouds['in'][0]))
+                # for z in range(len(_PcProcess.clouds['in'][0]) - 1):
+                for z in range(len(_PcProcess.clouds['in'][0])):
                     # if _PcProcess.clouds['in'][0][z][2] < _PcProcess.clouds['in'][0][z + 1][2]:  # detect for tail
                     a.append(_PcProcess.clouds['in'][0][z])
 
@@ -80,26 +85,31 @@ def main(in_file, out_file, command=''):
                 # compute for center (no need?)
                 after = sorted(after, key=lambda x: x[1])
                 after = [p[0] for p in after]
-                c = [0.0 for _ in range(6)]
-                for p in after:
-                    for _ in range(6):
-                        c[_] += p[_]
-                for _ in range(6):
-                    c[_] /= len(after)
+                # c = [0.0 for _ in range(6)]
+                # for p in after:
+                #     for _ in range(6):
+                #         c[_] += p[_]
+                # for _ in range(6):
+                #     c[_] /= len(after)
 
-                plane = after[:]
+                plane = copy.deepcopy(after)
                 for p in plane:
-                    p[2] = floor
+                    pass
+                    # print(p[2])
+                    # p[2] = floor
+
+                # for p in plane:
+                #     p[3] = 255
+                #     _PcProcess.clouds['in'][0].push_backPoint(*p)
+                # continue
 
                 index = list(range(len(plane)))
-                index = sorted(index, key=lambda x: [after[x][1], after[x][0]])
+                index = sorted(index, key=lambda x: [after[x][0], after[x][1]])
                 output = []
-
                 for j in index:  # upper
                     while len(output) >= 2 and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
                         output.pop()
                     output.append(j)
-                print('o:', len(output))
 
                 t = len(output) + 1
                 for j in index[-2::-1]:  # lower
@@ -108,27 +118,58 @@ def main(in_file, out_file, command=''):
                     output.append(j)
                 output.pop()
 
-                plane = [plane[x] for x in sorted(output)]
+                boarder = [after[x] for x in sorted(output)]
+                # for p in plane:
+                #     p[3] = 255
+                #     _PcProcess.clouds['in'][0].push_backPoint(*p)
+                # continue
+                # plane = after
 
+                from scipy.interpolate import Rbf
                 tmp = []
-                for d in range(360):
-                    for r in range(100):
-                        p = [r * cos(radians(d)), r * sin(radians(d)), floor, 0, 0, 0]
+                grid_leaf = 100
+                X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
+                Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
+                XI, YI = np.meshgrid(X, Y)
+
+                x = [p[0] for p in plane]
+                y = [p[1] for p in plane]
+                z = [p[2] for p in plane]
+                print(len(z))
+
+                rbf = Rbf(x, y, z, function='linear')
+                ZI = rbf(XI, YI)
+                print(ZI.dtype)
+                for xx in range(grid_leaf):
+                    for yy in range(grid_leaf):
+                        # print([XI[xx][yy], YI[xx][yy], ZI[xx][yy], 255, 0, 0])
+                        p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy], 255, 0, 0]
                         flag = True
-                        for b in range(len(plane)):
-                            if (cross(plane[b], plane[(b + 1) % len(plane)], p)) < 0:
+                        for b in range(len(boarder)):
+                            if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
                                 flag = False
                                 break
                         if flag:
                             tmp.append(p)
+                            # print(p[2])
+
+                # for d in range(360):
+                #     for r in range(100):
+                #         p = [r * cos(radians(d)), r * sin(radians(d)), floor, 0, 0, 0]
+                #         flag = True
+                #         for b in range(len(plane)):
+                #             if (cross(plane[b], plane[(b + 1) % len(plane)], p)) < 0:
+                #                 flag = False
+                #                 break
+                #         if flag:
+                #             tmp.append(p)
+
                 plane += tmp
                 # _PcProcess.add_floor('in', 'in')
                 for p in plane:
                     p[3] = 255
                     _PcProcess.clouds['in'][0].push_backPoint(*p)
 
-                _PcProcess.cut('in', 'in', 'z', True, floor)
-                print('ok')
                 # _PcProcess.clouds['in'] = _PcProcess.to_cpp([plane, []])
 
                 # _PcProcess.clouds['in'][0].to_mesh('GPT')
