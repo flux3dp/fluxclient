@@ -21,6 +21,10 @@ class StlSlicer(object):
         super(StlSlicer, self).__init__()
         self.reset(slic3r)
 
+    def __del__(self):
+        if self.working_p:
+            self.working_p.terminate()
+
     def reset(self, slic3r):
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
@@ -37,6 +41,7 @@ class StlSlicer(object):
         self.path = None
         self.image = b''
         self.ext_metadata = {}
+        self.working_p = None
 
     def upload(self, name, buf):
         """
@@ -212,6 +217,7 @@ class StlSlicer(object):
 
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
+        self.working_p = p
         while p.poll() is None:
             line = p.stdout.readline()
             print(line, file=sys.stderr, end='')
@@ -224,6 +230,7 @@ class StlSlicer(object):
         if p.poll() != 0:
             fail_flag = True
 
+        self.working_p = None
         # analying gcode(even transform)
         ws.send_progress('analyzing metadata', 0.99)
 
