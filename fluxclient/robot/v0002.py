@@ -64,7 +64,7 @@ class FluxRobotV0002(object):
 
             self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
         else:
-            raise RuntimeError("Handshake failed: %s" % status)
+            raise RuntimeError(status)
 
     def fileno(self):
         return self.sock.fileno()
