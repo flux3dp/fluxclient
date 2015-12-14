@@ -19,6 +19,10 @@ def show_pc(name, pc_in):
     return '{} size:{}'.format(name, len(pc_in[0]))
 
 
+def cross(p0, p1, p2):
+    return ((p1[0] - p0[0]) * (p2[1] - p0[1])) - ((p1[1] - p0[1]) * (p2[0] - p0[0]))
+
+
 def main(in_file, out_file, command=''):
     _PcProcess = PcProcess()
     tmp = out_file.rfind('.')
@@ -28,7 +32,7 @@ def main(in_file, out_file, command=''):
     _PcProcess.clouds['in'] = _PcProcess.to_cpp([read_pcd(in_file), []])
     print(show_pc('pc_in', _PcProcess.clouds['in']))
     # for i in findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', command):
-    for i in findall('[A-Z][+-]?[0-9]*[.]?[0-9]*', command):
+    for i in findall('[A-Z][a-z]?[+-]?[0-9]*[.]?[0-9]*', command):
         timestamp = datetime.datetime.fromtimestamp(time()).strftime('%H:%M:%S')
         if i.startswith('N'):
             _PcProcess.delete_noise('in', 'in', float(i[1:]))
@@ -38,8 +42,103 @@ def main(in_file, out_file, command=''):
             _PcProcess.to_mesh('in')
             suffix = 'stl'
             print('done')
+        elif i.startswith('A'):
+            if i[1] == 'f':
+                import bisect
+                from math import sqrt, asin, pi, radians, cos, sin
+
+                floor = -10
+                steps = 400
+                print('adding floor')
+                a = []
+
+                for z in range(len(_PcProcess.clouds['in'][0]) - 1):
+                    # if _PcProcess.clouds['in'][0][z][2] < _PcProcess.clouds['in'][0][z + 1][2]:  # detect for tail
+                    a.append(_PcProcess.clouds['in'][0][z])
+
+                # get near floor and a ring point set
+                d = [[p, asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2)) if p[0] > 0 else pi - asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2))] for p in a]  # add theta data
+                d = sorted(d, key=lambda x: abs(x[0][2] - floor))
+
+                rec = [float('-inf'), float('inf')]
+                interval = 2 * pi / 400 * 0.9
+                after = []
+                for p in d:
+                    tmp_index = bisect.bisect(rec, p[1])
+                    if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval:
+                        rec.insert(tmp_index, p[1])
+                        after.append(p)
+                    if len(rec) > 400 + 2:
+                        break
+
+                # print('rec l:', len(rec))
+                # for p in after:
+                #     p[0][3] = 255
+                #     _PcProcess.clouds['in'][0].push_backPoint(*p[0])
+                # continue
+
+                # compute for center (no need?)
+                after = sorted(after, key=lambda x: x[1])
+                after = [p[0] for p in after]
+                c = [0.0 for _ in range(6)]
+                for p in after:
+                    for _ in range(6):
+                        c[_] += p[_]
+                for _ in range(6):
+                    c[_] /= len(after)
+
+                plane = after[:]
+                for p in plane:
+                    p[2] = floor
+
+                index = list(range(len(plane)))
+                index = sorted(index, key=lambda x: [after[x][1], after[x][0]])
+                output = []
+
+                for j in index:  # upper
+                    while len(output) >= 2 and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                        output.pop()
+                    output.append(j)
+                print('o:', len(output))
+
+                t = len(output) + 1
+                for j in index[-2::-1]:  # lower
+                    while len(output) > t and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                        output.pop()
+                    output.append(j)
+                output.pop()
+
+                plane = [plane[x] for x in sorted(output)]
+
+                tmp = []
+                for d in range(360):
+                    for r in range(100):
+                        p = [r * cos(radians(d)), r * sin(radians(d)), floor, 0, 0, 0]
+                        flag = True
+                        for b in range(len(plane)):
+                            if (cross(plane[b], plane[(b + 1) % len(plane)], p)) < 0:
+                                flag = False
+                                break
+                        if flag:
+                            tmp.append(p)
+                plane += tmp
+                # _PcProcess.add_floor('in', 'in')
+                for p in plane:
+                    p[3] = 255
+                    _PcProcess.clouds['in'][0].push_backPoint(*p)
+
+                _PcProcess.cut('in', 'in', 'z', True, floor)
+                print('ok')
+                # _PcProcess.clouds['in'] = _PcProcess.to_cpp([plane, []])
+
+                # _PcProcess.clouds['in'][0].to_mesh('GPT')
+                # suffix = 'stl'
+
+            elif i[1] == 'c':
+                print('adding ceiling')
+            print('done')
         elif i.startswith('E'):
-            print(timestamp, 'export time file {}.{}'.format(prefix, suffix))
+            print(timestamp, 'export file {}.{}'.format(prefix, suffix))
             tmp = _PcProcess.export('in', suffix)
             with open(prefix + '.' + suffix, 'wb') as f:
                 f.write(tmp)
@@ -47,10 +146,10 @@ def main(in_file, out_file, command=''):
 parser = argparse.ArgumentParser(description='An experiment tool for scanning improve', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-i', '--input', help='input filename', required=True)
 parser.add_argument('-o', '--output', help='output filename', default='output.pcd')
-parser.add_argument('-c', '--command', help='ex: N0.3PE\n'
-                                            'N[stddev]: noise del with dev [stddev]\n'
-                                            'P: Possion Meshing\n'
-                                            'E: export file\n'
+parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
+                                                        'N[stddev]: noise del with dev [stddev]\n'
+                                                        'P: Possion Meshing\n'
+                                                        'E: export file\n'
                     )
 args = parser.parse_args()
 
