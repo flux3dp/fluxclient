@@ -31,6 +31,8 @@ def gcode_2_fcode():
         ext_metadata["CORRECTION"] = str(options.correction)
     if options.filament_detect is not None:
         ext_metadata["FILAMENT_DETECT"] = str(options.filament_detect)
+    if options.head_type is not None:
+        ext_metadata['HEAD_TYPE'] = str(options.head_type)
 
     with open(options.input, "r") as in_f:
         conv = GcodeToFcode(ext_metadata=ext_metadata)
