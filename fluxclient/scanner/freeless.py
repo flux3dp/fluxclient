@@ -71,7 +71,8 @@ class freeless():
             if f:
                 if point[0][0] ** 2 + point[0][2] ** 2 < MAX_DIST_XZ_SQ and point[0][1] >= PLATE_Y and point[0][1] < MAX_DIST_Y:
                     # add color
-                    point.append([img_o[y][x - cab_offset][0], img_o[y][x - cab_offset][1], img_o[y][x + 10][2]])
+                    point.append([img_o[y][x - cab_offset][0], img_o[y][x - cab_offset][1], img_o[y][x - cab_offset][2]])
+                    # point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])
                     point.append([x, y])
 
                     points.append(point)
