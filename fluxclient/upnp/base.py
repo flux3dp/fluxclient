@@ -1,6 +1,7 @@
 
-from select import select
 from random import randint
+from select import select
+from hashlib import sha1
 from time import time
 import struct
 import socket
@@ -12,6 +13,7 @@ from fluxclient import encryptor
 
 
 class UpnpBase(object):
+    _access_id = None
     remote_addr = "239.255.255.250"
 
     def __init__(self, uuid, remote_profile=None, lookup_callback=None,
@@ -26,7 +28,7 @@ class UpnpBase(object):
 
         if self.remote_version < StrictVersion("0.12a1"):
             raise RuntimeError("fluxmonitor version is too old")
-        elif self.remote_version >= StrictVersion("0.13a1"):
+        elif self.remote_version >= StrictVersion("0.14a1"):
             raise RuntimeError("fluxmonitor version is too new")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
@@ -63,6 +65,13 @@ class UpnpBase(object):
     @property
     def publickey_der(self):
         return encryptor.get_public_key_der(self.keyobj)
+
+    @property
+    def access_id(self):
+        if not self._access_id:
+            doc = encryptor.get_public_key_der(self.keyobj)
+            self._access_id = sha1(doc).digest()
+        return self._access_id
 
     def create_timestemp(self):
         return time() + self.timedelta

@@ -29,7 +29,8 @@ def printhelp():
     4 - Modify network settings
     5 - Check current wifi SSID
     6 - Set password
-    7 - Get IP Address""")
+    7 - Get IP Address
+    8 - Scan wifi""")
 
 
 def do_general_config(task):
@@ -90,6 +91,13 @@ def do_get_ipaddr(task):
     print(task.get_ipaddr())
 
 
+def do_scan_wifi(task):
+    ret = task.list_ssid()
+    print("%-30s %-4s %s" % ("SSID", "RSSI", "SECURITY"))
+    for l in ret:
+        print("%-30s %-4s %s" % (l.get("ssid"), l.get("rssi"),
+                                 l.get("security")))
+
 def cmdline(task):
     while True:
         printhelp()
@@ -106,6 +114,8 @@ def cmdline(task):
             do_set_password(task)
         elif cmd == "7":
             do_get_ipaddr(task)
+        elif cmd == "8":
+            do_scan_wifi(task)
         else:
             print("Unknow command id: %s" % cmd)
 

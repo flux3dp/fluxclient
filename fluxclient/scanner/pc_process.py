@@ -5,13 +5,12 @@ import logging
 import io
 import sys
 
-import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_stl, write_pcd
+from . import scan_settings
+from .tools import write_stl, write_pcd, read_pcd
 
-try:
-    import fluxclient.scanner._scanner as _scanner
-except:
-    pass
+
+from . import _scanner
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +22,21 @@ class PcProcess():
         self.meshs = {}
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
-        self.clouds[name] = (self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R))
-        logger.debug('upload %s,L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
-        logger.debug('all:' + " ".join(self.clouds.keys()))
+        """
         # upload [name] [point count L] [point count R]
+        """
+        self.clouds[name] = self.to_cpp((self.unpack_data(buffer_pc_L), self.unpack_data(buffer_pc_R)))
+        logger.debug('upload %s, L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
+        logger.debug('all:' + " ".join(self.clouds.keys()))
+
+    def import_file(name, buf, filetype):
+        if filetype == 'pcd':
+            tmp = read_pcd(buf)
+            tmp = self.to_cpp((tmp, []))
+            self.clouds[name] = tmp
+        else:
+            print("can't parse {} file".format(filetype), file=sys.stderr)
+            raise NotImplementedError
 
     def unpack_data(self, buffer_data):
         """
@@ -42,8 +52,22 @@ class PcProcess():
             pc.append(tmp_point)
         return pc
 
-    # def base(self, name):
-    #     self.current_name = name
+    def to_cpp(self, pc_both):
+        """
+        convert python style pc into cpp style pc object
+        """
+        c_both = []
+        for pc_python in pc_both:
+            pc = _scanner.PointCloudXYZRGBObj()
+            for i in pc_python:
+                pc.push_backPoint(*i)  # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
+            # ne(): normal estimate
+            # ne_viewpoint() :normal estimate considering view point
+            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
+            # pc.ne_viewpoint()
+            c_both.append(pc)
+        logger.debug('to_cpp done')
+        return c_both
 
     def cut(self, name_in, name_out, mode, direction, value):
         """
@@ -53,29 +77,10 @@ class PcProcess():
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
 
         self.clouds[name_out] = []
         for pc in pc_both:
             self.clouds[name_out].append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
-
-    def to_cpp(self, pc_both):
-        """
-        convert python style pc into cpp style pc object
-        """
-        tmp = []
-        for pc_python in pc_both:
-            pc = _scanner.PointCloudXYZRGBObj()
-            for i in pc_python:
-                pc.push_backPoint(*i)  # pc.push_backPoint(i[0], i[1], i[2], i[3], i[4], i[5])
-            # ne(): normal estimate
-            # ne_viewpoint() :normal estimate considering view point
-            # ref: http://pointclouds.org/documentation/tutorials/normal_estimation.php
-            pc.ne_viewpoint()
-            tmp.append(pc)
-        logger.debug('to_cpp done')
-        return tmp
 
     def delete_noise(self, name_in, name_out, stddev):
         """
@@ -84,12 +89,7 @@ class PcProcess():
 
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = self.clouds[name_in]
-
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
-        else:
-            pc_both = [i.clone() for i in pc_both]
+        pc_both = [i.clone() for i in self.clouds[name_in]]
 
         for pc in pc_both:
             logger.debug('start with %d point' % len(pc))
@@ -98,22 +98,16 @@ class PcProcess():
 
         self.clouds[name_out] = pc_both
 
-        return 0
-
     def to_mesh(self, name_in):
         logger.debug('to_mesh name:%s' % name_in)
         pc_both = self.clouds[name_in]
-        if type(pc_both[0]) == list:
-            pc_both = self.to_cpp(self.clouds[name_in])
-        else:
-            pc_both = self.clouds[name_in]
 
-        # warning merge L and R here!
-        pc = pc_both[0].clone()
-        pc = pc.add(pc_both[1])
+        # WARNING: merge L and R here!
+        # pc = pc_both[0].clone()
+        pc = pc_both[0].add(pc_both[1])
         pc.ne_viewpoint()
+        # pc.ne()
         pc.to_mesh()  # compute mesh
-
         return pc
 
     def dump(self, name):
@@ -125,80 +119,88 @@ class PcProcess():
         pc_both = self.clouds[name]
         buffer_data = []
 
-        if type(pc_both[0]) == list:
-            for pc in pc_both:
-                for p in pc:
-                    buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
-            buffer_data = b''.join(buffer_data)
-            assert (len(pc_both[0]) + len(pc_both[1])) * 24 == len(buffer_data), "dumping error!"
-            return len(pc_both[0]), len(pc_both[1]), buffer_data
-
-        else:
-            pc_size = []
-            for pc in pc_both:
-                pc_size.append(len(pc))
-                for p_i in range(pc_size[-1]):  # ?????
-                    p = pc.get_item(p_i)
-                    buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
-                    # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
-            buffer_data = b''.join(buffer_data)
-            return pc_size[0], pc_size[1], buffer_data
+        pc_size = []
+        for pc in pc_both:
+            l = len(pc)
+            pc_size.append(l)
+            for p_i in range(l):  # ?????
+                p = pc.get_item(p_i)
+                buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.))
+                # buffer_data.append(struct.pack('<ffffff', p[0], p[1], p[2], 0 / 255., 0 / 255., 0 / 255.))
+        buffer_data = b''.join(buffer_data)
+        return pc_size[0], pc_size[1], buffer_data
 
     def export(self, name, file_format, mode='binary'):
         if file_format == 'pcd':
             pc_both = self.clouds[name]
-            # warning merge L and R here!
-            if type(pc_both[0]) == list:
-                pc_add = pc_both[0] + pc_both[1]
-            else:
-                pc_add = []
-                pc_size = []
-                for pc in pc_both:
-                    pc_size.append(len(pc))
-                    for p_i in range(pc_size[-1]):
-                        pc_add.append(pc.get_item(p_i))
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
             tmp = io.StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
 
+        elif file_format == 'ply':
+            pc_both = self.clouds[name]
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
+
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
+            mesh_l = pc_mesh.STL_to_List()
             if mode == 'ascii':
                 strbuf = io.StringIO()
-                write_stl(pc_mesh.STL_to_List(), strbuf, 'ascii')
+                write_stl(mesh_l, './output.stl', mode)
+                write_stl(mesh_l, strbuf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
                 buf = io.BytesIO()
-                write_stl(pc_mesh.STL_to_List(), buf)
+                write_stl(mesh_l, './output.stl', mode)
+
+                write_stl(mesh_l, buf, mode)
                 return buf.getvalue()
 
-    def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+    def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
+        both_pc = []
+        for pc in self.clouds[name_in]:
+            pc_new = pc.clone()
+            pc_new.apply_transform(x, y, z, rx, ry, rz)
+            both_pc.append(pc_new)
 
-        logger.debug('merge %3f, %3f, %3f, %3f, %3f, %3f, %s' % (x, y, z, rx, ry, rz, name_out))
+        self.clouds[name_out] = both_pc
+
+    def merge(self, name_base, name_2, name_out):
+        logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
         both_pc = []
         for i in range(2):
             pc = self.clouds[name_2][i].clone()
-            pc.apply_transform(x, y, z, rx, ry, rz)
-            pc = pc.add(self.clouds[name_base][i])  # change it self
-            both_pc.append(pc)
+            pc_new = self.clouds[name_base][i].add(pc)
+            both_pc.append(pc_new)
 
         self.clouds[name_out] = both_pc
-        return True
 
+    # below not reviewed yet
     def auto_merge(self, name_base, name_2, name_out):
         logger.debug('automerge %s, %s' % (name_base, name_2))
-        for name in [name_base, name_2]:
-            if type(self.clouds[name][0]) == list:
-                self.clouds[name] = self.to_cpp(self.clouds[name])
         pc_both = []
         for i in range(2):
             if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
-                # if either pointcloud with zero point, return name_2 with no transform
+                # if either pointcloud with zero point, return name_2 without transform
                 pc_both.append(self.clouds[name_2][i].clone())
                 continue
             reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
             result, pc = reg.SCP()
+            # TODO:result?
             pc_both.append(pc)
 
         self.clouds[name_out] = pc_both
@@ -230,7 +232,7 @@ class PcProcessNoPCL(PcProcess):
         self.clouds[name_out] = pc_both_o
         return 0
 
-    def merge(self, name_base, name_2, x, y, z, rx, ry, rz, name_out):
+    def merge(self, name_base, name_2, name_out):
         self.clouds[name_out] = self.clouds[name_base]
         return True
 

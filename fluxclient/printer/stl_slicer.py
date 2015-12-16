@@ -9,10 +9,7 @@ import sys
 
 from PIL import Image
 
-try:
-    import fluxclient.printer._printer as _printer
-except:
-    pass
+from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
 from fluxclient.printer import ini_string, ini_constraint
@@ -23,6 +20,10 @@ class StlSlicer(object):
     def __init__(self, slic3r):
         super(StlSlicer, self).__init__()
         self.reset(slic3r)
+
+    def __del__(self):
+        if self.working_p:
+            self.working_p.terminate()
 
     def reset(self, slic3r):
         self.models = {}  # models data
@@ -39,6 +40,8 @@ class StlSlicer(object):
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
+        self.ext_metadata = {}
+        self.working_p = None
 
     def upload(self, name, buf):
         """
@@ -87,7 +90,7 @@ class StlSlicer(object):
         """
         basic printing parameter in front end
         """
-        if key in ['printSpeed', 'material', 'raft', 'support', 'layerHeight', 'infill', 'travelingSpeed', 'extrudingSpeed', 'temperature']:
+        if key in ['print_speed', 'material', 'raft', 'support', 'layer_height', 'infill', 'traveling_speed', 'extruding_speed', 'temperature']:
             self.user_setting[key] = value
             return True
         else:
@@ -100,7 +103,7 @@ class StlSlicer(object):
         return error message of bad input
 
         """
-        counter = 0
+        counter = 1
         bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement
@@ -110,6 +113,9 @@ class StlSlicer(object):
                 result = self.ini_value_check(key, value)
                 if result == 'ok':
                     self.config[key] = value
+                    if key == 'temperature':
+                        self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
+
                 else:
                     bad_lines.append((counter, result))
             elif line != '' and line != 'default':
@@ -173,7 +179,7 @@ class StlSlicer(object):
 
         for key in self.user_setting:
             if self.user_setting[key] != "default":
-                if key == 'printSpeed':
+                if key == 'print_peed':
                     pass  # TODO
                 elif key == 'material':
                     pass  # TODO
@@ -184,30 +190,34 @@ class StlSlicer(object):
                         self.config['raft_layers'] = '4'  # TODO?
                 elif key == 'support':
                     self.config['support_material'] = self.user_setting[key]
-                elif key == 'layerHeight':
+                elif key == 'layer_height':
                     self.config['first_layer_height'] = self.user_setting[key]
                     self.config['layer_height'] = self.user_setting[key]
                 elif key == 'infill':
                     fill_density = float(self.user_setting[key]) * 100
                     fill_density = max(min(fill_density, 99), 0)
                     self.config['fill_density'] = str(fill_density) + '%'
-                elif key == 'travelingSpeed':
+                elif key == 'traveling_speed':
                     self.config['travel_speed'] = self.user_setting[key]
-                elif key == 'extrudingSpeed':
+                elif key == 'extruding_speed':
                     self.config['perimeter_speed'] = self.user_setting[key]
                     self.config['infill_speed'] = self.user_setting[key]
                 elif key == 'temperature':
                     self.config['temperature'] = self.user_setting[key]
+                    self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
         self.my_ini_writer(tmp_slic3r_setting_file, self.config)
 
         command += ['--load', tmp_slic3r_setting_file]
+        # command += ['--load', '/Users/yen/Documents/config.ini']
+
         print('command:', ' '.join(command), file=sys.stderr)
 
         fail_flag = False
 
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
+        self.working_p = p
         while p.poll() is None:
             line = p.stdout.readline()
             print(line, file=sys.stderr, end='')
@@ -220,12 +230,14 @@ class StlSlicer(object):
         if p.poll() != 0:
             fail_flag = True
 
+        self.working_p = None
         # analying gcode(even transform)
-        ws.send_progress('analying metadata', 0.99)
+        ws.send_progress('analyzing metadata', 0.99)
 
         fcode_output = io.BytesIO()
         with open(tmp_gcode_file, 'r') as f:
-            m_GcodeToFcode = GcodeToFcode()
+            m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
+            m_GcodeToFcode.config = self.config
             m_GcodeToFcode.image = self.image
             m_GcodeToFcode.process(f, fcode_output)
 

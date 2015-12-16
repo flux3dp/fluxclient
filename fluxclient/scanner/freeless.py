@@ -3,11 +3,15 @@ import sys
 import time
 import math
 
-import numpy
+import numpy as np
+from PIL import Image
 
-import fluxclient.scanner.scan_settings as scan_settings
-from fluxclient.scanner.tools import write_stl, dot, normal, normalize, point_dis_sq
-
+try:
+    from . import scan_settings
+    from .tools import write_stl, dot, normal, normalize, point_dis_sq
+except:
+    import scan_settings
+    from tools import write_stl, dot, normal, normalize, point_dis_sq
 
 NUM_LASER_RANGE_THRESHOLD = 3
 RED_HUE_UPPER_THRESHOLD = 5
@@ -57,8 +61,8 @@ class freeless():
         points = []
 
         MAX_DIST_XZ_SQ = 70 ** 2
-        PLATE_Y = -20.0
-        MAX_DIST_Y = 100
+        PLATE_Y = -0.5
+        MAX_DIST_Y = 90
 
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)
@@ -67,7 +71,8 @@ class freeless():
             if f:
                 if point[0][0] ** 2 + point[0][2] ** 2 < MAX_DIST_XZ_SQ and point[0][1] >= PLATE_Y and point[0][1] < MAX_DIST_Y:
                     # add color
-                    point.append([img_o[y][x - cab_offset][0], img_o[y][x - cab_offset][1], img_o[y][x + 10][2]])
+                    point.append([img_o[y][x - cab_offset][0], img_o[y][x - cab_offset][1], img_o[y][x - cab_offset][2]])
+                    # point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])
                     point.append([x, y])
 
                     points.append(point)
@@ -222,12 +227,26 @@ class freeless():
         d = abs((img1.astype(int)) - (img2.astype(int)))
         # squre each element
         d = d.astype(int)
-        d = numpy.multiply(d, d)
+        d = np.multiply(d, d)
         # sum up r, g, b diff number into one number
-        d = numpy.sum(d, axis=2)
+        d = np.sum(d, axis=2)
+
+        # self.MAX_MAGNITUDE_SQ = (255. * 255.)
+        # img1 = img1.astype(int)
+        # img2 = img2.astype(int)
+
+        # # 0.21 R + 0.72 G + 0.07 B
+        # img1_gray = img1[:, :, 0] * 0.07 + img1[:, :, 1] * 0.72 + img1[:, :, 2] * 0.21
+        # img2_gray = img2[:, :, 0] * 0.07 + img2[:, :, 1] * 0.72 + img2[:, :, 2] * 0.21
+        # d = abs(img1_gray - img2_gray)
+        # d = np.multiply(d, d)
 
         # some transform
+        # self.MAX_MAGNITUDE_SQ = (255 * 3.0 * 255)
+        # self.m_laserMagnitudeThreshold = 0.3
         mag = d / self.MAX_MAGNITUDE_SQ  # 0.0 ~ 1.0
+        # print(mag, np.amax(mag), file=sys.stderr)
+        # self.m_laserMagnitudeThreshold = .3
 
         for row in range(scan_settings.img_height):
             m_laserRanges = []
@@ -317,18 +336,35 @@ class freeless():
         '''
         d = abs((img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
         d = d.astype(int)
-        d = numpy.multiply(d, d)
-        d = numpy.sum(d, axis=1)
+        d = np.multiply(d, d)
+        d = np.sum(d, axis=1)
 
         total = sum(d)
-        d = numpy.multiply(d, range(0, (bestRange[1] - bestRange[0])))
+        d = np.multiply(d, range(0, (bestRange[1] - bestRange[0])))
         d = sum(d)
         centerCol = bestRange[0] + round(d / float(total))
 
         return centerCol
 
 if __name__ == '__main__':
-    tmp = freeless()
+    import subprocess
+    from tools import write_pcd
+
+    tmp = freeless(scan_settings.laserX_L, scan_settings.laserZ_L)
+    im = np.array(Image.open('../../../rule.jpg'))
+    print(im.shape)
+    # self, img_o, img_red, indices, step, side, cab_offset, clock=False
+    # a = tmp.img_to_points(im, None, [(i, 325) for i in range(200, 352)], 0, 'L', -10)
+    a = tmp.img_to_points(im, None, [(i, 325) for i in range(84, 350)], 0, 'L', 10)
+    a = tmp.img_to_points(im, None, [(i, 325) for i in range(149, 350)], 0, 'L', 10)
+    # a += tmp.img_to_points(im, None, [(i, 325) for i in range(0, 352)], 0, 'L', -10)
+    output = '../../../tmp.pcd'
+    print(a[0])
+    print(a[-1])
+    print(a[0][2] - a[-1][2])
+    write_pcd(a, '../../../tmp.pcd')
+    subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
+
     # p = tmp.img_to_points(sys.argv[1])
     # scan_settings.write_pcd(p, sys.argv[2])
 

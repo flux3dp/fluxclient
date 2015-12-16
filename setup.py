@@ -18,6 +18,7 @@ setup(
     author="Flux Crop.",
     author_email="cerberus@flux3dp.com",
     description="",
+    include_package_data=True,
     license="?",
     packages=setup_utils.get_packages(),
     test_suite="tests.main.everything",

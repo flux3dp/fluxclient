@@ -8,12 +8,12 @@ img_width = 640
 img_height = 480
 
 sensorWidth = 3.67
-sensorHeight = 2.74 + 0.3
+sensorHeight = 2.74 + 0.08
 focalLength = 3.6
 
 # ######### mockup 2, measure by solidwork###
 cameraX = 0.0
-cameraY = 22.28
+cameraY = 22.28 + 8
 cameraZ = -174.70
 
 laserX_L = -53.61

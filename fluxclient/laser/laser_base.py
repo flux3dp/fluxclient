@@ -10,7 +10,7 @@ import datetime
 from PIL import Image
 import numpy as np
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.laser import Grid
+from . import Grid
 
 
 class LaserBase(object):
@@ -40,6 +40,7 @@ class LaserBase(object):
         # warning global setting, don't use theese unless you 100% understand what you are doing
         self.rotation = 0
         self.ratio = 1.
+        self.ext_metadata = {}
 
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
@@ -75,22 +76,22 @@ class LaserBase(object):
         if self.laser_on is True:
             return []
         self.laser_on = True
-        return ["M400", "X2O%d;turnOn" % self.draw_power, "G4 P20"]
+        return ["X2O%d;turnOn" % self.draw_power, "G4 P20"]
 
     def turnOff(self):
         if self.laser_on is False:
             return []
         self.laser_on = False
-        return ["M400", "X2O0;turnOff", "G4 P20"]
+        return ["X2O0;turnOff", "G4 P20"]
 
     def turnTo(self, power=None):
         if power is None:
             self.laser_on = True
-            return ["M400", "X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
+            return ["X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
 
         elif power != 0:
             self.laser_on = True
-            return ["M400", "X2O%d;turnTo %d" % (power, power), "G4 P20"]
+            return ["X2O%d;turnTo %d" % (power, power), "G4 P20"]
 
         elif power == 0:
             return self.turnOff()
@@ -300,9 +301,12 @@ class LaserBase(object):
 
     def fcode_generate(self, *args):
         fcode_output = io.BytesIO()
-        m_GcodeToFcode = GcodeToFcode()
+        m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
         m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
+        m_GcodeToFcode.md['CORRECTION'] = 'N'
+        m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
+        m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
         f = io.StringIO()
         f.write(self.gcode_generate(*args))

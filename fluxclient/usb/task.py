@@ -4,6 +4,7 @@ from time import time
 from uuid import UUID
 import logging
 import struct
+import json
 
 from serial import Serial
 
@@ -17,6 +18,7 @@ CODE_AUTH = 0x02
 CODE_CONFIG_GENERAL = 0x03
 CODE_CONFIG_NETWORK = 0x04
 CODE_GET_SSID = 0x05
+CODE_LIST_SSID = 0x08
 CODE_GET_IPADDR = 0x07
 CODE_SET_PASSWORD = 0x06
 
@@ -134,11 +136,16 @@ class UsbTask(object):
 
     def get_ssid(self):
         return self._make_request(CODE_GET_SSID,
-                                  timeout=30.0).decode("utf8", "ignore")
+                                  timeout=15.0).decode("utf8", "ignore")
+
+    def list_ssid(self):
+        doc = self._make_request(CODE_LIST_SSID,
+                                 timeout=15.0).decode("utf8", "ignore")
+        return json.loads(doc)
 
     def get_ipaddr(self):
         ret = self._make_request(CODE_GET_IPADDR,
-                                 timeout=30.0).decode("utf8", "ignore")
+                                 timeout=15.0).decode("utf8", "ignore")
         if ret:
             return ret.split(" ")
         else:

@@ -23,9 +23,8 @@ class GcodeToFcode(FcodeBase):
     this should done several thing:
       transform gcode into fcode
       analyze metadata
-      check boundary problem (?
     """
-    def __init__(self, version=1):
+    def __init__(self, version=1, head_type="EXTRUDER", ext_metadata={}):
         super(GcodeToFcode, self).__init__()
 
         self.tool = 0  # set by T command
@@ -36,14 +35,22 @@ class GcodeToFcode(FcodeBase):
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
-        self.current_pos = [None, None, None, None, None, None]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
+        self.distance = 0.  # recording distance go through
+        self.max_range = [0., 0., 0.]  # recording max coordinate
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
-        self.md = {'HEAD_TYPE': 'extruder'}  # basic metadata, use extruder as default
+        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        self.md.update(ext_metadata)
 
         self.record_path = True
         self.record_z = 0.0
+        self.layer_now = 0
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
+        # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
+
+        self.config = None
 
     def header(self):
         """
@@ -93,6 +100,7 @@ class GcodeToFcode(FcodeBase):
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
                 print(i, file=sys.stderr)
+
         return command, number
 
     def analyze_metadata(self, input_list, comment):
@@ -126,7 +134,11 @@ class GcodeToFcode(FcodeBase):
                 else:
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
+                if abs(self.current_pos[i - 1]) > self.max_range[i - 1]:
+                    # self.max_range[i - 1] = abs(self.current_pos[i - 1])
+                    self.max_range[i - 1] = self.current_pos[i - 1]
         tmp_path = sqrt(tmp_path)
+        self.distance += tmp_path
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
         # fill in self.path
         if self.record_path:
@@ -151,30 +163,43 @@ class GcodeToFcode(FcodeBase):
 
             output_stream.write(struct.pack('<I', 0))  # script length
             self.script_length = 0
-
+            comment_list = []
             for line in input_stream:
                 if ';' in line:
                     line, comment = line.split(';', 1)
+                    comment_list.append(comment)
                 else:
                     comment = ''
-                line = findall('[A-Z][+-]?[0-9]+', line)  # split
+                line = findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', line)  # split
 
                 if line:
-                    if line[0] == 'G0' or line[0] == 'G1':  # move
+                    if line[0] == 'G1' or line[0] == 'G0':  # move
                         command = 128
                         subcommand, data = self.XYZEF(line)
-                        self.analyze_metadata(data, comment)
 
+                        if self.absolute:  # deal with previous G92 command
+                            for i in range(1, 7):
+                                if data[i] is not None:
+                                    data[i] += self.G92_delta[i - 1]
+
+                        # # fix on slic3r bug slowing down in raft but not in real printing
+                        # if self.config is not None and self.layer_now == int(self.config['raft_layers']):
+                        #     data[0] = float(self.config['first_layer_speed']) * 60
+                        #     subcommand |= (1 << 6)
+
+                        self.analyze_metadata(data, comment)
                         command |= subcommand
                         self.writer(packer(command), output_stream)
+
                         for i in data:
                             if i is not None:
                                 self.writer(packer_f(i), output_stream)
+
                     elif line[0] == 'X2':  # laser
                         command = 32  # only use one laser
                         self.writer(packer(command), output_stream)
-                        if line[1] == 'O':
-                            strength = float(line[1].lstrip('O'))
+                        if line[1].startswith('O'):
+                            strength = float(line[1].lstrip('O')) / 255.
                         else:  # bad gcode!!
                             strength = 0
                         self.writer(packer_f(strength), output_stream)
@@ -198,24 +223,16 @@ class GcodeToFcode(FcodeBase):
                         self.extrude_absolute = False
 
                     elif line[0] == 'G92':  # set position
-                        command = 64
+                    # this command will not write into fcode
+                    # but using self.G92_delta to record the position
                         sub_command, data = self.XYZEF(line)
-
-                        tmp = lambda x: x is None
-                        if all(tmp(i) for i in data):
-                            sub_command = 0
+                        if all(i is None for i in data):  # A G92 without coordinates will reset all axes to zero.
                             for i in range(1, 7):
-                                sub_command |= (1 << (6 - i))
                                 data[i] = 0.0
-                        else:  # A G92 without coordinates will reset all axes to zero.
-                            pass
-
-                        command |= sub_command
-                        self.writer(packer(command), output_stream)
-                        for i in range(len(data)):
+                        for i in range(1, len(data)):
                             if data[i] is not None:
-                                self.writer(packer_f(data[i]), output_stream)
-                                self.current_pos[i - 1] = data[i]
+                                self.G92_delta[i - 1] = self.current_pos[i - 1] - data[i]
+
                     elif line[0] == 'G4':  # dwell
                         self.writer(packer(4), output_stream)
                         # P:ms or S:sec
@@ -264,6 +281,9 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
+                    elif line[0] == 'M25':  # pause by gcode
+                        command = 5
+                        self.writer(packer(command), output_stream)
 
                     else:
                         if line[0] in ['M400']:
@@ -278,9 +298,14 @@ class GcodeToFcode(FcodeBase):
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+            self.md['TRAVEL_DIST'] = str(self.distance)
+            self.md['MAX_X'] = str(self.max_range[0])
+            self.md['MAX_Y'] = str(self.max_range[1])
+            self.md['MAX_Z'] = str(self.max_range[2])
             self.md['TIME_COST'] = str(self.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
+            self.md['SETTING'] = str(comment_list[-130:])
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)
@@ -291,6 +316,7 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'r') as input_stream:
         with open(sys.argv[2], 'wb') as output_stream:
             m_GcodeToFcode.process(input_stream, output_stream)
+            print(m_GcodeToFcode.md)
     if len(sys.argv) > 3:
         with open(sys.argv[3], 'w') as f:
             if m_GcodeToFcode.path is None:

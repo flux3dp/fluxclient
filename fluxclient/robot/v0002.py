@@ -55,7 +55,6 @@ class FluxRobotV0002(object):
         buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
         sock.send(buf)
 
-        # status = sock.recv(16, socket.MSG_WAITALL).rstrip(b"\x00").decode()
         status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
 
         if status == "OK":
@@ -65,7 +64,7 @@ class FluxRobotV0002(object):
 
             self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
         else:
-            raise RuntimeError("Handshake failed: %s" % status)
+            raise RuntimeError(status)
 
     def fileno(self):
         return self.sock.fileno()
@@ -101,15 +100,17 @@ class FluxRobotV0002(object):
 
         return message
 
-    def _make_cmd(self, buf):
+    def _make_cmd(self, buf, timeout=30.0):
         self._send_cmd(buf)
-        return self.get_resp()
+        return self.get_resp(timeout)
 
     def recv_binary(self, binary_header):
         mn, mimetype, ssize = binary_header.split(" ")
         assert mn == "binary"
         size = int(ssize)
         logger.debug("Recv %s %i" % (mimetype, size))
+        if size == 0:
+            return (mimetype, b"")
         buf = BytesIO()
         left = size
         while left > 0:
@@ -180,7 +181,7 @@ class FluxRobotV0002(object):
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"cp " + source_entry.encode() + b" " + source.encode() + b"\x00"
+            b"cp " + source_entry.encode() + b" " + source.encode() + b" "
             + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
@@ -190,6 +191,27 @@ class FluxRobotV0002(object):
     @ok_or_error
     def start_play(self):
         return self._make_cmd(b"start")
+
+    def play_info(self):
+        self._send_cmd(b"play_info")
+        metadata = imgbuf = None
+
+        resp = self.get_resp().decode("ascii", "ignore")
+        if resp.startswith("binary text/json"):
+            _, bm = self.recv_binary(resp)
+            metadata = json.loads(bm.decode("utf8", "ignore"))
+        else:
+            raise_error(resp)
+
+        images = []
+        while True:
+            resp = self.get_resp().decode("ascii", "ignore")
+            if resp.startswith("binary "):
+                images.append(self.recv_binary(resp))
+            elif resp == "ok":
+                return metadata, images
+            else:
+                raise RuntimeError(resp)
 
     def upload_stream(self, stream, length, mimetype, upload_to, cmd="upload",
                       progress_callback=None):
@@ -283,7 +305,7 @@ class FluxRobotV0002(object):
         if msg.startswith("{"):
             return json.loads(msg, "ignore")
         else:
-            return msg
+            raise_error(msg)
 
     @ok_or_error
     def scan_laser(self, left, right):
@@ -302,6 +324,16 @@ class FluxRobotV0002(object):
 
     def scan_check(self):
         self._send_cmd(b"scan_check")
+        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        return resp
+
+    def calibrate(self):
+        self._send_cmd(b"calibrate")
+        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        return resp
+
+    def get_calibrate(self):
+        self._send_cmd(b"get_cab")
         resp = self.get_resp().decode("ascii", "ignore")
         return resp
 
@@ -345,8 +377,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def scan_backward(self):
-        # TODO: change protocol, this actually means to go backward a step
-        return self._make_cmd(b"scan_forword")
+        return self._make_cmd(b"scan_backward")
 
     @ok_or_error
     def begin_maintain(self):
