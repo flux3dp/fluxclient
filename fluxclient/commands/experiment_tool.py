@@ -44,18 +44,19 @@ def main(in_file, out_file, command=''):
             suffix = 'stl'
             print('done')
         elif i.startswith('A'):
-            if i[1] == 'f':
+            if i[1] == 'f' or i[1] == 'c':
                 import bisect
                 import copy
                 from math import sqrt, asin, pi, radians, cos, sin
-
-                floor = -10
+                floor = float(i[2:])
                 steps = 400
-                print('adding floor')
+                if i[1] == 'f':
+                    print('adding floor at {}'.format(floor))
+                elif i[1] == 'c':
+                    print('adding ceiling at {}'.format(floor))
                 a = []
-                # print(len(_PcProcess.clouds['in'][0]))
-                _PcProcess.cut('in', 'in', 'z', True, floor)
-                print(len(_PcProcess.clouds['in'][0]))
+
+                _PcProcess.cut('in', 'in', 'z', i[1] == 'f', floor)
                 # for z in range(len(_PcProcess.clouds['in'][0]) - 1):
                 for z in range(len(_PcProcess.clouds['in'][0])):
                     # if _PcProcess.clouds['in'][0][z][2] < _PcProcess.clouds['in'][0][z + 1][2]:  # detect for tail
@@ -135,11 +136,9 @@ def main(in_file, out_file, command=''):
                 x = [p[0] for p in plane]
                 y = [p[1] for p in plane]
                 z = [p[2] for p in plane]
-                print(len(z))
 
                 rbf = Rbf(x, y, z, function='linear')
                 ZI = rbf(XI, YI)
-                print(ZI.dtype)
                 for xx in range(grid_leaf):
                     for yy in range(grid_leaf):
                         # print([XI[xx][yy], YI[xx][yy], ZI[xx][yy], 255, 0, 0])
@@ -190,6 +189,7 @@ parser.add_argument('-o', '--output', help='output filename', default='output.pc
 parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
                                                         'N[stddev]: noise del with dev [stddev]\n'
                                                         'P: Possion Meshing\n'
+                                                        'A[fc][value]: add [floor] or [ceiling] at z = [value]'
                                                         'E: export file\n'
                     )
 args = parser.parse_args()
