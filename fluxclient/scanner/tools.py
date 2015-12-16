@@ -153,11 +153,13 @@ def write_stl(tri, output='model.stl', mode='binary'):
         outstl.write(struct.pack("@I", len(tri)))
         for i in tri:
             # output normal?
-            # n = normal(i)
-            # my_normal = normalize(n)
+            n = normal(i)
+            my_normal = normalize(n)
             # outstl.write(struct.pack("@fff", my_normal[0], my_normal[1], my_normal[2]))
+            outstl.write(struct.pack("@fff", my_normal[0], my_normal[1], my_normal[2]))
 
-            outstl.write(struct.pack("@fff", 0.0, 0.0, 0.0))
+            # outstl.write(struct.pack("@fff", 0.0, 0.0, 0.0))
+
             for j in i:
                 for k in j[:3]:
                     outstl.write(struct.pack("@f", k))
@@ -168,9 +170,9 @@ def write_stl(tri, output='model.stl', mode='binary'):
         print('solid ascii', file=outstl)
         for i in tri:
             # output normal?
-            # n = normal(i)
-            # my_normal = normalize(n)
-            my_normal = [0, 0, 0]
+            n = normal(i)
+            my_normal = normalize(n)
+            # my_normal = [0, 0, 0]
             print(' facet normal %f %f %f' % (my_normal[0], my_normal[1], my_normal[2]), file=outstl)
 
             print('  outer loop', file=outstl)
