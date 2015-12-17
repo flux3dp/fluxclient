@@ -180,7 +180,8 @@ class PcProcess():
         """
         # add L and R
         pc_both = self.clouds[name_in]
-        pc = pc_both[0].add(pc_both[1])
+        pc = pc_both[0].add(pc_both[1])  # return a new pc
+
         pc.apply_transform(x, y, z, rx, ry, rz)
 
         # split
@@ -202,21 +203,34 @@ class PcProcess():
 
         self.clouds[name_out] = both_pc
 
-    # below not reviewed yet
-    def auto_merge(self, name_base, name_2, name_out):
-        logger.debug('automerge %s, %s' % (name_base, name_2))
-        pc_both = []
-        for i in range(2):
-            if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
-                # if either pointcloud with zero point, return name_2 without transform
-                pc_both.append(self.clouds[name_2][i].clone())
-            else:
-                reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
-                result, pc = reg.SCP()
-                # TODO:result?
-                pc_both.append(pc)
+    def auto_alignment(self, name_base, name_2, name_out):
+        """
+        this is actually
+        """
+        # what about empty point cloud?
+        logger.debug('auto_alignment %s, %s' % (name_base, name_2))
 
-        self.clouds[name_out] = pc_both
+        # add L and R
+        pc_base = self.clouds[name_base]
+        pc_base = pc_base[0].add(pc_base[1])
+        pc_2 = self.clouds[name_2]
+        pc_2 = pc_2[0].add(pc_2[1])
+
+        if len(pc_base) == 0 or len(pc_2) == 0:
+            # if either pointcloud with zero point, return name_2 without transform
+            pc_both = pc_2
+        else:
+            reg = _scanner.RegCloud(pc_base, pc_2)
+            result, pc_both = reg.SCP()
+            # TODO:result???
+
+        new_pc = self.to_cpp([[], []])
+        for i in range(len(self.clouds[name_2][0])):
+            new_pc[0].push_backPoint(*pc_both[i])
+        for i in range(len(self.clouds[name_2][0]), len(self.clouds[name_2][0]) + len(self.clouds[name_2][1])):
+            new_pc[1].push_backPoint(*pc_both[i])
+
+        self.clouds[name_out] = new_pc
         return True
 
 
