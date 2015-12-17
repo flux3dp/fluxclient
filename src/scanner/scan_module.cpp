@@ -497,18 +497,21 @@ int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int dir
   // direction = True(>=), False(<=)
   output -> clear();
   float v;
-  value *= value;
+  if (mode == 3){
+    value *= value;
+  }
+
 
   for (uint32_t i = 0; i < input->size(); i += 1){
     switch (mode){
       case 0:
-      v = (*input)[i].x * (*input)[i].x;
+      v = (*input)[i].x;
       break;
       case 1:
-      v = (*input)[i].y * (*input)[i].y;
+      v = (*input)[i].y;
       break;
       case 2:
-      v = (*input)[i].z * (*input)[i].z;
+      v = (*input)[i].z;
       break;
       case 3:
       v = (*input)[i].x * (*input)[i].x + (*input)[i].y * (*input)[i].y;
