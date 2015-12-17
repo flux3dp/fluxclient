@@ -66,6 +66,9 @@ cdef class PointCloudXYZRGBObj:
     def __len__(self):
         return get_w(self.obj)
 
+    def __getitem__(self, key):
+        return self.get_item(key)
+
     cpdef add(self, PointCloudXYZRGBObj other):
         cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
         pc.obj = add(self.obj, other.obj)
@@ -124,11 +127,14 @@ cdef class PointCloudXYZRGBObj:
         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
         return 0
 
-    cpdef to_mesh(self):
+    cpdef to_mesh(self, method='POS'):
+
         self.concatenatePointsNormal()
         new_c = PointCloudXYZRGBObj()
-        POS(self.bothobj, self.meshobj, self.obj)
-        # GPT(self.bothobj, self.meshobj, self.obj)
+        if method == 'POS':
+            POS(self.bothobj, self.meshobj, self.obj)
+        elif method == 'GPT':
+            GPT(self.bothobj, self.meshobj, self.obj)
         return 0
 
     cpdef STL_to_Faces(self):
