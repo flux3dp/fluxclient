@@ -266,6 +266,8 @@ class StlSlicer(object):
 
         with open('output.fcode', 'wb') as f:
             f.write(fcode_output.getvalue())
+
+        self.my_ini_writer("output.ini", self.config)
         ###########################################################
 
         # clean up tmp files
