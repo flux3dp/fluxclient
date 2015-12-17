@@ -78,9 +78,10 @@ class PcProcess():
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
 
-        self.clouds[name_out] = []
+        tmp = []
         for pc in pc_both:
-            self.clouds[name_out].append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
+            tmp.append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
+        self.clouds[name_out] = tmp
 
     def delete_noise(self, name_in, name_out, stddev):
         """
@@ -171,13 +172,25 @@ class PcProcess():
                 return buf.getvalue()
 
     def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
-        both_pc = []
-        for pc in self.clouds[name_in]:
-            pc_new = pc.clone()
-            pc_new.apply_transform(x, y, z, rx, ry, rz)
-            both_pc.append(pc_new)
+        """
+        apply_transform to [name_in] pointcloud
+        and put it into [name_out]
+        note that we transforming left and right pointcloud together, and split it into 2 subset
+        it's because the left and right pc might have different center position
+        """
+        # add L and R
+        pc_both = self.clouds[name_in]
+        pc = pc_both[0].add(pc_both[1])
+        pc.apply_transform(x, y, z, rx, ry, rz)
 
-        self.clouds[name_out] = both_pc
+        # split
+        new_pc = self.to_cpp([[], []])
+        for i in range(len(pc_both[0])):
+            new_pc[0].push_backPoint(*pc[i])
+        for i in range(len(pc_both[0]), len(pc_both[0]) + len(pc_both[1])):
+            new_pc[1].push_backPoint(*pc[i])
+
+        self.clouds[name_out] = new_pc
 
     def merge(self, name_base, name_2, name_out):
         logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
@@ -197,11 +210,11 @@ class PcProcess():
             if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
                 # if either pointcloud with zero point, return name_2 without transform
                 pc_both.append(self.clouds[name_2][i].clone())
-                continue
-            reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
-            result, pc = reg.SCP()
-            # TODO:result?
-            pc_both.append(pc)
+            else:
+                reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
+                result, pc = reg.SCP()
+                # TODO:result?
+                pc_both.append(pc)
 
         self.clouds[name_out] = pc_both
         return True
