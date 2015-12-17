@@ -20,21 +20,21 @@ class LaserBitmap(LaserBase):
     def __init__(self):
         super(LaserBitmap, self).__init__()
         self.reset()
-        ######################## fake code ####################################
-        self.shading = True
-        #######################################################################
 
     def reset(self):
         """
         reset LaserBitmap class
         """
-        # threshold, pixel on image_map darker than this will trigger laser, actually no use(only 255 or 0 on image_map)
+        # threshold, pixel on image_map darker than this will trigger laser
+        self.shading = True
         self.thres = 255
         self.ratio *= 1 / self.pixel_per_mm
 
     def gcode_generate(self, res=1):
         """
-        return gcode in string type, use method:export_to_stream to export gcode to stream
+        return gcode in string type
+        res: resolution
+        use method: export_to_stream to export gcode to a stream
         """
         gcode = []
         gcode += self.header('FLUX. Laser Bitmap.')
@@ -45,6 +45,7 @@ class LaserBitmap(LaserBase):
         # apply threshold in a efficient way
         t = np.vectorize(lambda x: x if x <= self.thres else 255)
         self.image_map = t(self.image_map)
+        # self.dump('tmp.png')
 
         itera_o = list(range(0, len(self.image_map)))
         itera_r = list(reversed(range(0, len(self.image_map))))
@@ -59,6 +60,7 @@ class LaserBitmap(LaserBase):
                 itera = itera_o
                 final_x = len(self.image_map)
                 abs_shift_x = len(self.image_map) / 2 + 0.5
+                # this 0.5 is for fixing tiny difference when iter from "left to right " and "right to left"
             elif h % 2 == 1:
                 final_x = 0
                 itera = itera_r
@@ -66,12 +68,14 @@ class LaserBitmap(LaserBase):
 
             w = 0
             while w < len(itera):
-
                 if w % res != 0:
                     continue
-                gcode += self.turnTo(255 - self.image_map[h][itera[w]])
-                tmp = self.image_map[h][itera[w]]
-                while w < len(itera) and self.image_map[h][itera[w]] == tmp:
+                if self.shading:
+                    gcode += self.turnTo(255 - self.image_map[h][itera[w]])
+                else:
+                    gcode += self.turnTo(255)
+                this = self.image_map[h][itera[w]]
+                while w < len(itera) and self.image_map[h][itera[w]] == this:
                     w += 1
                 if w == len(itera):
                     if self.image_map[h][itera[-1]] != 255:
