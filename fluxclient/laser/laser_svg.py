@@ -93,8 +93,6 @@ class LaserSvg(LaserBase, SVGParser):
         #         tmp.append(i)
         # return "\n".join(tmp) + "\n"
 
-        with open('output.gcode', 'w') as f:
-            print("\n".join(gcode) + "\n", file=f)
         ##########################################
 
         return "\n".join(gcode) + "\n"

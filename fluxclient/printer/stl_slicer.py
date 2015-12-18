@@ -264,7 +264,7 @@ class StlSlicer(object):
             with open('merged.stl', 'wb') as f2:
                 f2.write(f.read())
 
-        with open('output.fcode', 'wb') as f:
+        with open('output.fc', 'wb') as f:
             f.write(fcode_output.getvalue())
 
         self.my_ini_writer("output.ini", self.config)
