@@ -29,7 +29,7 @@ class PcProcess():
         logger.debug('upload %s, L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
         logger.debug('all:' + " ".join(self.clouds.keys()))
 
-    def import_file(name, buf, filetype):
+    def import_file(self, name, buf, filetype):
         if filetype == 'pcd':
             tmp = read_pcd(buf)
             tmp = self.to_cpp((tmp, []))

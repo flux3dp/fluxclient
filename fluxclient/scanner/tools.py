@@ -64,7 +64,7 @@ def read_pcd(data):
         pcd = open(file_name, 'r')
 
     elif type(data) == bytes:
-        pcd = io.StringsIO()
+        pcd = io.StringIO()
         pcd.write(data.decode())
         pcd.seek(0)
 
