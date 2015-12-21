@@ -226,6 +226,7 @@ class StlSlicer(object):
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         self.working_p = p
+        slic3r_error = False
         while p.poll() is None:
             line = p.stdout.readline()
             print(line, file=sys.stderr, end='')
@@ -234,6 +235,8 @@ class StlSlicer(object):
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.12
                     ws.send_progress((line.rstrip())[3:], progress)
+                elif "Unable to close this loop" in line:
+                    slic3r_error = True
                 slic3r_out = line
         if p.poll() != 0:
             fail_flag = True
@@ -252,7 +255,7 @@ class StlSlicer(object):
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-            if len(m_GcodeToFcode.empty_layer) > 1:
+            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 1:
                 ws.send_warning("{} empty layer, might be error when slicing".format(len(m_GcodeToFcode.empty_layer)))
 
             del m_GcodeToFcode
