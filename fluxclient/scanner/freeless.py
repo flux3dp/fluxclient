@@ -49,9 +49,9 @@ class freeless():
         '''
         convert indices on the image into x-y-z-rgb points
         return  [
-                                p1[x-coordinate, y-coord, z-coord, r, g, b, step],
-                                p2[x-coordinate, y-coord, z-coord, r, g, b, step],
-                                p3[x-coordinate, y-coord, z-coord, r, g, b, step],
+                                p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y],
+                                p2[x-coordinate, y-coord, z-coord, r, g, b, step, x, y],
+                                p3[x-coordinate, y-coord, z-coord, r, g, b, step, x, y],
                                   ...
                 ]
 
@@ -59,6 +59,7 @@ class freeless():
                   switch y, z
         '''
         points = []
+        _step = step  # real step
 
         MAX_DIST_XZ_SQ = 70 ** 2
         PLATE_Y = -0.5
@@ -94,7 +95,7 @@ class freeless():
         new_points = []
         for p in points:
             # [WARNING] change here
-            new_points.append([p[0][0] * c + p[0][2] * (-s), p[0][0] * s + p[0][2] * c, p[0][1], p[2][2], p[2][1], p[2][0], step, p[3][0], p[3][1]])
+            new_points.append([p[0][0] * c + p[0][2] * (-s), p[0][0] * s + p[0][2] * c, p[0][1], p[2][2], p[2][1], p[2][0], _step, p[3][0], p[3][1]])
             # new_points.append([p[0][0] * c + p[0][2] * (-s), p[0][0] * s + p[0][2] * c, p[0][1], (step % 2) * 255, 255 - step / 400. * 255, 255 - step / 400. * 255, step, p[3][0], p[3][1]])
 
         return new_points
