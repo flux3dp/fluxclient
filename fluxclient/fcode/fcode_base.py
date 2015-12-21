@@ -9,6 +9,8 @@ class FcodeBase(object):
     """
     def __init__(self):
         super(FcodeBase, self).__init__()
+        self.filament_this_layer = [0., 0., 0.]
+        self.empty_layer = []
 
     def process_path(self, comment, moveflag, extrudeflag):
         """
@@ -25,9 +27,12 @@ class FcodeBase(object):
             elif 'move' in comment:
                 line_type = 3
                 if 'to next layer' in comment:
+                    if self.filament == self.filament_this_layer:
+                        self.empty_layer.append(self.layer_now)
                     tmp = findall('[0-9]+', comment)[-1]
                     self.layer_now = int(tmp)
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
+                    self.filament_this_layer = self.filament[:]
             elif 'skirt' in comment:
                 line_type = 4
             elif 'draw' in comment:

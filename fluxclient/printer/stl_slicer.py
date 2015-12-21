@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import os
 import sys
+import copy
 
 from PIL import Image
 
@@ -49,6 +50,13 @@ class StlSlicer(object):
         """
         self.models[name] = buf
 
+    def duplicate(self, name_in, name_out):
+        if name_in in self.models:
+            self.models[name_out] = copy.copy(self.models[name_in])
+            return True
+        else:
+            return False
+
     def upload_image(self, buf):
         b = io.BytesIO()
         b.write(buf)
@@ -60,7 +68,7 @@ class StlSlicer(object):
         image_bytes = b.getvalue()
         self.image = image_bytes
         ######################### fake code ###################################
-        with open('preview.png', 'wb') as f:
+        with open('_preview.png', 'wb') as f:
             f.write(image_bytes)
         ############################################################
 
@@ -244,6 +252,8 @@ class StlSlicer(object):
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+            if len(m_GcodeToFcode.empty_layer) > 1:
+                ws.send_warning("{} empty layer, might be error when slicing".format(len(m_GcodeToFcode.empty_layer)))
 
             del m_GcodeToFcode
 
