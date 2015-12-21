@@ -31,9 +31,13 @@ class PcProcess():
 
     def import_file(self, name, buf, filetype):
         if filetype == 'pcd':
-            tmp = read_pcd(buf)
-            tmp = self.to_cpp((tmp, []))
-            self.clouds[name] = tmp
+            try:
+                tmp = read_pcd(buf)
+                tmp = self.to_cpp((tmp, []))
+                self.clouds[name] = tmp
+                return True, ''
+            except:
+                return False, "Import fail, file broken?"
         else:
             print("can't parse {} file".format(filetype), file=sys.stderr)
             raise NotImplementedError
