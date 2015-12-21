@@ -67,9 +67,6 @@ class LaserBase(object):
         # setting
         gcode += ["X3F3", "X3F2", "X3F1"]
 
-        # home
-        gcode.append("G28")
-
         # move to proper height
         gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height))
         return gcode
