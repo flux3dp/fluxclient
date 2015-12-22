@@ -41,7 +41,7 @@ class StlSlicer(object):
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
-        self.ext_metadata = {}
+        self.ext_metadata = {'CORRECTION': 'A'}
         self.working_p = None
 
     def upload(self, name, buf):
@@ -256,7 +256,7 @@ class StlSlicer(object):
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
             if slic3r_error or len(m_GcodeToFcode.empty_layer) > 1:
-                ws.send_warning("{} empty layer, might be error when slicing".format(len(m_GcodeToFcode.empty_layer)))
+                ws.send_warning("{} empty layers, might be error when slicing".format(len(m_GcodeToFcode.empty_layer)))
 
             del m_GcodeToFcode
 
