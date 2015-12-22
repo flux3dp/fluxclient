@@ -16,6 +16,10 @@ def dot(a, b):
     return sum(a[i] * b[i] for i in range(3))
 
 
+def cross(p0, p1, p2):
+    return ((p1[0] - p0[0]) * (p2[1] - p0[1])) - ((p1[1] - p0[1]) * (p2[0] - p0[0]))
+
+
 def normalize(v):
     """
     normalize vector v

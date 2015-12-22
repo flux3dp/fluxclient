@@ -11,6 +11,7 @@
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/surface/poisson.h>
 #include <pcl/conversions.h>
+#include <pcl/segmentation/extract_clusters.h>
 
 #include <pcl/console/print.h>
 
@@ -64,6 +65,30 @@ int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold) {
   sor.setStddevMulThresh (threshold); //how many deviation out of n
   sor.setInputCloud (cloud);
   sor.filter (*cloud);
+
+  return 0;
+}
+
+int Euclidean_Cluster(PointCloudXYZRGBPtr cloud, float thres_dist, std::vector< std::vector<int> > &output){
+  // Euclidean Cluster Extraction
+  pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGB>);
+  tree->setInputCloud (cloud);
+  std::vector<pcl::PointIndices> cluster_indices;
+  pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
+  ec.setClusterTolerance (thres_dist); // 2cm
+  ec.setMinClusterSize(1);
+  // ec.setMaxClusterSize(25000);
+  ec.setSearchMethod (tree);
+  ec.setInputCloud (cloud);
+  ec.extract (cluster_indices);
+  output.clear();
+  for (uint i = 0; i < cluster_indices.size(); i += 1){
+    std::vector<int> tmp;
+    for (uint j = 0; j < cluster_indices[i].indices.size(); j += 1){
+      tmp.push_back(cluster_indices[i].indices[j]);
+    }
+    output.push_back(tmp);
+  }
 
   return 0;
 }

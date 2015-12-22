@@ -4,11 +4,15 @@ from operator import ge, le
 import logging
 import io
 import sys
+import bisect
+import copy
+from math import sqrt, asin, pi, radians, cos, sin
+
+from scipy.interpolate import Rbf
+import numpy as np
 
 from . import scan_settings
-from .tools import write_stl, write_pcd, read_pcd
-
-
+from .tools import write_stl, write_pcd, read_pcd, cross
 from . import _scanner
 
 
@@ -206,6 +210,101 @@ class PcProcess():
             both_pc.append(pc_new)
 
         self.clouds[name_out] = both_pc
+
+    def closure(self, name_in, name_out, z_value, floor):
+        if floor:
+            logger.debug('adding floor at {}'.format(floor))
+        else:
+            logger.debug('adding ceiling at {}'.format(floor))
+
+        points = []
+        out_pc = [i.clone() for i in self.clouds[name_in]]
+
+        self.cut(name_out, name_out, 'z', floor, z_value)
+        for i in range(2):
+            for z in range(len(out_pc[i])):
+                points.append(out_pc[i][z])
+
+        # get near floor and a ring point set
+        points = [[p, asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2)) if p[0] > 0 else pi - asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2))] for p in points]  # add theta data
+        points = sorted(points, key=lambda x: abs(x[0][2] - z_value))
+
+        # TODO: use a better way to find ring
+        rec = [float('-inf'), float('inf')]
+        interval = 2 * pi / scan_settings.scan_step * 0.8
+        after = []  # find out the boarder points
+        for p in points:
+            tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
+            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval:
+                rec.insert(tmp_index, p[1])
+                after.append(p)
+            if len(rec) > 400 + 2:
+                break
+
+        after = sorted(after, key=lambda x: x[1])
+        after = [p[0] for p in after]
+
+        plane = copy.deepcopy(after)
+        index = sorted(range(len(plane)), key=lambda x: [after[x][0], after[x][1]])
+
+        # find the convex hull
+        # ref: http://www.csie.ntnu.edu.tw/~u91029/ConvexHull.html
+        # Andrew's Monotone Chain
+        output = []
+        for j in index:  # upper
+            while len(output) >= 2 and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                output.pop()
+            output.append(j)
+
+        t = len(output) + 1
+        for j in index[-2::-1]:  # lower
+            while len(output) > t and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                output.pop()
+            output.append(j)
+        output.pop()
+
+        boarder = [after[x] for x in sorted(output)]
+
+        # compute the plane using RBF model
+        tmp = []
+        grid_leaf = 100
+        X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
+        Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
+        XI, YI = np.meshgrid(X, Y)
+
+        x = [p[0] for p in plane]
+        y = [p[1] for p in plane]
+        z = [p[2] for p in plane]
+
+        if floor:
+            color = [255, 0, 0]
+        else:
+            color = [0, 255, 0]
+
+        color = [0., 0., 0.]
+        for i in after:
+            for j in range(3):
+                color[j] += i[j + 3]
+        color = [i / len(after) for i in color]
+
+        rbf = Rbf(x, y, z, function='linear')
+        ZI = rbf(XI, YI)
+        for xx in range(grid_leaf):
+            for yy in range(grid_leaf):
+                p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
+                flag = True
+                for b in range(len(boarder)):
+                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                        flag = False
+                        break
+                if flag:
+                    tmp.append(p)
+        del rbf
+
+        plane += tmp
+        for p in plane:
+            out_pc[0].push_backPoint(*p)
+        self.clouds[name_out] = out_pc
 
     def auto_alignment(self, name_base, name_2, name_out):
         """

@@ -18,6 +18,7 @@ int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point);
 int get_w(PointCloudXYZRGBPtr cloud);
 
 int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold);
+int Euclidean_Cluster(PointCloudXYZRGBPtr cloud, float thres_dist, std::vector< std::vector<int> > &output);
 
 //normal estimation
 typedef pcl::PointCloud<pcl::Normal>::Ptr NormalPtr;

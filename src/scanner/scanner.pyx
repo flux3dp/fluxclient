@@ -37,6 +37,7 @@ cdef extern from "scan_module.h":
     int split(PointXYZRGBNormalPtr bothobj, PointCloudXYZRGBPtr obj, NormalPtr normalObj)
 
     int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float thresh)
+    int Euclidean_Cluster(PointCloudXYZRGBPtr cloud, float thres_dist, vector[vector [int]] &output)
 
     int ne(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius)
     int ne_viewpoint(PointCloudXYZRGBPtr cloud, NormalPtr normals, float radius )
@@ -116,6 +117,17 @@ cdef class PointCloudXYZRGBObj:
 
     cpdef int SOR(self, int neighbors, float threshold):
         return SOR(self.obj, neighbors, threshold)
+
+    cpdef Euclidean_Cluster(self, thres_dist):
+        cdef vector[vector [int]] output
+        Euclidean_Cluster(self.obj, thres_dist, output)
+        return output
+
+    # cpdef PointCloudXYZRGBObj subcloud(self, vector [int] indeces):
+    #     cdef PointCloudXYZRGBObj pc = PointCloudXYZRGBObj()
+    #     for i in indeces:
+    #         self.obj, pc.obj)
+    #     return pc
 
     cpdef int ne(self, float radius=scan_settings.NE_radius):
         return ne(self.obj, self.normalObj, radius)
