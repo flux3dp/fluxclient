@@ -37,7 +37,7 @@ class freeless():
         self.m_maxLaserWidth = 50
         self.m_minLaserWidth = 3
         self.MAX_MAGNITUDE_SQ = (255 * 3.0)  # doesn't really matter(just for scaling)
-        self.m_laserMagnitudeThreshold = .8  # main threshold, diff value from 0.0 to 1.0
+        self.m_laserMagnitudeThreshold = 1.25  # main threshold, diff value from 0.0 to 255?
         self.firstRowLaserCol = 0.5 * scan_settings.img_width
         self.RANGE_DISTANCE_THRESHOLD = 2
         self.numSuspectedBadLaserLocations = 0
