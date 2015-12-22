@@ -82,9 +82,9 @@ int Euclidean_Cluster(PointCloudXYZRGBPtr cloud, float thres_dist, std::vector< 
   ec.setInputCloud (cloud);
   ec.extract (cluster_indices);
   output.clear();
-  for (uint i = 0; i < cluster_indices.size(); i += 1){
+  for (size_t i = 0; i < cluster_indices.size(); i += 1){
     std::vector<int> tmp;
-    for (uint j = 0; j < cluster_indices[i].indices.size(); j += 1){
+    for (size_t j = 0; j < cluster_indices[i].indices.size(); j += 1){
       tmp.push_back(cluster_indices[i].indices[j]);
     }
     output.push_back(tmp);
