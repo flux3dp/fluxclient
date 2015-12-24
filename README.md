@@ -25,3 +25,9 @@ fluxclient contains all toolsets to control FLUX 3D Printer
 
 * Pillow
 `pip install Pillow`
+
+* Numpy
+`pip install numpy`
+
+* Scipy
+`pip install scipy`
