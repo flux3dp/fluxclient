@@ -98,14 +98,39 @@ class PcProcess():
 
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = [i.clone() for i in self.clouds[name_in]]
+        pc = [i.clone() for i in self.clouds[name_in]]
+        pc0_size = len(pc[0])
 
-        for pc in pc_both:
-            logger.debug('start with %d point' % len(pc))
-            pc.SOR(scan_settings.SOR_neighbors, stddev)
-            logger.debug('finished with %d point' % len(pc))
+        pc = pc[0].add(pc[1])
+        logger.debug('start with %d point' % len(pc))
+        pc.SOR(scan_settings.SOR_neighbors, stddev)
+        logger.debug('finished with %d point' % len(pc))
+        pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
 
         self.clouds[name_out] = pc_both
+        # self.cluster(name_out, name_out, thres=5)
+        # self.closure(name_out, name_out, -1000, True)
+        # self.closure(name_out, name_out, 1000, False)
+        # self.cluster(name_out, name_out, thres=2)
+
+    def cluster(self, name_in, name_out, thres=2):
+        pc = self.clouds[name_in]
+        logger.debug('cluster {} points'.format(len(pc[0]) + len(pc[1])))
+        pc0_size = len(pc[0])
+        output = (pc[0].add(pc[1])).Euclidean_Cluster(thres)
+        output = sorted(output, key=lambda x: len(x))
+        for i in output:
+            print(len(i))
+        tmp_pc = self.to_cpp([[], []])
+        for j in output[-1:]:
+            for i in j:
+                if i < pc0_size:
+                    p = pc[0][i]
+                else:
+                    p = pc[1][i - pc0_size]
+                tmp_pc[0].push_backPoint(*p)
+        logger.debug('finish with {} cluster, {} points in biggest one'.format(len(output), len(output[-1])))
+        self.clouds[name_out] = tmp_pc
 
     def to_mesh(self, name_in):
         logger.debug('to_mesh name:%s' % name_in)
@@ -308,7 +333,6 @@ class PcProcess():
 
     def auto_alignment(self, name_base, name_2, name_out):
         """
-        this is actually
         """
         # what about empty point cloud?
         logger.debug('auto_alignment %s, %s' % (name_base, name_2))
