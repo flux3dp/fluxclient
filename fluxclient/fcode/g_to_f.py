@@ -39,7 +39,7 @@ class GcodeToFcode(FcodeBase):
         self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.distance = 0.  # recording distance go through
-        self.max_range = [0., 0., 0.]  # recording max coordinate
+        self.max_range = [0., 0., 0., 0.]  # recording max coordinate, [x, y, z, r]
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
         self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
         self.md.update(ext_metadata)
@@ -137,6 +137,8 @@ class GcodeToFcode(FcodeBase):
                 if abs(self.current_pos[i - 1]) > self.max_range[i - 1]:
                     # self.max_range[i - 1] = abs(self.current_pos[i - 1])
                     self.max_range[i - 1] = self.current_pos[i - 1]
+        if self.current_pos[0] ** 2 + self.current_pos[1] ** 2:  # computer MAX_R
+            self.max_range[3] = self.current_pos[0] ** 2 + self.current_pos[1] ** 2
         tmp_path = sqrt(tmp_path)
         self.distance += tmp_path
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
@@ -297,11 +299,14 @@ class GcodeToFcode(FcodeBase):
             output_stream.seek(0, 2)  # go back to file end
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
+            if self.empty_layer[0] == 0:
+                self.empty_layer.pop(0)
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
             self.md['TRAVEL_DIST'] = str(self.distance)
-            self.md['MAX_X'] = str(self.max_range[0])
-            self.md['MAX_Y'] = str(self.max_range[1])
-            self.md['MAX_Z'] = str(self.max_range[2])
+
+            for v, k in enumerate(['Z', 'Y', 'Z', 'R']):
+                self.md['MAX_' + k] = str(self.max_range[v])
+
             self.md['TIME_COST'] = str(self.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?

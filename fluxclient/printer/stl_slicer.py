@@ -255,8 +255,8 @@ class StlSlicer(object):
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 1:
-                ws.send_warning("{} empty layers, might be error when slicing".format(len(m_GcodeToFcode.empty_layer)))
+            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                ws.send_warning("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer)))
 
             del m_GcodeToFcode
 
