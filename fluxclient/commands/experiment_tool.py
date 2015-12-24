@@ -12,10 +12,6 @@ from fluxclient.scanner.tools import read_pcd, write_stl, write_pcd
 from fluxclient.scanner.pc_process import PcProcess
 
 
-logger = logging.Logger(__name__)
-logger.setLevel(level=logging.DEBUG)
-
-
 def show_pc(name, pc_in):
     return '{} size:{}'.format(name, len(pc_in[0]))
 
@@ -50,22 +46,31 @@ def main(in_file, out_file, command=''):
                 f.write(tmp)
         elif i.startswith('C'):
             print('Clustering')
+            if i[1] == 's':  # show the clustering
+                thres = float(i[2:])
+            else:
+                thres = float(i[1:])
             pc = _PcProcess.clouds['in']
-            thres = float(i[1:])
+            # Euclidean_Cluster
             output = pc[0].Euclidean_Cluster(thres)
             output = sorted(output, key=lambda x: len(x))
             print('finish with {} cluster'.format(len(output)))
-            # Euclidean_Cluster
-            import random
-            r = lambda: random.randint(0, 255)
 
             tmp_pc = _PcProcess.to_cpp([[], []])
-            for j in output[-1:]:
+            if i[1] == 's':
+                tmp_index = 0
+            else:
+                tmp_index = -1
+            import random
+            r = lambda: random.randint(0, 255)
+            for j in output[tmp_index:]:
                 c = [r(), r(), r()]
-                for i in j:
-                    p = _PcProcess.clouds['in'][0][i]
-                    # tmp_pc[0].push_backPoint(p[0], p[1], p[2], *c)
-                    tmp_pc[0].push_backPoint(*p)
+                for k in j:
+                    p = _PcProcess.clouds['in'][0][k]
+                    if i[1] == 's':
+                        tmp_pc[0].push_backPoint(p[0], p[1], p[2], *c)
+                    else:
+                        tmp_pc[0].push_backPoint(*p)
             _PcProcess.clouds['in'] = tmp_pc
 
 
@@ -77,6 +82,7 @@ parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
                                                         'P: Possion Meshing\n'
                                                         'A[fc][value]: add [floor] or [ceiling] at z = [value]'
                                                         'E: export file\n'
+                                                        'C[s]?[value]: clustring points base on distance'
                     )
 args = parser.parse_args()
 
