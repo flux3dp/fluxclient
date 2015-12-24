@@ -53,6 +53,7 @@ class image_to_pc():
         '''
             feed 3 picture buffer and a step index
             note that this step index is the input
+            p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y]
         '''
 
         img_O = self.to_image(buffer_O)
@@ -90,23 +91,42 @@ class image_to_pc():
     def merge(self):
         """
         merge left and right scanned points
+        find which side is brighter, use it as base
         use Left side as base
         """
-        self.points_M = self.points_R + self.points_L
-        return
-        record = [set() for i in range(self.steps)]
-        for p in self.points_R:
-            record[p[6]].add(p[8])
-        self.points_M = self.points_R[:]
+        s_R = sum(int(p[3]) + p[4] + p[5] for p in self.points_R)
+        s_L = sum(int(p[3]) + p[4] + p[5] for p in self.points_L)
 
-        print(len(self.points_M), len(self.points_L), len(self.points_R), file=sys.stderr)
-        # print(record)
+        if s_R > s_L:
+            print('R')
+            base = self.points_R
+            add_on = self.points_L
+            delta = round(60 / (360 / self.steps))
+        else:
+            print('L')
+            base = self.points_L
+            add_on = self.points_R
+            delta = -round(60 / (360 / self.steps))
 
-        for p in self.points_L:
-            if not p[8] in record[p[6]]:
+        record = {}
+        for p in range(len(base)):
+            record[(base[p][6], base[p][8])] = p
+
+        self.points_M = base[:]
+
+        print('merging base {}, add_on {}'.format(len(base), len(add_on)), file=sys.stderr)
+
+        for p in add_on:
+            t = (p[6] + delta) % 400, p[8]
+            if t in record:
+                old_p = base[record[t]]
+                base[record[t]][3] = p[3] / 2 + old_p[3] / 2
+                base[record[t]][4] = p[4] / 2 + old_p[4] / 2
+                base[record[t]][5] = p[5] / 2 + old_p[5] / 2
+            else:
                 self.points_M.append(p)
 
-        print(len(self.points_M), len(self.points_L), len(self.points_R), file=sys.stderr)
+        print('merge done: output self.mpoints_M:{}'.format(len(self.points_M)), file=sys.stderr)
 
 
 def print_progress(step, total):
@@ -182,6 +202,8 @@ if __name__ == '__main__':
         print_progress(i, 400)
     print('')
     output = img_location + '.pcd'
+    print('start merge')
     m_image_to_pc.merge()
+    print('merge done')
     write_pcd(after(m_image_to_pc.points_M), output)
     subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))

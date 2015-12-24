@@ -40,6 +40,8 @@ class LaserBase(object):
         # warning global setting, don't use theese unless you 100% understand what you are doing
         self.rotation = 0
         self.ratio = 1.
+
+        # ext meta data, used when converting to fcode
         self.ext_metadata = {}
 
     def reset_image(self):
@@ -59,14 +61,11 @@ class LaserBase(object):
             gcode.append(";" + i)
 
         # force close laser
-        self.laser_on = True
+        self.laser_on = False
         gcode += self.turnOff()
 
         # setting
         gcode += ["X3F3", "X3F2", "X3F1"]
-
-        # home
-        gcode.append("G28")
 
         # move to proper height
         gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height))
@@ -85,6 +84,9 @@ class LaserBase(object):
         return ["X2O0;turnOff", "G4 P20"]
 
     def turnTo(self, power=None):
+        """
+        set laser power
+        """
         if power is None:
             self.laser_on = True
             return ["X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
@@ -168,9 +170,13 @@ class LaserBase(object):
         raise NotImplementedError('Successor didn\'t implement "gcode_generate" method')
 
     def export_to_stream(self, stream, *args):
+        """export gcode to stream"""
         stream.write(self.gcode_generate(*args))
 
     def set_params(self, key, value):
+        """
+        set parameters for setting
+        """
         if key == 'object_height':
             self.obj_height = float(value)
 
@@ -185,16 +191,6 @@ class LaserBase(object):
         else:
             raise ValueError('undefine setting key')
 
-    def rotate(self, x, y, rotation, cx=0., cy=0.):
-        """
-        compute new (x, y) after rotate toward (cx, cy)
-        """
-        vx = (x - cx)
-        vy = (y - cy)
-        x = cx + vx * cos(rotation) - vy * sin(rotation)
-        y = cy + vx * sin(rotation) + vy * cos(rotation)
-        return x, y
-
     def add_image(self, buffer_data, img_width, img_height, x1, y1, x2, y2, rotation, thres=255):
         """
         add image on top of current image i.e self.image_map
@@ -206,24 +202,35 @@ class LaserBase(object):
           return:
             None
         """
+        def rotate(x, y, rotation, cx=0., cy=0.):
+            """
+            compute new (x, y) after rotate toward (cx, cy)
+            """
+            vx = (x - cx)
+            vy = (y - cy)
+            x = cx + vx * cos(rotation) - vy * sin(rotation)
+            y = cy + vx * sin(rotation) + vy * cos(rotation)
+            return x, y
+
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
+        # pix.save('tmp.png', 'png')
 
         # image center (rotation center)
         cx = (x1 + x2) / 2.
         cy = (y1 + y2) / 2.
 
         # compute four original corner
-        ox1, oy1 = self.rotate(x1, y1, -rotation, cx, cy)
-        ox3, oy3 = self.rotate(x2, y2, -rotation, cx, cy)
+        ox1, oy1 = rotate(x1, y1, -rotation, cx, cy)
+        ox3, oy3 = rotate(x2, y2, -rotation, cx, cy)
 
         ox2, oy2 = ox1, oy3
         ox4, oy4 = ox3, oy1
 
         # rotate four corner
-        ox1, oy1 = self.rotate(ox1, oy1, rotation, cx, cy)
-        ox2, oy2 = self.rotate(ox2, oy2, rotation, cx, cy)
-        ox3, oy3 = self.rotate(ox3, oy3, rotation, cx, cy)
-        ox4, oy4 = self.rotate(ox4, oy4, rotation, cx, cy)
+        ox1, oy1 = rotate(ox1, oy1, rotation, cx, cy)
+        ox2, oy2 = rotate(ox2, oy2, rotation, cx, cy)
+        ox3, oy3 = rotate(ox3, oy3, rotation, cx, cy)
+        ox4, oy4 = rotate(ox4, oy4, rotation, cx, cy)
 
         # find upper-left corner after rotation(edge)
         gx1 = min(ox1, ox2, ox3, ox4)
@@ -278,12 +285,12 @@ class LaserBase(object):
     def dump(self, file_name='', mode='save'):
         """
             dump the image of this laser class
-
         """
         img = Image.fromarray(self.image_map)
         tmp = io.BytesIO()
-        tmp.write(Grid)
-        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))  # TODO: change file path
+        tmp.write(Grid)  # TODO: change file path
+        # magic number just for alignment, don't really important
+        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))
         img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
         img = img_background
         if mode == 'save':
@@ -297,7 +304,7 @@ class LaserBase(object):
             image_bytes = b.getvalue()
             return image_bytes
         else:
-            print("unsupport mode %s" % mode, file=sys.stderr)
+            raise NotImplementedError("unsupport mode {}".format(mode), file=sys.stderr)
 
     def fcode_generate(self, *args):
         fcode_output = io.BytesIO()

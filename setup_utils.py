@@ -80,7 +80,7 @@ def get_version():
 
 
 def get_install_requires():
-    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy']
+    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy']
 
 
 def get_packages():

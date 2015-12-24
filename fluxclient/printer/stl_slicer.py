@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import os
 import sys
+import copy
 
 from PIL import Image
 
@@ -40,7 +41,7 @@ class StlSlicer(object):
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.image = b''
-        self.ext_metadata = {}
+        self.ext_metadata = {'CORRECTION': 'A'}
         self.working_p = None
 
     def upload(self, name, buf):
@@ -48,6 +49,13 @@ class StlSlicer(object):
         upload a model's data in stl as bytes data
         """
         self.models[name] = buf
+
+    def duplicate(self, name_in, name_out):
+        if name_in in self.models:
+            self.models[name_out] = copy.copy(self.models[name_in])
+            return True
+        else:
+            return False
 
     def upload_image(self, buf):
         b = io.BytesIO()
@@ -60,7 +68,7 @@ class StlSlicer(object):
         image_bytes = b.getvalue()
         self.image = image_bytes
         ######################### fake code ###################################
-        with open('preview.png', 'wb') as f:
+        with open('_preview.png', 'wb') as f:
             f.write(image_bytes)
         ############################################################
 
@@ -218,6 +226,7 @@ class StlSlicer(object):
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         self.working_p = p
+        slic3r_error = False
         while p.poll() is None:
             line = p.stdout.readline()
             print(line, file=sys.stderr, end='')
@@ -226,6 +235,8 @@ class StlSlicer(object):
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.12
                     ws.send_progress((line.rstrip())[3:], progress)
+                elif "Unable to close this loop" in line:
+                    slic3r_error = True
                 slic3r_out = line
         if p.poll() != 0:
             fail_flag = True
@@ -244,6 +255,8 @@ class StlSlicer(object):
             self.path = m_GcodeToFcode.path
             metadata = m_GcodeToFcode.md
             metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                ws.send_warning("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer)))
 
             del m_GcodeToFcode
 
@@ -264,8 +277,10 @@ class StlSlicer(object):
             with open('merged.stl', 'wb') as f2:
                 f2.write(f.read())
 
-        with open('output.fcode', 'wb') as f:
+        with open('output.fc', 'wb') as f:
             f.write(fcode_output.getvalue())
+
+        self.my_ini_writer("output.ini", self.config)
         ###########################################################
 
         # clean up tmp files

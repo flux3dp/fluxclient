@@ -36,10 +36,11 @@ class LaserSvg(LaserBase, SVGParser):
     def gcode_generate(self, names, ws=None):
         self.reset_image()
         gcode = []
-        gcode += self.header('laser svg')
+        gcode += self.header('FLUX. Laser SVG.')
         progress = 0.1
         offset = 4 * len(names) / 0.98
         name_index = offset
+
         for name in names:
             name_index += 1
             ready_svg = self.ready_svgs[name]
@@ -83,15 +84,15 @@ class LaserSvg(LaserBase, SVGParser):
         gcode += ["G28"]
         ################ fake code ##############
         self.dump('./preview.png')
-        tmp = []
-        for i in gcode:
-            tmp.append(i)
-            if i[:2] == 'G1':
-                tmp.append(i)
+
+        # output only moving
+        # tmp = []
+        # for i in gcode:
+        #     tmp.append(i)
+        #     if i[:2] == 'G1':
+        #         tmp.append(i)
         # return "\n".join(tmp) + "\n"
 
-        with open('output.gcode', 'w') as f:
-            print("\n".join(gcode) + "\n", file=f)
         ##########################################
 
         return "\n".join(gcode) + "\n"

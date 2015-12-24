@@ -4,11 +4,15 @@ from operator import ge, le
 import logging
 import io
 import sys
+import bisect
+import copy
+from math import sqrt, asin, pi, radians, cos, sin
+
+from scipy.interpolate import Rbf
+import numpy as np
 
 from . import scan_settings
-from .tools import write_stl, write_pcd, read_pcd
-
-
+from .tools import write_stl, write_pcd, read_pcd, cross
 from . import _scanner
 
 
@@ -29,11 +33,15 @@ class PcProcess():
         logger.debug('upload %s, L: %d R: %d' % (name, len(self.clouds[name][0]), len(self.clouds[name][1])))
         logger.debug('all:' + " ".join(self.clouds.keys()))
 
-    def import_file(name, buf, filetype):
+    def import_file(self, name, buf, filetype):
         if filetype == 'pcd':
-            tmp = read_pcd(buf)
-            tmp = self.to_cpp((tmp, []))
-            self.clouds[name] = tmp
+            try:
+                tmp = read_pcd(buf)
+                tmp = self.to_cpp((tmp, []))
+                self.clouds[name] = tmp
+                return True, ''
+            except:
+                return False, "Import fail, file broken?"
         else:
             print("can't parse {} file".format(filetype), file=sys.stderr)
             raise NotImplementedError
@@ -78,9 +86,10 @@ class PcProcess():
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
 
-        self.clouds[name_out] = []
+        tmp = []
         for pc in pc_both:
-            self.clouds[name_out].append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
+            tmp.append(pc.cut('xyzr'.index(mode), 1 if direction else 0, value))
+        self.clouds[name_out] = tmp
 
     def delete_noise(self, name_in, name_out, stddev):
         """
@@ -89,14 +98,39 @@ class PcProcess():
 
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = [i.clone() for i in self.clouds[name_in]]
+        pc = [i.clone() for i in self.clouds[name_in]]
+        pc0_size = len(pc[0])
 
-        for pc in pc_both:
-            logger.debug('start with %d point' % len(pc))
-            pc.SOR(scan_settings.SOR_neighbors, stddev)
-            logger.debug('finished with %d point' % len(pc))
+        pc = pc[0].add(pc[1])
+        logger.debug('start with %d point' % len(pc))
+        pc.SOR(scan_settings.SOR_neighbors, stddev)
+        logger.debug('finished with %d point' % len(pc))
+        pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
 
         self.clouds[name_out] = pc_both
+        # self.cluster(name_out, name_out, thres=5)
+        # self.closure(name_out, name_out, -1000, True)
+        # self.closure(name_out, name_out, 1000, False)
+        # self.cluster(name_out, name_out, thres=2)
+
+    def cluster(self, name_in, name_out, thres=2):
+        pc = self.clouds[name_in]
+        logger.debug('cluster {} points'.format(len(pc[0]) + len(pc[1])))
+        pc0_size = len(pc[0])
+        output = (pc[0].add(pc[1])).Euclidean_Cluster(thres)
+        output = sorted(output, key=lambda x: len(x))
+        for i in output:
+            print(len(i))
+        tmp_pc = self.to_cpp([[], []])
+        for j in output[-1:]:
+            for i in j:
+                if i < pc0_size:
+                    p = pc[0][i]
+                else:
+                    p = pc[1][i - pc0_size]
+                tmp_pc[0].push_backPoint(*p)
+        logger.debug('finish with {} cluster, {} points in biggest one'.format(len(output), len(output[-1])))
+        self.clouds[name_out] = tmp_pc
 
     def to_mesh(self, name_in):
         logger.debug('to_mesh name:%s' % name_in)
@@ -171,13 +205,26 @@ class PcProcess():
                 return buf.getvalue()
 
     def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
-        both_pc = []
-        for pc in self.clouds[name_in]:
-            pc_new = pc.clone()
-            pc_new.apply_transform(x, y, z, rx, ry, rz)
-            both_pc.append(pc_new)
+        """
+        apply_transform to [name_in] pointcloud
+        and put it into [name_out]
+        note that we transforming left and right pointcloud together, and split it into 2 subset
+        it's because the left and right pc might have different center position
+        """
+        # add L and R
+        pc_both = self.clouds[name_in]
+        pc = pc_both[0].add(pc_both[1])  # return a new pc
 
-        self.clouds[name_out] = both_pc
+        pc.apply_transform(x, y, z, rx, ry, rz)
+
+        # split
+        new_pc = self.to_cpp([[], []])
+        for i in range(len(pc_both[0])):
+            new_pc[0].push_backPoint(*pc[i])
+        for i in range(len(pc_both[0]), len(pc_both[0]) + len(pc_both[1])):
+            new_pc[1].push_backPoint(*pc[i])
+
+        self.clouds[name_out] = new_pc
 
     def merge(self, name_base, name_2, name_out):
         logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
@@ -189,21 +236,128 @@ class PcProcess():
 
         self.clouds[name_out] = both_pc
 
-    # below not reviewed yet
-    def auto_merge(self, name_base, name_2, name_out):
-        logger.debug('automerge %s, %s' % (name_base, name_2))
-        pc_both = []
-        for i in range(2):
-            if len(self.clouds[name_base][i]) == 0 or len(self.clouds[name_2][i]) == 0:
-                # if either pointcloud with zero point, return name_2 without transform
-                pc_both.append(self.clouds[name_2][i].clone())
-                continue
-            reg = _scanner.RegCloud(self.clouds[name_base][i], self.clouds[name_2][i])
-            result, pc = reg.SCP()
-            # TODO:result?
-            pc_both.append(pc)
+    def closure(self, name_in, name_out, z_value, floor):
+        if floor:
+            logger.debug('adding floor at {}'.format(floor))
+        else:
+            logger.debug('adding ceiling at {}'.format(floor))
 
-        self.clouds[name_out] = pc_both
+        points = []
+        out_pc = [i.clone() for i in self.clouds[name_in]]
+
+        self.cut(name_out, name_out, 'z', floor, z_value)
+        for i in range(2):
+            for z in range(len(out_pc[i])):
+                points.append(out_pc[i][z])
+
+        # get near floor and a ring point set
+        points = [[p, asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2)) if p[0] > 0 else pi - asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2))] for p in points]  # add theta data
+        points = sorted(points, key=lambda x: abs(x[0][2] - z_value))
+
+        # TODO: use a better way to find ring
+        rec = [float('-inf'), float('inf')]
+        interval = 2 * pi / scan_settings.scan_step * 0.8
+        after = []  # find out the boarder points
+        for p in points:
+            tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
+            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval:
+                rec.insert(tmp_index, p[1])
+                after.append(p)
+            if len(rec) > 400 + 2:
+                break
+
+        after = sorted(after, key=lambda x: x[1])
+        after = [p[0] for p in after]
+
+        plane = copy.deepcopy(after)
+        index = sorted(range(len(plane)), key=lambda x: [after[x][0], after[x][1]])
+
+        # find the convex hull
+        # ref: http://www.csie.ntnu.edu.tw/~u91029/ConvexHull.html
+        # Andrew's Monotone Chain
+        output = []
+        for j in index:  # upper
+            while len(output) >= 2 and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                output.pop()
+            output.append(j)
+
+        t = len(output) + 1
+        for j in index[-2::-1]:  # lower
+            while len(output) > t and cross(after[output[-2]], after[output[-1]], after[j]) <= 0:
+                output.pop()
+            output.append(j)
+        output.pop()
+
+        boarder = [after[x] for x in sorted(output)]
+
+        # compute the plane using RBF model
+        tmp = []
+        grid_leaf = 100
+        X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
+        Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
+        XI, YI = np.meshgrid(X, Y)
+
+        x = [p[0] for p in plane]
+        y = [p[1] for p in plane]
+        z = [p[2] for p in plane]
+
+        if floor:
+            color = [255, 0, 0]
+        else:
+            color = [0, 255, 0]
+
+        color = [0., 0., 0.]
+        for i in after:
+            for j in range(3):
+                color[j] += i[j + 3]
+        color = [i / len(after) for i in color]
+
+        rbf = Rbf(x, y, z, function='linear')
+        ZI = rbf(XI, YI)
+        for xx in range(grid_leaf):
+            for yy in range(grid_leaf):
+                p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
+                flag = True
+                for b in range(len(boarder)):
+                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                        flag = False
+                        break
+                if flag:
+                    tmp.append(p)
+        del rbf
+
+        plane += tmp
+        for p in plane:
+            out_pc[0].push_backPoint(*p)
+        self.clouds[name_out] = out_pc
+
+    def auto_alignment(self, name_base, name_2, name_out):
+        """
+        """
+        # what about empty point cloud?
+        logger.debug('auto_alignment %s, %s' % (name_base, name_2))
+
+        # add L and R
+        pc_base = self.clouds[name_base]
+        pc_base = pc_base[0].add(pc_base[1])
+        pc_2 = self.clouds[name_2]
+        pc_2 = pc_2[0].add(pc_2[1])
+
+        if len(pc_base) == 0 or len(pc_2) == 0:
+            # if either pointcloud with zero point, return name_2 without transform
+            pc_both = pc_2
+        else:
+            reg = _scanner.RegCloud(pc_base, pc_2)
+            result, pc_both = reg.SCP()
+            # TODO:result???
+
+        new_pc = self.to_cpp([[], []])
+        for i in range(len(self.clouds[name_2][0])):
+            new_pc[0].push_backPoint(*pc_both[i])
+        for i in range(len(self.clouds[name_2][0]), len(self.clouds[name_2][0]) + len(self.clouds[name_2][1])):
+            new_pc[1].push_backPoint(*pc_both[i])
+
+        self.clouds[name_out] = new_pc
         return True
 
 

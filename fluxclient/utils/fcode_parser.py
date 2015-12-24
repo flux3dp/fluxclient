@@ -184,4 +184,4 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'rb') as f, open('tmp.gcode', 'w') as f2:
         m_FcodeParser.upload_content(f.read())
         m_FcodeParser.f_to_g(f2)
-        # print(m_FcodeParser.get_meta())
+        print(m_FcodeParser.get_meta())

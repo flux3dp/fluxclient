@@ -107,6 +107,12 @@ class SVGParser(object):
         reference:http://www.w3.org/TR/SVG/paths.html
         command supported: M, m, L, l, H, h, V, v, Z, z, C, c, S, s, Q, q, T, t, A, a
         '''
+        def angle_between(v1, v2):
+            angle = (v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)
+            if abs(angle) - 1 < 1e-10:  # precision problem will cause error on Domain of a function
+                angle = round(angle)
+            return copysign(acos(angle), v1[0] * v2[1] - v1[1] * v2[0])
+
         coordinate = []
         data = []
         head = 0
@@ -309,8 +315,6 @@ class SVGParser(object):
                     cy = sp * cx_prime + cp * cy_prime + ((y + end_y) / 2)
 
                     # F.6.5.4 - F.6.5.6
-                    angle_between = lambda v1, v2: SVGParser.angle_between(v1, v2)
-
                     tmp_v = ((x_prime - cx_prime) / rx, (y_prime - cy_prime) / ry)
                     theta_1 = angle_between((1, 0), tmp_v)
                     delta_theta = angle_between(tmp_v, ((-x_prime - cx_prime) / rx, (-y_prime - cy_prime) / ry))
@@ -334,13 +338,6 @@ class SVGParser(object):
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
         return [coordinate]
-
-    @staticmethod
-    def angle_between(v1, v2):
-        angle = (v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)
-        if abs(angle) - 1 < 1e-10:  # precision problem will cause error on Domain of a function
-            angle = round(angle)
-        return copysign(acos(angle), v1[0] * v2[1] - v1[1] * v2[0])
 
     @staticmethod
     def elements_to_list(svg):
