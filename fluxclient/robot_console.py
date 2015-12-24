@@ -38,15 +38,16 @@ class RobotConsole(object):
 
         self.cmd_mapping = {
             "ls": self.list_file,
-            "select": self.select_file,
             "fileinfo": self.fileinfo,
             "mkdir": self.mkdir,
             "rmdir": self.rmdir,
             "rmfile": self.rmfile,
             "cp": self.cpfile,
             "upload": self.upload_file,
-            "update_fw": self.update_fw,
             "md5": self.md5,
+
+            "select": self.select_file,
+            "update_fw": self.update_fw,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
@@ -173,14 +174,7 @@ class RobotConsole(object):
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
-    def upload_file(self, args):
-        options = shlex.split(args)
-        source = options[0]
-        if len(options) >= 2:
-            upload_to = " ".join(options[1].split("/", 1))
-        else:
-            upload_to = "#"
-
+    def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
             source, upload_to, progress_callback=self.log_progress_callback)
 
