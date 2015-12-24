@@ -451,6 +451,25 @@ class FluxRobotV0002(object):
         return self.get_resp()
 
     @ok_or_error
+    def config_set(self, key, value):
+        return self._make_cmd(b"config set " + key.encode() + b" " +\
+                              value.encode())
+
+    def config_get(self, key):
+        ret = self._make_cmd(b"config get " + key.encode()).decode("utf8",
+                                                                   "ignore")
+        if ret.startswith("ok VAL "):
+            return ret[7:]
+        elif ret.startswith("ok EMPTY"):
+            return None
+        else:
+            raise_error(ret)
+
+    @ok_or_error
+    def config_del(self, key):
+        return self._make_cmd(b"config del " + key.encode())
+
+    @ok_or_error
     def set_setting(self, key, value):
         cmd = "set %s %s" % (key, value)
         return self._make_cmd(cmd.encode())

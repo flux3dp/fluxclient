@@ -50,7 +50,11 @@ class RobotConsole(object):
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
-            "set": self.set_setting,
+            "config": {
+                "set": self.config_set,
+                "get": self.config_get,
+                "del": self.config_del
+            },
 
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
@@ -228,14 +232,20 @@ class RobotConsole(object):
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
-    def set_setting(self, line):
-        params = line.split(" ")
-        if len(params) == 2:
-            logger.info(
-                self.robot_obj.set_setting(key=params[0], value=params[1])
-            )
+    def config_set(self, key, value):
+        self.robot_obj.config_set(key, value)
+        logger.info("ok")
+
+    def config_get(self, key):
+        value = self.robot_obj.config_get(key)
+        if value:
+            logger.info("%s=%s\nok" % (key, value))
         else:
-            logger.info("BAD_PARAMS")
+            logger.info("%s not set\nok" % key)
+
+    def config_del(self, key):
+        self.robot_obj.config_del(key)
+        logger.info("ok")
 
     def maintain_eadj(self, ext=None):
         def callback(nav):
