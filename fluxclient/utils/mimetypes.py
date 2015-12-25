@@ -5,6 +5,7 @@ from mimetypes import add_type, guess_type
 
 add_type("text/gcode", ".gcode")
 add_type("application/fcode", ".fc")
+add_type("binary/flux-firmware", ".fxfw")
 
 
 def validate_ext(filename, match_mimetype):

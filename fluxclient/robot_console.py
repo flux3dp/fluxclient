@@ -38,19 +38,25 @@ class RobotConsole(object):
 
         self.cmd_mapping = {
             "ls": self.list_file,
-            "select": self.select_file,
             "fileinfo": self.fileinfo,
             "mkdir": self.mkdir,
             "rmdir": self.rmdir,
             "rmfile": self.rmfile,
             "cp": self.cpfile,
             "upload": self.upload_file,
-            "update_fw": self.update_fw,
             "md5": self.md5,
+
+            "select": self.select_file,
+            "update_fw": self.update_fw,
+            "update_mbfw": self.update_mbfw,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
-            "set": self.set_setting,
+            "config": {
+                "set": self.config_set,
+                "get": self.config_get,
+                "del": self.config_del
+            },
 
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
@@ -169,20 +175,18 @@ class RobotConsole(object):
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
-    def upload_file(self, args):
-        options = shlex.split(args)
-        source = options[0]
-        if len(options) >= 2:
-            upload_to = " ".join(options[1].split("/", 1))
-        else:
-            upload_to = "#"
-
+    def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
             source, upload_to, progress_callback=self.log_progress_callback)
 
     def update_fw(self, filename):
         self.robot_obj.upload_file(
             filename.rstrip(), cmd="update_fw",
+            progress_callback=self.log_progress_callback)
+
+    def update_mbfw(self, filename):
+        self.robot_obj.upload_file(
+            filename.rstrip(), cmd="update_mbfw",
             progress_callback=self.log_progress_callback)
 
     def md5(self, filename):
@@ -228,14 +232,20 @@ class RobotConsole(object):
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
-    def set_setting(self, line):
-        params = line.split(" ")
-        if len(params) == 2:
-            logger.info(
-                self.robot_obj.set_setting(key=params[0], value=params[1])
-            )
+    def config_set(self, key, value):
+        self.robot_obj.config_set(key, value)
+        logger.info("ok")
+
+    def config_get(self, key):
+        value = self.robot_obj.config_get(key)
+        if value:
+            logger.info("%s=%s\nok" % (key, value))
         else:
-            logger.info("BAD_PARAMS")
+            logger.info("%s not set\nok" % key)
+
+    def config_del(self, key):
+        self.robot_obj.config_del(key)
+        logger.info("ok")
 
     def maintain_eadj(self, ext=None):
         def callback(nav):

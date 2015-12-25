@@ -125,8 +125,9 @@ class FluxRobotV0002(object):
         else:
             return ret
 
+    # file commands
     def list_files(self, entry, path=""):
-        self._send_cmd(b"ls " + entry.encode() + b" " + path.encode())
+        self._send_cmd(b"file ls " + entry.encode() + b" " + path.encode())
         resp = self.get_resp().decode("ascii", "ignore")
         if resp == "continue":
             files = self.get_resp().decode("utf8", "ignore")
@@ -145,14 +146,9 @@ class FluxRobotV0002(object):
         else:
             raise_error(resp)
 
-    @ok_or_error
-    def select_file(self, entry, path):
-        self._send_cmd(b"select " + entry.encode() + b" " + path.encode())
-        return self.get_resp()
-
     def fileinfo(self, entry, path):
         info = [None, None]
-        self._send_cmd(b"fileinfo " + entry.encode() + b" " + path.encode())
+        self._send_cmd(b"file info " + entry.encode() + b" " + path.encode())
 
         resp = self.get_resp().decode("utf8", "ignore")
         if resp.startswith("binary "):
@@ -171,29 +167,75 @@ class FluxRobotV0002(object):
     @ok_or_error
     def mkdir(self, entry, path):
         return self._make_cmd(
-            b"mkdir " + entry.encode() + b" " + path.encode())
+            b"file mkdir " + entry.encode() + b" " + path.encode())
 
     @ok_or_error
     def rmdir(self, entry, path):
         return self._make_cmd(
-            b"rmdir " + entry.encode() + b" " + path.encode())
+            b"file rmdir " + entry.encode() + b" " + path.encode())
 
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"cp " + source_entry.encode() + b" " + source.encode() + b" "
+            b"file cp " + source_entry.encode() + b" " + source.encode() + b" "
             + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
     def rmfile(self, entry, path):
         return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
 
+    def md5(self, filename):
+        bresp = self._make_cmd(b"file md5 " + filename.encode())
+        resp = bresp.decode("ascii", "ignore")
+        if resp.startswith("md5 "):
+            return resp[4:]
+        else:
+            raise_error(resp)
+
+    def upload_file(self, filename, upload_to="#", cmd="file upload",
+                    progress_callback=None):
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            logger.debug("File opened")
+            size = os.fstat(f.fileno()).st_size
+            return self.upload_stream(f, size, mimetype, upload_to, cmd,
+                                      progress_callback)
+
+    # player commands
+    @ok_or_error
+    def select_file(self, entry, path):
+        self._send_cmd(b"player select " + entry.encode() + b" " +\
+                       path.encode())
+        return self.get_resp()
+
     @ok_or_error
     def start_play(self):
-        return self._make_cmd(b"start")
+        return self._make_cmd(b"player start")
+
+    @ok_or_error
+    def pause_play(self):
+        return self._make_cmd(b"player pause")
+
+    @ok_or_error
+    def abort_play(self):
+        return self._make_cmd(b"player abort")
+
+    @ok_or_error
+    def resume_play(self):
+        return self._make_cmd(b"player resume")
+
+    def report_play(self):
+        # TODO
+        msg = self._make_cmd(b"player report").decode("utf8", "ignore")
+        if msg.startswith("{"):
+            return json.loads(msg, "ignore")
+        else:
+            raise_error(msg)
 
     def play_info(self):
-        self._send_cmd(b"play_info")
+        self._send_cmd(b"player info")
         metadata = imgbuf = None
 
         resp = self.get_resp().decode("ascii", "ignore")
@@ -213,12 +255,27 @@ class FluxRobotV0002(object):
             else:
                 raise RuntimeError(resp)
 
-    def upload_stream(self, stream, length, mimetype, upload_to, cmd="upload",
-                      progress_callback=None):
-        # cmd = [cmd] [mimetype] [length] [upload_to]
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
+    def update_fw(self, filename, progress_callback=None):
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            logger.debug("File opened")
+            size = os.fstat(f.fileno()).st_size
+            self.upload_stream(f, size, mimetype, upload_to, cmd,
+                               progress_callback)
 
-        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
+    def upload_stream(self, stream, length, mimetype, upload_to,
+                      cmd="file upload", progress_callback=None):
+        if upload_to == "#":
+            # cmd = [cmd] [mimetype] [length] #
+            cmd = "%s %s %i #" % (cmd, mimetype, length)
+        else:
+            entry, path = upload_to.split("/", 1)
+            # cmd = [cmd] [mimetype] [length] [entry] [path]
+            cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
+
+        upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
         if upload_ret == "continue":
             logger.info(upload_ret)
         if upload_ret != "continue":
@@ -247,17 +304,7 @@ class FluxRobotV0002(object):
         if final_ret != b"ok":
             raise_error(final_ret.decode("ascii", "ignore"))
 
-    def upload_file(self, filename, upload_to="#", cmd="upload",
-                    progress_callback=None):
-        mimetype, _ = mimetypes.guess_type(filename)
-        if not mimetype:
-            mimetype = "binary"
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            return self.upload_stream(f, size, mimetype, upload_to, cmd,
-                                      progress_callback)
-
+    # Others
     def begin_upload(self, mimetype, length, cmd="upload", uploadto="#"):
         cmd = ("%s %s %i %s" % (cmd, mimetype, length, uploadto)).encode()
         upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
@@ -265,14 +312,6 @@ class FluxRobotV0002(object):
             return self.sock
         else:
             raise RuntimeError(upload_ret)
-
-    def md5(self, filename):
-        bresp = self._make_cmd(b"md5 " + filename.encode())
-        resp = bresp.decode("ascii", "ignore")
-        if resp.startswith("md5 "):
-            return resp[4:]
-        else:
-            raise_error(resp)
 
     @ok_or_error
     def begin_scan(self):
@@ -285,27 +324,6 @@ class FluxRobotV0002(object):
     @ok_or_error
     def kick(self):
         return self._make_cmd(b"kick")
-
-    # Play Tasks
-    @ok_or_error
-    def pause_play(self):
-        return self._make_cmd(b"pause")
-
-    @ok_or_error
-    def abort_play(self):
-        return self._make_cmd(b"abort")
-
-    @ok_or_error
-    def resume_play(self):
-        return self._make_cmd(b"resume")
-
-    def report_play(self):
-        # TODO
-        msg = self._make_cmd(b"report").decode("utf8", "ignore")
-        if msg.startswith("{"):
-            return json.loads(msg, "ignore")
-        else:
-            raise_error(msg)
 
     @ok_or_error
     def scan_laser(self, left, right):
@@ -449,6 +467,25 @@ class FluxRobotV0002(object):
                 if ret == 0:
                     sync += 1
         return self.get_resp()
+
+    @ok_or_error
+    def config_set(self, key, value):
+        return self._make_cmd(b"config set " + key.encode() + b" " +\
+                              value.encode())
+
+    def config_get(self, key):
+        ret = self._make_cmd(b"config get " + key.encode()).decode("utf8",
+                                                                   "ignore")
+        if ret.startswith("ok VAL "):
+            return ret[7:]
+        elif ret.startswith("ok EMPTY"):
+            return None
+        else:
+            raise_error(ret)
+
+    @ok_or_error
+    def config_del(self, key):
+        return self._make_cmd(b"config del " + key.encode())
 
     @ok_or_error
     def set_setting(self, key, value):
