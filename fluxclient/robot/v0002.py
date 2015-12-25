@@ -255,11 +255,25 @@ class FluxRobotV0002(object):
             else:
                 raise RuntimeError(resp)
 
+    def update_fw(self, filename, progress_callback=None):
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            logger.debug("File opened")
+            size = os.fstat(f.fileno()).st_size
+            self.upload_stream(f, size, mimetype, upload_to, cmd,
+                               progress_callback)
+
     def upload_stream(self, stream, length, mimetype, upload_to,
                       cmd="file upload", progress_callback=None):
-        entry, path = upload_to.split("/", 1)
-        # cmd = [cmd] [mimetype] [length] [entry] [path]
-        cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
+        if upload_to == "#":
+            # cmd = [cmd] [mimetype] [length] #
+            cmd = "%s %s %i #" % (cmd, mimetype, length)
+        else:
+            entry, path = upload_to.split("/", 1)
+            # cmd = [cmd] [mimetype] [length] [entry] [path]
+            cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
 
         upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
         if upload_ret == "continue":
