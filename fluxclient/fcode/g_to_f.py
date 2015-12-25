@@ -298,9 +298,10 @@ class GcodeToFcode(FcodeBase):
             output_stream.write(struct.pack('<I', self.script_length))
             output_stream.seek(0, 2)  # go back to file end
 
-            # warning: fileformat didn't consider multi-extruder, use first extruder instead
-            if self.empty_layer[0] == 0:
+            if len(self.empty_layer) > 0 and self.empty_layer[0] == 0:
                 self.empty_layer.pop(0)
+
+            # warning: fileformat didn't consider multi-extruder, use first extruder instead
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
             self.md['TRAVEL_DIST'] = str(self.distance)
 
