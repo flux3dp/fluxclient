@@ -353,9 +353,11 @@ class StlSlicer(object):
 
         # clean up tmp files
         fcode_output.close()
-        os.remove(tmp_stl_file)
-        os.remove(tmp_gcode_file)
-        os.remove(tmp_slic3r_setting_file)
+        for f in [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file]:
+            try:
+                os.remove(f)
+            except:
+                pass
         if fail_flag:
             return False, slic3r_out
         else:
