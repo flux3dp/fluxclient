@@ -48,6 +48,7 @@ class RobotConsole(object):
 
             "select": self.select_file,
             "update_fw": self.update_fw,
+            "update_mbfw": self.update_mbfw,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
@@ -181,6 +182,11 @@ class RobotConsole(object):
     def update_fw(self, filename):
         self.robot_obj.upload_file(
             filename.rstrip(), cmd="update_fw",
+            progress_callback=self.log_progress_callback)
+
+    def update_mbfw(self, filename):
+        self.robot_obj.upload_file(
+            filename.rstrip(), cmd="update_mbfw",
             progress_callback=self.log_progress_callback)
 
     def md5(self, filename):
