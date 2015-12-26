@@ -13,6 +13,10 @@ def free(key, value):
     return 'ok'
 
 
+def ignore(key, value):
+    return 'ignore'
+
+
 def percentage(key, value, start=0, end=100):
     tmp_value = value.rstrip('%')
     return int_range(key, tmp_value, start, end)
@@ -72,7 +76,7 @@ bottom_solid_layers = 3
 bridge_acceleration = 0
 bridge_fan_speed = 100
 bridge_flow_ratio = 1
-bridge_speed = 40
+bridge_speed = 20
 brim_width = 0
 complete_objects = 0
 cooling = 1
@@ -124,13 +128,13 @@ max_fan_speed = 100
 max_print_speed = 50
 max_volumetric_speed = 0
 min_fan_speed = 80
-min_print_speed = 10
+min_print_speed = 3
 min_skirt_length = 0
 notes =
 nozzle_diameter = 0.4
 octoprint_apikey =
 octoprint_host =
-only_retract_when_crossing_perimeters = 0
+only_retract_when_crossing_perimeters = 1
 ooze_prevention = 0
 output_filename_format = [input_filename_base].gcode
 overhangs = 0
@@ -147,7 +151,7 @@ retract_before_travel = 2
 retract_layer_change = 0
 retract_length = 5.5
 retract_length_toolchange = 10
-retract_lift = 0.3
+retract_lift = 0.1
 retract_restart_extra = 0
 retract_restart_extra_toolchange = 0
 retract_speed = 60
@@ -179,13 +183,13 @@ support_material_pattern = rectilinear-grid
 support_material_spacing = 2
 support_material_speed = 40
 support_material_threshold = 55
-temperature = 220
+temperature = 210
 thin_walls = 0
 threads = 2
 toolchange_gcode =
 top_infill_extrusion_width = 0.4
 top_solid_infill_speed = 15
-top_solid_layers = 3
+top_solid_layers = 4
 travel_speed = 80
 use_firmware_retraction = 0
 use_relative_e_distances = 0
@@ -226,20 +230,20 @@ ini_constraint = {
     'extrusion_width': False,
     'fan_always_on': [binary],
     'fan_below_layer_time': [int_range, 0],
-    'filament_colour': [hex_color],
+    'filament_colour': [ignore],
     'filament_diameter': False,
     'fill_angle': False,
     'fill_density': [percentage],
     'fill_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb']],
     'first_layer_acceleration': [binary],
-    'first_layer_bed_temperature': [constant],
+    'first_layer_bed_temperature': [ignore],
     'first_layer_extrusion_width': [percentage, 0, 1666],
     'first_layer_height': [float_range, 0.02, 0.4],
     'first_layer_speed': [int_range, 1, 150],
     'first_layer_temperature': [int_range, 10, 230],
     'gap_fill_speed': [int_range, 1, 150],
     'gcode_arcs': False,
-    'gcode_comments': [constant],
+    'gcode_comments': [ignore],
     'gcode_flavor': [free],
     'infill_acceleration': [binary],
     'infill_every_layers': [int_range, 0],
@@ -260,8 +264,8 @@ ini_constraint = {
     'min_skirt_length': False,
     'notes': False,
     'nozzle_diameter': [float_range],
-    'octoprint_apikey': [constant],
-    'octoprint_host': [constant],
+    'octoprint_apikey': [ignore],
+    'octoprint_host': [ignore],
     'only_retract_when_crossing_perimeters': [binary],
     'ooze_prevention': [binary],
     'output_filename_format': [free],
@@ -286,7 +290,7 @@ ini_constraint = {
     'seam_position': False,
     'skirt_distance': [float_range, 0],
     'skirt_height': [int_range, 0],
-    'skirts': [binary],
+    'skirts': [int_range, 0, 4],
     'slowdown_below_layer_time': [int_range, 0],
     'small_perimeter_speed': False,
     'solid_infill_below_area': False,
@@ -299,7 +303,7 @@ ini_constraint = {
     'start_gcode': False,
     'support_material': [binary],
     'support_material_angle': False,
-    'support_material_contact_distance': [float_range, 0.05, 20],
+    'support_material_contact_distance': [float_range, 0.0, 10],
     'support_material_enforce_layers': False,
     'support_material_extruder': False,
     'support_material_extrusion_width': False,

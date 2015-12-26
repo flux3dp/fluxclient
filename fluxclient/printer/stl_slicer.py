@@ -193,7 +193,8 @@ class StlSlicer(object):
                     self.config[key] = value
                     if key == 'temperature':
                         self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-
+                elif result == 'ignore':
+                    pass
                 else:
                     bad_lines.append((counter, result))
             elif line != '' and line != 'default':
