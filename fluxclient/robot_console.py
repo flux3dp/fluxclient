@@ -34,6 +34,9 @@ class RobotConsole(object):
 
             "home": robot_obj.maintain_home,
             "reset_mb": robot_obj.maintain_reset_mb,
+            "play": {
+                "quit": robot_obj.play_quit
+            }
         }
 
         self.cmd_mapping = {

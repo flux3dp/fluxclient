@@ -255,6 +255,10 @@ class FluxRobotV0002(object):
             else:
                 raise RuntimeError(resp)
 
+    @ok_or_error
+    def play_quit(self):
+        return self._make_cmd(b"player quit")
+
     def update_fw(self, filename, progress_callback=None):
         mimetype, _ = mimetypes.guess_type(filename)
         if not mimetype:
