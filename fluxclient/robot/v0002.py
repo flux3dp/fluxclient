@@ -256,7 +256,7 @@ class FluxRobotV0002(object):
                 raise RuntimeError(resp)
 
     @ok_or_error
-    def play_quit(self):
+    def quit_play(self):
         return self._make_cmd(b"player quit")
 
     def update_fw(self, filename, progress_callback=None):
