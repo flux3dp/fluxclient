@@ -314,7 +314,7 @@ ini_constraint = {
     'support_material_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb']],
     'support_material_spacing': False,
     'support_material_speed': [int_range, 1, 150],
-    'support_material_threshold': False,
+    'support_material_threshold': [int_range, 0, 90],
     'temperature': [int_range, 10, 230],
     'thin_walls': [binary],
     'threads': False,
