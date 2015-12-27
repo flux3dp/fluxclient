@@ -482,6 +482,8 @@ class FluxRobotV0002(object):
                     return
                 else:
                     raise_error(ret)
+        else:
+            raise_error(ret.decode("ascii", "utf8"))
 
     def maintain_unload_filament(self, index, temp, navigate_callback):
         ret = self._make_cmd(
@@ -496,6 +498,8 @@ class FluxRobotV0002(object):
                     return
                 else:
                     raise_error(ret)
+        else:
+            raise_error(ret.decode("ascii", "utf8"))
 
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
