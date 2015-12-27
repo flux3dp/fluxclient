@@ -405,19 +405,26 @@ class FluxRobotV0002(object):
     def begin_maintain(self):
         return self._make_cmd(b"maintain")
 
-    @ok_or_error
     def maintain_home(self):
-        return self._make_cmd(b"home")
+        self._send_cmd(b"home")
+        while True:
+            ret =  self.get_resp(6.0).decode("ascii", "ignore")
+            if ret.startswith("DEBUG:"):
+                logger.info(ret)
+            elif ret == "ok":
+                return
+            else:
+                raise_error(ret)
 
     @ok_or_error
     def maintain_reset_mb(self):
         return self._make_cmd(b"reset_mb")
 
-    def maintain_eadj(self, navigate_callback, clean=False):
+    def maintain_calibration(self, navigate_callback, clean=False):
         if clean:
-            ret = self._make_cmd(b"eadj clean")
+            ret = self._make_cmd(b"calibration clean")
         else:
-            ret = self._make_cmd(b"eadj")
+            ret = self._make_cmd(b"calibration")
 
         if ret == b"continue":
             nav = "continue"
@@ -432,11 +439,13 @@ class FluxRobotV0002(object):
         else:
             raise_error(ret.decode("ascii", "ignore"))
 
-    def maintain_hadj(self, navigate_callback, manual_h=None):
+    maintain_eadj = maintain_calibration
+
+    def maintain_zprobe(self, navigate_callback, manual_h=None):
         if manual_h:
-            ret = self._make_cmd(("cor_h %.4f" % manual_h).encode())
+            ret = self._make_cmd(("zprobe %.4f" % manual_h).encode())
         else:
-            ret = self._make_cmd(b"cor_h")
+            ret = self._make_cmd(b"zprobe")
 
         if ret == b"continue":
             nav = "continue"
@@ -450,6 +459,43 @@ class FluxRobotV0002(object):
                 nav = self.get_resp().decode("ascii", "ignore")
         else:
             raise_error(ret.decode("ascii", "ignore"))
+
+    maintain_hadj = maintain_zprobe
+
+    def maintain_headinfo(self):
+        ret = self._make_cmd(b"headinfo").decode("ascii", "ignore")
+        if ret.startswith("ok "):
+            return json.loads(ret[3:])
+        else:
+            raise_error(ret)
+
+    def maintain_load_filament(self, index, temp, navigate_callback):
+        ret = self._make_cmd(
+            ("load_filament %i %.1f" % (index, temp)).encode())
+
+        if ret == b"continue":
+            while True:
+                ret = self.get_resp().decode("ascii", "ignore")
+                if ret.startswith("CTRL "):
+                    navigate_callback(ret[5:])
+                elif ret == "ok":
+                    return
+                else:
+                    raise_error(ret)
+
+    def maintain_unload_filament(self, index, temp, navigate_callback):
+        ret = self._make_cmd(
+            ("unload_filament %i %.1f" % (index, temp)).encode())
+
+        if ret == b"continue":
+            while True:
+                ret = self.get_resp().decode("ascii", "ignore")
+                if ret.startswith("CTRL "):
+                    navigate_callback(ret[5:])
+                elif ret == "ok":
+                    return
+                else:
+                    raise_error(ret)
 
     def raw_mode(self):
         ret = self._make_cmd(b"raw")

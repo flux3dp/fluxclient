@@ -34,6 +34,7 @@ class RobotConsole(object):
 
             "home": robot_obj.maintain_home,
             "reset_mb": robot_obj.maintain_reset_mb,
+            "headinfo": robot_obj.maintain_headinfo,
             "play": {
                 "quit": robot_obj.quit_play
             }
@@ -63,6 +64,8 @@ class RobotConsole(object):
 
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
+            "load_filament": self.maintain_load_filament,
+            "unload_filament": self.maintain_unload_filament,
             "play": {
                 "info": self.play_info
             },
@@ -106,7 +109,11 @@ class RobotConsole(object):
                 logger.error("RuntimeError%s" % repr(e.args))
 
     def simple_cmd(self, func_ptr, *args):
-        logger.info(func_ptr(*args))
+        ret = func_ptr(*args)
+        if ret:
+            logger.info(ret)
+        else:
+            logger.info("ok")
 
     def list_file(self, args):
         path = shlex.split(args)[0]
@@ -275,6 +282,22 @@ class RobotConsole(object):
                                                manual_h=float(h))
 
         logger.info("Data: %s", ret)
+        logger.info("ok")
+
+    def maintain_load_filament(self, index, temp):
+        def callback(nav):
+            logger.info("NAV: %s", nav)
+
+        self.robot_obj.maintain_load_filament(int(index), float(temp),
+                                              callback)
+        logger.info("ok")
+
+    def maintain_unload_filament(self, index, temp):
+        def callback(nav):
+            logger.info("NAV: %s", nav)
+
+        self.robot_obj.maintain_unload_filament(int(index), float(temp),
+                                                callback)
         logger.info("ok")
 
     def raw_mode(self):
