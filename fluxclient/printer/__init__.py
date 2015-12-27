@@ -269,7 +269,7 @@ ini_constraint = {
     'only_retract_when_crossing_perimeters': [binary],
     'ooze_prevention': [binary],
     'output_filename_format': [free],
-    'overhangs': False,
+    'overhangs': [binary],
     'perimeter_acceleration': False,
     'perimeter_extruder': False,
     'perimeter_extrusion_width': False,
@@ -298,7 +298,7 @@ ini_constraint = {
     'solid_infill_extruder': False,
     'solid_infill_extrusion_width': False,
     'solid_infill_speed': [int_range, 1, 150],
-    'spiral_vase': [binary],  # TODO: 1 perimeter, no top solid layers, 0% fill density, no support
+    'spiral_vase': [binary],
     'standby_temperature_delta': [int_range, -400, 400],
     'start_gcode': False,
     'support_material': [binary],

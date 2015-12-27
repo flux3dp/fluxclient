@@ -14,7 +14,7 @@ from PIL import Image
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
-from fluxclient.printer import ini_string, ini_constraint
+from fluxclient.printer import ini_string, ini_constraint, ignore
 
 
 def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe):
@@ -193,6 +193,18 @@ class StlSlicer(object):
                     self.config[key] = value
                     if key == 'temperature':
                         self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
+                    if key == 'overhangs' and value == '0':
+                        self.config['support_material'] = '0'
+                        ini_constraint['support_material'] = [ignore]
+                    if key == 'spiral_vase' and value == '1':
+                        self.config['support_material'] = '0'
+                        ini_constraint['support_material'] = [ignore]
+                        self.config['fill_density'] = '0%'
+                        ini_constraint['fill_density'] = [ignore]
+                        self.config['perimeters'] = '1'
+                        ini_constraint['perimeters'] = [ignore]
+                        self.config['top_solid_layers'] = '0'
+                        ini_constraint['top_solid_layers'] = [ignore]
                 elif result == 'ignore':
                     pass
                 else:
