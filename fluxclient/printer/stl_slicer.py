@@ -206,6 +206,7 @@ class StlSlicer(object):
                         self.config['top_solid_layers'] = '0'
                         ini_constraint['top_solid_layers'] = [ignore]
                 elif result == 'ignore':
+                    # ignore this config key anyway
                     pass
                 else:
                     bad_lines.append((counter, result))
