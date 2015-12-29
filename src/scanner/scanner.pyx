@@ -2,8 +2,6 @@ import cython
 import sys
 from libcpp.vector cimport vector
 
-import fluxclient.scanner.scan_settings as scan_settings
-
 
 cdef extern from "scan_module.h":
     cdef cppclass PointCloudXYZRGBPtr:
@@ -129,10 +127,10 @@ cdef class PointCloudXYZRGBObj:
     #         self.obj, pc.obj)
     #     return pc
 
-    cpdef int ne(self, float radius=scan_settings.NE_radius):
+    cpdef int ne(self, radius):
         return ne(self.obj, self.normalObj, radius)
 
-    cpdef int ne_viewpoint(self, float radius=scan_settings.NE_radius):
+    cpdef int ne_viewpoint(self, radius):
         return ne_viewpoint(self.obj, self.normalObj, radius)
 
     cpdef int concatenatePointsNormal(self):
@@ -185,13 +183,13 @@ cdef class RegCloud:
     cdef M4f transformation
 
 
-    def __init__(self, PointCloudXYZRGBObj obj, PointCloudXYZRGBObj scene):
-        obj.ne_viewpoint()
+    def __init__(self, PointCloudXYZRGBObj obj, PointCloudXYZRGBObj scene, setting):
+        obj.ne_viewpoint(setting.NeighborhoodDistance)
         obj.concatenatePointsNormal()
         self.obj = createPointXYZRGBNormalPtr()
         clone(obj.bothobj, self.obj)
 
-        scene.ne_viewpoint()
+        scene.ne_viewpoint(setting.NeighborhoodDistance)
         scene.concatenatePointsNormal()
         self.scene = createPointXYZRGBNormalPtr()
         clone(scene.bothobj, self.scene)

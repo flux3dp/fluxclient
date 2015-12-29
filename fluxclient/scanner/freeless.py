@@ -7,10 +7,8 @@ import numpy as np
 from PIL import Image
 
 try:
-    from . import scan_settings
     from .tools import write_stl, dot, normal, normalize, point_dis_sq
 except:
-    import scan_settings
     from tools import write_stl, dot, normal, normalize, point_dis_sq
 
 NUM_LASER_RANGE_THRESHOLD = 3
@@ -27,19 +25,20 @@ class freeless():
       freeless algorithm base on: http://www.freelss.org/
     '''
 
-    def __init__(self, laserX, laserZ):
+    def __init__(self, laserX, laserZ, scan_settings):
         '''
           m_maxLaserWidth, m_minLaserWidth: red dots width within this range will be considered valid laser points
           firstRowLaserCol : red dot location of previous scanning step, reference for next step
           RANGE_DISTANCE_THRESHOLD : two range will be merged if their distance is small than this variable
         '''
+        self.settings = scan_settings
         self.m_laserRanges = []
-        self.m_maxLaserWidth = 50
-        self.m_minLaserWidth = 3
+        self.m_maxLaserWidth = scan_settings.MAXLaserRange
+        self.m_minLaserWidth = scan_settings.MINLaserRange
         self.MAX_MAGNITUDE_SQ = (255 * 3.0)  # doesn't really matter(just for scaling)
-        self.m_laserMagnitudeThreshold = 1.25  # main threshold, diff value from 0.0 to 255?
-        self.firstRowLaserCol = 0.5 * scan_settings.img_width
-        self.RANGE_DISTANCE_THRESHOLD = 2
+        self.m_laserMagnitudeThreshold = scan_settings.MagnitudeThreshold  # main threshold, diff value from 0.0 to 255?
+        self.firstRowLaserCol = 0.5 * self.settings.img_width
+        self.RANGE_DISTANCE_THRESHOLD = scan_settings.LaserRangeMergeDistance
         self.numSuspectedBadLaserLocations = 0
         self.results = []
         self.laser_plane = [[0, 0, 0], normalize([laserZ, 0, -1 * laserX])]
@@ -87,7 +86,7 @@ class freeless():
         if clock:
             step = - step
 
-        theta = math.pi * 2 * step / scan_settings.scan_step
+        theta = math.pi * 2 * step / self.settings.scan_step
 
         c = math.cos(theta)
         s = math.sin(theta)
@@ -127,7 +126,7 @@ class freeless():
             return False, None
 
         point = [[ray[0][0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
-        point.append([scan_settings.laserX_L - point[0][0], scan_settings.laserY_L - point[0][1], scan_settings.laserZ_L - point[0][2]])
+        point.append([self.settings.laserX_L - point[0][0], self.settings.laserY_L - point[0][1], self.settings.laserZ_L - point[0][2]])
         # print point
 
         return True, point
@@ -143,16 +142,16 @@ class freeless():
         #     return self.place[(x, y)]
 
         # portion, We subtract by one because the image is 0 indexed
-        x = float(x) / (scan_settings.img_width - 1)
-        y = float(scan_settings.img_height - 1 - y) / (scan_settings.img_height - 1)
+        x = float(x) / (self.settings.img_width - 1)
+        y = float(self.settings.img_height - 1 - y) / (self.settings.img_height - 1)
 
-        # x = (x * scan_settings.sensorWidth) + scan_settings.cameraX - (scan_settings.sensorWidth * 0.5) + 0.125  # rule of thumb number
-        # y = (y * scan_settings.sensorHeight) + scan_settings.cameraY - (scan_settings.sensorHeight * 0.5) + 0.31  # rule of thumb number
-        x = (x * scan_settings.sensorWidth) + scan_settings.cameraX - (scan_settings.sensorWidth * 0.5)  # rule of thumb number
-        y = (y * scan_settings.sensorHeight) + scan_settings.cameraY - (scan_settings.sensorHeight * 0.5)  # rule of thumb number
-        z = scan_settings.cameraZ + scan_settings.focalLength
+        # x = (x * self.settings.sensorWidth) + self.settings.cameraX - (self.settings.sensorWidth * 0.5) + 0.125  # rule of thumb number
+        # y = (y * self.settings.sensorHeight) + self.settings.cameraY - (self.settings.sensorHeight * 0.5) + 0.31  # rule of thumb number
+        x = (x * self.settings.sensorWidth) + self.settings.cameraX - (self.settings.sensorWidth * 0.5)  # rule of thumb number
+        y = (y * self.settings.sensorHeight) + self.settings.cameraY - (self.settings.sensorHeight * 0.5)  # rule of thumb number
+        z = self.settings.cameraZ + self.settings.focalLength
 
-        ray = [[x, y, z], normalize([x - scan_settings.cameraX, y - scan_settings.cameraY, z - scan_settings.cameraZ])]
+        ray = [[x, y, z], normalize([x - self.settings.cameraX, y - self.settings.cameraY, z - self.settings.cameraZ])]
         # self.place[(x, y)] = ray
         return ray
 
@@ -215,7 +214,7 @@ class freeless():
         print ('tri:', len(tri), 'triangels')
         write_stl(tri, file_name)
 
-    def subProcess(self, img1, img2, maxNumLocations=scan_settings.img_height):
+    def subProcess(self, img1, img2, maxNumLocations):
         '''
           find out the location of the laser dots
           return a list of indices [[x,y], [x,y], [x,y]]
@@ -249,12 +248,12 @@ class freeless():
         # print(mag, np.amax(mag), file=sys.stderr)
         # self.m_laserMagnitudeThreshold = .3
 
-        for row in range(scan_settings.img_height):
+        for row in range(self.settings.img_height):
             m_laserRanges = []
             # candidates, [ [starting index, ending index, middle point], ... ]
             m_laserRanges.append([-1, -1, None])
 
-            for col in range(scan_settings.img_width):
+            for col in range(self.settings.img_width):
                 # diff value is bigger than threshold
                 if mag[row][col] > self.m_laserMagnitudeThreshold:
                     # new candidate appear: first time > threshold, record as starting index
@@ -289,7 +288,7 @@ class freeless():
                     else:
                         m_laserRanges[-1][0] = -1
 
-            # if m_laserRanges[-1][0] != -1 and m_laserRanges[-1][0] != scan_settings.img_width - 1:
+            # if m_laserRanges[-1][0] != -1 and m_laserRanges[-1][0] != self.settings.img_width - 1:
             #   print m_laserRanges
             #   input()
 
@@ -351,7 +350,7 @@ if __name__ == '__main__':
     import subprocess
     from tools import write_pcd
 
-    tmp = freeless(scan_settings.laserX_L, scan_settings.laserZ_L)
+    tmp = freeless(self.settings.laserX_L, self.settings.laserZ_L)
     im = np.array(Image.open('../../../rule.jpg'))
     print(im.shape)
     # self, img_o, img_red, indices, step, side, cab_offset, clock=False
@@ -367,6 +366,6 @@ if __name__ == '__main__':
     subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
 
     # p = tmp.img_to_points(sys.argv[1])
-    # scan_settings.write_pcd(p, sys.argv[2])
+    # self.settings.write_pcd(p, sys.argv[2])
 
     # print >>sys.stderr, "\nError: python ./img_to_points.py [img location] [output file name]\n"

@@ -1,57 +1,47 @@
 #!/usr/bin/env python3
-import math
+from math import pi, atan
 
-scan_step = 400  # steps
-theta_a = math.pi / 6  # radius between center and laser
 
-img_width = 640
-img_height = 480
+class ScanSetting(object):
+    """docstring for ScanSetting"""
+    def __init__(self):
+        super(ScanSetting, self).__init__()
+        # for scan
+        self.scan_step = 400  # steps
+        self.theta_a = pi / 6  # radius between center and laser
 
-sensorWidth = 3.67
-sensorHeight = 2.74 + 0.08
-focalLength = 3.6
+        self.img_width = 640
+        self.img_height = 480
 
-# ######### mockup 2, measure by solidwork###
-cameraX = 0.0
-cameraY = 22.28 + 8
-cameraZ = -174.70
+        self.sensorWidth = 3.67
+        self.sensorHeight = 2.74 + 0.08
+        self.focalLength = 3.6
 
-laserX_L = -53.61
-laserY_L = 31.62
-laserZ_L = -76.47
+        # ######### mockup 2, measure by solidwork###
+        self.cameraX = 0.0
+        self.cameraY = 22.28 + 8
+        self.cameraZ = -174.70
 
-laserX_R = 53.61
-laserY_R = 31.62
-laserZ_R = -76.47
+        self.laserX_L = -53.61
+        self.laserY_L = 31.62
+        self.laserZ_L = -76.47
 
-theta_a = math.atan(laserX_L / laserZ_L)
-# ######### mockup 1, hand measured #########
-# cameraX = 0.0
-# cameraY = 90
-# cameraZ = 170.0
+        self.laserX_R = 53.61
+        self.laserY_R = 31.62
+        self.laserZ_R = -76.47
 
-# laserX_L = -52.0
-# laserY_L = 133.
-# laserZ_L = 77.0
+        self.theta_a = atan(self.laserX_L / self.laserZ_L)
 
-# laserX_R = 52.0
-# laserY_R = 133.
-# laserZ_R = 77.0
-##############################################
+        self.MAXLaserRange = 50
+        self.LaserRangeMergeDistance = 2
+        self.MINLaserRange = 3
+        self.MagnitudeThreshold = 1.25
+        self.LLaserAdjustment = 0
+        self.RLaserAdjustment = 0
 
-# ######### prototype, hand measured #########
-# cameraX = 0.0
-# cameraY = 120.0
-# cameraZ = 150.0
-
-# laserX_L = -80.0
-# laserY_L = 120.0
-# laserZ_L = 120
-
-# laserX_R = 80.0
-# laserY_R = 120.0
-# laserZ_R = 120
-##############################################
-
-SOR_neighbors = 50
-NE_radius = 10
+        # for modeling
+        self.NoiseNeighbors = 50
+        self.NeighborhoodDistance = 10
+        self.SegmentationDistance = 2
+        self.CloseBottom = -1000
+        self.CloseTop = 1000

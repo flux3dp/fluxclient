@@ -11,7 +11,6 @@ from math import sqrt, asin, pi, radians, cos, sin
 from scipy.interpolate import Rbf
 import numpy as np
 
-from . import scan_settings
 from .tools import write_stl, write_pcd, read_pcd, cross
 from . import _scanner
 
@@ -21,9 +20,10 @@ logger = logging.getLogger(__name__)
 
 class PcProcess():
     """process point cloud"""
-    def __init__(self):
+    def __init__(self, scan_settings):
         self.clouds = {}  # clouds that hold all the point cloud data, key:name, value:point cloud
         self.meshs = {}
+        self.settings = scan_settings
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
         """
@@ -103,15 +103,15 @@ class PcProcess():
 
         pc = pc[0].add(pc[1])
         logger.debug('start with %d point' % len(pc))
-        pc.SOR(scan_settings.SOR_neighbors, stddev)
+        pc.SOR(int(self.settings.NoiseNeighbors), stddev)
         logger.debug('finished with %d point' % len(pc))
         pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
 
         self.clouds[name_out] = pc_both
-        # self.cluster(name_out, name_out, thres=5)
-        # self.closure(name_out, name_out, -1000, True)
-        # self.closure(name_out, name_out, 1000, False)
-        # self.cluster(name_out, name_out, thres=2)
+
+        self.cluster(name_out, name_out, self.settings.SegmentationDistance)
+        self.closure(name_out, name_out, self.settings.CloseBottom, True)
+        self.closure(name_out, name_out, self.settings.CloseTop, False)
 
     def cluster(self, name_in, name_out, thres=2):
         pc = self.clouds[name_in]
@@ -139,7 +139,7 @@ class PcProcess():
         # WARNING: merge L and R here!
         # pc = pc_both[0].clone()
         pc = pc_both[0].add(pc_both[1])
-        pc.ne_viewpoint()
+        pc.ne_viewpoint(self.settings.NeighborhoodDistance)
         # pc.ne()
         pc.to_mesh()  # compute mesh
         return pc
@@ -256,11 +256,11 @@ class PcProcess():
 
         # TODO: use a better way to find ring
         rec = [float('-inf'), float('inf')]
-        interval = 2 * pi / scan_settings.scan_step * 0.8
-        after = []  # find out the boarder points
-        for p in points:
+        interval = 2 * pi / self.settings.scan_step * 0.8
+        after = [points[0]]  # find out the boarder points
+        for p in points[1:]:
             tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
-            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval:
+            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval and abs(after[0][0][2] - p[0][2]) < 10:
                 rec.insert(tmp_index, p[1])
                 after.append(p)
             if len(rec) > 400 + 2:
@@ -293,13 +293,18 @@ class PcProcess():
         # compute the plane using RBF model
         tmp = []
         grid_leaf = 100
-        X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
-        Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
+        # X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
+        # Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
+        X = np.linspace(-100, 100, grid_leaf)
+        Y = np.linspace(-100, 100, grid_leaf)
         XI, YI = np.meshgrid(X, Y)
 
         x = [p[0] for p in plane]
         y = [p[1] for p in plane]
         z = [p[2] for p in plane]
+
+        for p in plane:
+            tmp.append([p[0], p[1], p[2], 255, 0, 0])
 
         if floor:
             color = [255, 0, 0]
@@ -311,17 +316,23 @@ class PcProcess():
             for j in range(3):
                 color[j] += i[j + 3]
         color = [i / len(after) for i in color]
+        color = [255., 0., 0.]
+        rbf = Rbf(x, y, z, function='linear', epsilon=0.1)
+        # rbf = Rbf(x, y, z)
+        # rbf = Rbf(x, y, z, function='thin_plate', epsilon=1)
+        print(rbf([x[0]], [y[0]]))
+        print(z[0])
 
-        rbf = Rbf(x, y, z, function='linear')
         ZI = rbf(XI, YI)
         for xx in range(grid_leaf):
             for yy in range(grid_leaf):
                 p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
                 flag = True
-                for b in range(len(boarder)):
-                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
-                        flag = False
-                        break
+                # flag = False
+                # for b in range(len(boarder)):
+                #     if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                #         flag = False
+                #         break
                 if flag:
                     tmp.append(p)
         del rbf
@@ -347,7 +358,7 @@ class PcProcess():
             # if either pointcloud with zero point, return name_2 without transform
             pc_both = pc_2
         else:
-            reg = _scanner.RegCloud(pc_base, pc_2)
+            reg = _scanner.RegCloud(pc_base, pc_2, self.settings)
             result, pc_both = reg.SCP()
             # TODO:result???
 
