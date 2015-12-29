@@ -110,8 +110,8 @@ class PcProcess():
         self.clouds[name_out] = pc_both
 
         self.cluster(name_out, name_out, self.settings.SegmentationDistance)
-        self.closure(name_out, name_out, self.settings.CloseBottom, True)
-        self.closure(name_out, name_out, self.settings.CloseTop, False)
+        self.closure(name_out, name_out, self.settings.CloseTop, False, 1000)
+        self.closure(name_out, name_out, self.settings.CloseBottom, True, 1000)
 
     def cluster(self, name_in, name_out, thres=2):
         pc = self.clouds[name_in]
@@ -236,7 +236,7 @@ class PcProcess():
 
         self.clouds[name_out] = both_pc
 
-    def closure(self, name_in, name_out, z_value, floor):
+    def closure(self, name_in, name_out, z_value, floor, thick=5):
         if floor:
             logger.debug('adding floor at {}'.format(floor))
         else:
@@ -258,12 +258,13 @@ class PcProcess():
         rec = [float('-inf'), float('inf')]
         interval = 2 * pi / self.settings.scan_step * 0.8
         after = [points[0]]  # find out the boarder points
+
         for p in points[1:]:
             tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
-            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval and abs(after[0][0][2] - p[0][2]) < 10:
+            if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval and abs(after[0][0][2] - p[0][2]) < thick:
                 rec.insert(tmp_index, p[1])
                 after.append(p)
-            if len(rec) > 400 + 2:
+            if len(rec) > self.settings.scan_step + 2:
                 break
 
         after = sorted(after, key=lambda x: x[1])
@@ -293,18 +294,16 @@ class PcProcess():
         # compute the plane using RBF model
         tmp = []
         grid_leaf = 100
-        # X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
-        # Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
-        X = np.linspace(-100, 100, grid_leaf)
-        Y = np.linspace(-100, 100, grid_leaf)
+        X = np.linspace(min(p[0] for p in plane), max(p[0] for p in plane), grid_leaf)
+        Y = np.linspace(min(p[1] for p in plane), max(p[1] for p in plane), grid_leaf)
         XI, YI = np.meshgrid(X, Y)
 
-        x = [p[0] for p in plane]
-        y = [p[1] for p in plane]
-        z = [p[2] for p in plane]
+        x = np.array([p[0] for p in plane])
+        y = np.array([p[1] for p in plane])
+        z = np.array([p[2] for p in plane])
 
-        for p in plane:
-            tmp.append([p[0], p[1], p[2], 255, 0, 0])
+        # for p in plane:
+        #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
 
         if floor:
             color = [255, 0, 0]
@@ -316,23 +315,17 @@ class PcProcess():
             for j in range(3):
                 color[j] += i[j + 3]
         color = [i / len(after) for i in color]
-        color = [255., 0., 0.]
-        rbf = Rbf(x, y, z, function='linear', epsilon=0.1)
-        # rbf = Rbf(x, y, z)
-        # rbf = Rbf(x, y, z, function='thin_plate', epsilon=1)
-        print(rbf([x[0]], [y[0]]))
-        print(z[0])
+        rbf = Rbf(x, y, z, function='linear', smooth=1)
 
         ZI = rbf(XI, YI)
         for xx in range(grid_leaf):
             for yy in range(grid_leaf):
                 p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
                 flag = True
-                # flag = False
-                # for b in range(len(boarder)):
-                #     if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
-                #         flag = False
-                #         break
+                for b in range(len(boarder)):
+                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                        flag = False
+                        break
                 if flag:
                     tmp.append(p)
         del rbf
