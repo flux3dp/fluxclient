@@ -41,6 +41,7 @@ class GcodeToFcode(FcodeBase):
         self.distance = 0.  # recording distance go through
         self.max_range = [0., 0., 0., 0.]  # recording max coordinate, [x, y, z, r]
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
+        self.previous = [0., 0., 0.]  # recording previous filament/path
         self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
         self.md.update(ext_metadata)
 
@@ -48,6 +49,7 @@ class GcodeToFcode(FcodeBase):
         self.record_z = 0.0
         self.layer_now = 0
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
+
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
         self.config = None
@@ -112,17 +114,6 @@ class GcodeToFcode(FcodeBase):
         if input_list[0] is not None:
             self.current_speed = input_list[0]
 
-        extrudeflag = False
-        for i in range(4, 7):  # extruder
-            if input_list[i] is not None:
-                extrudeflag = True
-                if self.absolute:
-                    self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
-                    self.current_pos[i - 1] = input_list[i]
-                else:
-                    self.filament[i - 4] += input_list[i]
-                    self.current_pos[i - 1] += input_list[i]
-
         tmp_path = 0.
         moveflag = False  # record if position change in this command
         for i in range(1, 4):  # position
@@ -135,16 +126,41 @@ class GcodeToFcode(FcodeBase):
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
                 if abs(self.current_pos[i - 1]) > self.max_range[i - 1]:
-                    # self.max_range[i - 1] = abs(self.current_pos[i - 1])
                     self.max_range[i - 1] = self.current_pos[i - 1]
-        if self.current_pos[0] ** 2 + self.current_pos[1] ** 2:  # computer MAX_R
+        if self.current_pos[0] ** 2 + self.current_pos[1] ** 2 > self.max_range[3]:  # computer MAX_R
             self.max_range[3] = self.current_pos[0] ** 2 + self.current_pos[1] ** 2
         tmp_path = sqrt(tmp_path)
+
+        extrudeflag = False
+        for i in range(4, 7):  # extruder
+            if input_list[i] is not None:
+                extrudeflag = True
+                if self.absolute:
+                    if tmp_path != 0:
+                        if input_list[i] - self.current_pos[i - 1] == 0:
+                            input_list[i] = self.previous[i - 4] * tmp_path + self.current_pos[i - 1]
+                            self.G92_delta += self.previous[i - 4] * tmp_path
+                        else:
+                            self.previous[i - 4] = (input_list[i] - self.current_pos[i - 1]) / tmp_path
+
+                    self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
+                    self.current_pos[i - 1] = input_list[i]
+                else:
+                    if tmp_path != 0:
+                        if input_list[i] == 0:
+                            input_list[i] = self.previous[i - 4] * tmp_path
+                        else:
+                            self.previous[i - 4] = input_list[i] / tmp_path
+
+                    self.filament[i - 4] += input_list[i]
+                    self.current_pos[i - 1] += input_list[i]
+
         self.distance += tmp_path
         self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
         # fill in self.path
         if self.record_path:
             self.process_path(comment, moveflag, extrudeflag)
+        return input_list
 
     def writer(self, buf, stream):
         """
@@ -189,7 +205,7 @@ class GcodeToFcode(FcodeBase):
                         #     data[0] = float(self.config['first_layer_speed']) * 60
                         #     subcommand |= (1 << 6)
 
-                        self.analyze_metadata(data, comment)
+                        data = self.analyze_metadata(data, comment)
                         command |= subcommand
                         self.writer(packer(command), output_stream)
 
@@ -300,6 +316,7 @@ class GcodeToFcode(FcodeBase):
 
             if len(self.empty_layer) > 0 and self.empty_layer[0] == 0:
                 self.empty_layer.pop(0)
+            print('tmppty', self.empty_layer)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
