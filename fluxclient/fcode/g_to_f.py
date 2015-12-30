@@ -322,7 +322,7 @@ class GcodeToFcode(FcodeBase):
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
             self.md['TRAVEL_DIST'] = str(self.distance)
 
-            for v, k in enumerate(['Z', 'Y', 'Z', 'R']):
+            for v, k in enumerate(['X', 'Y', 'Z', 'R']):
                 self.md['MAX_' + k] = str(self.max_range[v])
 
             self.md['TIME_COST'] = str(self.time_need)
