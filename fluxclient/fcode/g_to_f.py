@@ -139,7 +139,7 @@ class GcodeToFcode(FcodeBase):
                     if tmp_path != 0:
                         if input_list[i] - self.current_pos[i - 1] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path + self.current_pos[i - 1]
-                            self.G92_delta += self.previous[i - 4] * tmp_path
+                            self.G92_delta[i - 1] += self.previous[i - 4] * tmp_path
                         else:
                             self.previous[i - 4] = (input_list[i] - self.current_pos[i - 1]) / tmp_path
 
@@ -322,6 +322,7 @@ class GcodeToFcode(FcodeBase):
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
             self.md['TRAVEL_DIST'] = str(self.distance)
 
+            self.max_range[3] = sqrt(self.max_range[3])
             for v, k in enumerate(['X', 'Y', 'Z', 'R']):
                 self.md['MAX_' + k] = str(self.max_range[v])
 
