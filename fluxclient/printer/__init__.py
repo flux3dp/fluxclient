@@ -213,7 +213,8 @@ use_volumetric_e = 0
 vibration_limit = 0
 wipe = 0
 xy_size_compensation = 0
-z_offset = 0'''
+z_offset = 0
+flux_first_layer = 0'''
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -346,4 +347,5 @@ ini_constraint = {
     'wipe': False,
     'xy_size_compensation': False,
     'z_offset': [float_range, 0, 23.5],
+    'flux_first_layer': [binary],
 }

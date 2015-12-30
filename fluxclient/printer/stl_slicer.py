@@ -326,7 +326,6 @@ class StlSlicer(object):
 
         # analying gcode(even transform)
         ws.send_progress('analyzing metadata', 0.99)
-
         fcode_output = io.BytesIO()
         with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
@@ -351,6 +350,7 @@ class StlSlicer(object):
             raise('wrong output type, only support gcode and fcode')
 
         ##################### fake code ###########################
+
         with open('output.gcode', 'wb') as f:
             with open(tmp_gcode_file, 'rb') as f2:
                 f.write(f2.read())
@@ -503,12 +503,13 @@ class StlSlicer(object):
             lines = f.readlines()
         else:
             lines = data
+
         for i in lines:
             if i[0] == '#':
                 pass
             elif '=' in i:
                 tmp = i.rstrip().split('=')
-                result[tmp[0].rstrip()] = tmp[1].rstrip()
+                result[tmp[0].strip()] = tmp[1].strip()
             else:
                 print(i, file=sys.stderr)
                 raise ValueError('not ini file?')
