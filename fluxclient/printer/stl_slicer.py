@@ -95,6 +95,7 @@ class StlSlicer(object):
         self.end_slicing()
 
     def reset(self, slic3r):
+        self.working_p = []  # process that are slicing
         self.models = {}  # models data
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
@@ -110,7 +111,6 @@ class StlSlicer(object):
         self.path = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
-        self.working_p = []
 
     def upload(self, name, buf):
         """

@@ -11,12 +11,14 @@ class FcodeBase(object):
         super(FcodeBase, self).__init__()
         self.filament_this_layer = [0., 0., 0.]
         self.empty_layer = []
+        self.counter_between_layers = 0
 
     def process_path(self, comment, moveflag, extrudeflag):
         """
         convert to path list(for visualizing)
         """
         # TODO?: reconsider if theese two flag necessary
+        self.counter_between_layers += 1
         if moveflag:
             if 'infill' in comment:
                 line_type = 0
@@ -27,9 +29,10 @@ class FcodeBase(object):
             elif 'move' in comment:
                 line_type = 3
                 if 'to next layer' in comment:
-                    if self.filament == self.filament_this_layer:
+                    if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
                         self.empty_layer.append(self.layer_now)
                     tmp = findall('[0-9]+', comment)[-1]
+                    self.counter_between_layers = 0
                     self.layer_now = int(tmp)
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
                     self.filament_this_layer = self.filament[:]
