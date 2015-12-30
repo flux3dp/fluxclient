@@ -32,10 +32,10 @@ class ScanSetting(object):
 
         self.theta_a = atan(self.laserX_L / self.laserZ_L)
 
-        self.MAXLaserRange = 50
-        self.LaserRangeMergeDistance = 2
+        self.MAXLaserRange = 65
+        self.LaserRangeMergeDistance = 65
         self.MINLaserRange = 3
-        self.MagnitudeThreshold = 1.25
+        self.MagnitudeThreshold = 3
         self.LLaserAdjustment = 0
         self.RLaserAdjustment = 0
 
