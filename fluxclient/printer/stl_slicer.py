@@ -4,7 +4,7 @@ import struct
 import io
 import subprocess
 import tempfile
-import os
+from os import remove, environ
 import sys
 import copy
 from multiprocessing import Process, Pipe
@@ -62,25 +62,23 @@ def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe
         raise('wrong output type, only support gcode and fcode')
 
     ##################### fake code ###########################
-    with open('output.gcode', 'wb') as f:
-        with open(tmp_gcode_file, 'rb') as f2:
-            f.write(f2.read())
-    tmp_stl_file = command[1]
-    with open(tmp_stl_file, 'rb') as f:
-        with open('merged.stl', 'wb') as f2:
-            f2.write(f.read())
+    if environ.get("flux_debug") == '1':
+        with open('output.gcode', 'wb') as f:
+            with open(tmp_gcode_file, 'rb') as f2:
+                f.write(f2.read())
+        tmp_stl_file = command[1]
+        with open(tmp_stl_file, 'rb') as f:
+            with open('merged.stl', 'wb') as f2:
+                f2.write(f.read())
 
-    with open('output.fc', 'wb') as f:
-        f.write(fcode_output.getvalue())
+        with open('output.fc', 'wb') as f:
+            f.write(fcode_output.getvalue())
 
-    StlSlicer.my_ini_writer("output.ini", config)
+        StlSlicer.my_ini_writer("output.ini", config)
     ###########################################################
 
     # # clean up tmp files
     fcode_output.close()
-    # os.remove(tmp_stl_file)
-    # os.remove(tmp_gcode_file)
-    # os.remove(tmp_slic3r_setting_file)
     if fail_flag:
         child_pipe.send([False, slic3r_out, []])
     else:
@@ -138,8 +136,9 @@ class StlSlicer(object):
         image_bytes = b.getvalue()
         self.image = image_bytes
         ######################### fake code ###################################
-        with open('_preview.png', 'wb') as f:
-            f.write(image_bytes)
+        if environ.get("flux_debug") == '1':
+            with open('_preview.png', 'wb') as f:
+                f.write(image_bytes)
         ############################################################
 
     def delete(self, name):
@@ -301,7 +300,6 @@ class StlSlicer(object):
         self.my_ini_writer(tmp_slic3r_setting_file, self.config)
 
         command += ['--load', tmp_slic3r_setting_file]
-        # command += ['--load', '/Users/yen/Documents/config.ini']
 
         print('command:', ' '.join(command), file=sys.stderr)
 
@@ -350,26 +348,26 @@ class StlSlicer(object):
             raise('wrong output type, only support gcode and fcode')
 
         ##################### fake code ###########################
+        if environ.get("flux_debug") == '1':
+            with open('output.gcode', 'wb') as f:
+                with open(tmp_gcode_file, 'rb') as f2:
+                    f.write(f2.read())
 
-        with open('output.gcode', 'wb') as f:
-            with open(tmp_gcode_file, 'rb') as f2:
-                f.write(f2.read())
+            with open(tmp_stl_file, 'rb') as f:
+                with open('merged.stl', 'wb') as f2:
+                    f2.write(f.read())
 
-        with open(tmp_stl_file, 'rb') as f:
-            with open('merged.stl', 'wb') as f2:
-                f2.write(f.read())
+            with open('output.fc', 'wb') as f:
+                f.write(fcode_output.getvalue())
 
-        with open('output.fc', 'wb') as f:
-            f.write(fcode_output.getvalue())
-
-        self.my_ini_writer("output.ini", self.config)
+            self.my_ini_writer("output.ini", self.config)
         ###########################################################
 
         # clean up tmp files
         fcode_output.close()
         for f in [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file]:
             try:
-                os.remove(f)
+                remove(f)
             except:
                 pass
         if fail_flag:
@@ -448,7 +446,6 @@ class StlSlicer(object):
         command += ['--output', tmp_gcode_file]
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--load', tmp_slic3r_setting_file]
-        # command += ['--load', '/Users/yen/Documents/config.ini']
 
         print('command:', ' '.join(command), file=sys.stderr)
         self.end_slicing()
@@ -463,7 +460,7 @@ class StlSlicer(object):
                 p[0].terminate()
             for filename in p[1]:
                 try:
-                    os.remove(filename)
+                    remove(filename)
                 except:
                     pass
         self.working_p = []

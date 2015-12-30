@@ -471,7 +471,8 @@ class SVGParser(object):
         # root.attrib['style'] = "border: solid #ff0000;"  # TODO: delete this, this is only for debug
 
         ################ fake code ##############
-        tree.write('preprocess.svg')
+        if environ.get("flux_debug") == '1':
+            tree.write('preprocess.svg')
         ########################################
 
         return [ET.tostring(root), viewBox[2], viewBox[3]]  # ET.tostring type: bytes
