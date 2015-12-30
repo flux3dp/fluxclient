@@ -136,7 +136,7 @@ class GcodeToFcode(FcodeBase):
             if input_list[i] is not None:
                 extrudeflag = True
                 if self.absolute:
-                    if tmp_path != 0:
+                    if self.config['flux_refill_empty'] == '1' and tmp_path != 0:
                         if input_list[i] - self.current_pos[i - 1] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path + self.current_pos[i - 1]
                             self.G92_delta[i - 1] += self.previous[i - 4] * tmp_path
@@ -146,7 +146,8 @@ class GcodeToFcode(FcodeBase):
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
                     self.current_pos[i - 1] = input_list[i]
                 else:
-                    if tmp_path != 0:
+                    if self.config['flux_refill_empty'] == '1' and tmp_path != 0:
+                        print('hi')
                         if input_list[i] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path
                         else:
