@@ -110,8 +110,8 @@ class PcProcess():
         self.clouds[name_out] = pc_both
 
         self.cluster(name_out, name_out, self.settings.SegmentationDistance)
-        self.closure(name_out, name_out, self.settings.CloseTop, False, 1000)
-        self.closure(name_out, name_out, self.settings.CloseBottom, True, 1000)
+        self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
+        self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
 
     def cluster(self, name_in, name_out, thres=2):
         pc = self.clouds[name_in]
@@ -119,8 +119,8 @@ class PcProcess():
         pc0_size = len(pc[0])
         output = (pc[0].add(pc[1])).Euclidean_Cluster(thres)
         output = sorted(output, key=lambda x: len(x))
-        for i in output:
-            print(len(i))
+        # for i in output:
+        #     print(len(i))
         tmp_pc = self.to_cpp([[], []])
         for j in output[-1:]:
             for i in j:
@@ -141,7 +141,7 @@ class PcProcess():
         pc = pc_both[0].add(pc_both[1])
         pc.ne_viewpoint(self.settings.NeighborhoodDistance)
         # pc.ne()
-        pc.to_mesh()  # compute mesh
+        pc.to_mesh(method='POS')  # compute mesh
         return pc
 
     def dump(self, name):
@@ -316,6 +316,7 @@ class PcProcess():
                 color[j] += i[j + 3]
         color = [i / len(after) for i in color]
         rbf = Rbf(x, y, z, function='linear', smooth=1)
+        # color = [255, 0, 0]
 
         ZI = rbf(XI, YI)
         for xx in range(grid_leaf):
