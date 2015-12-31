@@ -11,6 +11,7 @@ from multiprocessing import Process, Pipe
 
 from PIL import Image
 
+from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
@@ -337,6 +338,9 @@ class StlSlicer(object):
             if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
                 ws.send_warning("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer)))
 
+            if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
+                fail_flag = True
+                slic3r_out = "gcode area too big"
             del m_GcodeToFcode
 
         if output_type == '-g':

@@ -318,7 +318,6 @@ class GcodeToFcode(FcodeBase):
 
             if len(self.empty_layer) > 0 and self.empty_layer[0] == 0:
                 self.empty_layer.pop(0)
-            print('tmppty', self.empty_layer)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
             self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
