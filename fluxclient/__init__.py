@@ -3,7 +3,7 @@ def check_pcl():
     try:
         from .scanner import _scanner
         return True
-    except ImportError:
+    except (ImportError, AttributeError):
         return False
 
 
