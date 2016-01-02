@@ -219,8 +219,8 @@ flux_first_layer = 0'''
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
-    'bed_shape': [constant],
-    'bed_temperature': [constant],
+    'bed_shape': [ignore],
+    'bed_temperature': [ignore],
     'before_layer_gcode': [free],
     'bottom_solid_layers': [int_range, 0, 20],
     'bridge_acceleration': [binary],
@@ -242,7 +242,7 @@ ini_constraint = {
     'extra_perimeters': [binary],
     'extruder_clearance_height': False,
     'extruder_clearance_radius': False,
-    'extruder_offset': [constant],
+    'extruder_offset': [ignore],
     'extrusion_axis': False,
     'extrusion_multiplier': False,
     'extrusion_width': False,
@@ -277,7 +277,7 @@ ini_constraint = {
     'max_fan_speed': [percentage],
     'max_print_speed': False,
     'max_volumetric_speed': False,
-    'min_fan_speed': [constant],
+    'min_fan_speed': [int_range, 0, 100],
     'min_print_speed': False,
     'min_skirt_length': False,
     'notes': False,
