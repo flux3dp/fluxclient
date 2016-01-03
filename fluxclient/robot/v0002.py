@@ -475,15 +475,22 @@ class FluxRobotV0002(object):
 
         if ret == b"continue":
             while True:
-                ret = self.get_resp().decode("ascii", "ignore")
-                if ret.startswith("CTRL "):
-                    navigate_callback(ret[5:])
-                elif ret == "ok":
-                    return
-                else:
-                    raise_error(ret)
+                try:
+                    ret = self.get_resp().decode("ascii", "ignore")
+                    if ret.startswith("CTRL "):
+                        navigate_callback(ret[5:])
+                    elif ret == "ok":
+                        return
+                    else:
+                        raise_error(ret)
+                except KeyboardInterrupt:
+                    self._send_cmd(b"stop_load_filament")
+                    logger.info("Interrupt load filament")
         else:
             raise_error(ret.decode("ascii", "utf8"))
+
+    def maintain_stop_load_filament(self):
+        self._send_cmd("stop_load_filament")
 
     def maintain_unload_filament(self, index, temp, navigate_callback):
         ret = self._make_cmd(
