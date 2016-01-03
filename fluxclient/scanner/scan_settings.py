@@ -18,6 +18,10 @@ class ScanSetting(object):
         self.focalLength = 3.6
 
         # ######### mockup 2, measure by solidwork###
+        self.cab_m = self.img_width / 2
+        self.cab_l = self.img_width / 2
+        self.cab_r = self.img_width / 2
+
         self.cameraX = 0.0
         self.cameraY = 22.28 + 8
         self.cameraZ = -174.70

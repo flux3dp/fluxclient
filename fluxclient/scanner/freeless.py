@@ -41,7 +41,12 @@ class freeless():
         self.RANGE_DISTANCE_THRESHOLD = scan_settings.LaserRangeMergeDistance
         self.numSuspectedBadLaserLocations = 0
         self.results = []
-        self.laser_plane = [[0, 0, 0], normalize([laserZ, 0, -1 * laserX])]
+        if laserX > 0:
+            d = (scan_settings.cab_r - scan_settings.cab_m) * 35 / 125
+            self.laser_plane = [[d, 0, 0], normalize([laserZ, 0, -1 * (laserX - d)])]
+        else:
+            d = (scan_settings.cab_l - scan_settings.cab_m) * 35 / 125
+            self.laser_plane = [[d, 0, 0], normalize([laserZ, 0, -1 * (laserX - d)])]
         self.place = {}
 
     def img_to_points(self, img_o, img_red, indices, step, side, cab_offset, clock=False):
