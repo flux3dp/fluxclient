@@ -82,7 +82,6 @@ class LaserSvg(LaserBase, SVGParser):
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
-        gcode += ["G28"]
         ################ fake code ##############
         if environ.get("flux_debug") == '1':
             self.dump('./preview.png')

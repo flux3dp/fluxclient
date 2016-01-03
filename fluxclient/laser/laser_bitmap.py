@@ -91,7 +91,6 @@ class LaserBitmap(LaserBase):
             gcode += self.turnOff()
 
         gcode += self.turnOff()
-        gcode += ["G28"]
         gcode = "\n".join(gcode) + "\n"
         logger.debug("generate gcode done:%d bytes" % len(gcode))
         ######################## fake code ####################################
