@@ -65,6 +65,7 @@ class RobotConsole(object):
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
             "load_filament": self.maintain_load_filament,
+            "stop_load_filament": self.maintain_stop_load_filament,
             "unload_filament": self.maintain_unload_filament,
             "play": {
                 "info": self.play_info
@@ -291,6 +292,9 @@ class RobotConsole(object):
         self.robot_obj.maintain_load_filament(int(index), float(temp),
                                               callback)
         logger.info("ok")
+
+    def maintain_stop_load_filament(self):
+        self.robot_obj.maintain_stop_load_filament()
 
     def maintain_unload_filament(self, index, temp):
         def callback(nav):
