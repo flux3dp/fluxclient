@@ -8,10 +8,9 @@ from serial import Serial
 
 # for windows
 import platform
-from time import sleep
-from serial import serialutil as SerialUtil
+from serial.serialutil import SerialTimeoutException
 
-from fluxclient import encryptor as E
+from fluxclient import encryptor as E  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +30,9 @@ def is_windows():
 
 
 class UsbTask(object):
+    s = None
+
     def __init__(self, port, baudrate=115200):
-        self.s = 0
         # Select does not work with windows..
         if is_windows():
             self.s = Serial(port=port, baudrate=115200, timeout=0.1)
@@ -41,8 +41,8 @@ class UsbTask(object):
         self.s.write(b"\x00" * 16)
         if is_windows():
             try:
-                str_read = self.s.readall()  # Normally returns with empty string
-            except SerialUtil.SerialTimeoutException:
+                self.s.readall()  # Normally returns with empty string
+            except SerialTimeoutException:
                 logger.error("Serial timeout")
         else:
             while True:
