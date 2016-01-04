@@ -96,6 +96,8 @@ class LaserBitmap(LaserBase):
         ######################## fake code ####################################
         if environ.get("flux_debug") == '1':
             self.dump('./preview.png')
+            with open('output.gcode', 'w') as f:
+                print(gcode, file=f)
         #######################################################################
         return gcode
 
