@@ -329,7 +329,8 @@ class GcodeToFcode(FcodeBase):
             self.md['TIME_COST'] = str(self.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
-            self.md['SETTING'] = str(comment_list[-130:])
+            if self.md['HEAD_TYPE'] == 'EXTRUDER':
+                self.md['SETTING'] = str(comment_list[-130:])
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)
