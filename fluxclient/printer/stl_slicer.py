@@ -16,6 +16,7 @@ from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
 from fluxclient.printer import ini_string, ini_constraint, ignore
+from fluxclient.printer.flux_raft import Raft
 
 
 def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe):
@@ -323,8 +324,18 @@ class StlSlicer(object):
         if p.poll() != 0:
             fail_flag = True
 
+        # TODO: design a intermedia data structure for gcode and write a general preprocessor
+        if self.config['flux_raft'] == '1':
+            m_preprocessor = Raft()
+            raft_output = io.StringIO()
+            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
+            raft_output = raft_output.getvalue()
+            with open(tmp_gcode_file, 'w') as f:
+                print(raft_output, file=f)
+
         # analying gcode(even transform)
         ws.send_progress('analyzing metadata', 0.99)
+
         fcode_output = io.BytesIO()
         with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)

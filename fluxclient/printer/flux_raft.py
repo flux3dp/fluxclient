@@ -3,6 +3,7 @@ import sys
 import time
 import math
 import re
+import os
 from queue import Queue
 from math import ceil, sqrt
 
@@ -22,6 +23,7 @@ class Raft():
         self.z_space = 0.12
         self.width = ceil(172 / self.resolution)
         self.grid = [[]]
+        self.gcode = []
 
     def print_start_gcode(self):
         code = """M107 ; disable fan
@@ -39,10 +41,9 @@ G1 E-2.00000 F2400.00000 ; retract
 G92E0
 G1 F1800
 """
+        print(code, file=self.output_stream)
 
-        print(code)
-
-    def process(self, gcode, debug=True):
+    def process(self, gcode, debug=False):
         #Process all gcode on first few layers, and fill the grid, skip skirt...
         self.grid = self.fill_grid(gcode)
         #Select all connected islands, find the edge points at each one
@@ -64,7 +65,7 @@ G1 F1800
                 continue
             #Lift Z
             line = re.sub("Z ?(-?[\d.]+)", self.z_rep, line)
-            print(line, end="")
+            print(line, end="", file=self.output_stream)
 
     def z_rep(self, matchobj):
         z_old = float(matchobj.group(1))
@@ -74,7 +75,7 @@ G1 F1800
         island_id = 0
         for island in islands:
             island_id = island_id + 1
-            print(";Island #%d" % island_id)
+            print(";Island #%d" % island_id, file=self.output_stream)
             edge = island
 
             x = edge[0][0]
@@ -114,8 +115,8 @@ G1 F1800
                 sorted_edge.append([x, y])
 
             #Outline of raft
-            print("G92 E0")
-            print("G1 Z%lf" % self.first_layer)
+            print("G92 E0", file=self.output_stream)
+            print("G1 Z%lf" % self.first_layer, file=self.output_stream)
 
             extruded = 0
             (x_min, y_min, x_max, y_max) = (999999, 999999, -1, -1)
@@ -140,7 +141,7 @@ G1 F1800
                 extruded = extruded + e
 
                 last_point = [x, y]
-                print("G1X%lfY%lfE%lf" % (x, y, extruded))
+                print("G1X%lfY%lfE%lf" % (x, y, extruded), file=self.output_stream)
 
             #Infill of raft
             horizontal_lines = abs(ceil((y_max - y_min) * self.resolution / self.line_width))
@@ -151,7 +152,7 @@ G1 F1800
             width = len(self.grid)
 
             for l in range(0, self.count):
-                print("G1 Z%lf" % (self.first_layer + l * self.layer_height))
+                print("G1 Z%lf" % (self.first_layer + l * self.layer_height), file=self.output_stream)
                 if l % 2 == 0:
                     for r in range(0, horizontal_lines):
                         y = self.g2m(self.m2g(y_min) + self.line_width * r)
@@ -169,8 +170,8 @@ G1 F1800
                                 e = abs(self.m2g(x) - fill_start) * self.extrusion
                                 extruded = extruded + e
 
-                                print("G1 X%lf Y%lf ; H line" % (fill_start, self.m2g(y)))
-                                print("G1 X%lf Y%lf E%lf" % (self.m2g(x), self.m2g(y), extruded))
+                                print("G1 X%lf Y%lf ; H line" % (fill_start, self.m2g(y)), file=self.output_stream)
+                                print("G1 X%lf Y%lf E%lf" % (self.m2g(x), self.m2g(y), extruded), file=self.output_stream)
                                 inside = False
                 else:
                     for r in range(0, vertical_lines):
@@ -189,8 +190,8 @@ G1 F1800
                                 e = abs(self.m2g(y) - fill_start) * self.extrusion
                                 extruded = extruded + e
 
-                                print("G1 X%lf Y%lf ; V line" % (self.m2g(x), fill_start))
-                                print("G1 X%lf Y%lf E%lf" % (self.m2g(x), self.m2g(y), extruded))
+                                print("G1 X%lf Y%lf ; V line" % (self.m2g(x), fill_start), file=self.output_stream)
+                                print("G1 X%lf Y%lf E%lf" % (self.m2g(x), self.m2g(y), extruded), file=self.output_stream)
                                 inside = False
 
     def is_edge(self, edge, x, y):
@@ -331,17 +332,24 @@ G1 F1800
 
         Image.fromarray(im.astype(np.uint8)).save("grid.png")
 
+    def main(self, gcode, output_stream, debug):
+        if type(gcode) == str:
+            with open(gcode) as f:
+                gcode = f.readlines()
+        self.output_stream = output_stream
+
+        self.resolution = 0.5
+        self.expansion = 10  # flux only param : equals to raft exapansion
+        self.first_layer = 0.3  # equal to first layer height
+        self.layer_height = 0.2  # equal to layer height
+        self.count = 3  # equal to raft layers
+        self.process(gcode)
+
+
 if __name__ == '__main__':
     #Read gcode
     fname = sys.argv[1]
-    gcode = []
     with open(fname) as f:
         gcode = f.readlines()
-
     raft = Raft()
-    raft.resolution = 0.5
-    raft.expansion = 10  # flux only param : equals to raft exapansion
-    raft.first_layer = 0.3  # equal to first layer height
-    raft.layer_height = 0.2  # equal to layer height
-    raft.count = 3  # equal to raft layers
-    raft.process(gcode)
+    raft.main(gcode, output_stream=sys.stdout, debug=True)

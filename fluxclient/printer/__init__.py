@@ -215,7 +215,8 @@ wipe = 0
 xy_size_compensation = 0
 z_offset = 0
 flux_refill_empty = 0
-flux_first_layer = 0'''
+flux_first_layer = 0
+flux_raft = 0'''
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -350,4 +351,5 @@ ini_constraint = {
     'z_offset': [float_range, 0, 23.5],
     'flux_refill_empty': [binary],
     'flux_first_layer': [binary],
+    'flux_raft': [binary],
 }
