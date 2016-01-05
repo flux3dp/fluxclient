@@ -10,7 +10,7 @@ import datetime
 from PIL import Image
 import numpy as np
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from . import Grid
+import pkg_resources
 
 
 class LaserBase(object):
@@ -286,10 +286,9 @@ class LaserBase(object):
             dump the image of this laser class
         """
         img = Image.fromarray(self.image_map)
-        tmp = io.BytesIO()
-        tmp.write(Grid)  # TODO: change file path
+        grid = pkg_resources.resource_filename("fluxclient", "assets/grid.png")
         # magic number just for alignment, don't really important
-        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))
+        img_background = Image.open(grid).resize((img.size[0] + 66, img.size[1] + 66))
         img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
         img = img_background
         if mode == 'save':

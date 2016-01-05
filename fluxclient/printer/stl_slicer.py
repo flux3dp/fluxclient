@@ -139,7 +139,7 @@ class StlSlicer(object):
         self.image = image_bytes
         ######################### fake code ###################################
         if environ.get("flux_debug") == '1':
-            with open('_preview.png', 'wb') as f:
+            with open('preview.png', 'wb') as f:
                 f.write(image_bytes)
         ############################################################
 
