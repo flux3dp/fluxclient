@@ -145,9 +145,7 @@ def create_scanner_extentions():
                           "pcl_search_release", "pcl_sample_consensus_release",
                           "pcl_filters_release", "pcl_features_release",
                           "pcl_segmentation_release", "pcl_surface_release",
-                          "pcl_registration_release", "pcl_keypoints_release",
-                          "pcl_tracking_release", "pcl_recognition_release",
-                          "pcl_outofcore_release", "pcl_people_release"]
+                          "pcl_registration_release", "pcl_keypoints_release"]
             include_dirs += ["C:/Program Files (x86)/Eigen/include",
                              "C:/Program Files (x86)/flann/include",
                              "C:/Program Files/Eigen/include",
