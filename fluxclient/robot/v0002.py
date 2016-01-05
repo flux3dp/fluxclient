@@ -44,7 +44,7 @@ class FluxRobotV0002(object):
         sign, randbytes = buf[8:-128], buf[-128:]
 
         if server_key:
-            logger.error("Warning: server key checking not implement!")
+            logger.warn("Warning: server key checking not implement!")
         else:
             logger.warn("Warning: can not validate remote")
 
