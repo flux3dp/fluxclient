@@ -246,7 +246,10 @@ class StlSlicer(object):
         ws.send_progress('merging', 0.2)
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
-            points, faces = self.read_stl(self.models[n])
+            try:
+                points, faces = self.read_stl(self.models[n])
+            except:
+                return False, 'can\'t parse %s,may not ba a stl file' % (n)
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
             m_mesh_merge.add_on(m_mesh)
