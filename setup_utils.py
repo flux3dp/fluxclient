@@ -125,8 +125,7 @@ def create_scanner_extentions():
             libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
                           "pcl_search", "pcl_sample_consensus", "pcl_filters",
                           "pcl_features", "pcl_segmentation", "pcl_surface",
-                          "pcl_registration", "pcl_keypoints", "pcl_tracking",
-                          "pcl_recognition", "pcl_outofcore", "pcl_people", ]
+                          "pcl_registration", "pcl_keypoints"]
             if has_package("pcl_common-1.8"):
                 include_dirs += [locate_includes("pcl_common-1.8")]
             elif has_package("pcl_common-1.7"):
