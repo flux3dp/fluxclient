@@ -10,7 +10,7 @@ import datetime
 from PIL import Image
 import numpy as np
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from . import Grid
+import pkg_resources
 
 
 class LaserBase(object):
@@ -61,7 +61,7 @@ class LaserBase(object):
             gcode.append(";" + i)
 
         # force close laser
-        self.laser_on = False
+        self.laser_on = True
         gcode += self.turnOff()
 
         # setting
@@ -69,6 +69,7 @@ class LaserBase(object):
 
         # move to proper height
         gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height))
+
         return gcode
 
     def turnOn(self):
@@ -213,7 +214,7 @@ class LaserBase(object):
             return x, y
 
         pix = Image.frombytes('L', (img_width, img_height), buffer_data)
-        # pix.save('tmp.png', 'png')
+        # pix.save('get.png', 'png')
 
         # image center (rotation center)
         cx = (x1 + x2) / 2.
@@ -223,8 +224,11 @@ class LaserBase(object):
         ox1, oy1 = rotate(x1, y1, -rotation, cx, cy)
         ox3, oy3 = rotate(x2, y2, -rotation, cx, cy)
 
+        # 1 4
+        # 2 3
         ox2, oy2 = ox1, oy3
         ox4, oy4 = ox3, oy1
+        pix = pix.resize(tuple(map(lambda x: int(x * self.pixel_per_mm), ((ox3 - ox1), (oy1 - oy3)))))
 
         # rotate four corner
         ox1, oy1 = rotate(ox1, oy1, rotation, cx, cy)
@@ -235,6 +239,7 @@ class LaserBase(object):
         # find upper-left corner after rotation(edge)
         gx1 = min(ox1, ox2, ox3, ox4)
         gy1 = max(oy1, oy2, oy3, oy4)
+
         gy1_on_map = round((gx1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx1_on_map = round(-(gy1 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
 
@@ -243,54 +248,47 @@ class LaserBase(object):
         gy2_on_map = round((gx2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
         gx2_on_map = round(-(gy2 / self.radius * len(self.image_map) / 2.) + (len(self.image_map) / 2.))
 
-        # shrink size if image too big, to avoid white frame disappear
-        if pix.size[0] >= len(self.image_map) or pix.size[1] >= len(self.image_map):
-            if pix.size[0] >= pix.size[1]:
-                new_size = (len(self.image_map), len(self.image_map) * pix.size[1] // pix.size[0])
-            else:
-                new_size = (len(self.image_map) * pix.size[0] // pix.size[1], len(self.image_map))
-            pix = pix.resize(new_size)
-
         # add white frame on each side
         new_pix = Image.new('L', (pix.size[0] + 2, pix.size[1] + 2), 255)
         new_pix.paste(pix, (1, 1))
         new_pix = new_pix.rotate(degrees(rotation), expand=1)
 
-        new_pix = new_pix.resize((gy2_on_map - gy1_on_map, gx2_on_map - gx1_on_map))
         for h in range(new_pix.size[1]):
             # using white frame to find starting and ending index
             # find_start, find_end for each row
-            flag = False  # whether find white frame
+            flag1 = False  # whether find white frame
             for find_s in range(new_pix.size[0]):
-                if new_pix.getpixel((find_s, h)) > 0:
+                if new_pix.getpixel((find_s, h)) > 0:  # check this thres?
                     find_s = find_s + 1
-                    flag = True
+                    flag1 = True
                     break
-            if not flag:
-                find_s = new_pix.size[0]
 
-            flag = False
+            flag2 = False
             for find_e in range(new_pix.size[0] - 1, -1, -1):
                 if new_pix.getpixel((find_e, h)) > 0:
-                    flag = True
+                    find_e = find_e
+                    flag2 = True
                     break
-            if not flag:
-                find_e = 0
 
-            for w in range(find_s, find_e):
-                if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
-                    if new_pix.getpixel((w, h)) <= thres:
-                        self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
+            # only one white point in this row(cause by resizing)
+            # if find_e < find_s and abs(h - (new_pix.size[1] / 2)) > 1:
+            #     find_e = new_pix.size[0]
+
+            # NOTE: flag1 always equal to flag2
+            if flag1:  # at least one white point in this row
+                for w in range(find_s, find_e):
+                    if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
+                        if new_pix.getpixel((w, h)) <= thres:
+                            self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
 
     def dump(self, file_name='', mode='save'):
         """
             dump the image of this laser class
         """
         img = Image.fromarray(self.image_map)
-        tmp = io.BytesIO()
-        tmp.write(Grid)  # TODO: change file path
+        grid = pkg_resources.resource_filename("fluxclient", "assets/grid.png")
         # magic number just for alignment, don't really important
-        img_background = Image.open(tmp).resize((img.size[0] + 66, img.size[1] + 66))
+        img_background = Image.open(grid).resize((img.size[0] + 66, img.size[1] + 66))
         img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
         img = img_background
         if mode == 'save':

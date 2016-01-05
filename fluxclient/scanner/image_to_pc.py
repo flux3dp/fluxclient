@@ -8,12 +8,11 @@ from PIL import Image
 
 try:
     from . import freeless
-    from . import scan_settings
     from .tools import write_pcd
 except:
     import freeless
-    import scan_settings
     from tools import write_pcd
+
 
 from fluxclient.hw_profile import HW_PROFILE
 try:
@@ -24,15 +23,16 @@ except:
 
 class image_to_pc():
     """docstring for image_to_pc"""
-    def __init__(self, steps):
-        self.reset(steps)
+    def __init__(self, steps, scan_settings):
+        self.reset(steps, scan_settings)
 
-    def reset(self, steps):
+    def reset(self, steps, scan_settings):
+        self.settings = scan_settings
         self.points_L = []
-        self.fs_L = freeless.freeless(scan_settings.laserX_L, scan_settings.laserZ_L)
+        self.fs_L = freeless.freeless(self.settings.laserX_L, self.settings.laserZ_L, self.settings)
 
         self.points_R = []
-        self.fs_R = freeless.freeless(scan_settings.laserX_R, scan_settings.laserZ_R)
+        self.fs_R = freeless.freeless(self.settings.laserX_R, self.settings.laserZ_R, self.settings)
 
         self.step_counter = 0
         self.steps = steps
@@ -60,19 +60,19 @@ class image_to_pc():
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
 
-        indices_L = self.fs_L.subProcess(img_O, img_L, scan_settings.img_height)
+        indices_L = self.fs_L.subProcess(img_O, img_L, self.settings.img_height)
+
         indices_L = [[p[0], p[1] + l_cab]for p in indices_L]
-        # indices_L = [[i, step] for i in range(scan_settings.img_height)]
+        # indices_L = [[i, step] for i in range(self.settings.img_height)]
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', l_cab, clock=True)
         self.points_L.extend(point_L_this)
         # return [self.points_to_bytes(point_L_this), []]
 
-        indices_R = self.fs_R.subProcess(img_O, img_R, scan_settings.img_height)
+        indices_R = self.fs_R.subProcess(img_O, img_R, self.settings.img_height)
         indices_R = [[p[0], p[1] + r_cab]for p in indices_R]
         point_R_this = self.fs_R.img_to_points(img_O, img_R, indices_R, step, 'R', r_cab, clock=True)
         self.points_R.extend(point_R_this)
         # return [[], self.points_to_bytes(point_R_this)]
-
         return [self.points_to_bytes(point_L_this), self.points_to_bytes(point_R_this)]
 
     def points_to_bytes(self, points):
@@ -192,11 +192,13 @@ def after(l):
 
 if __name__ == '__main__':
     import subprocess
-    m_image_to_pc = image_to_pc(400)
+    from fluxclient.scanner.scan_settings import ScanSetting
+    ss = 10
+    m_image_to_pc = image_to_pc(ss, ScanSetting())
     img_location = sys.argv[1].rstrip('/')
     print(img_location)
 
-    for i in range(400):
+    for i in range(ss):
         tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
         m_image_to_pc.feed(*tmp, step=i, l_cab=-10, r_cab=-10)
         print_progress(i, 400)

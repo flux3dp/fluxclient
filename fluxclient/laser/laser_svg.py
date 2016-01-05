@@ -3,6 +3,7 @@
 import sys
 from math import sin, cos, pi, sqrt
 import logging
+from os import environ
 # cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
 import xml.etree.ElementTree as ET
 
@@ -81,9 +82,9 @@ class LaserSvg(LaserBase, SVGParser):
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
-        gcode += ["G28"]
         ################ fake code ##############
-        self.dump('./preview.png')
+        if environ.get("flux_debug") == '1':
+            self.dump('./preview.png')
 
         # output only moving
         # tmp = []

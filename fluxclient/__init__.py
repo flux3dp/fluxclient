@@ -3,9 +3,9 @@ def check_pcl():
     try:
         from .scanner import _scanner
         return True
-    except ImportError:
+    except (ImportError, AttributeError):
         return False
 
 
-__version__ = "0.7a5"
+__version__ = "0.8b4"
 SUPPORT_PCL = check_pcl()

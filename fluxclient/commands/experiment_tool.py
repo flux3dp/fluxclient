@@ -8,6 +8,7 @@ import datetime
 import numpy as np
 
 from fluxclient.scanner.pc_process import PcProcess
+from fluxclient.scanner.scan_settings import ScanSetting
 from fluxclient.scanner.tools import read_pcd, write_stl, write_pcd
 from fluxclient.scanner.pc_process import PcProcess
 
@@ -17,7 +18,7 @@ def show_pc(name, pc_in):
 
 
 def main(in_file, out_file, command=''):
-    _PcProcess = PcProcess()
+    _PcProcess = PcProcess(ScanSetting())
     tmp = out_file.rfind('.')
     prefix, suffix = out_file[:tmp], out_file[tmp + 1:]
     print('out_file', prefix, suffix)

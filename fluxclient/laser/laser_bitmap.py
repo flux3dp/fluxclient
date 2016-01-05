@@ -2,6 +2,7 @@
 
 from math import pi, sin, cos, degrees
 import logging
+from os import environ
 
 import numpy as np
 from PIL import Image
@@ -90,11 +91,13 @@ class LaserBitmap(LaserBase):
             gcode += self.turnOff()
 
         gcode += self.turnOff()
-        gcode += ["G28"]
         gcode = "\n".join(gcode) + "\n"
         logger.debug("generate gcode done:%d bytes" % len(gcode))
         ######################## fake code ####################################
-        self.dump('./preview.png')
+        if environ.get("flux_debug") == '1':
+            self.dump('./preview.png')
+            with open('output.gcode', 'w') as f:
+                print(gcode, file=f)
         #######################################################################
         return gcode
 

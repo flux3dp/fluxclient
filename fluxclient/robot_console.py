@@ -34,26 +34,39 @@ class RobotConsole(object):
 
             "home": robot_obj.maintain_home,
             "reset_mb": robot_obj.maintain_reset_mb,
+            "headinfo": robot_obj.maintain_headinfo,
+            "play": {
+                "quit": robot_obj.quit_play
+            }
         }
 
         self.cmd_mapping = {
             "ls": self.list_file,
-            "select": self.select_file,
             "fileinfo": self.fileinfo,
             "mkdir": self.mkdir,
             "rmdir": self.rmdir,
             "rmfile": self.rmfile,
             "cp": self.cpfile,
             "upload": self.upload_file,
-            "update_fw": self.update_fw,
             "md5": self.md5,
+
+            "select": self.select_file,
+            "update_fw": self.update_fw,
+            "update_mbfw": self.update_mbfw,
             "oneshot": self.oneshot,
             "scanimages": self.scanimages,
             "raw": self.raw_mode,
-            "set": self.set_setting,
+            "config": {
+                "set": self.config_set,
+                "get": self.config_get,
+                "del": self.config_del
+            },
 
             "eadj": self.maintain_eadj,
             "cor_h": self.maintain_hadj,
+            "load_filament": self.maintain_load_filament,
+            "stop_load_filament": self.maintain_stop_load_filament,
+            "unload_filament": self.maintain_unload_filament,
             "play": {
                 "info": self.play_info
             },
@@ -97,7 +110,11 @@ class RobotConsole(object):
                 logger.error("RuntimeError%s" % repr(e.args))
 
     def simple_cmd(self, func_ptr, *args):
-        logger.info(func_ptr(*args))
+        ret = func_ptr(*args)
+        if ret:
+            logger.info(ret)
+        else:
+            logger.info("ok")
 
     def list_file(self, args):
         path = shlex.split(args)[0]
@@ -169,20 +186,18 @@ class RobotConsole(object):
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
-    def upload_file(self, args):
-        options = shlex.split(args)
-        source = options[0]
-        if len(options) >= 2:
-            upload_to = " ".join(options[1].split("/", 1))
-        else:
-            upload_to = "#"
-
+    def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
             source, upload_to, progress_callback=self.log_progress_callback)
 
     def update_fw(self, filename):
         self.robot_obj.upload_file(
             filename.rstrip(), cmd="update_fw",
+            progress_callback=self.log_progress_callback)
+
+    def update_mbfw(self, filename):
+        self.robot_obj.upload_file(
+            filename.rstrip(), cmd="update_mbfw",
             progress_callback=self.log_progress_callback)
 
     def md5(self, filename):
@@ -228,14 +243,20 @@ class RobotConsole(object):
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
-    def set_setting(self, line):
-        params = line.split(" ")
-        if len(params) == 2:
-            logger.info(
-                self.robot_obj.set_setting(key=params[0], value=params[1])
-            )
+    def config_set(self, key, value):
+        self.robot_obj.config_set(key, value)
+        logger.info("ok")
+
+    def config_get(self, key):
+        value = self.robot_obj.config_get(key)
+        if value:
+            logger.info("%s=%s\nok" % (key, value))
         else:
-            logger.info("BAD_PARAMS")
+            logger.info("%s not set\nok" % key)
+
+    def config_del(self, key):
+        self.robot_obj.config_del(key)
+        logger.info("ok")
 
     def maintain_eadj(self, ext=None):
         def callback(nav):
@@ -262,6 +283,25 @@ class RobotConsole(object):
                                                manual_h=float(h))
 
         logger.info("Data: %s", ret)
+        logger.info("ok")
+
+    def maintain_load_filament(self, index, temp):
+        def callback(nav):
+            logger.info("NAV: %s", nav)
+
+        self.robot_obj.maintain_load_filament(int(index), float(temp),
+                                              callback)
+        logger.info("ok")
+
+    def maintain_stop_load_filament(self):
+        self.robot_obj.maintain_stop_load_filament()
+
+    def maintain_unload_filament(self, index, temp):
+        def callback(nav):
+            logger.info("NAV: %s", nav)
+
+        self.robot_obj.maintain_unload_filament(int(index), float(temp),
+                                                callback)
         logger.info("ok")
 
     def raw_mode(self):

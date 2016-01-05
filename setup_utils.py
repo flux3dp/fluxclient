@@ -125,8 +125,7 @@ def create_scanner_extentions():
             libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
                           "pcl_search", "pcl_sample_consensus", "pcl_filters",
                           "pcl_features", "pcl_segmentation", "pcl_surface",
-                          "pcl_registration", "pcl_keypoints", "pcl_tracking",
-                          "pcl_recognition", "pcl_outofcore", "pcl_people", ]
+                          "pcl_registration", "pcl_keypoints"]
             if has_package("pcl_common-1.8"):
                 include_dirs += [locate_includes("pcl_common-1.8")]
             elif has_package("pcl_common-1.7"):
@@ -146,15 +145,17 @@ def create_scanner_extentions():
                           "pcl_search_release", "pcl_sample_consensus_release",
                           "pcl_filters_release", "pcl_features_release",
                           "pcl_segmentation_release", "pcl_surface_release",
-                          "pcl_registration_release", "pcl_keypoints_release",
-                          "pcl_tracking_release", "pcl_recognition_release",
-                          "pcl_outofcore_release", "pcl_people_release"]
+                          "pcl_registration_release", "pcl_keypoints_release"]
             include_dirs += ["C:/Program Files (x86)/Eigen/include",
                              "C:/Program Files (x86)/flann/include",
+                             "C:/Program Files/Eigen/include",
+                             "C:/Program Files/flann/include",
                              "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
                              "C:/Program Files/PCL 1.7.2/lib",
                              "C:/local/boost_1_59_0"]
-            library_dirs += ["C:/Program Files/PCL 1.7.2/lib"]
+            library_dirs += ["C:/Program Files/PCL 1.7.2/lib",
+                             "C:/local/boost_1_59_0/lib64-msvc-14.0"]
+
         else:
             raise RuntimeError("Unknow platform!!")
 

@@ -1,6 +1,7 @@
 #include <limits>
-
+#include <iostream>
 #include "printer_module.h"
+
 
 
 MeshPtr createMeshPtr(){
@@ -33,28 +34,28 @@ int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
 }
 
 int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    fromPCLPointCloud2(base->cloud, *cloud);
-    int size_to_add_on = cloud->size();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(base->cloud, *cloud);
+  int size_to_add_on = cloud->size();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
-    fromPCLPointCloud2(add_on_mesh->cloud, *cloud2);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(add_on_mesh->cloud, *cloud2);
 
     // add cloud together
-    *cloud += *cloud2;
+  *cloud += *cloud2;
 
-    pcl::Vertices v;
-    v.vertices.resize(3);
+  pcl::Vertices v;
+  v.vertices.resize(3);
     // add faces, but shift the index for add on mesh
-    for (uint32_t i = 0; i < add_on_mesh->polygons.size(); i += 1){
-        v.vertices[0] = add_on_mesh->polygons[i].vertices[0] + size_to_add_on;
-        v.vertices[1] = add_on_mesh->polygons[i].vertices[1] + size_to_add_on;
-        v.vertices[2] = add_on_mesh->polygons[i].vertices[2] + size_to_add_on;
-        base->polygons.push_back(v);
-    }
+  for (uint32_t i = 0; i < add_on_mesh->polygons.size(); i += 1){
+    v.vertices[0] = add_on_mesh->polygons[i].vertices[0] + size_to_add_on;
+    v.vertices[1] = add_on_mesh->polygons[i].vertices[1] + size_to_add_on;
+    v.vertices[2] = add_on_mesh->polygons[i].vertices[2] + size_to_add_on;
+    base->polygons.push_back(v);
+  }
 
-    toPCLPointCloud2(*cloud, base->cloud);
-    return 0;
+  toPCLPointCloud2(*cloud, base->cloud);
+  return 0;
 }
 
 int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
@@ -199,9 +200,104 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
 
   toPCLPointCloud2(*cloud, triangles->cloud);
   return 0;
+}
+
+int find_intersect(pcl::PointXYZ a, pcl::PointXYZ b, float floor_v, pcl::PointXYZ &p){
+  // find the intersect between line a, b and plane z=floor_v
+  std::vector<float> v(3);  // vetor a->b
+  v[0] = b.x - a.x;
+  v[1] = b.y - a.y;
+  v[2] = b.z - a.z;
+
+  float t = (floor_v - a.z) / v[2];
+  p.x = a.x + t * v[0];
+  p.y = a.y + t * v[1];
+  p.z = a.z + t * v[2];
+  return 0;
+}
+
+
+int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v){
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(input_mesh->cloud, *cloud);
+
+  pcl::Vertices v;
+  v.vertices.resize(3);
+  pcl::Vertices on, under;
+  // consider serveral case
+
+  for (uint32_t i = 0; i < input_mesh->polygons.size(); i += 1){
+    // on.vertices.clear();
+    // under.vertices.clear();
+    pcl::Vertices on, under;
+    for (uint32_t j = 0; j < 3; j += 1){
+
+      if ((*cloud)[input_mesh->polygons[i].vertices[j]].z <= floor_v){
+        under.vertices.push_back(input_mesh->polygons[i].vertices[j]);
+      }
+      else{
+        on.vertices.push_back(input_mesh->polygons[i].vertices[j]);
+      }
+    }
+
+    if(on.vertices.size() == 3){
+      out_mesh->polygons.push_back(on);
+    }
+    else if(under.vertices.size() == 3){
+      // do nothing
+    }
+    else if(under.vertices.size() == 2){
+      pcl::PointXYZ upper_p;
+      upper_p = (*cloud)[on.vertices[0]];
+      for (int j = 0; j < 2; j += 1){
+        pcl::PointXYZ lower_p, new_p;
+        lower_p = (*cloud)[under.vertices[j]];
+        find_intersect(upper_p, lower_p, floor_v, new_p);
+        cloud -> push_back(new_p);
+        on.vertices.push_back(cloud -> size() - 1);
+      }
+      out_mesh->polygons.push_back(on);
+    }
+    else if(under.vertices.size() == 1){
+      pcl::PointXYZ mid;
+      mid.x = ((*cloud)[on.vertices[0]].x + (*cloud)[on.vertices[1]].x) / 2;
+      mid.y = ((*cloud)[on.vertices[0]].y + (*cloud)[on.vertices[1]].y) / 2;
+      mid.z = ((*cloud)[on.vertices[0]].z + (*cloud)[on.vertices[1]].z) / 2;
+      cloud -> push_back(mid);
+      int mid_index = cloud -> size() - 1;
+
+      pcl::PointXYZ intersect0, intersect1;
+      find_intersect((*cloud)[on.vertices[0]], (*cloud)[under.vertices[0]], floor_v, intersect0);
+      cloud -> push_back(intersect0);
+      int intersect0_index = cloud -> size() - 1;
+      find_intersect((*cloud)[on.vertices[1]], (*cloud)[under.vertices[0]], floor_v, intersect1);
+      cloud -> push_back(intersect1);
+      int intersect1_index = cloud -> size() - 1;
+
+      pcl::Vertices v1, v2, v3;
+      v1.vertices.push_back(on.vertices[0]);
+      v1.vertices.push_back(intersect0_index);
+      v1.vertices.push_back(mid_index);
+      out_mesh->polygons.push_back(v1);
+
+      v2.vertices.push_back(mid_index);
+      v2.vertices.push_back(intersect0_index);
+      v2.vertices.push_back(intersect1_index);
+      out_mesh->polygons.push_back(v2);
+
+      v3.vertices.push_back(mid_index);
+      v3.vertices.push_back(intersect1_index);
+      v3.vertices.push_back(on.vertices[1]);
+      out_mesh->polygons.push_back(v3);
+    }
+
   }
 
-  int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data){
+  toPCLPointCloud2(*cloud, out_mesh->cloud);
+  return 0;
+}
+
+int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data){
   // point's data
   // data =[
   //           t1[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
@@ -209,49 +305,49 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   //           t3[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
   //             ...
   //       ]
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    fromPCLPointCloud2(triangles->cloud, *cloud);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(triangles->cloud, *cloud);
 
-    int v0, v1, v2;
+  int v0, v1, v2;
 
-    std::vector<float> tmpvv(3, 0.0);
-    std::vector< std::vector<float> > tmpv(3, tmpvv);
-    data.resize(triangles->polygons.size());
+  std::vector<float> tmpvv(3, 0.0);
+  std::vector< std::vector<float> > tmpv(3, tmpvv);
+  data.resize(triangles->polygons.size());
 
-    for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-      data[i] = tmpv;
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    data[i] = tmpv;
 
-      v0 = triangles->polygons[i].vertices[0];
-      v1 = triangles->polygons[i].vertices[1];
-      v2 = triangles->polygons[i].vertices[2];
+    v0 = triangles->polygons[i].vertices[0];
+    v1 = triangles->polygons[i].vertices[1];
+    v2 = triangles->polygons[i].vertices[2];
 
-      data[i][0][0] = (*cloud)[v0].x;
-      data[i][0][1] = (*cloud)[v0].y;
-      data[i][0][2] = (*cloud)[v0].z;
+    data[i][0][0] = (*cloud)[v0].x;
+    data[i][0][1] = (*cloud)[v0].y;
+    data[i][0][2] = (*cloud)[v0].z;
 
-      data[i][1][0] = (*cloud)[v1].x;
-      data[i][1][1] = (*cloud)[v1].y;
-      data[i][1][2] = (*cloud)[v1].z;
+    data[i][1][0] = (*cloud)[v1].x;
+    data[i][1][1] = (*cloud)[v1].y;
+    data[i][1][2] = (*cloud)[v1].z;
 
-      data[i][2][0] = (*cloud)[v2].x;
-      data[i][2][1] = (*cloud)[v2].y;
-      data[i][2][2] = (*cloud)[v2].z;
+    data[i][2][0] = (*cloud)[v2].x;
+    data[i][2][1] = (*cloud)[v2].y;
+    data[i][2][2] = (*cloud)[v2].z;
       // std::cout << "  polygons[" << i << "]: " <<std::endl;
-    }
-    return 0;
   }
+  return 0;
+}
 
-  int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
+int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
   // index of faces
   // data = [ f1[p1_index, p2_index, p3_index],
   //          f2[p1_index, p2_index, p3_index], ...
   //        ]
-    data.resize(triangles->polygons.size());
-    for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-      data[i].resize(3);
-      data[i][0] = triangles->polygons[i].vertices[0];
-      data[i][1] = triangles->polygons[i].vertices[1];
-      data[i][2] = triangles->polygons[i].vertices[2];
-    }
-    return 0;
+  data.resize(triangles->polygons.size());
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    data[i].resize(3);
+    data[i][0] = triangles->polygons[i].vertices[0];
+    data[i][1] = triangles->polygons[i].vertices[1];
+    data[i][2] = triangles->polygons[i].vertices[2];
   }
+  return 0;
+}

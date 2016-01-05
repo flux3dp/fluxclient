@@ -1,14 +1,16 @@
-
 from select import select
 from time import time
 from uuid import UUID
 import logging
 import struct
 import json
-
 from serial import Serial
 
-from fluxclient import encryptor as E
+# for windows
+import platform
+from serial.serialutil import SerialTimeoutException
+
+from fluxclient import encryptor as E  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +25,32 @@ CODE_GET_IPADDR = 0x07
 CODE_SET_PASSWORD = 0x06
 
 
-class UsbTask(object):
-    def __init__(self, port, baudrate=115200):
-        self.s = Serial(port=port, baudrate=115200, timeout=0)
-        self.s.write(b"\x00" * 16)
+def is_windows():
+    return platform.platform().startswith("Windows")
 
-        while True:
-            rl = select((self.s, ), (), (), 0.1)[0]
-            if rl:
-                self.s.readall()
-            else:
-                break
+
+class UsbTask(object):
+    s = None
+
+    def __init__(self, port, baudrate=115200):
+        # Select does not work with windows..
+        if is_windows():
+            self.s = Serial(port=port, baudrate=115200, timeout=0.1)
+        else:
+            self.s = Serial(port=port, baudrate=115200, timeout=0)
+        self.s.write(b"\x00" * 16)
+        if is_windows():
+            try:
+                self.s.readall()  # Normally returns with empty string
+            except SerialTimeoutException:
+                logger.error("Serial timeout")
+        else:
+            while True:
+                rl = select((self.s, ), (), (), 0.1)[0]
+                if rl:
+                    self.s.readall()
+                else:
+                    break
 
         self.keyobj = E.get_or_create_keyobj()
         self._discover()
@@ -67,7 +84,11 @@ class UsbTask(object):
         ttl = time() + timeout
         resp = b""
         while time() < ttl:
-            rl = select((self.s, ), (), (), max(time() - ttl, 0))[0]
+            rl = False
+            if is_windows():  # In windows, the timeout=0.1 works like select
+                rl = True
+            else:
+                rl = select((self.s, ), (), (), max(time() - ttl, 0))[0]
             if rl:
                 resp += self.s.readall()
                 if self._try_parse_response(code, resp):
@@ -77,6 +98,7 @@ class UsbTask(object):
                     else:
                         raise UsbTaskError(resp[8:].decode("ascii", "ignore"),
                                            "status: %i" % status)
+
         raise UsbTaskError("TIMEOUT")
 
     def _try_parse_response(self, code, buf):

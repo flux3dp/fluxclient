@@ -12,7 +12,8 @@ cdef extern from "printer_module.h":
     int add_on(MeshPtr base, MeshPtr new_mesh)
     int STL_to_List(MeshPtr triangles, vector[vector [vector [float]]] &data)
     int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z)
-    int bounding_box(MeshPtr triangles, vector[float] &b_box);
+    int bounding_box(MeshPtr triangles, vector[float] &b_box)
+    int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v)
 
 cdef class MeshObj:
     cdef MeshPtr meshobj
@@ -31,6 +32,11 @@ cdef class MeshObj:
 
     def add_on(self, MeshObj new_mesh):
         add_on(self.meshobj, new_mesh.meshobj)
+
+    def cut(self, float floor_v):
+        out_mesh = MeshObj([], [])
+        cut(self.meshobj, out_mesh.meshobj, floor_v)
+        return out_mesh
 
     cpdef write_stl(self, file_name, flag=None):
         cpdef vector[vector [vector [float]]] tri
