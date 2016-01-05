@@ -249,7 +249,7 @@ class StlSlicer(object):
             try:
                 points, faces = self.read_stl(self.models[n])
             except:
-                return False, 'can\'t parse %s,may not ba a stl file' % (n)
+                return False, 'can\'t parse %s, may not ba a stl file' % (n)
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
             m_mesh_merge.add_on(m_mesh)
@@ -324,7 +324,7 @@ class StlSlicer(object):
                     ws.send_progress((line.rstrip())[3:], progress)
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
-                slic3r_out = line
+                slic3r_out = line.strip()
         if p.poll() != 0:
             fail_flag = True
 
