@@ -66,7 +66,6 @@ class FcodeParser(object):
 
     def get_meta(self):
         if self.data:
-
             meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
             metadata = {}
             outstring = []
@@ -79,10 +78,25 @@ class FcodeParser(object):
         else:
             return None
 
+    def get_metadata(self):
+        meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
+        metadata = {}
+        for item in meta_buf.split(b"\x00"):
+            sitem = item.split(b"=", 1)
+            if len(sitem) == 2:
+                metadata[sitem[0].decode()] = sitem[1].decode()
+        return metadata
+
     def get_path(self):  # TODO
         pass
 
-    def f_to_g(self, outstream):
+    def f_to_g(self, outstream, include_meta=False):
+        if include_meta:
+            meta = self.get_metadata()
+            for key, value in meta.items():
+                outstream.write(";%s=%s\n" % (key, value))
+            outstream.write("\n")
+
         index = 12
         self.data[12:12 + self.script_size]
         while index < 12 + self.script_size:
