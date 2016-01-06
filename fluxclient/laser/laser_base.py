@@ -288,8 +288,9 @@ class LaserBase(object):
         img = Image.fromarray(self.image_map)
         grid = pkg_resources.resource_filename("fluxclient", "assets/grid.png")
         # magic number just for alignment, don't really important
-        img_background = Image.open(grid).resize((img.size[0] + 66, img.size[1] + 66))
-        img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
+        delta = 0
+        img_background = Image.open(grid).resize((img.size[0] + delta, img.size[1] + delta))
+        img_background.paste(img, (delta // 2, delta // 2), img.point(lambda x: 255 if x < 255 else 0))
         img = img_background
         if mode == 'save':
             img.save(file_name, 'png')
