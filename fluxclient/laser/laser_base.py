@@ -279,7 +279,10 @@ class LaserBase(object):
                 for w in range(find_s, find_e):
                     if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                         if new_pix.getpixel((w, h)) <= thres:
-                            self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
+                            if self.shading:
+                                self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
+                            else:
+                                self.image_map[gx1_on_map + h][gy1_on_map + w] = 0
 
     def dump(self, file_name='', mode='save'):
         """
@@ -306,6 +309,10 @@ class LaserBase(object):
             raise NotImplementedError("unsupport mode {}".format(mode), file=sys.stderr)
 
     def fcode_generate(self, *args):
+        f = io.StringIO()
+        f.write(self.gcode_generate(*args))
+        f.seek(0)
+
         fcode_output = io.BytesIO()
         m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
@@ -314,8 +321,5 @@ class LaserBase(object):
         m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
-        f = io.StringIO()
-        f.write(self.gcode_generate(*args))
-        f.seek(0)
         m_GcodeToFcode.process(f, fcode_output)
         return fcode_output.getvalue()
