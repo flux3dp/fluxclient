@@ -8,6 +8,7 @@ from os import remove, environ
 import sys
 import copy
 from multiprocessing import Process, Pipe
+import json
 
 from PIL import Image
 
@@ -224,9 +225,9 @@ class StlSlicer(object):
             for layer in self.path:
                 tmp = []
                 for p in layer:
-                    tmp.append('{"t":%d, "p":[%.3f, %.3f, %.3f]}' % (p[3], p[0], p[1], p[2]))
-                result.append('[' + ','.join(tmp) + ']')
-            return '[' + ','.join(result) + ']'
+                    tmp.append({'t': p[3], 'p': [p[0], p[1], p[2]]})
+                result.append(tmp)
+            return json.dumps(result)
 
     def gcode_generate(self, names, ws, output_type):
         """
