@@ -31,7 +31,7 @@ class LaserBase(object):
         # self.obj_height = 2.56  # wood?
         # self.obj_height = 0.0  # plate
 
-        self.pixel_per_mm = 8  # sample rate for each point
+        self.pixel_per_mm = 10  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
 
         # list holding current image
@@ -189,6 +189,9 @@ class LaserBase(object):
 
         elif key == 'shading':
             self.shading = int(value) == 1
+
+        elif key == 'one_way':
+            self.one_way = int(value) == 1
         else:
             raise ValueError('undefine setting key')
 
