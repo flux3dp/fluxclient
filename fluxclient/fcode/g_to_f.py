@@ -261,6 +261,7 @@ class GcodeToFcode(FcodeBase):
                             elif sub_line.startswith('S'):
                                 ms = float(line[1].lstrip('S')) * 1000
                         self.writer(packer_f(ms), output_stream)
+                        self.time_need += ms / 1000
 
                     elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
                         command = 16
