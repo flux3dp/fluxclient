@@ -3,9 +3,10 @@ from select import select
 from errno import EPIPE
 from io import BytesIO
 from time import time
-import struct
+import warnings
 import logging
 import socket
+import struct
 import json
 import os
 
@@ -184,8 +185,8 @@ class FluxRobotV0002(object):
     def rmfile(self, entry, path):
         return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
 
-    def md5(self, filename):
-        bresp = self._make_cmd(b"file md5 " + filename.encode())
+    def md5(self, entry, path):
+        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " + path.encode())
         resp = bresp.decode("ascii", "ignore")
         if resp.startswith("md5 "):
             return resp[4:]
@@ -394,12 +395,16 @@ class FluxRobotV0002(object):
         pass
 
     @ok_or_error
-    def scan_next(self, resolution=200):
+    def scan_forward(self):
         return self._make_cmd(b"scan_next")
 
     @ok_or_error
     def scan_backward(self):
         return self._make_cmd(b"scan_backward")
+
+    def scan_next(self):
+        warnings.warn("deprecated", DeprecationWarning)
+        self.scan_forward()
 
     @ok_or_error
     def begin_maintain(self):
