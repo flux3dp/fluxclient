@@ -45,9 +45,7 @@ class GcodeToFcode(FcodeBase):
         self.md.update(ext_metadata)
 
         self.record_path = True
-        self.record_z = 0.0
         self.layer_now = 0
-
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
         self.config = None

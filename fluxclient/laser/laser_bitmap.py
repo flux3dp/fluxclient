@@ -78,7 +78,10 @@ class LaserBitmap(LaserBase):
                 while w < len(itera) and self.image_map[h][itera[w]] == this:
                     w += 1
                 if this != 255:
-                    gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
+                    if w_record == 0:
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=3600)
+                    else:
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
                     gcode += self.turnTo(255 - this)
                     gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
                     gcode += self.turnOff()

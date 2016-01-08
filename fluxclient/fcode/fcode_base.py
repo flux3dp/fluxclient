@@ -19,12 +19,14 @@ class FcodeBase(object):
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
         self.empty_layer = []
         self.counter_between_layers = 0
+        self.record_z = 0.0
 
     def process_path(self, comment, move_flag, extrude_flag):
         """
         convert to path list(for visualizing)
         """
         # TODO?: reconsider if theese two flag necessary
+        already_split = False
         self.counter_between_layers += 1
         if move_flag:
             if 'infill' in comment:
@@ -36,6 +38,8 @@ class FcodeBase(object):
             elif 'move' in comment:
                 line_type = 3
                 if 'to next layer' in comment:
+                    self.record_z = self.current_pos[2]
+                    already_split = True
                     if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
                         self.empty_layer.append(self.layer_now)
                     tmp = findall('[0-9]+', comment)[-1]
@@ -54,7 +58,11 @@ class FcodeBase(object):
                     line_type = 3
 
             self.path[-1].append(self.current_pos[:3] + [line_type])
-            self.record_z = self.current_pos[2]
+
+            if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
+                self.path.append([self.path[-1][-1][:3] + [line_type]])
+                self.record_z = self.current_pos[2]
+                self.layer_now = len(self.path)
 
     @classmethod
     def path_to_js(cls, path):

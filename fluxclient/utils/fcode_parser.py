@@ -1,7 +1,10 @@
+# !/usr/bin/env python3
 
 from zipfile import crc32
 import struct
 import sys
+
+from fluxclient.fcode.fcode_base import FcodeBase
 
 FILE_BROKEN = "FILE_BROKEN"
 uint_unpacker = lambda x: struct.Struct("<I").unpack(x)[0]  # 4 bytes uint
@@ -10,7 +13,12 @@ float_unpacker = lambda x: struct.Struct("<f").unpack(x)[0]  # 4 bytes float
 
 
 def XYZE(command):
-    '[F, X, Y, Z, E1, E2, E3]'
+    """
+    return things look like this [True, True, True, None, None, None, True]
+
+    in [F, X, Y, Z, E1, E2, E3] order
+
+    """
     tmp = [None for _ in range(7)]
     c = 0
     while c < 7:
@@ -20,16 +28,28 @@ def XYZE(command):
     return tmp
 
 
-class FcodeParser(object):
+class FcodeParser(FcodeBase):
     """
     https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
     """
-    def __init__(self):
+    def __init__(self, buf=''):
         super(FcodeParser, self).__init__()
         self.data = None
+        self.metadata = None
+
         self.current_T = 0
+        self.extrudeflag = False
+        self.laserflag = False
+
+        if buf:
+            self.upload_content(buf)
 
     def upload_content(self, buf):
+        """
+        upload fcode content in this object,
+        buf[in]: could be string indicating the path to .fcode or bytes
+        bool [return]: retrun bool showing whether it's valid fcode
+        """
         if type(buf) == bytes:
             tmp_data = self.data
             self.data = buf
@@ -43,6 +63,9 @@ class FcodeParser(object):
                 return self.upload_content(f.read())
 
     def full_check(self):
+        """
+        fully check the fcode file, check all the checksum raise error if any error occur
+        """
         try:
             assert self.data[:8] == b"FCx0001\n"
             self.script_size = uint_unpacker(self.data[8:12])
@@ -59,36 +82,35 @@ class FcodeParser(object):
             raise RuntimeError(FILE_BROKEN, e.args[0] if e.args else "#")
 
     def get_img(self):
+        """
+        get the png preview image(should be 640 * 640) in fcode, in bytes
+        """
         if self.data:
             return self.data[28 + self.script_size + self.meta_size:28 + self.script_size + self.meta_size + self.image_size]
         else:
             return None
 
-    def get_meta(self):
+    def get_metadata(self):
+        """
+        get the metadata
+        dict [return]: metadata, a dict object like this {"AUTHOR": "Yen", "HEAD_TYPE": "EXTRUDER"}
+        """
         if self.data:
-            meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
-            metadata = {}
-            outstring = []
-            for item in meta_buf.split(b"\x00"):
-                sitem = item.split(b"=", 1)
-                if len(sitem) == 2:
-                    metadata[sitem[0].decode()] = sitem[1].decode()
-                    outstring.append('"%s": "%s"' % (sitem[0].decode(), sitem[1].decode()))
-            return '{' + ', '.join(outstring) + '}'
+            if self.metadata is None:
+                meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
+                metadata = {}
+                for item in meta_buf.split(b"\x00"):
+                    itme = item.split(b"=", 1)
+                    if len(itme) == 2:
+                        metadata[itme[0].decode()] = itme[1].decode()
+                self.metadata = metadata
+        return self.metadata
+
+    def get_path(self):
+        if self.data:
+            return self.path
         else:
             return None
-
-    def get_metadata(self):
-        meta_buf = self.data[20 + self.script_size:20 + self.script_size + self.meta_size]
-        metadata = {}
-        for item in meta_buf.split(b"\x00"):
-            sitem = item.split(b"=", 1)
-            if len(sitem) == 2:
-                metadata[sitem[0].decode()] = sitem[1].decode()
-        return metadata
-
-    def get_path(self):  # TODO
-        pass
 
     def f_to_g(self, outstream, include_meta=False):
         if include_meta:
@@ -145,6 +167,10 @@ class FcodeParser(object):
             elif command >= 32 and command <= 39:  # laser
                 strength = float_unpacker(self.data[index:index + 4])
                 strength = round(strength * 255)
+                if strength > 0:
+                    self.laserflag = True
+                else:
+                    self.laserflag = False
                 outstream.write('X2O{} T{}\n'.format(strength, command & 7))
                 index += 4
             elif command >= 48 and command <= 63:  # fan speed
@@ -177,18 +203,27 @@ class FcodeParser(object):
                         outstream.write('G92 E{}\n'.format(value))
 
             elif command >= 128 and command <= 255:  # moving
-                tmp = XYZE(command)
+                line_segment = XYZE(command)
                 s = ['G1 ']
-                for i, c in zip(tmp, ['F', 'X', 'Y', 'Z', 'E', 'E', 'E']):
-                    if i:
+                for f, c, i in zip(line_segment, ['F', 'X', 'Y', 'Z', 'E', 'E', 'E'], range(7)):
+                    if f is True:
                         value = float_unpacker(self.data[index:index + 4])
                         index += 4
                         if c == 'E':
                             s.append('{}{:.5f} '.format(c, value))
                         else:
                             s.append('{}{:.3f} '.format(c, value))
+                        if i >= 1:
+                            self.current_pos[i - 1] = value
                 s.append('\n')
                 outstream.write(''.join(s))
+
+                if any(i is not None for i in line_segment[4:6]):
+                    self.extrudeflag = True
+                else:
+                    self.extrudeflag = False
+                move_flag = any(i is not None for i in line_segment[1:4])
+                self.process_path('', move_flag, self.laserflag or self.extrudeflag)
             else:
                 print('something wrong')
 
@@ -198,4 +233,5 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'rb') as f, open('tmp.gcode', 'w') as f2:
         m_FcodeParser.upload_content(f.read())
         m_FcodeParser.f_to_g(f2)
-        print(m_FcodeParser.get_meta())
+        print(m_FcodeParser.get_metadata())
+        # print(m_FcodeParser.get_path())
