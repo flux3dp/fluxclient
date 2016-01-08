@@ -218,16 +218,7 @@ class StlSlicer(object):
         return bad_lines
 
     def get_path(self):
-        if self.path is None:
-            return ''
-        else:
-            result = []
-            for layer in self.path:
-                tmp = []
-                for p in layer:
-                    tmp.append({'t': p[3], 'p': [p[0], p[1], p[2]]})
-                result.append(tmp)
-            return json.dumps(result)
+        return GcodeToFcode.path_to_js(self.path)
 
     def gcode_generate(self, names, ws, output_type):
         """

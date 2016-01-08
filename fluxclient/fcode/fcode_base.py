@@ -2,6 +2,9 @@
 
 import sys
 from re import findall
+from json import dumps
+
+from fluxclient.hw_profile import HW_PROFILE
 
 
 class FcodeBase(object):
@@ -12,16 +15,18 @@ class FcodeBase(object):
     def __init__(self):
         super(FcodeBase, self).__init__()
         self.filament_this_layer = [0., 0., 0.]
+        self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
         self.empty_layer = []
         self.counter_between_layers = 0
 
-    def process_path(self, comment, moveflag, extrudeflag):
+    def process_path(self, comment, move_flag, extrude_flag):
         """
         convert to path list(for visualizing)
         """
         # TODO?: reconsider if theese two flag necessary
         self.counter_between_layers += 1
-        if moveflag:
+        if move_flag:
             if 'infill' in comment:
                 line_type = 0
             elif 'perimeter' in comment:
@@ -43,10 +48,23 @@ class FcodeBase(object):
             elif 'draw' in comment:
                 line_type = 0
             else:   # no data in comment
-                if extrudeflag:
+                if extrude_flag:
                     line_type = 1
                 else:
                     line_type = 3
 
             self.path[-1].append(self.current_pos[:3] + [line_type])
             self.record_z = self.current_pos[2]
+
+    @classmethod
+    def path_to_js(cls, path):
+        if path is None:
+                return ''
+        else:
+            result = []
+            for layer in path:
+                tmp = []
+                for p in layer:
+                    tmp.append({'t': p[3], 'p': [p[0], p[1], p[2]]})
+                result.append(tmp)
+            return dumps(result)

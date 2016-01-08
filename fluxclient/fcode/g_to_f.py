@@ -30,12 +30,11 @@ class GcodeToFcode(FcodeBase):
         self.tool = 0  # set by T command
         self.absolute = True  # whether using absolute position
         self.unit = 1  # how many mm is one unit in gcode, might be mm or inch(2.54)
-
         self.crc = 0  # computing crc32
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
-        self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+
         self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.distance = 0.  # recording distance go through
@@ -48,7 +47,6 @@ class GcodeToFcode(FcodeBase):
         self.record_path = True
         self.record_z = 0.0
         self.layer_now = 0
-        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
 
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
