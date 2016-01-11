@@ -288,7 +288,7 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] == 'M107' or line[0] == 'M106':  # fan control
                         command = 48
-                        command |= 1  # TODO: change this part, consder fan control protocol
+                        command |= 0  # TODO: change this part, consder fan control protocol
                         self.writer(packer(command), output_stream)
                         if line[0] == 'M107':
                             self.writer(packer_f(0.0), output_stream)
