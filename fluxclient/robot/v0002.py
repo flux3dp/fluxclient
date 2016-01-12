@@ -558,5 +558,17 @@ class FluxRobotV0002(object):
         cmd = "set %s %s" % (key, value)
         return self._make_cmd(cmd.encode())
 
+    def deviceinfo(self):
+        ret = self._make_cmd(b"deviceinfo").decode("utf8", "ignore")
+        if ret.startswith("ok\n"):
+            info = {}
+            for raw in ret[3:].split("\n"):
+                if ":" in raw:
+                    key, val = raw.split(":", 1)
+                    info[key] = val
+            return info
+        else:
+            raise_error(ret)
+
     def close(self):
         self.sock.close()

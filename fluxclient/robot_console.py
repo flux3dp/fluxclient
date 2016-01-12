@@ -17,6 +17,7 @@ class RobotConsole(object):
     def __init__(self, robot_obj):
         self.robot_obj = robot_obj
         self.simple_mapping = {
+            "deviceinfo": robot_obj.deviceinfo,
             "start": robot_obj.start_play,
             "pause": robot_obj.pause_play,
             "resume": robot_obj.resume_play,
