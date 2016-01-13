@@ -193,8 +193,13 @@ def after(l):
 if __name__ == '__main__':
     import subprocess
     from fluxclient.scanner.scan_settings import ScanSetting
-    ss = 10
-    m_image_to_pc = image_to_pc(ss, ScanSetting())
+    m, l, r = [314.0, 325.0, 316.0]
+    # m -
+    ss = 400
+    SS = ScanSetting()
+    SS.LLaserAdjustment = int(m) - (SS.img_width / 2)
+    SS.RLaserAdjustment = int(m) - (SS.img_width / 2)
+    m_image_to_pc = image_to_pc(ss, SS)
     img_location = sys.argv[1].rstrip('/')
     print(img_location)
 
