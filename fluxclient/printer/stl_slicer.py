@@ -18,12 +18,14 @@ from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
+import pkg_resources
 
 
 def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe):
     tmp_gcode_file = command[3]
     fail_flag = False
     subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+    p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
     progress = 0.2
     slic3r_error = False
     while subp.poll() is None:
@@ -304,6 +306,7 @@ class StlSlicer(object):
         fail_flag = False
 
         p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         slic3r_error = False
         while p.poll() is None:
