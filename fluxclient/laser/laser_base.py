@@ -325,4 +325,4 @@ class LaserBase(object):
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
         m_GcodeToFcode.process(f, fcode_output)
-        return fcode_output.getvalue()
+        return fcode_output.getvalue(), m_GcodeToFcode
