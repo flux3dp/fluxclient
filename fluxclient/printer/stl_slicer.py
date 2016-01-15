@@ -407,7 +407,7 @@ class StlSlicer(object):
         fail_flag = False
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
 
-        self.working_p[p_index][1].append(subp)
+        self.working_p[p_index].append(subp)
         # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         slic3r_error = False
@@ -424,49 +424,50 @@ class StlSlicer(object):
                 slic3r_out = line
         if subp.poll() != 0:
             fail_flag = True
-        # analying gcode(even transform)
-        child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+        if not fail_flag:
+            # analying gcode(even transform)
+            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
-        fcode_output = io.BytesIO()
-        with open(tmp_gcode_file, 'r') as f:
-            m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
-            m_GcodeToFcode.config = config
-            m_GcodeToFcode.image = image
-            m_GcodeToFcode.process(f, fcode_output)
-            path = m_GcodeToFcode.path
-            metadata = m_GcodeToFcode.md
-            metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+            fcode_output = io.BytesIO()
+            with open(tmp_gcode_file, 'r') as f:
+                m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode.config = config
+                m_GcodeToFcode.image = image
+                m_GcodeToFcode.process(f, fcode_output)
+                path = m_GcodeToFcode.path
+                metadata = m_GcodeToFcode.md
+                metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+                if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                    child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
-            del m_GcodeToFcode
+                del m_GcodeToFcode
 
-        if output_type == '-g':
-            with open(tmp_gcode_file, 'rb') as f:
-                output = f.read()
-        elif output_type == '-f':
-            output = fcode_output.getvalue()
-        else:
-            raise('wrong output type, only support gcode and fcode')
+            if output_type == '-g':
+                with open(tmp_gcode_file, 'rb') as f:
+                    output = f.read()
+            elif output_type == '-f':
+                output = fcode_output.getvalue()
+            else:
+                raise('wrong output type, only support gcode and fcode')
 
-        ##################### fake code ###########################
-        if environ.get("flux_debug") == '1':
-            with open('output.gcode', 'wb') as f:
-                with open(tmp_gcode_file, 'rb') as f2:
-                    f.write(f2.read())
-            tmp_stl_file = command[1]
-            with open(tmp_stl_file, 'rb') as f:
-                with open('merged.stl', 'wb') as f2:
-                    f2.write(f.read())
+            ##################### fake code ###########################
+            if environ.get("flux_debug") == '1':
+                with open('output.gcode', 'wb') as f:
+                    with open(tmp_gcode_file, 'rb') as f2:
+                        f.write(f2.read())
+                tmp_stl_file = command[1]
+                with open(tmp_stl_file, 'rb') as f:
+                    with open('merged.stl', 'wb') as f2:
+                        f2.write(f.read())
 
-            with open('output.fc', 'wb') as f:
-                f.write(fcode_output.getvalue())
+                with open('output.fc', 'wb') as f:
+                    f.write(fcode_output.getvalue())
 
-            StlSlicer.my_ini_writer("output.ini", config)
-        ###########################################################
+                StlSlicer.my_ini_writer("output.ini", config)
+            ###########################################################
 
-        # # clean up tmp files
-        fcode_output.close()
+            # # clean up tmp files
+            fcode_output.close()
         if fail_flag:
             child_pipe.append([False, slic3r_out, []])
         else:
@@ -475,8 +476,10 @@ class StlSlicer(object):
     def end_slicing(self):
         for p in self.working_p:
             if type(p[-1]) == (subprocess.Popen):
-                if p[-1].is_alive():
+                if p[-1].poll() is None:
                     p[-1].terminate()
+            else:
+                print(type(p[-1]))
             for filename in p[1]:
                 try:
                     remove(filename)
