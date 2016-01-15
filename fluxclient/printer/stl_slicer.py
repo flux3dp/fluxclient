@@ -8,6 +8,7 @@ from os import remove, environ
 import sys
 import copy
 from multiprocessing import Process, Pipe
+import multiprocessing as mp
 import json
 
 from PIL import Image
@@ -25,7 +26,7 @@ def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe
     tmp_gcode_file = command[3]
     fail_flag = False
     subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-    p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+    # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
     progress = 0.2
     slic3r_error = False
     while subp.poll() is None:
@@ -453,7 +454,7 @@ class StlSlicer(object):
                     self.config['temperature'] = self.user_setting[key]
                     self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config)
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete='flux')
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -461,6 +462,7 @@ class StlSlicer(object):
         command += ['--load', tmp_slic3r_setting_file]
 
         print('command:', ' '.join(command), file=sys.stderr)
+        mp.set_start_method('spawn', force=True)
         self.end_slicing()
         parent_pipe, child_pipe = Pipe()
         p = Process(target=slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, child_pipe))
@@ -537,13 +539,16 @@ class StlSlicer(object):
             return 'key not exist: %s' % key
 
     @classmethod
-    def my_ini_writer(cls, file_path, content):
+    def my_ini_writer(cls, file_path, content, delete=None):
         """
         write to [file_path] with dict(content)
         """
         with open(file_path, 'w') as f:
             for i in content:
-                print("%s=%s" % (i, content[i]), file=f)
+                if delete and delete in i:
+                    pass
+                else:
+                    print("%s=%s" % (i, content[i]), file=f)
         return
 
     @classmethod
