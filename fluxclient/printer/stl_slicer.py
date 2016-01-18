@@ -385,7 +385,7 @@ class StlSlicer(object):
                     self.config['temperature'] = self.user_setting[key]
                     self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete='flux')
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -558,7 +558,7 @@ class StlSlicer(object):
         """
         with open(file_path, 'w') as f:
             for i in content:
-                if delete and delete in i:
+                if delete and any(j in i for j in delete):
                     pass
                 else:
                     print("%s=%s" % (i, content[i]), file=f)
