@@ -410,6 +410,7 @@ class StlSlicer(object):
         # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         slic3r_error = False
+        slic3r_out = ''
         while subp.poll() is None:
             line = subp.stdout.readline()
             print(line, file=sys.stderr, end='')
@@ -438,6 +439,10 @@ class StlSlicer(object):
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
                     child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+
+                if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
+                    fail_flag = True
+                    slic3r_out = "gcode area too big"
 
                 del m_GcodeToFcode
 
@@ -506,7 +511,7 @@ class StlSlicer(object):
                         self.output = None
                         self.metadata = None
                         self.path = None
-                        m = '{"status": "error", "error": "{}"}' % message[1]
+                        m = '{"status": "error", "error": "%s"}' % message[1]
                     ret.append(m)
         return ret
 
