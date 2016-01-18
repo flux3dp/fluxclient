@@ -15,7 +15,7 @@ if options["pcl"]:
 setup(
     name="fluxclient",
     version=setup_utils.get_version(),
-    author="Flux Crop.",
+    author="Flux Corp.",
     author_email="cerberus@flux3dp.com",
     description="",
     include_package_data=True,
