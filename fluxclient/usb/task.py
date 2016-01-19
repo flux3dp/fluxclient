@@ -99,7 +99,7 @@ class UsbTask(object):
                         raise UsbTaskError(resp[8:].decode("ascii", "ignore"),
                                            "status: %i" % status)
 
-        raise UsbTaskError("TIMEOUT")
+        raise UsbTaskException("TIMEOUT")
 
     def _try_parse_response(self, code, buf):
         buf_length = len(buf)
@@ -181,5 +181,5 @@ class UsbTaskError(RuntimeError):
     pass
 
 
-class UsbTaskException(Exception):
+class UsbTaskException(SystemError):
     pass
