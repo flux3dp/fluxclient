@@ -30,12 +30,11 @@ class GcodeToFcode(FcodeBase):
         self.tool = 0  # set by T command
         self.absolute = True  # whether using absolute position
         self.unit = 1  # how many mm is one unit in gcode, might be mm or inch(2.54)
-
         self.crc = 0  # computing crc32
 
         self.current_speed = 1  # current speed (set by F), mm/minute
         self.image = None  # png image, should be a bytes obj
-        self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
+
         self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
         self.time_need = 0.  # recording time the printing process need, in sec
         self.distance = 0.  # recording distance go through
@@ -46,10 +45,7 @@ class GcodeToFcode(FcodeBase):
         self.md.update(ext_metadata)
 
         self.record_path = True
-        self.record_z = 0.0
         self.layer_now = 0
-        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
-
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
         self.config = None
@@ -261,6 +257,7 @@ class GcodeToFcode(FcodeBase):
                             elif sub_line.startswith('S'):
                                 ms = float(line[1].lstrip('S')) * 1000
                         self.writer(packer_f(ms), output_stream)
+                        self.time_need += ms / 1000
 
                     elif line[0] == 'M104' or line[0] == 'M109':  # set extruder temperature
                         command = 16
@@ -291,7 +288,7 @@ class GcodeToFcode(FcodeBase):
 
                     elif line[0] == 'M107' or line[0] == 'M106':  # fan control
                         command = 48
-                        command |= 1  # TODO: change this part, consder fan control protocol
+                        command |= 0  # TODO: change this part, consder fan control protocol
                         self.writer(packer(command), output_stream)
                         if line[0] == 'M107':
                             self.writer(packer_f(0.0), output_stream)
@@ -330,7 +327,7 @@ class GcodeToFcode(FcodeBase):
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
-                self.md['SETTING'] = str(comment_list[-130:])
+                self.md['SETTING'] = str(comment_list[-137:])
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)

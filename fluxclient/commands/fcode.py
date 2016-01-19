@@ -43,4 +43,15 @@ def gcode_2_fcode():
 
 
 def fcode_2_gcode():
-    pass
+    parser = argparse.ArgumentParser(description='flux fcode creator')
+    parser.add_argument("-i", dest='input', type=str, required=True)
+    parser.add_argument("-o", dest='output', type=str, required=True)
+
+    options = parser.parse_args()
+
+    from fluxclient.utils.fcode_parser import FcodeParser
+
+    with open(options.input, "rb") as f, open(options.output, "w") as t:
+        parser = FcodeParser()
+        parser.upload_content(f.read())
+        parser.f_to_g(t, include_meta=True)

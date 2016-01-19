@@ -102,6 +102,8 @@ def get_entry_points():
             "flux_laser=fluxclient.commands.laser:main",
             "flux_fcode_conv=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
+            "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",
+            "flux_exp=fluxclient.commands.experiment_tool:main",
         ]
     }
 

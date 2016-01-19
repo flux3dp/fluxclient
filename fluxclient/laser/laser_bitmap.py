@@ -28,6 +28,7 @@ class LaserBitmap(LaserBase):
         """
         # threshold, pixel on image_map darker than this will trigger laser
         self.shading = True
+        self.one_way = True
         self.thres = 255
         self.ratio *= 1 / self.pixel_per_mm
 
@@ -40,54 +41,53 @@ class LaserBitmap(LaserBase):
         gcode = []
         gcode += self.header('FLUX. Laser Bitmap.')
 
-        #row iteration
         abs_shift = len(self.image_map) / 2
 
         # apply threshold in a efficient way
         t = np.vectorize(lambda x: x if x <= self.thres else 255)
         self.image_map = t(self.image_map)
-        # self.dump('tmp.png')
 
         itera_o = list(range(0, len(self.image_map)))
         itera_r = list(reversed(range(0, len(self.image_map))))
 
+        #row iteration
         for h in range(0, len(self.image_map)):
-
             #column iteration
             if h % res != 0:
                 continue
-
-            if h % 2 == 0:
+            if self.one_way:
                 itera = itera_o
-                final_x = len(self.image_map)
                 abs_shift_x = len(self.image_map) / 2 + 0.5
-                # this 0.5 is for fixing tiny difference when iter from "left to right " and "right to left"
-            elif h % 2 == 1:
-                final_x = 0
-                itera = itera_r
-                abs_shift_x = len(self.image_map) / 2 - 0.5
+            else:
+                if h & 1 == 0:
+                    itera = itera_o
+                    # this 0.5 is for fixing tiny difference between iter from "left to right " and "right to left"
+                    abs_shift_x = len(self.image_map) / 2 + 0.5
+                elif h & 1 == 1:
+                    itera = itera_r
+                    abs_shift_x = len(self.image_map) / 2 - 0.5
+            final_x = itera[-1]
 
             w = 0
+            back = True
             while w < len(itera):
                 if w % res != 0:
                     continue
-                if self.shading:
-                    gcode += self.turnTo(255 - self.image_map[h][itera[w]])
-                else:
-                    gcode += self.turnTo(255)
+                # record starting point and value for this pixel
+                w_record = w
                 this = self.image_map[h][itera[w]]
                 while w < len(itera) and self.image_map[h][itera[w]] == this:
                     w += 1
-                if w == len(itera):
-                    if self.image_map[h][itera[-1]] != 255:
-                        gcode += self.moveTo(final_x - abs_shift_x, abs_shift - h)
-                        gcode += self.turnOff()
-                    break
-                else:
-                    if final_x != 0:
-                        gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
+                if this != 255:
+                    if back:
+                        back = False
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=8000)
                     else:
-                        gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
+                    gcode += self.turnTo(255 - this)
+                    gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
+                    gcode += self.turnOff()
+
             gcode += self.turnOff()
 
         gcode += self.turnOff()

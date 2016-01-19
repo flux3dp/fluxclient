@@ -3,9 +3,10 @@ from select import select
 from errno import EPIPE
 from io import BytesIO
 from time import time
-import struct
+import warnings
 import logging
 import socket
+import struct
 import json
 import os
 
@@ -44,7 +45,7 @@ class FluxRobotV0002(object):
         sign, randbytes = buf[8:-128], buf[-128:]
 
         if server_key:
-            logger.error("Warning: server key checking not implement!")
+            logger.warn("Warning: server key checking not implement!")
         else:
             logger.warn("Warning: can not validate remote")
 
@@ -184,8 +185,8 @@ class FluxRobotV0002(object):
     def rmfile(self, entry, path):
         return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
 
-    def md5(self, filename):
-        bresp = self._make_cmd(b"file md5 " + filename.encode())
+    def md5(self, entry, path):
+        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " + path.encode())
         resp = bresp.decode("ascii", "ignore")
         if resp.startswith("md5 "):
             return resp[4:]
@@ -394,12 +395,16 @@ class FluxRobotV0002(object):
         pass
 
     @ok_or_error
-    def scan_next(self, resolution=200):
+    def scan_forward(self):
         return self._make_cmd(b"scan_next")
 
     @ok_or_error
     def scan_backward(self):
         return self._make_cmd(b"scan_backward")
+
+    def scan_next(self):
+        warnings.warn("deprecated", DeprecationWarning)
+        self.scan_forward()
 
     @ok_or_error
     def begin_maintain(self):
@@ -552,6 +557,18 @@ class FluxRobotV0002(object):
     def set_setting(self, key, value):
         cmd = "set %s %s" % (key, value)
         return self._make_cmd(cmd.encode())
+
+    def deviceinfo(self):
+        ret = self._make_cmd(b"deviceinfo").decode("utf8", "ignore")
+        if ret.startswith("ok\n"):
+            info = {}
+            for raw in ret[3:].split("\n"):
+                if ":" in raw:
+                    key, val = raw.split(":", 1)
+                    info[key] = val
+            return info
+        else:
+            raise_error(ret)
 
     def close(self):
         self.sock.close()

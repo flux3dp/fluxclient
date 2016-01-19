@@ -31,7 +31,7 @@ class LaserBase(object):
         # self.obj_height = 2.56  # wood?
         # self.obj_height = 0.0  # plate
 
-        self.pixel_per_mm = 8  # sample rate for each point
+        self.pixel_per_mm = 10  # sample rate for each point
         self.radius = 85  # laser max radius = 85mm
 
         # list holding current image
@@ -189,6 +189,9 @@ class LaserBase(object):
 
         elif key == 'shading':
             self.shading = int(value) == 1
+
+        elif key == 'one_way':
+            self.one_way = int(value) == 1
         else:
             raise ValueError('undefine setting key')
 
@@ -279,7 +282,10 @@ class LaserBase(object):
                 for w in range(find_s, find_e):
                     if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                         if new_pix.getpixel((w, h)) <= thres:
-                            self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
+                            if self.shading:
+                                self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
+                            else:
+                                self.image_map[gx1_on_map + h][gy1_on_map + w] = 0
 
     def dump(self, file_name='', mode='save'):
         """
@@ -288,8 +294,9 @@ class LaserBase(object):
         img = Image.fromarray(self.image_map)
         grid = pkg_resources.resource_filename("fluxclient", "assets/grid.png")
         # magic number just for alignment, don't really important
-        img_background = Image.open(grid).resize((img.size[0] + 66, img.size[1] + 66))
-        img_background.paste(img, (33, 33), img.point(lambda x: 255 if x < 255 else 0))
+        delta = 0
+        img_background = Image.open(grid).resize((img.size[0] + delta, img.size[1] + delta))
+        img_background.paste(img, (delta // 2, delta // 2), img.point(lambda x: 255 if x < 255 else 0))
         img = img_background
         if mode == 'save':
             img.save(file_name, 'png')
@@ -305,6 +312,10 @@ class LaserBase(object):
             raise NotImplementedError("unsupport mode {}".format(mode), file=sys.stderr)
 
     def fcode_generate(self, *args):
+        f = io.StringIO()
+        f.write(self.gcode_generate(*args))
+        f.seek(0)
+
         fcode_output = io.BytesIO()
         m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
@@ -313,8 +324,5 @@ class LaserBase(object):
         m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
-        f = io.StringIO()
-        f.write(self.gcode_generate(*args))
-        f.seek(0)
         m_GcodeToFcode.process(f, fcode_output)
-        return fcode_output.getvalue()
+        return fcode_output.getvalue(), m_GcodeToFcode

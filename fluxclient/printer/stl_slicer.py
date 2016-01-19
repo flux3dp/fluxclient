@@ -7,7 +7,10 @@ import tempfile
 from os import remove, environ
 import sys
 import copy
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe
+from threading import Thread
+
+import json
 
 from PIL import Image
 
@@ -17,74 +20,7 @@ from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
-
-
-def slicing_worker(command, config, image, ext_metadata, output_type, child_pipe):
-    tmp_gcode_file = command[3]
-    fail_flag = False
-    subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-    progress = 0.2
-    slic3r_error = False
-    while subp.poll() is None:
-        line = subp.stdout.readline()
-        print(line, file=sys.stderr, end='')
-        sys.stderr.flush()
-        if line:
-            if line.startswith('=> ') and not line.startswith('=> Exporting'):
-                progress += 0.12
-                child_pipe.send('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
-            elif "Unable to close this loop" in line:
-                slic3r_error = True
-            slic3r_out = line
-    if subp.poll() != 0:
-        fail_flag = True
-    # analying gcode(even transform)
-    child_pipe.send('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
-
-    fcode_output = io.BytesIO()
-    with open(tmp_gcode_file, 'r') as f:
-        m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
-        m_GcodeToFcode.config = config
-        m_GcodeToFcode.image = image
-        m_GcodeToFcode.process(f, fcode_output)
-        path = m_GcodeToFcode.path
-        metadata = m_GcodeToFcode.md
-        metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-        if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-            child_pipe.send('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
-
-        del m_GcodeToFcode
-
-    if output_type == '-g':
-        with open(tmp_gcode_file, 'rb') as f:
-            output = f.read()
-    elif output_type == '-f':
-        output = fcode_output.getvalue()
-    else:
-        raise('wrong output type, only support gcode and fcode')
-
-    ##################### fake code ###########################
-    if environ.get("flux_debug") == '1':
-        with open('output.gcode', 'wb') as f:
-            with open(tmp_gcode_file, 'rb') as f2:
-                f.write(f2.read())
-        tmp_stl_file = command[1]
-        with open(tmp_stl_file, 'rb') as f:
-            with open('merged.stl', 'wb') as f2:
-                f2.write(f.read())
-
-        with open('output.fc', 'wb') as f:
-            f.write(fcode_output.getvalue())
-
-        StlSlicer.my_ini_writer("output.ini", config)
-    ###########################################################
-
-    # # clean up tmp files
-    fcode_output.close()
-    if fail_flag:
-        child_pipe.send([False, slic3r_out, []])
-    else:
-        child_pipe.send([output, metadata, path])
+import pkg_resources
 
 
 class StlSlicer(object):
@@ -194,10 +130,10 @@ class StlSlicer(object):
                     self.config[key] = value
                     if key == 'temperature':
                         self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-                    if key == 'overhangs' and value == '0':
+                    elif key == 'overhangs' and value == '0':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
-                    if key == 'spiral_vase' and value == '1':
+                    elif key == 'spiral_vase' and value == '1':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
                         self.config['fill_density'] = '0%'
@@ -206,6 +142,7 @@ class StlSlicer(object):
                         ini_constraint['perimeters'] = [ignore]
                         self.config['top_solid_layers'] = '0'
                         ini_constraint['top_solid_layers'] = [ignore]
+
                 elif result == 'ignore':
                     # ignore this config key anyway
                     pass
@@ -217,16 +154,7 @@ class StlSlicer(object):
         return bad_lines
 
     def get_path(self):
-        if self.path is None:
-            return ''
-        else:
-            result = []
-            for layer in self.path:
-                tmp = []
-                for p in layer:
-                    tmp.append('{"t":%d, "p":[%.3f, %.3f, %.3f]}' % (p[3], p[0], p[1], p[2]))
-                result.append('[' + ','.join(tmp) + ']')
-            return '[' + ','.join(result) + ']'
+        return GcodeToFcode.path_to_js(self.path)
 
     def gcode_generate(self, names, ws, output_type):
         """
@@ -458,7 +386,7 @@ class StlSlicer(object):
                     self.config['temperature'] = self.user_setting[key]
                     self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config)
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -467,27 +395,123 @@ class StlSlicer(object):
 
         print('command:', ' '.join(command), file=sys.stderr)
         self.end_slicing()
-        parent_pipe, child_pipe = Pipe()
-        p = Process(target=slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, child_pipe))
-        self.working_p.append((p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], parent_pipe))
+
+        # parent_pipe, child_pipe = Pipe()
+        pipe = []
+        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
         p.start()
+
+    def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
+        tmp_gcode_file = command[3]
+        fail_flag = False
+        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+
+        self.working_p[p_index].append(subp)
+        # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        progress = 0.2
+        slic3r_error = False
+        slic3r_out = ''
+        while subp.poll() is None:
+            line = subp.stdout.readline()
+            print(line, file=sys.stderr, end='')
+            sys.stderr.flush()
+            if line:
+                if line.startswith('=> ') and not line.startswith('=> Exporting'):
+                    progress += 0.12
+                    child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
+                elif "Unable to close this loop" in line:
+                    slic3r_error = True
+                slic3r_out = line
+        if subp.poll() != 0:
+            fail_flag = True
+        if not fail_flag:
+            # analying gcode(even transform)
+            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+
+            fcode_output = io.BytesIO()
+
+            if config['detect_filament_runout'] == '1':
+                ext_metadata['FILAMENT_DETECT'] = 'Y'
+            else:
+                ext_metadata['FILAMENT_DETECT'] = 'N'
+
+            tmp = 8191
+            if config['detect_head_tilt'] == '0':
+                tmp -= 32
+            if config['detect_head_shake'] == '0':
+                tmp -= 16
+            ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
+
+            with open(tmp_gcode_file, 'r') as f:
+                m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode.config = config
+                m_GcodeToFcode.image = image
+                m_GcodeToFcode.process(f, fcode_output)
+                path = m_GcodeToFcode.path
+                metadata = m_GcodeToFcode.md
+                metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+                if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                    child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+
+                if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
+                    fail_flag = True
+                    slic3r_out = "gcode area too big"
+
+                del m_GcodeToFcode
+
+            if output_type == '-g':
+                with open(tmp_gcode_file, 'rb') as f:
+                    output = f.read()
+            elif output_type == '-f':
+                output = fcode_output.getvalue()
+            else:
+                raise('wrong output type, only support gcode and fcode')
+
+            ##################### fake code ###########################
+            if environ.get("flux_debug") == '1':
+                with open('output.gcode', 'wb') as f:
+                    with open(tmp_gcode_file, 'rb') as f2:
+                        f.write(f2.read())
+                tmp_stl_file = command[1]
+                with open(tmp_stl_file, 'rb') as f:
+                    with open('merged.stl', 'wb') as f2:
+                        f2.write(f.read())
+
+                with open('output.fc', 'wb') as f:
+                    f.write(fcode_output.getvalue())
+
+                StlSlicer.my_ini_writer("output.ini", config)
+            ###########################################################
+
+            # # clean up tmp files
+            fcode_output.close()
+        if fail_flag:
+            child_pipe.append([False, slic3r_out, []])
+        else:
+            child_pipe.append([output, metadata, path])
 
     def end_slicing(self):
         for p in self.working_p:
-            if p[0].is_alive():
-                p[0].terminate()
+            if type(p[-1]) == (subprocess.Popen):
+                if p[-1].poll() is None:
+                    p[-1].terminate()
+            else:
+                print(type(p[-1]))
             for filename in p[1]:
                 try:
                     remove(filename)
                 except:
                     pass
-        self.working_p = []
+        # self.working_p = []
 
     def report_slicing(self):
         ret = []
         if self.working_p:
-            while self.working_p[-1][2].poll():
-                message = self.working_p[-1][2].recv()
+            l = len(self.working_p[-1][2])
+            for _ in range(l):
+                message = self.working_p[-1][2][0]
+                self.working_p[-1][2].pop(0)
                 if type(message) == str:
                     ret.append(message)
                 else:
@@ -501,7 +525,7 @@ class StlSlicer(object):
                         self.output = None
                         self.metadata = None
                         self.path = None
-                        m = '{"status": "error", "error": "{}"}' % message[1]
+                        m = '{"status": "error", "error": "%s"}' % message[1]
                     ret.append(m)
         return ret
 
@@ -542,13 +566,16 @@ class StlSlicer(object):
             return 'key not exist: %s' % key
 
     @classmethod
-    def my_ini_writer(cls, file_path, content):
+    def my_ini_writer(cls, file_path, content, delete=None):
         """
         write to [file_path] with dict(content)
         """
         with open(file_path, 'w') as f:
             for i in content:
-                print("%s=%s" % (i, content[i]), file=f)
+                if delete and any(j in i for j in delete):
+                    pass
+                else:
+                    print("%s=%s" % (i, content[i]), file=f)
         return
 
     @classmethod

@@ -217,7 +217,10 @@ z_offset = 0
 flux_refill_empty = 0
 flux_first_layer = 0
 flux_raft = 0
-flux_floor = -1'''
+flux_floor = -1
+detect_filament_runout = 1
+detect_head_shake = 1
+detect_head_tilt = 1'''
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -354,4 +357,7 @@ ini_constraint = {
     'flux_first_layer': [binary],
     'flux_raft': [binary],
     'flux_floor': [float_range, -1, 240],
+    'detect_filament_runout': [binary],
+    'detect_head_shake': [binary],
+    'detect_head_tilt': [binary]
 }

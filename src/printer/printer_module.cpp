@@ -202,7 +202,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   return 0;
 }
 
-int find_intersect(pcl::PointXYZ a, pcl::PointXYZ b, float floor_v, pcl::PointXYZ &p){
+int find_intersect(pcl::PointXYZ &a, pcl::PointXYZ &b, float floor_v, pcl::PointXYZ &p){
   // find the intersect between line a, b and plane z=floor_v
   std::vector<float> v(3);  // vetor a->b
   v[0] = b.x - a.x;
