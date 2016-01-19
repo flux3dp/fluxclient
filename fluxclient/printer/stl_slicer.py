@@ -130,10 +130,10 @@ class StlSlicer(object):
                     self.config[key] = value
                     if key == 'temperature':
                         self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-                    if key == 'overhangs' and value == '0':
+                    elif key == 'overhangs' and value == '0':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
-                    if key == 'spiral_vase' and value == '1':
+                    elif key == 'spiral_vase' and value == '1':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
                         self.config['fill_density'] = '0%'
@@ -142,6 +142,7 @@ class StlSlicer(object):
                         ini_constraint['perimeters'] = [ignore]
                         self.config['top_solid_layers'] = '0'
                         ini_constraint['top_solid_layers'] = [ignore]
+
                 elif result == 'ignore':
                     # ignore this config key anyway
                     pass
@@ -429,6 +430,19 @@ class StlSlicer(object):
             child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
             fcode_output = io.BytesIO()
+
+            if config['detect_filament_runout'] == '1':
+                ext_metadata['FILAMENT_DETECT'] = 'Y'
+            else:
+                ext_metadata['FILAMENT_DETECT'] = 'N'
+
+            tmp = 8191
+            if config['detect_head_tilt'] == '0':
+                tmp -= 32
+            if config['detect_head_shake'] == '0':
+                tmp -= 16
+            ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
+
             with open(tmp_gcode_file, 'r') as f:
                 m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
                 m_GcodeToFcode.config = config
