@@ -5,12 +5,15 @@ import time
 from .laser_svg import LaserSvg
 
 
-class PenDraw(LaserBase, SVGParser):
+class PenSvg(LaserBase, SVGParser):
     """docstring for PenDraw"""
     def __init__(self):
         super(PenDraw, self).__init__()
+
+        self.ext_metadata['HEAD_TYPE'] = 'N/A'
         self.lift_height = 100
         self.draw_height = 0
+        # override
         self.turnOn = self.draw
         self.turnOff = self.lift
 
@@ -41,7 +44,7 @@ class PenDraw(LaserBase, SVGParser):
 
         # header part
         gcode.append(";Generate by Flux Studio %s" % (datetime.datetime.fromtimestamp(time.time()).strftime('on %Y-%m-%d at %H:%M:%S')))
-        gcode.append(";Pen holder Gcode")
+        gcode.append(";Pen holder svg Gcode")
         for i in header.split('\n'):
             gcode.append(";" + i)
 
@@ -55,3 +58,21 @@ class PenDraw(LaserBase, SVGParser):
         self.laser_on = False
         gcode += ["G1 F5000 Z%.5f;lift pen" % self.lift_height]
         return gcode
+
+    def set_params(self, key, value):
+        """
+        set parameters for setting
+        """
+        if key == 'lift_height':
+            self.lift_height = float(value)
+
+        elif key == 'draw_height':
+            self.draw_height = float(value)
+
+        elif key == 'speed':
+            self.laser_speed = float(value) * 60  # mm/s -> mm/min
+
+        elif key == 'one_way':
+            self.one_way = int(value) == 1
+        else:
+            raise ValueError('undefine setting key')

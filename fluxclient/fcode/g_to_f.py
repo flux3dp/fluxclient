@@ -316,7 +316,9 @@ class GcodeToFcode(FcodeBase):
                 self.empty_layer.pop(0)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
-            self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+            if self.md['HEAD_TYPE'] == 'EXTRUDER':
+                self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+
             self.md['TRAVEL_DIST'] = str(self.distance)
 
             self.max_range[3] = sqrt(self.max_range[3])
