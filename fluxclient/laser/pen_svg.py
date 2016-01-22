@@ -3,12 +3,15 @@ import datetime
 import time
 
 from .laser_svg import LaserSvg
+from .laser_base import LaserBase
+from fluxclient.utils.svg_parser import SVGParser
 
 
-class PenSvg(LaserBase, SVGParser):
-    """docstring for PenDraw"""
+class PenSvg(LaserSvg, SVGParser):
+    """docstring for PenSvg"""
     def __init__(self):
-        super(PenDraw, self).__init__()
+        super(PenSvg, self).__init__()
+        self.shading = False
 
         self.ext_metadata['HEAD_TYPE'] = 'N/A'
         self.lift_height = 100
@@ -75,4 +78,4 @@ class PenSvg(LaserBase, SVGParser):
         elif key == 'one_way':
             self.one_way = int(value) == 1
         else:
-            raise ValueError('undefine setting key')
+            raise ValueError('undefine setting key %s' % key)
