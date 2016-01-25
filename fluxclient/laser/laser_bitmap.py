@@ -27,6 +27,7 @@ class LaserBitmap(LaserBase):
         reset LaserBitmap class
         """
         # threshold, pixel on image_map darker than this will trigger laser
+        self.ext_metadata['HEAD_TYPE'] = 'LASER'
         self.shading = True
         self.one_way = True
         self.thres = 255
