@@ -140,9 +140,10 @@ def main():
     Nickname: %(name)s
     Serial: %(serial)s
     UUID: %(uuid)s
+    Version: %(ver)s
     Has Password: %(pwd)s
     """ % {"name": task.name, "serial": task.serial, "uuid": task.uuid.hex,
-           "pwd": task.has_password})
+           "ver": task.remote_version, "pwd": task.has_password})
 
     resp = do_auth(task).decode("ascii", "ignore")
     if resp not in ("OK", "ALREADY_TRUSTED"):
