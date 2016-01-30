@@ -11,7 +11,7 @@ import json
 import os
 
 from fluxclient.utils import mimetypes
-from fluxclient import encryptor as E
+from fluxclient import encryptor as E  # noqa
 
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def raise_error(ret):
-    if ret.startswith("error "):
+    if ret.startswith("error ") or ret.startswith("er "):
         raise RuntimeError(*(ret.split(" ")[1:]))
     else:
         raise RuntimeError("UNKNOW_ERROR", ret)
@@ -80,7 +80,7 @@ class FluxRobotV0002(object):
     def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
-            raise TimeoutError("get resp timeout")
+            raise RuntimeError("get resp timeout")
         # bml = self.sock.recv(2, socket.MSG_WAITALL)
         bml = msg_waitall(self.sock, 2)
         if not bml:
@@ -186,7 +186,8 @@ class FluxRobotV0002(object):
         return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
 
     def md5(self, entry, path):
-        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " + path.encode())
+        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
+                               path.encode())
         resp = bresp.decode("ascii", "ignore")
         if resp.startswith("md5 "):
             return resp[4:]
@@ -207,7 +208,7 @@ class FluxRobotV0002(object):
     # player commands
     @ok_or_error
     def select_file(self, entry, path):
-        self._send_cmd(b"player select " + entry.encode() + b" " +\
+        self._send_cmd(b"player select " + entry.encode() + b" " +
                        path.encode())
         return self.get_resp()
 
@@ -237,7 +238,7 @@ class FluxRobotV0002(object):
 
     def play_info(self):
         self._send_cmd(b"player info")
-        metadata = imgbuf = None
+        metadata = None
 
         resp = self.get_resp().decode("ascii", "ignore")
         if resp.startswith("binary text/json"):
@@ -260,25 +261,17 @@ class FluxRobotV0002(object):
     def quit_play(self):
         return self._make_cmd(b"player quit")
 
-    def update_fw(self, filename, progress_callback=None):
-        mimetype, _ = mimetypes.guess_type(filename)
-        if not mimetype:
-            mimetype = "binary"
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            self.upload_stream(f, size, mimetype, upload_to, cmd,
-                               progress_callback)
-
-    def upload_stream(self, stream, length, mimetype, upload_to,
+    def upload_stream(self, stream, length, mimetype, upload_to=None,
                       cmd="file upload", progress_callback=None):
         if upload_to == "#":
             # cmd = [cmd] [mimetype] [length] #
             cmd = "%s %s %i #" % (cmd, mimetype, length)
-        else:
+        elif upload_to:
             entry, path = upload_to.split("/", 1)
             # cmd = [cmd] [mimetype] [length] [entry] [path]
             cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
+        else:
+            cmd = "%s %s %i" % (cmd, mimetype, length)
 
         upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
         if upload_ret == "continue":
@@ -310,8 +303,8 @@ class FluxRobotV0002(object):
             raise_error(final_ret.decode("ascii", "ignore"))
 
     # Others
-    def begin_upload(self, mimetype, length, cmd="upload", uploadto="#"):
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, uploadto)).encode()
+    def begin_upload(self, mimetype, length, cmd="upload", upload_to="#"):
+        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
         upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
         if upload_ret == "continue":
             return self.sock
@@ -413,7 +406,7 @@ class FluxRobotV0002(object):
     def maintain_home(self):
         self._send_cmd(b"home")
         while True:
-            ret =  self.get_resp(6.0).decode("ascii", "ignore")
+            ret = self.get_resp(6.0).decode("ascii", "ignore")
             if ret.startswith("DEBUG:"):
                 logger.info(ret)
             elif ret == "ok":
@@ -513,6 +506,23 @@ class FluxRobotV0002(object):
         else:
             raise_error(ret.decode("ascii", "utf8"))
 
+    def maintain_update_hbfw(self, mimetype, stream, size,
+                             progress_callback=None):
+        def uplaod_process_callback(self, processed, total):
+            progress_callback("CTRL UPLOADING %i" % processed)
+
+        logger.debug("File opened")
+        self.upload_stream(stream, size, mimetype, None, "update_head",
+                           uplaod_process_callback)
+        while True:
+            ret = self.get_resp().decode("utf8", "ignore")
+            if ret == "ok":
+                return
+            elif ret.startswith("CTRL "):
+                progress_callback(ret)
+            else:
+                raise_error(ret)
+
     def raw_mode(self):
         ret = self._make_cmd(b"raw")
         if ret == b"continue":
@@ -536,7 +546,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def config_set(self, key, value):
-        return self._make_cmd(b"config set " + key.encode() + b" " +\
+        return self._make_cmd(b"config set " + key.encode() + b" " +
                               value.encode())
 
     def config_get(self, key):

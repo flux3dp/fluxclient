@@ -43,6 +43,8 @@ class LaserBase(object):
 
         # ext meta data, used when converting to fcode
         self.ext_metadata = {}
+        self.ext_metadata['CORRECTION'] = 'N'
+        self.ext_metadata['FILAMENT_DETECT'] = 'N'
 
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
@@ -319,9 +321,6 @@ class LaserBase(object):
         fcode_output = io.BytesIO()
         m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
-        m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
-        m_GcodeToFcode.md['CORRECTION'] = 'N'
-        m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
         m_GcodeToFcode.process(f, fcode_output)

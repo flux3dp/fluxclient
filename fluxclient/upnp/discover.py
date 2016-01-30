@@ -15,7 +15,7 @@ CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 MULTICAST_VERSION = 1
 
-from fluxclient import encryptor as E
+from fluxclient import encryptor as E  # noqa
 from .misc import DEFAULT_IPADDR, DEFAULT_PORT
 
 
@@ -57,14 +57,19 @@ class UpnpDiscover(object):
         self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                        socket.IPPROTO_UDP)
         self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
-                           socket.INADDR_ANY)
+
+        mreq = struct.pack("4sl", socket.inet_aton(ipaddr), socket.INADDR_ANY)
         self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
                                   mreq)
+        self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP,
+                                  1)
+        self.disc_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF,
+                                  socket.INADDR_ANY)
+
         if platform.system() == "Windows":
             self.disc_sock.bind(("", self.port))
         else:
-            self.disc_sock.bind((DEFAULT_IPADDR, self.port))
+            self.disc_sock.bind((ipaddr, self.port))
 
         self.touch_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                         socket.IPPROTO_UDP)
@@ -186,7 +191,7 @@ class UpnpDiscover(object):
                     st_ts, st_id, st_prog, st_head, st_err = \
                         struct.unpack("dif16s32s", stbuf)
 
-                    head_module = st_head.decode("ascii", 
+                    head_module = st_head.decode("ascii",
                                                  "ignore").strip("\x00")
                     error_label = st_err.decode("ascii",
                                                 "ignore").strip("\x00")
