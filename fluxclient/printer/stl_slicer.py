@@ -17,7 +17,7 @@ from PIL import Image
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.scanner.tools import dot, normal
+from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
 import pkg_resources
@@ -623,7 +623,7 @@ class StlSlicer(object):
                     v0 = tuple(map(float, (instl.readline().split()[-3:])))
                     v1 = tuple(map(float, (instl.readline().split()[-3:])))
                     v2 = tuple(map(float, (instl.readline().split()[-3:])))
-                    right_hand_mormal = normal([v0, v1, v2])
+                    right_hand_mormal = normalize(normal([v0, v1, v2]))
                     if dot(right_hand_mormal, read_normal) < 0:
                         v1, v2 = v2, v1
 
@@ -646,13 +646,14 @@ class StlSlicer(object):
             header = file_data[:80]
             length = struct.unpack(byte_order + 'I', file_data[80:84])[0]
 
+            patten = byte_order + 'fff'
+            index = 84
             for i in range(length):
-                index = i * 50 + 84
-                read_normal = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
-                v0 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
-                v1 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
-                v2 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
-                right_hand_mormal = normal([v0, v1, v2])
+                read_normal = struct.unpack(patten, file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
+                v0 = struct.unpack(patten, file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
+                v1 = struct.unpack(patten, file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
+                v2 = struct.unpack(patten, file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
+                right_hand_mormal = normalize(normal([v0, v1, v2]))
                 if dot(right_hand_mormal, read_normal) < 0:
                     v1, v2 = v2, v1
 
@@ -664,6 +665,7 @@ class StlSlicer(object):
                         counter += 1
                     face.append(points[v])
                 faces.append(face)
+                index += 50
 
         points_list = []
         for i in range(counter):

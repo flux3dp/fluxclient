@@ -159,7 +159,6 @@ def write_stl(tri, output='model.stl', mode='binary'):
             # output normal?
             n = normal(i)
             my_normal = normalize(n)
-            # outstl.write(struct.pack("@fff", my_normal[0], my_normal[1], my_normal[2]))
             outstl.write(struct.pack("@fff", my_normal[0], my_normal[1], my_normal[2]))
 
             # outstl.write(struct.pack("@fff", 0.0, 0.0, 0.0))
