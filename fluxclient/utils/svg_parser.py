@@ -343,6 +343,7 @@ class SVGParser(object):
     @staticmethod
     def elements_to_list(svg):
         """
+        [svg]: root generate from ET.fromstring()
         parse svg(readin as root, from ElementTree)
         return list-in-list indicating the coordinate the laser should go through
         each element in one list
@@ -372,8 +373,9 @@ class SVGParser(object):
         return coordinates
 
     @staticmethod
-    def preprocess(buf, name):
+    def preprocess(buf):
         """
+        [buf]
         preprocess the svg file
         make it only with black storke and elements' frame
         and compute smallest viewBox

@@ -506,6 +506,12 @@ class FluxRobotV0002(object):
         else:
             raise_error(ret.decode("ascii", "utf8"))
 
+    @ok_or_error
+    def maintain_extruder_temp(self, index, temp):
+        ret = self._make_cmd(
+            ("extruder_temp %i %.1f" % (index, temp)).encode())
+        return ret
+
     def maintain_update_hbfw(self, mimetype, stream, size,
                              progress_callback=None):
         def uplaod_process_callback(self, processed, total):
