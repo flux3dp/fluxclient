@@ -8,6 +8,7 @@ from os import remove, environ
 import sys
 from multiprocessing import Pipe
 from threading import Thread
+import logging
 
 from PIL import Image
 # import pkg_resources
@@ -18,6 +19,8 @@ from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
+
+logger = logging.getLogger("printer.stl_slicer")
 
 
 class StlSlicer(object):
@@ -242,7 +245,7 @@ class StlSlicer(object):
 
         command += ['--load', tmp_slic3r_setting_file]
 
-        print('command:', ' '.join(command), file=sys.stderr)
+        logger.debug('command: ' + ' '.join(command))
 
         fail_flag = False
 
@@ -251,7 +254,7 @@ class StlSlicer(object):
         slic3r_error = False
         while p.poll() is None:
             line = p.stdout.readline()
-            print(line, file=sys.stderr, end='')
+            logger.debug(line.rstrip())
             sys.stderr.flush()
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
@@ -399,7 +402,7 @@ class StlSlicer(object):
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--load', tmp_slic3r_setting_file]
 
-        print('command:', ' '.join(command), file=sys.stderr)
+        logger.debug('command: ' + ' '.join(command))
         self.end_slicing()
 
         # parent_pipe, child_pipe = Pipe()
@@ -420,8 +423,7 @@ class StlSlicer(object):
         slic3r_out = ''
         while subp.poll() is None:
             line = subp.stdout.readline()
-            print(line, file=sys.stderr, end='')
-            sys.stderr.flush()
+            logger.debug(line.rstrip())
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.12
@@ -507,7 +509,7 @@ class StlSlicer(object):
                 if p[-1].poll() is None:
                     p[-1].terminate()
             else:
-                print(type(p[-1]))
+                pass
             for filename in p[1]:
                 try:
                     remove(filename)
@@ -566,7 +568,7 @@ class StlSlicer(object):
                 tmp = i.rstrip().split('=')
                 result[tmp[0].strip()] = tmp[1].strip()
             else:
-                print(i, file=sys.stderr)
+                logger.error(i)
                 raise ValueError('not ini file?')
         return result
 
