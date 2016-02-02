@@ -29,31 +29,39 @@ class TestPrinter:
         StlSlicer.read_stl(stl_binary)
 
     def test_upload(self, stl_binary):
-        _stl_slicer = StlSlicer('/Applications/Slic3r.app/Contents/MacOS/slic3r')
+        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
         _stl_slicer.upload('tmp', stl_binary)
 
     def test_duplicate(self, stl_binary):
-        _stl_slicer = StlSlicer('/Applications/Slic3r.app/Contents/MacOS/slic3r')
+        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
         _stl_slicer.upload('tmp', stl_binary)
         _stl_slicer.duplicate('tmp', 'tmp2')
 
     def test_upload_image(self, img_buf):
-        _stl_slicer = StlSlicer('/Applications/Slic3r.app/Contents/MacOS/slic3r')
+        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
         _stl_slicer.upload_image(img_buf)
 
     def test_delete(self, stl_binary):
-        _stl_slicer = StlSlicer('/Applications/Slic3r.app/Contents/MacOS/slic3r')
+        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
         _stl_slicer.upload('tmp', stl_binary)
         a, b = _stl_slicer.delete('tmp')
         assert a is True
         a, b = _stl_slicer.delete('tmp')
         assert a is False
 
-    def test_set(self, stl_binary):
-        pass
-
     def test_slicing(self, stl_binary):
-        sleep(0)
+        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        _stl_slicer.upload('tmp', stl_binary)
+        _stl_slicer.set('tmp', [0, 0, 4.5, 0, 0, 0, 1, 1, 1])
+        _stl_slicer.begin_slicing(['tmp'], None, '-f')
+        sleep(1)
+        while True:
+            a = _stl_slicer.report_slicing()
+            if a[-1].startswith('{"status": "complete"'):
+                break
+            sleep(0.5)
+
+
     # def test_preprocess(self, svg_buf):
     #     data, w, h = SVGParser.preprocess(svg_buf)
 
