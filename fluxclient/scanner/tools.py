@@ -3,7 +3,8 @@
 import struct
 import sys
 from math import sqrt
-import io
+from io import StringIO
+
 
 # PCL NOTE: http://docs.pointclouds.org/1.7.0/structpcl_1_1_point_x_y_z_r_g_b.html
 # uint32_t rgb = ((uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b);
@@ -68,7 +69,7 @@ def read_pcd(data):
         pcd = open(file_name, 'r')
 
     elif type(data) == bytes:
-        pcd = io.StringIO()
+        pcd = StringIO()
         pcd.write(data.decode())
         pcd.seek(0)
 

@@ -9,13 +9,13 @@ from fluxclient.utils.svg_parser import SVGParser
 
 @pytest.fixture(scope="module")
 def svg_buf(request):
-    buf = open('data/Achtung.svg', 'rb').read()
+    buf = open('tests/laser/data/Achtung.svg', 'rb').read()
     return buf
 
 
 @pytest.fixture(scope="module")
 def clean_svg_buf(request):
-    buf = open('data/Achtung.svg', 'rb').read()
+    buf = open('tests/laser/data/Achtung.svg', 'rb').read()
     data, w, h = SVGParser.preprocess(buf)
     return data
 
