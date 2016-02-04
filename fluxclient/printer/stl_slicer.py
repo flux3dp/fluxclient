@@ -272,7 +272,7 @@ class StlSlicer(object):
             raft_output = StringIO()
             m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
             raft_output = raft_output.getvalue()
-            with open(tmp_gcode_file, 'w') as f:
+            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
                 print(raft_output, file=f)
 
         # analying gcode(even transform)
@@ -433,6 +433,15 @@ class StlSlicer(object):
                 slic3r_out = line
         if subp.poll() != 0:
             fail_flag = True
+
+        if config['flux_raft'] == '1':
+            m_preprocessor = Raft()
+            raft_output = StringIO()
+            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
+            raft_output = raft_output.getvalue()
+            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
+                print(raft_output, file=f)
+
         if not fail_flag:
             # analying gcode(even transform)
             child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
