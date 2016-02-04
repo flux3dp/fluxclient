@@ -1,26 +1,26 @@
 # !/usr/bin/env python3
 
-import struct
-import io
+from struct import unpack
+from io import BytesIO, StringIO
 import subprocess
 import tempfile
 from os import remove, environ
 import sys
-import copy
 from multiprocessing import Pipe
 from threading import Thread
-
-import json
+import logging
 
 from PIL import Image
+# import pkg_resources
 
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.scanner.tools import dot, normal
+from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
-import pkg_resources
+
+logger = logging.getLogger("printer.stl_slicer")
 
 
 class StlSlicer(object):
@@ -34,7 +34,7 @@ class StlSlicer(object):
 
     def reset(self, slic3r):
         self.working_p = []  # process that are slicing
-        self.models = {}  # models data
+        self.models = {}  # models data, store the buf(stl file)
         self.parameter = {}  # model's parameter
         self.user_setting = {}  # slcing setting
 
@@ -57,19 +57,25 @@ class StlSlicer(object):
         self.models[name] = buf
 
     def duplicate(self, name_in, name_out):
+        """
+        name_in[in]: name for the original one
+        name_out[in] name for the new one
+
+        duplicate a model in models(but not set position yet)
+        """
         if name_in in self.models:
-            self.models[name_out] = copy.copy(self.models[name_in])
+            self.models[name_out] = self.models[name_in]  # no need to copy, bytes is immutable
             return True
         else:
             return False
 
     def upload_image(self, buf):
-        b = io.BytesIO()
+        b = BytesIO()
         b.write(buf)
         img = Image.open(b)
         img = img.resize((640, 640))  # resize preview image
 
-        b = io.BytesIO()
+        b = BytesIO()
         img.save(b, 'png')
         image_bytes = b.getvalue()
         self.image = image_bytes
@@ -115,6 +121,7 @@ class StlSlicer(object):
         """
         user input  setting content
         use '#' as comment symbol (different from wiki's ini file standard)
+
         return error message of bad input
 
         """
@@ -154,7 +161,10 @@ class StlSlicer(object):
         return bad_lines
 
     def get_path(self):
-        return GcodeToFcode.path_to_js(self.path)
+        """
+        """
+        if self.path:
+            return GcodeToFcode.path_to_js(self.path)
 
     def gcode_generate(self, names, ws, output_type):
         """
@@ -235,7 +245,7 @@ class StlSlicer(object):
 
         command += ['--load', tmp_slic3r_setting_file]
 
-        print('command:', ' '.join(command), file=sys.stderr)
+        logger.debug('command: ' + ' '.join(command))
 
         fail_flag = False
 
@@ -244,7 +254,7 @@ class StlSlicer(object):
         slic3r_error = False
         while p.poll() is None:
             line = p.stdout.readline()
-            print(line, file=sys.stderr, end='')
+            logger.debug(line.rstrip())
             sys.stderr.flush()
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
@@ -259,16 +269,16 @@ class StlSlicer(object):
         # TODO: design a intermedia data structure for gcode and write a general preprocessor
         if self.config['flux_raft'] == '1':
             m_preprocessor = Raft()
-            raft_output = io.StringIO()
+            raft_output = StringIO()
             m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
             raft_output = raft_output.getvalue()
-            with open(tmp_gcode_file, 'w') as f:
+            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
                 print(raft_output, file=f)
 
         # analying gcode(even transform)
         ws.send_progress('analyzing metadata', 0.99)
 
-        fcode_output = io.BytesIO()
+        fcode_output = BytesIO()
         with open(tmp_gcode_file, 'r') as f:
             m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
             m_GcodeToFcode.config = self.config
@@ -331,7 +341,6 @@ class StlSlicer(object):
             else:
                 False, [error message]
         """
-        # TODO: maybe put theese code in multiprocess someday?
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
@@ -393,7 +402,7 @@ class StlSlicer(object):
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--load', tmp_slic3r_setting_file]
 
-        print('command:', ' '.join(command), file=sys.stderr)
+        logger.debug('command: ' + ' '.join(command))
         self.end_slicing()
 
         # parent_pipe, child_pipe = Pipe()
@@ -414,8 +423,7 @@ class StlSlicer(object):
         slic3r_out = ''
         while subp.poll() is None:
             line = subp.stdout.readline()
-            print(line, file=sys.stderr, end='')
-            sys.stderr.flush()
+            logger.debug(line.rstrip())
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.12
@@ -425,11 +433,20 @@ class StlSlicer(object):
                 slic3r_out = line
         if subp.poll() != 0:
             fail_flag = True
+
+        if config['flux_raft'] == '1':
+            m_preprocessor = Raft()
+            raft_output = StringIO()
+            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
+            raft_output = raft_output.getvalue()
+            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
+                print(raft_output, file=f)
+
         if not fail_flag:
             # analying gcode(even transform)
             child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
-            fcode_output = io.BytesIO()
+            fcode_output = BytesIO()
 
             if config['detect_filament_runout'] == '1':
                 ext_metadata['FILAMENT_DETECT'] = 'Y'
@@ -492,12 +509,16 @@ class StlSlicer(object):
             child_pipe.append([output, metadata, path])
 
     def end_slicing(self):
+        """
+        when being called, end every working slic3r process
+        but couldn't kill the thread
+        """
         for p in self.working_p:
             if type(p[-1]) == (subprocess.Popen):
                 if p[-1].poll() is None:
                     p[-1].terminate()
             else:
-                print(type(p[-1]))
+                pass
             for filename in p[1]:
                 try:
                     remove(filename)
@@ -506,6 +527,11 @@ class StlSlicer(object):
         # self.working_p = []
 
     def report_slicing(self):
+        """
+        report the slicing state
+        find the last working process(self.working_p)
+        and return the message in it
+        """
         ret = []
         if self.working_p:
             l = len(self.working_p[-1][2])
@@ -532,7 +558,8 @@ class StlSlicer(object):
     @classmethod
     def my_ini_parser(cls, data):
         """
-        read-in .ini setting file as default settings
+        data[in]: [str] indicating a file path or [list of str] indicating lines of ini file
+        read-in .ini file setting file as default settings
         return a dict
         """
         result = {}
@@ -550,11 +577,17 @@ class StlSlicer(object):
                 tmp = i.rstrip().split('=')
                 result[tmp[0].strip()] = tmp[1].strip()
             else:
-                print(i, file=sys.stderr)
+                logger.error(i)
                 raise ValueError('not ini file?')
         return result
 
     def ini_value_check(self, key, value):
+        """
+        key[in]: str
+        value[out]: str
+        return: 'ok' or [error message]
+        check whether (key, value) pair is valid according to the constraint
+        """
         if key in self.config:
             if value.strip() == 'default':
                 return 'ok'
@@ -568,7 +601,9 @@ class StlSlicer(object):
     @classmethod
     def my_ini_writer(cls, file_path, content, delete=None):
         """
-        write to [file_path] with dict(content)
+        file_path[in]: str, output file_path
+        content[in]: dict
+        write a .ini file
         """
         with open(file_path, 'w') as f:
             for i in content:
@@ -581,6 +616,8 @@ class StlSlicer(object):
     @classmethod
     def ascii_or_binary(cls, data, byte_order):
         """
+        data[in]: bytes data of a stl file
+        byte_order[in]: '@' or '<', for different input source
         check what kind of stl file it is
         return False -> binary
         return True -> ascii
@@ -588,7 +625,7 @@ class StlSlicer(object):
         if not data.startswith(b'solid '):
             return False
 
-        length = struct.unpack(byte_order + 'I', data[80:84])[0]
+        length = unpack(byte_order + 'I', data[80:84])[0]
         if len(data) == 80 + 4 + length * 50:
             return False
         return True
@@ -596,9 +633,10 @@ class StlSlicer(object):
     @classmethod
     def read_stl(cls, file_data):
         """
+        file_data[in]: string indicating a a file path, or a bytes that is the content of stl file
         read in stl
         """
-        # https://en.wikipedia.org/wiki/STL_(file_format)
+        # ref: https://en.wikipedia.org/wiki/STL_(file_format)
         if type(file_data) == str:
             with open(file_data, 'rb') as f:
                 file_data = f.read()
@@ -606,13 +644,13 @@ class StlSlicer(object):
         elif type(file_data) == bytes:
             byte_order = '<'
         else:
-            raise ValueError('wrong stl data type:%s' % str(type(file_data)))
+            raise ValueError('wrong stl data type: %s' % str(type(file_data)))
         points = {}  # key: points, value: index
         faces = []
         counter = 0
         if cls.ascii_or_binary(file_data, byte_order):
             # ascii stl file
-            instl = io.StringIO(file_data.decode('utf8'))
+            instl = StringIO(file_data.decode('utf8'))
             instl.readline()  # read in: "solid [name]"
 
             while True:
@@ -623,7 +661,7 @@ class StlSlicer(object):
                     v0 = tuple(map(float, (instl.readline().split()[-3:])))
                     v1 = tuple(map(float, (instl.readline().split()[-3:])))
                     v2 = tuple(map(float, (instl.readline().split()[-3:])))
-                    right_hand_mormal = normal([v0, v1, v2])
+                    right_hand_mormal = normalize(normal([v0, v1, v2]))
                     if dot(right_hand_mormal, read_normal) < 0:
                         v1, v2 = v2, v1
 
@@ -644,15 +682,16 @@ class StlSlicer(object):
         else:
             # binary stl file
             header = file_data[:80]
-            length = struct.unpack(byte_order + 'I', file_data[80:84])[0]
+            length = unpack(byte_order + 'I', file_data[80:84])[0]
 
+            patten = byte_order + 'fff'
+            index = 84
             for i in range(length):
-                index = i * 50 + 84
-                read_normal = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
-                v0 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
-                v1 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
-                v2 = struct.unpack(byte_order + 'fff', file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
-                right_hand_mormal = normal([v0, v1, v2])
+                read_normal = unpack(patten, file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
+                v0 = unpack(patten, file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
+                v1 = unpack(patten, file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
+                v2 = unpack(patten, file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
+                right_hand_mormal = normalize(normal([v0, v1, v2]))
                 if dot(right_hand_mormal, read_normal) < 0:
                     v1, v2 = v2, v1
 
@@ -664,6 +703,7 @@ class StlSlicer(object):
                         counter += 1
                     face.append(points[v])
                 faces.append(face)
+                index += 50
 
         points_list = []
         for i in range(counter):

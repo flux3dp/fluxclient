@@ -68,6 +68,8 @@ class RobotConsole(object):
             "load_filament": self.maintain_load_filament,
             "stop_load_filament": self.maintain_stop_load_filament,
             "unload_filament": self.maintain_unload_filament,
+            "extruder_temp": self.maintain_extruder_temp,
+            "update_hbfw": self.maintain_update_hbfw,
             "play": {
                 "info": self.play_info
             },
@@ -303,6 +305,21 @@ class RobotConsole(object):
 
         self.robot_obj.maintain_unload_filament(int(index), float(temp),
                                                 callback)
+        logger.info("ok")
+
+    def maintain_extruder_temp(self, sindex, stemp):
+        self.robot_obj.maintain_extruder_temp(int(sindex), float(stemp))
+        logger.info("ok")
+
+    def maintain_update_hbfw(self, filename):
+        def callback(nav):
+            logger.info("--> %s", nav)
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            self.robot_obj.maintain_update_hbfw(mimetype, f, size, callback)
         logger.info("ok")
 
     def raw_mode(self):

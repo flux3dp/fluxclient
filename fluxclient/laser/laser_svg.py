@@ -104,4 +104,4 @@ if __name__ == '__main__':
     m_laser_svg = LaserSvg()
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
-        m_laser_svg.preprocess(f.read(), filename)
+        m_laser_svg.preprocess(f.read())
