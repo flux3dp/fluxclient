@@ -141,7 +141,7 @@ def create_scanner_extentions():
         elif platform.platform().startswith("Linux"):
             extra_compile_args += ["-lstdc++"]
 
-        elif platform.platform().startswith("Windows"):
+        elif platform.platform().startswith("Windows"): 
             libraries += ["pcl_common_release", "pcl_octree_release",
                           "pcl_io_release", "pcl_kdtree_release",
                           "pcl_search_release", "pcl_sample_consensus_release",
@@ -150,13 +150,13 @@ def create_scanner_extentions():
                           "pcl_registration_release", "pcl_keypoints_release"]
             include_dirs += ["C:/Program Files (x86)/Eigen/include",
                              "C:/Program Files (x86)/flann/include",
-                             "C:/Program Files/Eigen/include",
-                             "C:/Program Files/flann/include",
+                             "C:/Program Files/PCL 1.7.2/3rdParty/flann/include",
                              "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
                              "C:/Program Files/PCL 1.7.2/lib",
-                             "C:/local/boost_1_59_0"]
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Eigen/eigen3",
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/include/boost-1_57"]
             library_dirs += ["C:/Program Files/PCL 1.7.2/lib",
-                             "C:/local/boost_1_59_0/lib64-msvc-14.0"]
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/lib"]
 
         else:
             raise RuntimeError("Unknow platform!!")
