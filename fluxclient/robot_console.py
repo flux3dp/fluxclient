@@ -168,9 +168,8 @@ class RobotConsole(object):
         else:
             raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
 
-    def cpfile(self, args):
+    def cpfile(self, source, target):
         try:
-            source, target = shlex.split(args)
             if source.startswith("SD/"):
                 source_entry = "SD"
                 source = source[3:]
