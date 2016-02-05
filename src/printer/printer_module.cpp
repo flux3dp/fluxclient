@@ -1,5 +1,6 @@
 #include <limits>
 #include <iostream>
+#include <math.h>
 #include "printer_module.h"
 
 
@@ -33,7 +34,7 @@ int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
   return 0;
 }
 
-int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
+int add_on(MeshPtr base, MeshPtr add_on_mesh){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(base->cloud, *cloud);
   int size_to_add_on = cloud->size();
@@ -349,5 +350,57 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
     data[i][1] = triangles->polygons[i].vertices[1];
     data[i][2] = triangles->polygons[i].vertices[2];
   }
+  return 0;
+}
+
+int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
+  pcl::PointCloud<pcl::PointXYZ>::Ptr P;
+  find_support_point(input_mesh, 45, 0.1, P);
+  return 0;
+}
+
+int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
+  // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
+  // MeshPtr triangles[in]: input stl
+  // float alpha[in]: angle that > alpha need to be supported
+  // float sample_rate[in]: sample reate (grid)
+  // P[out]: out put the points that need to be supported
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr _P(new pcl::PointCloud<pcl::PointXYZ>);
+  P = _P;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(triangles->cloud, *cloud);
+  std::cout << "input points " << cloud -> size() << std::endl;
+  std::cout << "input faces " << triangles->polygons.size() << std::endl;
+  // std::vector<float> normal_p;
+  // std::vector<float> normal_vertical;
+  // normal_vertical.push_back(0);
+  // normal_vertical.push_back(0);
+  // normal_vertical.push_back(1);
+  alpha = cos(alpha);
+  int s = 0;
+  float a[3], b[3], normal_p[3], normal_vertical[3] = {0, 0, 1};
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+
+    a[0] = (*cloud)[(triangles->polygons[i]).vertices[1]].x - (*cloud)[(triangles->polygons[i]).vertices[0]].x;
+    a[1] = (*cloud)[(triangles->polygons[i]).vertices[1]].y - (*cloud)[(triangles->polygons[i]).vertices[0]].y;
+    a[2] = (*cloud)[(triangles->polygons[i]).vertices[1]].z - (*cloud)[(triangles->polygons[i]).vertices[0]].z;
+
+    b[0] = (*cloud)[(triangles->polygons[i]).vertices[2]].x - (*cloud)[(triangles->polygons[i]).vertices[0]].x;
+    b[1] = (*cloud)[(triangles->polygons[i]).vertices[2]].y - (*cloud)[(triangles->polygons[i]).vertices[0]].y;
+    b[2] = (*cloud)[(triangles->polygons[i]).vertices[2]].z - (*cloud)[(triangles->polygons[i]).vertices[0]].z;
+
+    normal_p[0] = a[1] * b[2] - a[2] * b[1];
+    normal_p[1] = a[2] * b[0] - a[0] * b[2];
+    normal_p[2] = a[0] * b[1] - a[1] * b[0];
+
+    float cos_theta = (normal_p[0] * normal_vertical[0] + normal_p[1] * normal_vertical[1] + normal_p[2] * normal_vertical[2]) / (sqrt(normal_p[0] * normal_p[0] + normal_p[1] * normal_p[1] + normal_p[2] * normal_p[2]) * sqrt(normal_vertical[0] * normal_vertical[0] + normal_vertical[1] * normal_vertical[1] + normal_vertical[2] * normal_vertical[2]));
+    if(cos_theta > alpha){
+      s += 1;
+    }
+
+  }
+  std::cout<< "s:"<< s << std::endl;
   return 0;
 }

@@ -14,6 +14,7 @@ cdef extern from "printer_module.h":
     int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z)
     int bounding_box(MeshPtr triangles, vector[float] &b_box)
     int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v)
+    int add_support(MeshPtr input_mesh, MeshPtr out_mesh)
 
 cdef class MeshObj:
     cdef MeshPtr meshobj
@@ -24,6 +25,10 @@ cdef class MeshObj:
 
         for i in face_indice:
             push_backFace(self.meshobj, i[0], i[1], i[2])
+
+    def add_support(self):
+        out_mesh = MeshObj([], [])
+        add_support(self.meshobj, out_mesh.meshobj)
 
     def apply_transform(self, transform_param):
         # transform_param:  x, y, z, rx, ry, rz, scale

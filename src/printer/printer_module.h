@@ -18,3 +18,6 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
 int bounding_box(MeshPtr triangles, std::vector<float> &b_box);
 int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &b_box);
 int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v);
+
+int add_support(MeshPtr input_mesh, MeshPtr out_mesh);
+int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P);
