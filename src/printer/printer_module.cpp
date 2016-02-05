@@ -355,7 +355,7 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
 
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
   pcl::PointCloud<pcl::PointXYZ>::Ptr P;
-  find_support_point(input_mesh, 45, 0.1, P);
+  find_support_point(input_mesh, 3.1415926 / 4, 0.1, P);
   return 0;
 }
 
@@ -379,9 +379,11 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   // normal_vertical.push_back(0);
   // normal_vertical.push_back(1);
   alpha = cos(alpha);
-  int s = 0;
-  float a[3], b[3], normal_p[3], normal_vertical[3] = {0, 0, 1};
+  float a[3], b[3], normal_p[3];
+  const float normal_vertical[3] = {0, 0, -1};
+  std::vector<int> rec;
   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+  // for (size_t i = 0; i < 1; i += 1){
 
     a[0] = (*cloud)[(triangles->polygons[i]).vertices[1]].x - (*cloud)[(triangles->polygons[i]).vertices[0]].x;
     a[1] = (*cloud)[(triangles->polygons[i]).vertices[1]].y - (*cloud)[(triangles->polygons[i]).vertices[0]].y;
@@ -395,12 +397,16 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
     normal_p[1] = a[2] * b[0] - a[0] * b[2];
     normal_p[2] = a[0] * b[1] - a[1] * b[0];
 
+    // std::cout << normal_p[2] << std::endl;
     float cos_theta = (normal_p[0] * normal_vertical[0] + normal_p[1] * normal_vertical[1] + normal_p[2] * normal_vertical[2]) / (sqrt(normal_p[0] * normal_p[0] + normal_p[1] * normal_p[1] + normal_p[2] * normal_p[2]) * sqrt(normal_vertical[0] * normal_vertical[0] + normal_vertical[1] * normal_vertical[1] + normal_vertical[2] * normal_vertical[2]));
+    // std::cout << cos_theta << std::endl;
     if(cos_theta > alpha){
-      s += 1;
+      rec.push_back(i);
+      // std::cout << "> "<<i << std::endl;
     }
-
   }
-  std::cout<< "s:"<< s << std::endl;
+  std::cout<< "s:"<< rec.size() << std::endl;
+
+
   return 0;
 }
