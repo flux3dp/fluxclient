@@ -137,9 +137,9 @@ class StlSlicer(object):
                     self.config[key] = value
                     if key == 'temperature':
                         self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-                    elif key == 'overhangs' and value == '0':
-                        self.config['support_material'] = '0'
-                        ini_constraint['support_material'] = [ignore]
+                    # elif key == 'overhangs' and value == '0':
+                    #     self.config['support_material'] = '0'
+                    #     ini_constraint['support_material'] = [ignore]
                     elif key == 'spiral_vase' and value == '1':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
