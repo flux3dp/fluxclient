@@ -83,6 +83,11 @@ class UpnpDiscover(object):
         self.touch_sock.close()
         self.touch_sock = None
 
+    def poke(self, ipaddr):
+        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
+                              UUID(int=0).bytes)
+        self.touch_sock.sendto(payload, (ipaddr, DEFAULT_PORT))
+
     def limited_uuid(self, uuid):
         if self.uuid:
             return self.uuid == uuid
