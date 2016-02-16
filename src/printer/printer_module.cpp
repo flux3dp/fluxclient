@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/io/pcd_io.h>
 #include "printer_module.h"
 
 
@@ -357,7 +358,7 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
 
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);
-  find_support_point(input_mesh, 3.1415926 / 4, 0.1, P);
+  find_support_point(input_mesh, M_PI / 4, 0.1, P);
   std::cout<< "P size after:"<< P->size() << std::endl;
   return 0;
 }
@@ -365,10 +366,9 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
   // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
   // MeshPtr triangles[in]: input stl
-  // float alpha[in]: angle that > alpha need to be supported
+  // float alpha[in]: angle that >= alpha need to be supported
   // float sample_rate[in]: sample reate (grid)
   // P[out]: out put the points that need to be supported
-
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
@@ -379,7 +379,7 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   // normal_vertical.push_back(0);
   // normal_vertical.push_back(0);
   // normal_vertical.push_back(1);
-  alpha = cos(alpha);
+  float cos_alpha = cos((M_PI / 2.0) - alpha);
   float a[3], b[3], normal_p[3];
   float la, lb;
   const float normal_vertical[3] = {0, 0, -1};
@@ -402,7 +402,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
     // std::cout << normal_p[2] << std::endl;
     float cos_theta = (normal_p[0] * normal_vertical[0] + normal_p[1] * normal_vertical[1] + normal_p[2] * normal_vertical[2]) / (sqrt(normal_p[0] * normal_p[0] + normal_p[1] * normal_p[1] + normal_p[2] * normal_p[2]) * sqrt(normal_vertical[0] * normal_vertical[0] + normal_vertical[1] * normal_vertical[1] + normal_vertical[2] * normal_vertical[2]));
     // std::cout << cos_theta << std::endl;
-    if(cos_theta > alpha){  // faces that need to be supported
+    // faces that need to be supported
+    if(cos_theta >= cos_alpha){  //cosine, larger angle, smaller cosine
       rec.push_back(i);
       // std::cout << "> "<<i << std::endl;
       b[0] = (*cloud)[(triangles->polygons[i]).vertices[2]].x - (*cloud)[(triangles->polygons[i]).vertices[1]].x;
@@ -412,7 +413,7 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
       lb = sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
       int ia = (int)(la / (sample_rate / 10.));
       int ib = (int)(lb / (sample_rate / 10.));
-      std::cout<< "ia:"<< ia << " " << ib << std::endl;
+      // std::cout<< "ia:"<< ia << " " << ib << std::endl;
 
 
       for (size_t j = 0; j < ia; j += 1){
@@ -434,6 +435,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.setInputCloud(P);
   grid.filter(*P);
   std::cout<< "P size after:"<< P->size() << std::endl;
+
+  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
   // for (size_t j = 0; j < P->size(); j += 1){
   //   std::cout<< (*P)[j] << std::endl;
   // }
