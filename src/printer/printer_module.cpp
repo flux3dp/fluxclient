@@ -6,7 +6,29 @@
 #include <pcl/io/pcd_io.h>
 #include "printer_module.h"
 
-
+struct cone
+{
+  float pos[3];
+  float theta;
+  cone(){
+    pos[0] = 0;
+    pos[1] = 0;
+    pos[2] = 0;
+    theta = 0;
+  }
+  cone(float x, float  y, float z, float t){
+    pos[0] = x;
+    pos[1] = y;
+    pos[2] = z;
+    theta = t;
+  }
+  cone(cone const &cone2){
+    pos[0] = cone2.pos[0];
+    pos[1] = cone2.pos[1];
+    pos[2] = cone2.pos[2];
+    theta = cone2.theta;
+  }
+};
 
 MeshPtr createMeshPtr(){
   MeshPtr mesh(new pcl::PolygonMesh);
@@ -362,6 +384,31 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
   std::cout<< "P size after:"<< P->size() << std::endl;
   return 0;
 }
+int cone_intersect(cone a, cone b, cone &c){
+
+  float dz = b.pos[2] - a.pos[2];
+  float dxy = sqrt(pow(a.pos[0] - b.pos[0], 2) + pow(a.pos[1] - b.pos[1], 2));
+  if(dxy == 0){
+    if(dz == 0){
+      c = a;
+      return 0;
+    }
+    return -1;
+  }
+  float h;
+  std::cout<< "tan " << tan(a.theta) << std::endl;
+  std::cout<< "dxy " << dxy << std::endl;
+  std::cout<< "dz " << dz << std::endl;
+  h = (dxy / tan(a.theta) - dz) / 2;
+  std::cout<< "h:" << h << std::endl;
+
+  cone cc(
+  ((h + dz) * a.pos[0] + h * b.pos[0]) / (h + dz + h),
+  ((h + dz) * a.pos[1] + h * b.pos[1]) / (h + dz + h),
+  a.pos[2] - h ,a.theta);
+  c = cc;
+  return 0;
+}
 
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
   // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
@@ -440,5 +487,9 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   // for (size_t j = 0; j < P->size(); j += 1){
   //   std::cout<< (*P)[j] << std::endl;
   // }
+  cone ca(1, 0, 1, M_PI / 4.0), cb(0, 0, 0, M_PI / 4.0), cc;
+  cone_intersect(ca, cb, cc);
   return 0;
 }
+
+
