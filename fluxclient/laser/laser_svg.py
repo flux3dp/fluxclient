@@ -84,9 +84,16 @@ class LaserSvg(LaserBase, SVGParser):
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
+
+        gcode = "\n".join(gcode) + "\n"
+        logger.debug("generate gcode done:%d bytes" % len(gcode))
+
         ################ fake code ##############
         if environ.get("flux_debug") == '1':
             self.dump('./preview.png')
+            with open('output.gcode', 'w') as f:
+                print(gcode, file=f)
+        #######################################################################
 
         # output only moving
         # tmp = []
@@ -98,7 +105,7 @@ class LaserSvg(LaserBase, SVGParser):
 
         ##########################################
 
-        return "\n".join(gcode) + "\n"
+        return gcode
 
 if __name__ == '__main__':
     m_laser_svg = LaserSvg()

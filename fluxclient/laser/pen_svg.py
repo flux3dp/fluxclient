@@ -47,7 +47,9 @@ class PenSvg(LaserSvg, SVGParser):
 
         # header part
         gcode.append(";Generate by Flux Studio %s" % (datetime.datetime.fromtimestamp(time.time()).strftime('on %Y-%m-%d at %H:%M:%S')))
-        gcode.append(";Pen holder svg Gcode")
+        gcode.append(";Pen Gcode")
+        gcode.append(";FLUX. Pen SVG.")
+
         for i in header.split('\n'):
             gcode.append(";" + i)
 
