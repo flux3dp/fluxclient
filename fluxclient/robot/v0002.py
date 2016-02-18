@@ -189,7 +189,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def rmfile(self, entry, path):
-        return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
+        return self._make_cmd(b"file rm " + entry.encode() + b" " + path.encode())
 
     def md5(self, entry, path):
         bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
