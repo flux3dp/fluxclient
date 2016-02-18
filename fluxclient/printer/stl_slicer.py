@@ -4,6 +4,7 @@ from struct import unpack
 from io import BytesIO, StringIO
 import subprocess
 import tempfile
+import os
 from os import remove, environ
 import platform
 import sys
@@ -348,7 +349,9 @@ class StlSlicer(object):
                 return False, '%s not set yet' % (n)
         # tmp files
         if platform.platform().startswith("Windows"):
-            temp_dir = 'C:\windows\Temp'
+            if not os.path.isdir('C:\Temp'):
+                os.mkdir('C:\Temp')
+            temp_dir = 'C:\Temp'
         else:
             temp_dir = None
 
