@@ -148,15 +148,15 @@ def create_scanner_extentions():
                           "pcl_filters_release", "pcl_features_release",
                           "pcl_segmentation_release", "pcl_surface_release",
                           "pcl_registration_release", "pcl_keypoints_release"]
-            include_dirs += ["C:/Program Files (x86)/Eigen/include",
-                             "C:/Program Files (x86)/flann/include",
-                             "C:/Program Files/Eigen/include",
-                             "C:/Program Files/flann/include",
+            include_dirs += [
                              "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
                              "C:/Program Files/PCL 1.7.2/lib",
-                             "C:/local/boost_1_59_0"]
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Eigen/eigen3",
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/include/boost-1_57",
+                             "C:/Program Files/PCL 1.7.2/3rdParty/FLANN/include",
+                             ]
             library_dirs += ["C:/Program Files/PCL 1.7.2/lib",
-                             "C:/local/boost_1_59_0/lib64-msvc-14.0"]
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/lib"]
 
         else:
             raise RuntimeError("Unknow platform!!")
