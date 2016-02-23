@@ -46,6 +46,12 @@ struct tree_node
   }
 };
 
+inline std::ostream& operator<< (std::ostream& stream, const tree_node& n)
+{
+  stream << n.left << " " << n.right << " " << n.index << " " << n.height << " " << std::endl;
+  return stream;
+}
+
 class SupportTree{
 public:
   SupportTree();
@@ -495,7 +501,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
       // iter = std::lower_bound(P_v.begin(), P_v.end(), std::pair<int, float>(P_v[m.first].first, P -> points[P_v[m.first].first].z));
       // std::cout<< "at:" << iter -  P_v.begin() << " " << P_v.size() << std::endl;
 
-      if(m.first > 0){  // cone
+      if(m.first >= 0){  // cone
         // tmp_C[m.first]
         // std::cout<< "m.first " << m.first << std::endl;
         P_v.erase(P_v.begin() + m.first);
@@ -528,6 +534,10 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
       // std::cout<< P_v.size() << std::endl;
     }
   }
+  // for (size_t i = 0; i < support_tree.tree.size(); i += 1){
+  //   std::cout << support_tree.tree[i] << std::endl;
+  // }
+
   return 0;
 }
 
@@ -617,7 +627,9 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
           point.x = (*cloud)[(triangles->polygons[i]).vertices[0]].x + a[0] * j / ia + b[0] * k / ib;
           point.y = (*cloud)[(triangles->polygons[i]).vertices[0]].y + a[1] * j / ia + b[1] * k / ib;
           point.z = (*cloud)[(triangles->polygons[i]).vertices[0]].z + a[2] * j / ia + b[2] * k / ib;
-          P -> push_back(point);
+          if(point.z != 0){
+            P -> push_back(point);
+          }
         }
       }
     }
@@ -630,7 +642,7 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.filter(*P);
   std::cout<< "P size after:"<< P->size() << std::endl;
 
-  // pcl::io::savePCDFileASCII ("tmp.pcd", *P);
+  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
 
   return 0;
 }
