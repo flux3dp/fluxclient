@@ -74,21 +74,28 @@ SupportTree::~SupportTree(){
 void SupportTree::out_as_js(){
   std::cout<< "tree = [";
   for (size_t i = 0; i < tree.size(); i += 1){
-    std::cout<< "[";
+    if(tree[i].left != -1){
+      std::cout<< "[";
 
       std::cout << "[" << (*cloud)[tree[i].index].x << "," << (*cloud)[tree[i].index].y << "," << (*cloud)[tree[i].index].z << "]";
-    std::cout<< ",";
+      std::cout<< ",";
 
-    std::cout << "[" << (*cloud)[tree[i].left].x << "," << (*cloud)[tree[i].left].y << "," << (*cloud)[tree[i].left].z << "]";
-    std::cout<< ",";
+      if(tree[i].left >= 0){
+        std::cout << "[" << (*cloud)[tree[i].left].x << "," << (*cloud)[tree[i].left].y << "," << (*cloud)[tree[i].left].z << "]";
+        std::cout<< ",";
+      }
+      else{
 
-    std::cout << "[" << (*cloud)[tree[i].right].x << "," << (*cloud)[tree[i].right].y << "," << (*cloud)[tree[i].right].z << "]";
-    std::cout<< ",";
+      }
 
-    std::cout<< tree[i].height;
+      std::cout << "[" << (*cloud)[tree[i].right].x << "," << (*cloud)[tree[i].right].y << "," << (*cloud)[tree[i].right].z << "]";
+      std::cout<< ",";
 
-    std::cout<< "],";
-    // std::cout<< std::endl;
+      std::cout<< tree[i].height;
+
+      std::cout<< "],";
+      // std::cout<< std::endl;
+    }
   }
   std::cout<< "]";
   // for (size_t i = 0; i < t.tree.size(); i += 1){
@@ -468,12 +475,12 @@ bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b
 }
 
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
-  //////////////////
+  ////////////////// TODO: what's this /////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
-  //////////////////
+  //////////////////////////////////////////////////////
 
 
-  float alpha = M_PI / 4;
+  float alpha = M_PI / 180 * (30);
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
   std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
@@ -557,7 +564,6 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
         P -> points.push_back(pcl::PointXYZ(P -> points[current_point].x, P -> points[current_point].y, 0));
         // C[P->size() ](c);
         support_tree.tree.push_back(tree_node(-3, current_point, P->size() - 1, support_tree.tree[current_point].height));
-        // std::cout<< "b " << support_tree.tree[current_point].height << std::endl;
       }
       else if(m.first == -2){ // mesh-cone
         //////////////////// TODO ////////////////////////////////////////
