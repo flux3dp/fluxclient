@@ -54,20 +54,37 @@ inline std::ostream& operator<< (std::ostream& stream, const tree_node& n)
 
 class SupportTree{
 public:
-  SupportTree();
+  SupportTree(pcl::PointCloud<pcl::PointXYZ>::Ptr P);
   ~SupportTree();
+  void out_as_js();
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
   std::vector<tree_node> tree;
 };
 
-SupportTree::SupportTree(){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
-  cloud = cloud2;
+SupportTree::SupportTree(pcl::PointCloud<pcl::PointXYZ>::Ptr P){
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+  cloud = P;
 }
 
 SupportTree::~SupportTree(){
 
+}
+
+void SupportTree::out_as_js(){
+  // for (size_t i = 0; i < t.tree.size(); i += 1){
+  //   stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
+  // }
+}
+
+inline std::ostream& operator<< (std::ostream& stream, const SupportTree& t)
+{
+  for (size_t i = 0; i < t.tree.size(); i += 1){
+
+    stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
+  }
+
+  return stream;
 }
 
 MeshPtr createMeshPtr(){
@@ -435,42 +452,40 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
   //////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
   //////////////////
-  SupportTree support_tree;
+
+
   float alpha = M_PI / 4;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
   std::cout<< "P size need to be supported:"<< P->size() << std::endl;
+  SupportTree support_tree(P);
 
   sort(P -> points.begin(), P -> points.end(), sort_by_z);
-  std::map<int, cone> C;
+  std::map<int, cone> C;  // recording every cone, key = index of P
 
-  // std::map<int, int> P_v;  // main index list for tracing cones, just use for rb-tree, value is shit
   std::vector< std::pair<int, float> > P_v;  // main index list, first = index of P, second = z-coordinate
   for (size_t i = 0; i < P -> points.size(); i += 1){
     C[i] = cone(P -> points[i].x, P -> points[i].y, P -> points[i].z, alpha);
     P_v.push_back(std::pair<int, float>(i, P -> points[i].z));
   }
   sort(P_v.begin(), P_v.end(), sort_by_second);
-  // std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > P_v(P -> points);
-  int add_points_index = P_v.size();
-  // std::map<int, double, bool(*)(double, double)> S(double_fn_pt); //use this as r-b-tree, key: index, value:distance
-  std::vector<std::pair <int, float> > S;  // candidate for intersecino point, index of P_v and distance
-  int current_point;
   for (size_t i = 0; i < P_v.size(); i += 1){
+    // support_tree.cloud -> push_back(P -> points[P_v[i].first]);
     support_tree.tree.push_back(tree_node(-1, -1, P_v[i].first, 1));
   }
+  // std::cout<< "tree " << support_tree << std::endl;
 
+  std::vector<std::pair <int, float> > S;  // candidates for intersetino point, first:index of P_v,second: distance
+
+  std::map<int, cone> tmp_C;  // cones, key = index of P_v
+  int current_point; // current index of P
   while(P_v.size() != 0){
     current_point = P_v.back().first;  // index of P
-    P_v.pop_back();  // erase smallest p, can slightly skip some if statement
+    P_v.pop_back();  // erase highest p, can slightly skip some if statement
+
     S.clear();
+    tmp_C.clear();
     // cone-cone intersection
-    std::map<int, cone> tmp_C;  // cones, key = index of P_v
-    // for(std::vector< std::pair<int, float> >::iterator iter = P_v.begin(); iter != P_v.end(); iter++){
-    //   cone tmp_cone;
-    //   S.push_back(std::pair<int, double>(iter -> first, cone_intersect(C[current_point], C[iter -> first], tmp_cone)));
-    //   tmp_C[iter -> first] = tmp_cone;
-    // }
     for (size_t i = 0; i < P_v.size(); i += 1){
       cone tmp_cone;
       S.push_back(std::pair<int, double>(i, cone_intersect(C[current_point], C[P_v[i].first], tmp_cone)));
@@ -485,6 +500,8 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
 
     S.push_back(std::pair<int, double>(-2, std::numeric_limits<double>::infinity()));
     ///////////////////////////////////////////////
+
+    // choose the right candidate
     std::pair<int, float> m(S[0]);  // first: index of P_v, second: distance
     for (size_t i = 0; i < S.size(); i += 1){
       if(S[i].second < m.second){
@@ -492,36 +509,38 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
       }
       // std::cout<< "S:" << S[i].first << " " << S[i].second << std::endl;
     }
-
     if(m.second > m_threshold){
         // C.erase(current_point);
     }
     else{
-      // std::vector< std::pair<int, float> >::iterator iter;
-      // iter = std::lower_bound(P_v.begin(), P_v.end(), std::pair<int, float>(P_v[m.first].first, P -> points[P_v[m.first].first].z));
-      // std::cout<< "at:" << iter -  P_v.begin() << " " << P_v.size() << std::endl;
-
-      if(m.first >= 0){  // cone
+      if(m.first >= 0){  // cone-cone
         // tmp_C[m.first]
         // std::cout<< "m.first " << m.first << std::endl;
+        cone c(tmp_C[m.first]);
+        C[P->size()] = c;
+
+        P -> points.push_back(pcl::PointXYZ(c.pos[0], c.pos[1], c.pos[2]));
+        std::pair<int, double> new_pv(P->size() - 1, c.pos[2]);
+        // support_tree.cloud.push_back(P -> points.back())
+
+        support_tree.tree.push_back(tree_node(current_point, P_v[m.first].first, new_pv.first, support_tree.tree[current_point].height + support_tree.tree[P_v[m.first].first].height));
         P_v.erase(P_v.begin() + m.first);
 
-        cone c(tmp_C[m.first]);
-        P_v.push_back(std::pair<int, double>(P->size(), c.pos[2]));
-        C[P->size()] = c;
-        P -> points.push_back(pcl::PointXYZ(c.pos[0], c.pos[1], c.pos[2]));
+        std::vector< std::pair<int, float> >::iterator low;
 
-        support_tree.tree.push_back(tree_node(current_point, P_v[m.first].first, P->size() - 1, support_tree.tree[current_point].height + support_tree.tree[P_v[m.first].first].height));
+        low = std::lower_bound (P_v.begin(), P_v.end(), new_pv, sort_by_second);
+        P_v.insert(low, new_pv);
       }
-      else if(m.first == -1){ // plate
+      else if(m.first == -1){ // plate-cone
         // support_tree
         cone c;
         // P_v.push_back(std::pair<int, double>(P->size(),  ));
         P -> points.push_back(pcl::PointXYZ(P -> points[current_point].x, P -> points[current_point].y, 0));
         // C[P->size() ](c);
         support_tree.tree.push_back(tree_node(-3, current_point, P->size() - 1, support_tree.tree[current_point].height));
+        // std::cout<< "b " << support_tree.tree[current_point].height << std::endl;
       }
-      else if(m.first == -2){ // mesh
+      else if(m.first == -2){ // mesh-cone
         //////////////////// TODO ////////////////////////////////////////
         // P -> points.push_back(pcl::PointXYZ(intersect.x, intersect.y, intersect.z));
         // support_tree.tree.push_back(tree_node(-2, current_point, P->size() - 1, support_tree.tree[current_point].height));
@@ -531,13 +550,11 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
         std::cout<< "GG, this shouldn't  happen"<< std::endl;
         assert(false);
       }
-      // std::cout<< P_v.size() << std::endl;
     }
   }
-  // for (size_t i = 0; i < support_tree.tree.size(); i += 1){
-  //   std::cout << support_tree.tree[i] << std::endl;
-  // }
 
+  // std::cout<< "tree " << support_tree << std::endl;
+  // std::cout<< "support_tree.cloud " << support_tree.cloud -> size() << std::endl;
   return 0;
 }
 
@@ -641,7 +658,6 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.setInputCloud(P);
   grid.filter(*P);
   std::cout<< "P size after:"<< P->size() << std::endl;
-
   pcl::io::savePCDFileASCII ("tmp.pcd", *P);
 
   return 0;
