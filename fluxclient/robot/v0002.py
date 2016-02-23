@@ -111,7 +111,7 @@ class FluxRobotV0002(object):
         size = int(ssize)
         logger.debug("Recv %s %i" % (mimetype, size))
         if size == 0:
-            return (mimetype, b"")
+            return mimetype
         left = size
         while left > 0:
             left -= stream.write(self.sock.recv(min(4096, left)))
