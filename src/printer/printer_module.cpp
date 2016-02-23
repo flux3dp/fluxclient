@@ -72,6 +72,25 @@ SupportTree::~SupportTree(){
 }
 
 void SupportTree::out_as_js(){
+  std::cout<< "tree = [";
+  for (size_t i = 0; i < tree.size(); i += 1){
+    std::cout<< "[";
+
+      std::cout << "[" << (*cloud)[tree[i].index].x << "," << (*cloud)[tree[i].index].y << "," << (*cloud)[tree[i].index].z << "]";
+    std::cout<< ",";
+
+    std::cout << "[" << (*cloud)[tree[i].left].x << "," << (*cloud)[tree[i].left].y << "," << (*cloud)[tree[i].left].z << "]";
+    std::cout<< ",";
+
+    std::cout << "[" << (*cloud)[tree[i].right].x << "," << (*cloud)[tree[i].right].y << "," << (*cloud)[tree[i].right].z << "]";
+    std::cout<< ",";
+
+    std::cout<< tree[i].height;
+
+    std::cout<< "],";
+    // std::cout<< std::endl;
+  }
+  std::cout<< "]";
   // for (size_t i = 0; i < t.tree.size(); i += 1){
   //   stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
   // }
@@ -457,7 +476,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
   float alpha = M_PI / 4;
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
-  std::cout<< "P size need to be supported:"<< P->size() << std::endl;
+  std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
   SupportTree support_tree(P);
 
   sort(P -> points.begin(), P -> points.end(), sort_by_z);
@@ -555,6 +574,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
 
   // std::cout<< "tree " << support_tree << std::endl;
   // std::cout<< "support_tree.cloud " << support_tree.cloud -> size() << std::endl;
+  support_tree.out_as_js();
   return 0;
 }
 
@@ -594,8 +614,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
-  std::cout << "input points " << cloud -> size() << std::endl;
-  std::cout << "input faces " << triangles->polygons.size() << std::endl;
+  std::cerr << "input points " << cloud -> size() << std::endl;
+  std::cerr << "input faces " << triangles->polygons.size() << std::endl;
   // std::vector<float> normal_p;
   // std::vector<float> normal_vertical;
   // normal_vertical.push_back(0);
@@ -651,13 +671,13 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
       }
     }
   }
-  std::cout<< "face need:"<< rec.size() << std::endl;
-  std::cout<< "P size before:"<< P->size() << std::endl;
+  std::cerr<< "face need:"<< rec.size() << std::endl;
+  std::cerr<< "P size before:"<< P->size() << std::endl;
   pcl::VoxelGrid<pcl::PointXYZ> grid;
   grid.setLeafSize(sample_rate, sample_rate, sample_rate);
   grid.setInputCloud(P);
   grid.filter(*P);
-  std::cout<< "P size after:"<< P->size() << std::endl;
+  std::cerr<< "P size after:"<< P->size() << std::endl;
   pcl::io::savePCDFileASCII ("tmp.pcd", *P);
 
   return 0;
