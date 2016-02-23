@@ -1,10 +1,15 @@
-#include <limits>
 #include <iostream>
 #include <math.h>
+#include <map>
+#include <algorithm>
+#include <limits>
 
 #include <pcl/filters/voxel_grid.h>
+////////////////////   fake code ////////////////////////////////////
 #include <pcl/io/pcd_io.h>
+//////////////////////////////////////////////////////
 #include "printer_module.h"
+#define likely(x)  __builtin_expect((x),1)
 
 struct cone
 {
@@ -29,6 +34,19 @@ struct cone
     theta = cone2.theta;
   }
 };
+
+// class SupportTree{
+// public:
+//   SupportTree(int a);
+//   ~SupportTree();
+
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
+// };
+
+// SupportTree::SupportTree(int a){
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+//   cloud = cloud2;
+// }
 
 MeshPtr createMeshPtr(){
   MeshPtr mesh(new pcl::PolygonMesh);
@@ -378,14 +396,102 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
   return 0;
 }
 
+bool sort_by_z(const pcl::PointXYZ a,const pcl::PointXYZ b)
+{
+   return a.z < b.z;
+}
+bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b){
+  if(likely(a.second != b.second)){
+    return a.second < b.second;
+  }
+  else{
+    return a.first < b.first;
+  }
+}
+
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
+  //////////////////
+  double m_threshold = std::numeric_limits<double>::infinity();
+  //////////////////
+  // SupportTree support_tree(1);
+  float alpha = M_PI / 4;
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);
-  find_support_point(input_mesh, M_PI / 4, 0.1, P);
-  std::cout<< "P size after:"<< P->size() << std::endl;
+  find_support_point(input_mesh, alpha, 1, P);
+  std::cout<< "P size need to be supported:"<< P->size() << std::endl;
+
+  sort(P -> points.begin(), P -> points.end(), sort_by_z);
+  std::vector<cone> C;
+
+  // std::map<int, int> P_v;  // main index list for tracing cones, just use for rb-tree, value is shit
+  std::vector< std::pair<int, float> > P_v;  // main index list, first = index of P, second = z-coordinate
+  for (size_t i = 0; i < P -> points.size(); i += 1){
+    C.push_back(cone(P -> points[i].x, P -> points[i].y, P -> points[i].z, alpha));
+    P_v.push_back(std::pair<int, float>(i, P -> points[i].z));
+  }
+  sort(P_v.begin(), P_v.end(), sort_by_second);
+  // std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ> > P_v(P -> points);
+  int add_points_index = P_v.size();
+  // std::map<int, double, bool(*)(double, double)> S(double_fn_pt); //use this as r-b-tree, key: index, value:distance
+  std::vector<std::pair <int, float> > S;  // candidate for intersecino point, index of P_v and distance
+  int current_point;
+  while(P_v.size() != 0){
+    current_point = P_v.back().first;
+    P_v.pop_back();  // erase smallest p, can slightly skip some if statement
+    S.clear();
+    // cone-cone intersection
+    std::map<int, cone> tmp_C;  // cones, key = index of P
+    for(std::vector< std::pair<int, float> >::iterator iter = P_v.begin(); iter != P_v.end(); iter++){
+      cone tmp_cone;
+      S.push_back(std::pair<int, double>(iter -> first, cone_intersect(C[current_point], C[iter -> first], tmp_cone)));
+      tmp_C[iter -> first] = tmp_cone;
+    }
+    // cone-plate intersection
+    S.push_back(std::pair<int, double>(-1, P -> points[current_point].z));
+
+    // cone-mesh intersection, use -1 to indicate it's connected to mesh
+    ////////////////  TODO ////////////////////////
+
+    S.push_back(std::pair<int, double>(-2, std::numeric_limits<double>::infinity()));
+    ///////////////////////////////////////////////
+    std::pair<int, float> m(S[0]);  // first: index of P_v, second: distance
+    for (size_t i = 0; i < S.size(); i += 1){
+      if(S[i].second < m.second){
+        m = S[i];
+      }
+      // std::cout<< "S:" << S[i].first << " " << S[i].second << std::endl;
+    }
+
+    if(m.second > m_threshold){
+        C.erase(C.begin() + current_point);
+    }
+    else{
+      // std::vector< std::pair<int, float> >::iterator iter;
+      // iter = std::lower_bound(P_v.begin(), P_v.end(), std::pair<int, float>(P_v[m.first].first, P -> points[P_v[m.first].first].z));
+      // std::cout<< "at:" << iter -  P_v.begin() << " " << P_v.size() << std::endl;
+
+      if(m.first > 0){  // cone
+        // tmp_C[m.first]
+        // P_v.erase(P_v.begin() + m.first);
+      }
+      else if(m.first == -1){ // plate
+        // support_tree
+      }
+      else if(m.first == -2){ // mesh
+
+      }
+      else{
+        std::cout<< "GG, this shouldn't  happen"<< std::endl;
+        assert(false);
+      }
+
+    }
+  }
   return 0;
 }
-int cone_intersect(cone a, cone b, cone &c){
 
+double cone_intersect(cone a, cone b, cone &c){
+  // return distance between cone a and interseciton
+  // inner division point
   float dz = b.pos[2] - a.pos[2];
   float dxy = sqrt(pow(a.pos[0] - b.pos[0], 2) + pow(a.pos[1] - b.pos[1], 2));
   if(dxy == 0){
@@ -396,18 +502,18 @@ int cone_intersect(cone a, cone b, cone &c){
     return -1;
   }
   float h;
-  std::cout<< "tan " << tan(a.theta) << std::endl;
-  std::cout<< "dxy " << dxy << std::endl;
-  std::cout<< "dz " << dz << std::endl;
+  // std::cout<< "tan " << tan(a.theta) << std::endl;
+  // std::cout<< "dxy " << dxy << std::endl;
+  // std::cout<< "dz " << dz << std::endl;
   h = (dxy / tan(a.theta) - dz) / 2;
-  std::cout<< "h:" << h << std::endl;
+  // std::cout<< "h:" << h << std::endl;
 
-  cone cc(
-  ((h + dz) * a.pos[0] + h * b.pos[0]) / (h + dz + h),
-  ((h + dz) * a.pos[1] + h * b.pos[1]) / (h + dz + h),
-  a.pos[2] - h ,a.theta);
-  c = cc;
-  return 0;
+  c.pos[0] = ((h + dz) * a.pos[0] + h * b.pos[0]) / (h + dz + h),
+  c.pos[1] = ((h + dz) * a.pos[1] + h * b.pos[1]) / (h + dz + h),
+  c.pos[2] = a.pos[2] - h;
+  c.theta = a.theta;
+
+  return sqrt(pow(a.pos[0] - c.pos[0], 2) + pow(a.pos[1] - c.pos[1], 2) + pow(a.pos[2] - c.pos[2], 2));
 }
 
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
@@ -472,7 +578,6 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
           P -> push_back(point);
         }
       }
-
     }
   }
   std::cout<< "face need:"<< rec.size() << std::endl;
@@ -483,13 +588,10 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.filter(*P);
   std::cout<< "P size after:"<< P->size() << std::endl;
 
-  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
-  // for (size_t j = 0; j < P->size(); j += 1){
-  //   std::cout<< (*P)[j] << std::endl;
-  // }
-  cone ca(1, 0, 1, M_PI / 4.0), cb(0, 0, 0, M_PI / 4.0), cc;
-  cone_intersect(ca, cb, cc);
+  // pcl::io::savePCDFileASCII ("tmp.pcd", *P);
+
+  // cone ca(1, 0, 1, M_PI / 4.0), cb(0, 0, 1, M_PI / 4.0), cc;
+  // cone_intersect(ca, cb, cc);
+  // std::cout<< "cc.pos[0]:" << cc.pos[0] << std::endl;
   return 0;
 }
-
-

@@ -54,7 +54,7 @@ G1 F1800
         #Print raft gcode
         raft_gcode = self.generate_gcode(islands)
         #Debug output
-        if debug:
+        if debug and os.environ.get("flux_debug") == '1':
             self.output_grid()
         #Print other gcode ( uplift Z by elf.count*self.layer_height+self.z_space )
         skip = 15

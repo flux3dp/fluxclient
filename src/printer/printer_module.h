@@ -22,5 +22,4 @@ int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v);
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh);
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P);
 struct cone;
-int cone_intersect(cone a, cone b, cone &c);
-
+double cone_intersect(cone a, cone b, cone &c);
