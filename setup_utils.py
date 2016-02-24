@@ -141,7 +141,7 @@ def create_scanner_extentions():
         elif platform.platform().startswith("Linux"):
             extra_compile_args += ["-lstdc++"]
 
-        elif platform.platform().startswith("Windows"): 
+        elif platform.platform().startswith("Windows"):
             libraries += ["pcl_common_release", "pcl_octree_release",
                           "pcl_io_release", "pcl_kdtree_release",
                           "pcl_search_release", "pcl_sample_consensus_release",

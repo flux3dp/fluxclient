@@ -4,7 +4,9 @@ from struct import unpack
 from io import BytesIO, StringIO
 import subprocess
 import tempfile
+import os
 from os import remove, environ
+import platform
 import sys
 from multiprocessing import Pipe
 from threading import Thread
@@ -346,13 +348,20 @@ class StlSlicer(object):
             if not (n in self.models and n in self.parameter):
                 return False, '%s not set yet' % (n)
         # tmp files
-        tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
+        if platform.platform().startswith("Windows"):
+            if not os.path.isdir('C:\Temp'):
+                os.mkdir('C:\Temp')
+            temp_dir = 'C:\Temp'
+        else:
+            temp_dir = None
+
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.stl', delete=False)
         tmp_stl_file = tmp.name  # store merged stl
 
-        tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
-        tmp = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = _printer.MeshObj([], [])

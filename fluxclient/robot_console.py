@@ -48,6 +48,7 @@ class RobotConsole(object):
             "rmdir": self.rmdir,
             "rmfile": self.rmfile,
             "cp": self.cpfile,
+            "download": self.download_file,
             "upload": self.upload_file,
             "md5": self.md5,
 
@@ -188,6 +189,14 @@ class RobotConsole(object):
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
+    def download_file(self, source, target):
+        def callback(left, size):
+            logger.info("Download %i / %i" % (size - left, size))
+
+        entry, path = source.split("/", 1)
+        with open(target, "wb") as f:
+            self.robot_obj.download_file(entry, path, f, callback)
+
     def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
             source, upload_to, progress_callback=self.log_progress_callback)
@@ -203,7 +212,8 @@ class RobotConsole(object):
             progress_callback=self.log_progress_callback)
 
     def md5(self, filename):
-        md5 = self.robot_obj.md5(" ".join(filename.split("/", 1)))
+        entry, path = filename.split("/", 1)
+        md5 = self.robot_obj.md5(entry, path)
         logger.info("MD5 %s %s", filename, md5)
 
     def play_info(self):

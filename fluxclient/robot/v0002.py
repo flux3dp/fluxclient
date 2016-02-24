@@ -105,17 +105,23 @@ class FluxRobotV0002(object):
         self._send_cmd(buf)
         return self.get_resp(timeout)
 
-    def recv_binary(self, binary_header):
+    def recv_binary_into(self, binary_header, stream, callback=None):
         mn, mimetype, ssize = binary_header.split(" ")
         assert mn == "binary"
         size = int(ssize)
         logger.debug("Recv %s %i" % (mimetype, size))
         if size == 0:
-            return (mimetype, b"")
-        buf = BytesIO()
+            return mimetype
         left = size
         while left > 0:
-            left -= buf.write(self.sock.recv(min(4096, left)))
+            left -= stream.write(self.sock.recv(min(4096, left)))
+            if callback:
+                callback(left, size)
+        return mimetype
+
+    def recv_binary(self, binary_header, callback=None):
+        buf = BytesIO()
+        mimetype = self.recv_binary_into(binary_header, buf, callback)
         return (mimetype, buf.getvalue())
 
     # Command Tasks
@@ -183,7 +189,7 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def rmfile(self, entry, path):
-        return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
+        return self._make_cmd(b"file rm " + entry.encode() + b" " + path.encode())
 
     def md5(self, entry, path):
         bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
@@ -191,6 +197,19 @@ class FluxRobotV0002(object):
         resp = bresp.decode("ascii", "ignore")
         if resp.startswith("md5 "):
             return resp[4:]
+        else:
+            raise_error(resp)
+
+    def download_file(self, entry, path, stream, callback=None):
+        self._send_cmd(("file download %s %s" % (entry, path)).encode())
+        resp = self.get_resp().decode("utf8", "ignore")
+        if resp.startswith("binary "):
+            mimetype = self.recv_binary_into(resp, stream, callback)
+            ret = self.get_resp().decode("utf8", "ignore")
+            if ret == "ok":
+                return mimetype
+            else:
+                raise_error(resp)
         else:
             raise_error(resp)
 
