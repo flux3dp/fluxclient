@@ -148,13 +148,13 @@ def create_scanner_extentions():
                           "pcl_filters_release", "pcl_features_release",
                           "pcl_segmentation_release", "pcl_surface_release",
                           "pcl_registration_release", "pcl_keypoints_release"]
-            include_dirs += [
+            include_dirs += ["C:/Program Files (x86)/Eigen/include",
+                             "C:/Program Files (x86)/flann/include",
+                             "C:/Program Files/PCL 1.7.2/3rdParty/flann/include",
                              "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
                              "C:/Program Files/PCL 1.7.2/lib",
                              "C:/Program Files/PCL 1.7.2/3rdParty/Eigen/eigen3",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/include/boost-1_57",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/FLANN/include",
-                             ]
+                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/include/boost-1_57"]
             library_dirs += ["C:/Program Files/PCL 1.7.2/lib",
                              "C:/Program Files/PCL 1.7.2/3rdParty/Boost/lib"]
 
