@@ -474,13 +474,13 @@ bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b
   }
 }
 
-int add_support(MeshPtr input_mesh, MeshPtr out_mesh){
+int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
   ////////////////// TODO: what's this /////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
   //////////////////////////////////////////////////////
 
 
-  float alpha = M_PI / 180 * (30);
+  // float alpha = M_PI / 180 * (30);
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
   std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
