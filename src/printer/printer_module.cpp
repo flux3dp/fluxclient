@@ -11,23 +11,39 @@
 #include "printer_module.h"
 #define likely(x)  __builtin_expect((x),1)
 
-struct cone
+struct v3
 {
   float pos[3];
-  float theta;
-  cone(){
+  v3(){
     pos[0] = 0;
     pos[1] = 0;
     pos[2] = 0;
-    theta = 0;
   }
-  cone(float x, float  y, float z, float t){
+  v3(float x, float y, float z){
     pos[0] = x;
     pos[1] = y;
     pos[2] = z;
+  }
+  float& operator[] (int nIndex){
+    assert(nIndex >= 0 && nIndex < 3);
+    return pos[nIndex];
+  }
+};
+
+struct cone
+{
+  // float pos[3];
+  v3 pos;
+  float theta;
+  cone(){
+
+    theta = 0;
+  }
+  cone(float x, float  y, float z, float t){
+    pos = v3(x, y, z);
     theta = t;
   }
-  cone(cone const &cone2){
+  cone(cone &cone2){
     pos[0] = cone2.pos[0];
     pos[1] = cone2.pos[1];
     pos[2] = cone2.pos[2];
@@ -63,12 +79,10 @@ public:
 };
 
 SupportTree::SupportTree(pcl::PointCloud<pcl::PointXYZ>::Ptr P){
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
   cloud = P;
 }
 
 SupportTree::~SupportTree(){
-
 }
 
 void SupportTree::out_as_js(){
@@ -85,9 +99,7 @@ void SupportTree::out_as_js(){
         std::cout<< ",";
       }
       else{
-
       }
-
       std::cout << "[" << (*cloud)[tree[i].right].x << "," << (*cloud)[tree[i].right].y << "," << (*cloud)[tree[i].right].z << "]";
       std::cout<< ",";
 
@@ -98,18 +110,14 @@ void SupportTree::out_as_js(){
     }
   }
   std::cout<< "]";
-  // for (size_t i = 0; i < t.tree.size(); i += 1){
-  //   stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
-  // }
+  return;
 }
 
 inline std::ostream& operator<< (std::ostream& stream, const SupportTree& t)
 {
   for (size_t i = 0; i < t.tree.size(); i += 1){
-
     stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
   }
-
   return stream;
 }
 
@@ -479,8 +487,6 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
   double m_threshold = std::numeric_limits<double>::infinity();
   //////////////////////////////////////////////////////
 
-
-  // float alpha = M_PI / 180 * (30);
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
   std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
@@ -585,8 +591,10 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 }
 
 double cone_intersect(cone a, cone b, cone &c){
-  // return distance between cone a and interseciton
-  // inner division point
+  // computer the cone-cone intersection
+  // usint inner division point
+  // return distance between cone a's position and interseciton point
+
   float dz = b.pos[2] - a.pos[2];
   float dxy = sqrt(pow(a.pos[0] - b.pos[0], 2) + pow(a.pos[1] - b.pos[1], 2));
   if(dxy == 0){
@@ -662,7 +670,6 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
       int ia = (int)(la / (sample_rate / 10.));
       int ib = (int)(lb / (sample_rate / 10.));
       // std::cout<< "ia:"<< ia << " " << ib << std::endl;
-
 
       for (size_t j = 0; j < ia; j += 1){
         for (size_t k = 0; k < (float)j / ia * ib; k += 1){
