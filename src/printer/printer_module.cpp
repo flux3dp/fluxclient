@@ -11,8 +11,7 @@
 #include "printer_module.h"
 #define likely(x)  __builtin_expect((x),1)
 
-struct v3
-{
+struct v3{
   float pos[3];
   v3(){
     pos[0] = 0;
@@ -30,13 +29,16 @@ struct v3
   }
 };
 
-struct cone
-{
+float d_v3(v3 &a, v3 &b){
+  return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2) + pow(a[2] - b[2], 2));
+}
+
+struct cone{
   // float pos[3];
   v3 pos;
   float theta;
   cone(){
-
+    pos = v3();
     theta = 0;
   }
   cone(float x, float  y, float z, float t){
@@ -50,9 +52,12 @@ struct cone
     theta = cone2.theta;
   }
 };
+struct tri_data{
+  bool ok;
 
-struct tree_node
-{
+};
+
+struct tree_node{
   int left, right, index, height;
   tree_node(int l, int r, int i, int h){
     left = l;
@@ -62,8 +67,7 @@ struct tree_node
   }
 };
 
-inline std::ostream& operator<< (std::ostream& stream, const tree_node& n)
-{
+inline std::ostream& operator<< (std::ostream& stream, const tree_node& n){
   stream << n.left << " " << n.right << " " << n.index << " " << n.height << " " << std::endl;
   return stream;
 }
@@ -113,8 +117,7 @@ void SupportTree::out_as_js(){
   return;
 }
 
-inline std::ostream& operator<< (std::ostream& stream, const SupportTree& t)
-{
+inline std::ostream& operator<< (std::ostream& stream, const SupportTree& t){
   for (size_t i = 0; i < t.tree.size(); i += 1){
     stream << t.tree[i].left << ", " << t.tree[i].right << ", " << t.tree[i].index << ", " << t.tree[i].height << ", " << std::endl;
   }
@@ -482,6 +485,47 @@ bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b
   }
 }
 
+int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
+  // ref:http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.479.8237&rep=rep1&type=pdf
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(input_mesh->cloud, *cloud);
+  for (size_t i = 0; i < input_mesh -> polygons.size(); i += 1){
+    tri_data a;
+    Eigen::Matrix3f tri_before, tri_after;
+    for (size_t j = 0; j < 3; j += 1){
+      tri_before(j, 0) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].x;
+      tri_before(j, 1) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].y;
+      tri_before(j, 2) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].z;
+    }
+
+    for (size_t j = 0; j < 3; j += 1){
+      for (size_t k = 0; k < 3 - i; k += 1){
+        tri_after(j, k) = 0;
+      }
+    }
+    float d12 = sqrt(pow(tri_before(0, 0) - tri_before(1, 0), 2) + pow(tri_before(0, 1) - tri_before(1, 1), 2) + pow(tri_before(0, 2) - tri_before(1, 2), 2));
+    float d13 = sqrt(pow(tri_before(0, 0) - tri_before(2, 0), 2) + pow(tri_before(0, 1) - tri_before(2, 1), 2) + pow(tri_before(0, 2) - tri_before(2, 2), 2));
+    float d23 = sqrt(pow(tri_before(1, 0) - tri_before(2, 0), 2) + pow(tri_before(1, 1) - tri_before(2, 1), 2) + pow(tri_before(1, 2) - tri_before(2, 2), 2));
+    tri_after(1, 2) = d12;
+    tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
+    tri_after(2, 1) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
+
+    std::cerr<< "before \n" << tri_before << std::endl;
+    std::cerr<< "after \n" << tri_after << std::endl;
+    // tri_after.tran
+    Eigen::Matrix3f tri_trans = tri_before.colPivHouseholderQr().solve(tri_after);
+    std::cerr<< "s1 \n" << tri_trans << std::endl;
+    std::cerr<< "s2 \n" << tri_before * tri_trans << std::endl;
+
+    // t0((*cloud)[(triangles->polygons[i]).vertices[0]].x, (*cloud)[(triangles->polygons[i]).vertices[0]].y, (*cloud)[(triangles->polygons[i]).vertices[0]].z);
+    // Eigen::Matrix3f t1((*cloud)[(triangles->polygons[i]).vertices[1]].x, (*cloud)[(triangles->polygons[i]).vertices[1]].y, (*cloud)[(triangles->polygons[i]).vertices[1]].z);
+    // Eigen::Matrix3f t2((*cloud)[(triangles->polygons[i]).vertices[2]].x, (*cloud)[(triangles->polygons[i]).vertices[2]].y, (*cloud)[(triangles->polygons[i]).vertices[2]].z);
+    preprocess_tri.push_back(a);
+    return 0;
+  }
+  return 0;
+}
+
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
   ////////////////// TODO: what's this /////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
@@ -489,6 +533,9 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
+  std::vector<tri_data> preprocess_tri;
+  preprocess(input_mesh, preprocess_tri);
+  std::cerr<< "preprocess_tri " << preprocess_tri.size() << std::endl;
   std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
   SupportTree support_tree(P);
 
@@ -529,8 +576,8 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
     // cone-mesh intersection, use -1 to indicate it's connected to mesh
     ////////////////  TODO ////////////////////////
-
-    S.push_back(std::pair<int, double>(-2, std::numeric_limits<double>::infinity()));
+    v3 cm_point;
+    S.push_back(std::pair<int, double>(-2, cone_mesh_intersect(C[current_point], input_mesh, cm_point)));
     ///////////////////////////////////////////////
 
     // choose the right candidate
@@ -573,8 +620,8 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
       }
       else if(m.first == -2){ // mesh-cone
         //////////////////// TODO ////////////////////////////////////////
-        // P -> points.push_back(pcl::PointXYZ(intersect.x, intersect.y, intersect.z));
-        // support_tree.tree.push_back(tree_node(-2, current_point, P->size() - 1, support_tree.tree[current_point].height));
+        P -> points.push_back(pcl::PointXYZ(cm_point[0], cm_point[1], cm_point[2]));
+        support_tree.tree.push_back(tree_node(-2, current_point, P->size() - 1, support_tree.tree[current_point].height));
         ////////////////////////////////////////////////////////////
       }
       else{
@@ -582,11 +629,12 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         assert(false);
       }
     }
+    // break;
   }
 
   // std::cout<< "tree " << support_tree << std::endl;
   // std::cout<< "support_tree.cloud " << support_tree.cloud -> size() << std::endl;
-  support_tree.out_as_js();
+  // support_tree.out_as_js();
   return 0;
 }
 
@@ -615,10 +663,31 @@ double cone_intersect(cone a, cone b, cone &c){
   c.pos[1] = ((h + dz) * a.pos[1] + h * b.pos[1]) / (h + dz + h),
   c.pos[2] = a.pos[2] - h;
   c.theta = a.theta;
-
-  return sqrt(pow(a.pos[0] - c.pos[0], 2) + pow(a.pos[1] - c.pos[1], 2) + pow(a.pos[2] - c.pos[2], 2));
+  return d_v3(a.pos, c.pos);
+  // return sqrt(pow(a.pos[0] - c.pos[0], 2) + pow(a.pos[1] - c.pos[1], 2) + pow(a.pos[2] - c.pos[2], 2));
 }
 
+double cone_mesh_intersect(cone a, MeshPtr triangles, v3 &p){
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  fromPCLPointCloud2(triangles->cloud, *cloud);
+
+  double m = std::numeric_limits<double>::infinity();
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    v3 t0((*cloud)[(triangles->polygons[i]).vertices[0]].x, (*cloud)[(triangles->polygons[i]).vertices[0]].y, (*cloud)[(triangles->polygons[i]).vertices[0]].z);
+    v3 t1((*cloud)[(triangles->polygons[i]).vertices[1]].x, (*cloud)[(triangles->polygons[i]).vertices[1]].y, (*cloud)[(triangles->polygons[i]).vertices[1]].z);
+    v3 t2((*cloud)[(triangles->polygons[i]).vertices[2]].x, (*cloud)[(triangles->polygons[i]).vertices[2]].y, (*cloud)[(triangles->polygons[i]).vertices[2]].z);
+    v3 tmp_p;
+    double d = 0.0;
+    //todo: add some early cut?
+
+    // = d_v3tri(t0, t1, t2, a.pos, tmp_p);
+    if(d < m){
+      m = d;
+      p = tmp_p;
+    }
+  }
+  return m+999;
+}
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
   // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
   // MeshPtr triangles[in]: input stl
@@ -691,7 +760,11 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.setInputCloud(P);
   grid.filter(*P);
   std::cerr<< "P size after:"<< P->size() << std::endl;
+  ////////////////////fake code //////////////////////////////
   pcl::io::savePCDFileASCII ("tmp.pcd", *P);
+  ////////////////////////////////////////////////////////////
 
   return 0;
 }
+
+
