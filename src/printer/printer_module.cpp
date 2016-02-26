@@ -54,7 +54,17 @@ struct cone{
 };
 struct tri_data{
   bool ok;
-
+  Eigen::Matrix4f tri_trans;
+  Eigen::Vector3f L_13;
+  Eigen::Vector3f L_111;
+  Eigen::Vector3f L_331;
+  Eigen::Vector3f L_23;
+  Eigen::Vector3f L_223;
+  Eigen::Vector3f L_332;
+  Eigen::Vector3f L_12;
+  Eigen::Vector3f L_112;
+  Eigen::Vector3f L_221;
+  std::map<int, bool> in_tri;
 };
 
 struct tree_node{
@@ -485,43 +495,87 @@ bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b
   }
 }
 
+Eigen::Vector3f sol_2(float x1, float y1, float x2, float y2){
+  // return Eigen::Vector3f(y1 - y2, x2 - x1, x1 * y2 - x2 * y1);
+  return Eigen::Vector3f(y1 - y2, x2 - x1, x1 * y2 - x2 * y1);
+}
+float sub_in(float y, float z, Eigen::Vector3f f){
+  return f(0) * y + f(1) * z + f(2);
+}
+
 int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
   // ref:http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.479.8237&rep=rep1&type=pdf
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(input_mesh->cloud, *cloud);
   for (size_t i = 0; i < input_mesh -> polygons.size(); i += 1){
+    // TODO:(check if ok for tri)
     tri_data a;
-    Eigen::Matrix3f tri_before, tri_after;
+    Eigen::Matrix3f tri_before;
+    Eigen::Matrix3f tri_after;
+    tri_after.setZero();
     for (size_t j = 0; j < 3; j += 1){
-      tri_before(j, 0) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].x;
-      tri_before(j, 1) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].y;
-      tri_before(j, 2) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].z;
+      tri_before(0, j) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].x;
+      tri_before(1, j) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].y;
+      tri_before(2, j) = (*cloud)[(input_mesh->polygons[i]).vertices[j]].z;
     }
 
-    for (size_t j = 0; j < 3; j += 1){
-      for (size_t k = 0; k < 3 - i; k += 1){
-        tri_after(j, k) = 0;
+    float d12 = sqrt(pow(tri_before(0, 0) - tri_before(0, 1), 2) + pow(tri_before(1, 0) - tri_before(1, 1), 2) + pow(tri_before(2, 0) - tri_before(2, 1), 2));
+    float d13 = sqrt(pow(tri_before(0, 0) - tri_before(0, 2), 2) + pow(tri_before(1, 0) - tri_before(1, 2), 2) + pow(tri_before(2, 0) - tri_before(2, 2), 2));
+    float d23 = sqrt(pow(tri_before(0, 1) - tri_before(0, 2), 2) + pow(tri_before(1, 1) - tri_before(1, 2), 2) + pow(tri_before(2, 1) - tri_before(2, 2), 2));
+    tri_after(2, 1) = d12;
+    tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
+    tri_after(1, 2) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
+    for (size_t i = 0; i < 3; i += 1){
+      for (size_t j = 0; j < 3; j += 1){
+        tri_after(i, j) -= tri_before(i, 0);
       }
     }
-    float d12 = sqrt(pow(tri_before(0, 0) - tri_before(1, 0), 2) + pow(tri_before(0, 1) - tri_before(1, 1), 2) + pow(tri_before(0, 2) - tri_before(1, 2), 2));
-    float d13 = sqrt(pow(tri_before(0, 0) - tri_before(2, 0), 2) + pow(tri_before(0, 1) - tri_before(2, 1), 2) + pow(tri_before(0, 2) - tri_before(2, 2), 2));
-    float d23 = sqrt(pow(tri_before(1, 0) - tri_before(2, 0), 2) + pow(tri_before(1, 1) - tri_before(2, 1), 2) + pow(tri_before(1, 2) - tri_before(2, 2), 2));
-    tri_after(1, 2) = d12;
-    tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
-    tri_after(2, 1) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
+    a.tri_trans.setIdentity();
+    a.tri_trans.block<3,3>(0,0) = tri_after * tri_before.inverse();
+    for (size_t j = 0; j < 3; j += 1){
+      a.tri_trans(j, 3) = tri_before(j, 0);
+    }
 
-    std::cerr<< "before \n" << tri_before << std::endl;
-    std::cerr<< "after \n" << tri_after << std::endl;
-    // tri_after.tran
-    Eigen::Matrix3f tri_trans = tri_before.colPivHouseholderQr().solve(tri_after);
-    std::cerr<< "s1 \n" << tri_trans << std::endl;
-    std::cerr<< "s2 \n" << tri_before * tri_trans << std::endl;
+    float tmp;
 
-    // t0((*cloud)[(triangles->polygons[i]).vertices[0]].x, (*cloud)[(triangles->polygons[i]).vertices[0]].y, (*cloud)[(triangles->polygons[i]).vertices[0]].z);
-    // Eigen::Matrix3f t1((*cloud)[(triangles->polygons[i]).vertices[1]].x, (*cloud)[(triangles->polygons[i]).vertices[1]].y, (*cloud)[(triangles->polygons[i]).vertices[1]].z);
-    // Eigen::Matrix3f t2((*cloud)[(triangles->polygons[i]).vertices[2]].x, (*cloud)[(triangles->polygons[i]).vertices[2]].y, (*cloud)[(triangles->polygons[i]).vertices[2]].z);
+    a.L_13 = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 2), tri_after(2, 2));
+    a.in_tri[13] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_13) > 0;
+
+    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L_13(1), -a.L_13(0), 0));
+    a.L_111 = Eigen::Vector3f(a.L_13(1), -a.L_13(0), tmp);
+    a.in_tri[111] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_111) > 0;
+
+    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L_13(1), -a.L_13(0), 0));
+    a.L_331 = Eigen::Vector3f(a.L_13(1), -a.L_13(0), tmp);
+    a.in_tri[331] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_331) > 0;
+
+
+    a.L_23 = sol_2(tri_after(1, 1), tri_after(2, 1), tri_after(1, 2), tri_after(2, 2));
+    a.in_tri[23] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_23) > 0;
+
+    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L_23(1), -a.L_23(0), 0));
+    a.L_223 = Eigen::Vector3f(a.L_23(1), -a.L_23(0), tmp);
+    a.in_tri[223] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_223) > 0;
+
+    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L_23(1), -a.L_23(0), 0));
+    a.L_332 = Eigen::Vector3f(a.L_23(1), -a.L_23(0), tmp);
+    a.in_tri[332] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_332) > 0;
+
+
+    a.L_12 = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 1), tri_after(2, 1));
+    a.in_tri[12] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_12) > 0;
+
+    // L_112
+    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L_12(1), -a.L_12(0), 0));
+    a.L_112 = Eigen::Vector3f(a.L_12(1), -a.L_12(0), tmp);
+    a.in_tri[112] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_112) > 0;
+
+    // L_221
+    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L_12(1), -a.L_12(0), 0));
+    a.L_221 = Eigen::Vector3f(a.L_12(1), -a.L_12(0), tmp);
+    a.in_tri[221] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_221) > 0;
+
     preprocess_tri.push_back(a);
-    return 0;
   }
   return 0;
 }
