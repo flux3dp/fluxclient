@@ -33,6 +33,7 @@ struct cone{
     theta = cone2.theta;
   }
 };
+
 struct tri_data{
   bool ok;
   Eigen::Matrix3f tri_after;
@@ -576,7 +577,7 @@ int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
 }
 
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
-  ////////////////// TODO: what's this /////////////////
+  ////////////////// TODO: read paper to find out what's this /////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
   //////////////////////////////////////////////////////
 
@@ -624,11 +625,9 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
     // cone-plate intersection
     S.push_back(std::pair<int, double>(-1, P -> points[current_point].z));
 
-    // cone-mesh intersection, use -1 to indicate it's connected to mesh
-    ////////////////  TODO ////////////////////////
+    // cone-mesh intersection, use -2 to indicate it's connected to mesh
     Eigen::Vector3f cm_point;
     S.push_back(std::pair<int, double>(-2, cone_mesh_intersect(C[current_point], input_mesh, preprocess_tri, cm_point)));
-    ///////////////////////////////////////////////
 
     // choose the right candidate
     std::pair<int, float> m(S[0]);  // first: index of P_v, second: distance
@@ -646,7 +645,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         // tmp_C[m.first]
         // std::cout<< "m.first " << m.first << std::endl;
         cone c(tmp_C[m.first]);
-        C[P->size()] = c;
+        C[P->points.size()] = c;
 
         P -> points.push_back(pcl::PointXYZ(c.pos[0], c.pos[1], c.pos[2]));
         std::pair<int, double> new_pv(P->size() - 1, c.pos[2]);
@@ -679,7 +678,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         assert(false);
       }
     }
-    break;
+    // break;
   }
 
   // std::cout<< "tree " << support_tree << std::endl;
@@ -718,6 +717,7 @@ double cone_intersect(cone a, cone b, cone &c){
 }
 
 double cone_mesh_intersect(cone a, MeshPtr triangles, std::vector<tri_data> &preprocess_tri, Eigen::Vector3f &p){
+  float tan_a = tan(a.theta);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
 
@@ -796,12 +796,19 @@ double cone_mesh_intersect(cone a, MeshPtr triangles, std::vector<tri_data> &pre
       }
       exit(1);
     }
+    tmp_p = preprocess_tri[i].tri_trans.inverse() * tmp_p;
 
-    if(d < m){
-      m = d;
-      p = preprocess_tri[i].tri_trans.inverse() * tmp_p;
-      std::cerr<< "i " << i << " "<< record.size() << std::endl;
+    float h = a.pos[2] - tmp_p(2);
+    if(h >= 0){
+      if(tan_a * h >= sqrt(pow(tmp_p[0] - a.pos[0], 2) + pow(tmp_p[1] - a.pos[1], 2))){
+        if(d < m){
+          m = d;
+          p = tmp_p;
+          std::cerr<< "i " << i << " "<< record.size() << std::endl;
+        }
+      }
     }
+
   }
   std::cerr<< "m " << m << std::endl;
   std::cerr<< "tmp_p " << tmp_p << std::endl;
@@ -883,7 +890,9 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.filter(*P);
   std::cerr<< "P size after:"<< P->size() << std::endl;
   ////////////////////fake code //////////////////////////////
-  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
+
+
+  pcl::io::savePCDFileASCII ("tmp.pcd", *P + *cloud);
   ////////////////////////////////////////////////////////////
 
   return 0;
