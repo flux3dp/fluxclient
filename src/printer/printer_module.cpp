@@ -1,9 +1,8 @@
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <map>
 #include <algorithm>
 #include <limits>
-
 #include <pcl/filters/voxel_grid.h>
 ////////////////////   fake code ////////////////////////////////////
 #include <pcl/io/pcd_io.h>
@@ -11,38 +10,20 @@
 #include "printer_module.h"
 #define likely(x)  __builtin_expect((x),1)
 
-struct v3{
-  float pos[3];
-  v3(){
-    pos[0] = 0;
-    pos[1] = 0;
-    pos[2] = 0;
-  }
-  v3(float x, float y, float z){
-    pos[0] = x;
-    pos[1] = y;
-    pos[2] = z;
-  }
-  float& operator[] (int nIndex){
-    assert(nIndex >= 0 && nIndex < 3);
-    return pos[nIndex];
-  }
-};
-
-float d_v3(v3 &a, v3 &b){
+float d_v3(Eigen::Vector3f &a, Eigen::Vector3f &b){
   return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2) + pow(a[2] - b[2], 2));
 }
 
 struct cone{
   // float pos[3];
-  v3 pos;
+  Eigen::Vector3f pos;
   float theta;
   cone(){
-    pos = v3();
+    pos = Eigen::Vector3f(0, 0, 0);
     theta = 0;
   }
   cone(float x, float  y, float z, float t){
-    pos = v3(x, y, z);
+    pos = Eigen::Vector3f(x, y, z);
     theta = t;
   }
   cone(cone &cone2){
@@ -54,16 +35,18 @@ struct cone{
 };
 struct tri_data{
   bool ok;
-  Eigen::Matrix4f tri_trans;
-  Eigen::Vector3f L_13;
-  Eigen::Vector3f L_111;
-  Eigen::Vector3f L_331;
-  Eigen::Vector3f L_23;
-  Eigen::Vector3f L_223;
-  Eigen::Vector3f L_332;
-  Eigen::Vector3f L_12;
-  Eigen::Vector3f L_112;
-  Eigen::Vector3f L_221;
+  Eigen::Matrix3f tri_after;
+  Eigen::Affine3f tri_trans;
+  // Eigen::Vector3f L_13;
+  // Eigen::Vector3f L_111;
+  // Eigen::Vector3f L_331;
+  // Eigen::Vector3f L_23;
+  // Eigen::Vector3f L_223;
+  // Eigen::Vector3f L_332;
+  // Eigen::Vector3f L_12;
+  // Eigen::Vector3f L_112;
+  // Eigen::Vector3f L_221;
+  std::map<int, Eigen::Vector3f> L;
   std::map<int, bool> in_tri;
 };
 
@@ -499,6 +482,7 @@ Eigen::Vector3f sol_2(float x1, float y1, float x2, float y2){
   // return Eigen::Vector3f(y1 - y2, x2 - x1, x1 * y2 - x2 * y1);
   return Eigen::Vector3f(y1 - y2, x2 - x1, x1 * y2 - x2 * y1);
 }
+
 float sub_in(float y, float z, Eigen::Vector3f f){
   return f(0) * y + f(1) * z + f(2);
 }
@@ -508,6 +492,7 @@ int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(input_mesh->cloud, *cloud);
   for (size_t i = 0; i < input_mesh -> polygons.size(); i += 1){
+  // for (size_t i = 0; i < 1; i += 1){
     // TODO:(check if ok for tri)
     tri_data a;
     Eigen::Matrix3f tri_before;
@@ -525,55 +510,65 @@ int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
     tri_after(2, 1) = d12;
     tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
     tri_after(1, 2) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
+    a.tri_after = tri_after;
+
     for (size_t i = 0; i < 3; i += 1){
       for (size_t j = 0; j < 3; j += 1){
         tri_after(i, j) -= tri_before(i, 0);
       }
     }
-    a.tri_trans.setIdentity();
-    a.tri_trans.block<3,3>(0,0) = tri_after * tri_before.inverse();
+    Eigen::Matrix4f tri_trans;
+    tri_trans.setIdentity();
+    tri_trans.block<3,3>(0,0) = tri_after * tri_before.inverse();
     for (size_t j = 0; j < 3; j += 1){
-      a.tri_trans(j, 3) = tri_before(j, 0);
+      tri_trans(j, 3) = tri_before(j, 0);
     }
+    a.tri_trans = tri_trans;
+    tri_after = a.tri_after;
+    // std::cerr<< "a " << a.tri_trans * tri_before << std::endl;
+    // std::cerr<< "tri_after " << tri_after << std::endl;
 
     float tmp;
 
-    a.L_13 = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 2), tri_after(2, 2));
-    a.in_tri[13] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_13) > 0;
+    a.L[13] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 2), tri_after(2, 2));
+    // std::cerr<< "a[13] " << a.L[13] << std::endl;
+    a.in_tri[13] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) >= 0;
+    // std::cerr<< "t " << sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) << std::endl;
+    // std::cerr<< "in 13 " << a.in_tri[13] << std::endl;
 
-    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L_13(1), -a.L_13(0), 0));
-    a.L_111 = Eigen::Vector3f(a.L_13(1), -a.L_13(0), tmp);
-    a.in_tri[111] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_111) > 0;
+    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
+    a.L[111] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
+    a.in_tri[111] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[111]) >= 0;
 
-    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L_13(1), -a.L_13(0), 0));
-    a.L_331 = Eigen::Vector3f(a.L_13(1), -a.L_13(0), tmp);
-    a.in_tri[331] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_331) > 0;
-
-
-    a.L_23 = sol_2(tri_after(1, 1), tri_after(2, 1), tri_after(1, 2), tri_after(2, 2));
-    a.in_tri[23] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_23) > 0;
-
-    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L_23(1), -a.L_23(0), 0));
-    a.L_223 = Eigen::Vector3f(a.L_23(1), -a.L_23(0), tmp);
-    a.in_tri[223] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_223) > 0;
-
-    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L_23(1), -a.L_23(0), 0));
-    a.L_332 = Eigen::Vector3f(a.L_23(1), -a.L_23(0), tmp);
-    a.in_tri[332] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_332) > 0;
+    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
+    a.L[331] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
+    a.in_tri[331] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[331]) >= 0;
 
 
-    a.L_12 = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 1), tri_after(2, 1));
-    a.in_tri[12] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L_12) > 0;
+    a.L[23] = sol_2(tri_after(1, 1), tri_after(2, 1), tri_after(1, 2), tri_after(2, 2));
+    // std::cerr<< "a[23] " << a.L[23] << std::endl;
+    a.in_tri[23] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[23]) >= 0;
 
-    // L_112
-    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L_12(1), -a.L_12(0), 0));
-    a.L_112 = Eigen::Vector3f(a.L_12(1), -a.L_12(0), tmp);
-    a.in_tri[112] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L_112) > 0;
+    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
+    a.L[223] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
+    a.in_tri[223] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[223]) >= 0;
 
-    // L_221
-    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L_12(1), -a.L_12(0), 0));
-    a.L_221 = Eigen::Vector3f(a.L_12(1), -a.L_12(0), tmp);
-    a.in_tri[221] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L_221) > 0;
+    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
+    a.L[332] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
+    a.in_tri[332] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[332]) >= 0;
+
+
+    a.L[12] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 1), tri_after(2, 1));
+    // std::cerr<< "a[12] " << a.L[12] << std::endl;
+    a.in_tri[12] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[12]) >= 0;
+
+    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
+    a.L[112] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
+    a.in_tri[112] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[112]) >= 0;
+
+    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
+    a.L[221] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
+    a.in_tri[221] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[221]) >= 0;
 
     preprocess_tri.push_back(a);
   }
@@ -587,9 +582,10 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr P(new pcl::PointCloud<pcl::PointXYZ>);  // recording every point's xyz data
   find_support_point(input_mesh, alpha, 1, P);
+
   std::vector<tri_data> preprocess_tri;
   preprocess(input_mesh, preprocess_tri);
-  std::cerr<< "preprocess_tri " << preprocess_tri.size() << std::endl;
+
   std::cerr<< "P size need to be supported:"<< P->size() << std::endl;
   SupportTree support_tree(P);
 
@@ -630,8 +626,8 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
     // cone-mesh intersection, use -1 to indicate it's connected to mesh
     ////////////////  TODO ////////////////////////
-    v3 cm_point;
-    S.push_back(std::pair<int, double>(-2, cone_mesh_intersect(C[current_point], input_mesh, cm_point)));
+    Eigen::Vector3f cm_point;
+    S.push_back(std::pair<int, double>(-2, cone_mesh_intersect(C[current_point], input_mesh, preprocess_tri, cm_point)));
     ///////////////////////////////////////////////
 
     // choose the right candidate
@@ -683,12 +679,12 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         assert(false);
       }
     }
-    // break;
+    break;
   }
 
   // std::cout<< "tree " << support_tree << std::endl;
   // std::cout<< "support_tree.cloud " << support_tree.cloud -> size() << std::endl;
-  // support_tree.out_as_js();
+  support_tree.out_as_js();
   return 0;
 }
 
@@ -721,27 +717,99 @@ double cone_intersect(cone a, cone b, cone &c){
   // return sqrt(pow(a.pos[0] - c.pos[0], 2) + pow(a.pos[1] - c.pos[1], 2) + pow(a.pos[2] - c.pos[2], 2));
 }
 
-double cone_mesh_intersect(cone a, MeshPtr triangles, v3 &p){
+double cone_mesh_intersect(cone a, MeshPtr triangles, std::vector<tri_data> &preprocess_tri, Eigen::Vector3f &p){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
 
-  double m = std::numeric_limits<double>::infinity();
-  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-    v3 t0((*cloud)[(triangles->polygons[i]).vertices[0]].x, (*cloud)[(triangles->polygons[i]).vertices[0]].y, (*cloud)[(triangles->polygons[i]).vertices[0]].z);
-    v3 t1((*cloud)[(triangles->polygons[i]).vertices[1]].x, (*cloud)[(triangles->polygons[i]).vertices[1]].y, (*cloud)[(triangles->polygons[i]).vertices[1]].z);
-    v3 t2((*cloud)[(triangles->polygons[i]).vertices[2]].x, (*cloud)[(triangles->polygons[i]).vertices[2]].y, (*cloud)[(triangles->polygons[i]).vertices[2]].z);
-    v3 tmp_p;
-    double d = 0.0;
-    //todo: add some early cut?
+  float m = std::numeric_limits<float>::infinity();
+  std::vector<int> main_list(3);
+  main_list[0] = 12;
+  main_list[1] = 13;
+  main_list[2] = 23;
 
-    // = d_v3tri(t0, t1, t2, a.pos, tmp_p);
+  float d;
+  Eigen::Vector3f tmp_p;
+  int index, tmp_sum;
+  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    Eigen::Vector3f p_trans = preprocess_tri[i].tri_trans * a.pos;
+    // Eigen::Vector3f p_yz(0, p_trans(1), p_trans(2));
+    std::vector<int> record;
+    for (size_t j = 0; j < 3; j += 1){
+      if (bool(sub_in(p_trans(1), p_trans(2), preprocess_tri[i].L[main_list[j]]) >= 0) == preprocess_tri[i].in_tri[main_list[j]]){
+        record.push_back(main_list[j]);
+      }
+    }
+    if (record.size() == 3){  // in the triangle
+      d = std::abs(p_trans(0));
+      tmp_p = Eigen::Vector3f(0, p_trans(1), p_trans(2));
+    }
+    else if(record.size() == 2){ // nearst to another line
+      tmp_sum = record[0] + record[1];
+      if(tmp_sum == 12 + 13){
+        index = 23;
+      }
+      else if(tmp_sum == 12 + 23){
+        index = 13;
+      }
+      else if(tmp_sum == 13 + 23){
+        index = 12;
+      }
+      float c_n = (preprocess_tri[i].L[index](1) * p_trans(1)+ preprocess_tri[i].L[index](0) * p_trans(2)) * -1;
+      float a_sq_plus_b_sq = pow(preprocess_tri[i].L[index](0), 2) + pow(preprocess_tri[i].L[index](1), 2);
+      tmp_p = Eigen::Vector3f(0,
+        (-preprocess_tri[i].L[index](0) * preprocess_tri[i].L[index](2) - preprocess_tri[i].L[index](1) * c_n) / a_sq_plus_b_sq,
+        (preprocess_tri[i].L[index](0) * c_n - preprocess_tri[i].L[index](1) * preprocess_tri[i].L[index](2)) / a_sq_plus_b_sq);
+      d = d_v3(tmp_p, p_trans);
+    }
+    else if(record.size() == 1){// nearst to another point
+      if(record[0] == 12){
+        index = 3 - 1;
+      }
+      else if(record[0] == 13){
+        index = 2 - 1;
+      }
+      else if(record[0] == 23){
+        index = 1 - 1;
+      }
+      tmp_p = Eigen::Vector3f(preprocess_tri[i].tri_after(0, index), preprocess_tri[i].tri_after(1, index), preprocess_tri[i].tri_after(2, index));
+      d = d_v3(tmp_p, p_trans);
+      // line_point
+    }
+    else{
+      // d+=1;
+      std::cerr<< "i " << i << " "<< record.size() << std::endl;
+      std::cerr<< "p_trans " << p_trans << std::endl;
+      std::cerr<< "1 f\n " << preprocess_tri[i].L[main_list[0]] << std::endl;
+      std::cerr<< "2 f\n " << preprocess_tri[i].L[main_list[1]] << std::endl;
+      std::cerr<< "3 f\n " << preprocess_tri[i].L[main_list[2]] << std::endl;
+
+      std::cerr<< "n 1\n " << sub_in(p_trans(1), p_trans(2), preprocess_tri[i].L[main_list[0]]) << std::endl;
+      std::cerr<< "n 2\n " << bool(sub_in(p_trans(1), p_trans(2), preprocess_tri[i].L[main_list[1]]) >=0) << std::endl;
+      std::cerr<< "n 3\n " << sub_in(p_trans(1), p_trans(2), preprocess_tri[i].L[main_list[2]]) << std::endl;
+
+      std::cerr<< " a1\n " << preprocess_tri[i].in_tri[main_list[0]] << std::endl;
+      std::cerr<< " a2\n " << preprocess_tri[i].in_tri[main_list[1]] << std::endl;
+      std::cerr<< " a3\n " << preprocess_tri[i].in_tri[main_list[2]] << std::endl;
+      if (bool(sub_in(p_trans(1), p_trans(2), preprocess_tri[i].L[main_list[1]]) >=0) == preprocess_tri[i].in_tri[main_list[1]])
+      {
+          std::cerr<< "ok " << std::endl;
+      }
+      exit(1);
+    }
+
     if(d < m){
       m = d;
-      p = tmp_p;
+      p = preprocess_tri[i].tri_trans.inverse() * tmp_p;
+      std::cerr<< "i " << i << " "<< record.size() << std::endl;
     }
   }
-  return m+999;
+  std::cerr<< "m " << m << std::endl;
+  std::cerr<< "tmp_p " << tmp_p << std::endl;
+  std::cerr<< "p " << p << std::endl;
+
+  return m;
 }
+
 int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
   // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
   // MeshPtr triangles[in]: input stl
@@ -820,5 +888,3 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
 
   return 0;
 }
-
-
