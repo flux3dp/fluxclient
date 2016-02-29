@@ -587,7 +587,153 @@ int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
   return 0;
 }
 
+int add_triangle(Eigen::Matrix3f &tri, pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point, MeshPtr &strut_stl){
+  for (size_t i = 0; i < 3; i += 1){
+    strut_point->push_back(pcl::PointXYZ(tri(0, i), tri(1, i), tri(2, i)));
+  }
+  pcl::Vertices v;
+  v.vertices.resize(3);
+  v.vertices[0] = strut_point -> size() - 3;
+  v.vertices[1] = strut_point -> size() - 2;
+  v.vertices[2] = strut_point -> size() - 1;
+
+  strut_stl->polygons.push_back(v);
+  return 0;
+}
+
+Eigen::Matrix3f find_strut_tri(float R, float shrink_d, Eigen::Vector3f start, Eigen::Vector3f end){
+  Eigen::Matrix3f tri;
+  tri(0, 0) = R;
+  tri(1, 0) = 0;
+  tri(2, 0) = 0;
+
+  tri(0, 1) = R * cos(M_PI * 2 / 3);
+  tri(1, 1) = R * sin(M_PI * 2 / 3);
+  tri(2, 1) = 0;
+
+  tri(0, 2) = R * cos(M_PI * 2 / 3 * 2);
+  tri(1, 2) = R * sin(M_PI * 2 / 3 * 2);
+  tri(2, 2) = 0;
+
+
+  Eigen::Vector3f v(0, 0, 1);
+  Eigen::Quaternionf a;
+  // std::cerr<< "end - start " << end - start << std::endl;
+  a = a.FromTwoVectors(v, end - start);
+  v = (end - start).normalized();
+  // std::cerr<< "tri " << tri << std::endl;
+  // std::cerr<< "av " << a * v << std::endl;
+  // std::cerr<< "cc " << a * tri<< std::endl;
+
+  // Eigen::Matrix4f tri_trans;
+  tri = a * tri;
+  for (size_t i = 0; i < 3; i += 1){
+    for (size_t j = 0; j < 3; j += 1){
+      tri(j, i) += start(j) + (v(j) * shrink_d);
+    }
+  }
+
+  return tri;
+}
+
+int re_strut(std::vector<int> input, int from, Eigen::Matrix3f tri, SupportTree &support_tree, MeshPtr &strut_stl, pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
+  float R=0.5, shrink_d = 2;
+  // recursively generate strut
+  for (size_t i = 0; i < input.size(); i += 1){
+    if (support_tree.tree[input[i]].left >= 0){ // split into 2
+      // re_strut(input, tri, i, support_tree, strut_stl, strut_point, P);
+    }
+    else if(support_tree.tree[input[i]].left == -1){ // meet support point
+      Eigen::Vector3f start = Eigen::Vector3f(P->points[support_tree.tree[input[i]].index].x, P->points[support_tree.tree[input[i]].index].y, P->points[support_tree.tree[input[i]].index].z);
+      Eigen::Matrix3f new_tri = find_strut_tri(R, shrink_d, start, Eigen::Vector3f(P->points[support_tree.tree[from].index].x, P->points[support_tree.tree[from].index].y, P->points[support_tree.tree[from].index].z));
+      // add_triangle(tri, strut_point, strut_stl);
+      Eigen::Vector3f tmp;
+      int tmp_index = strut_point -> size();
+
+      strut_point -> push_back(pcl::PointXYZ(start(0), start(1), start(2)));
+      for (size_t j = 0; j < 3; j += 1){
+        tmp = new_tri.block<3, 1>(0, j);
+        strut_point -> push_back(pcl::PointXYZ(tmp(0), tmp(1), tmp(2)));
+      }
+
+      for (size_t j = 0; j < 3; j += 1){
+        pcl::Vertices v;
+        v.vertices.resize(3);
+        v.vertices[0] = tmp_index;
+        v.vertices[1] = tmp_index + ((j + 1) % 3) + 1;
+        v.vertices[2] = tmp_index + ((j + 0) % 3) + 1;
+
+        strut_stl->polygons.push_back(v);
+      }
+    }
+  }
+  return 0;
+}
+
+int genearte_strut(pcl::PointCloud<pcl::PointXYZ>::Ptr P, SupportTree &support_tree, MeshPtr &strut_stl){
+  std::vector<int> input;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point(new pcl::PointCloud<pcl::PointXYZ>);
+  float R, shrink_d = 2;
+  for (size_t i = 0; i < support_tree.tree.size(); i += 1){
+
+    // (*cloud)[(triangles->polygons[i]).vertices[1]].x
+    if(support_tree.tree[i].left == -3 || support_tree.tree[i].left == -2){
+      input.push_back(support_tree.tree[i].right);
+      Eigen::Matrix3f tri;
+      if (support_tree.tree[i].left == -3){// dealing with strut start from plate
+        R = 0.5; // TODO: how to determine R, radius
+        tri(0, 0) = P->points[support_tree.tree[i].index].x + R;
+        tri(1, 0) = P->points[support_tree.tree[i].index].y + 0;
+        tri(2, 0) = 0;
+
+        tri(0, 1) = P->points[support_tree.tree[i].index].x + R * cos(M_PI * 2 / 3 * 2);
+        tri(1, 1) = P->points[support_tree.tree[i].index].y + R * sin(M_PI * 2 / 3 * 2);
+        tri(2, 1) = 0;
+
+        tri(0, 2) = P->points[support_tree.tree[i].index].x + R * cos(M_PI * 2 / 3);
+        tri(1, 2) = P->points[support_tree.tree[i].index].y + R * sin(M_PI * 2 / 3);
+        tri(2, 2) = 0;
+        add_triangle(tri, strut_point, strut_stl);
+
+      }
+      else{// dealing with strut start from mesh
+        Eigen::Vector3f start = Eigen::Vector3f(P->points[support_tree.tree[i].index].x, P->points[support_tree.tree[i].index].y, P->points[support_tree.tree[i].index].z);
+        tri = find_strut_tri(R, shrink_d, start, Eigen::Vector3f(P->points[support_tree.tree[i].right].x, P->points[support_tree.tree[i].right].y, P->points[support_tree.tree[i].right].z));
+
+        Eigen::Vector3f tmp;
+        int tmp_index = strut_point -> size();
+
+        strut_point -> push_back(pcl::PointXYZ(start(0), start(1), start(2)));
+        for (size_t j = 0; j < 3; j += 1){
+          tmp = tri.block<3, 1>(0, j);
+          strut_point -> push_back(pcl::PointXYZ(tmp(0), tmp(1), tmp(2)));
+        }
+
+        for (size_t j = 0; j < 3; j += 1){
+          pcl::Vertices v;
+          v.vertices.resize(3);
+          v.vertices[0] = tmp_index;
+          v.vertices[1] = tmp_index + ((j + 1) % 3) + 1;
+          v.vertices[2] = tmp_index + ((j + 0) % 3) + 1;
+
+          strut_stl->polygons.push_back(v);
+        }
+      }
+      re_strut(input, i, tri, support_tree, strut_stl, strut_point, P);
+      input.clear();
+    }
+  }
+  toPCLPointCloud2(*strut_point, strut_stl->cloud);
+  return 0;
+}
+
 int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
+  // Eigen::Matrix3f tmp;
+  // tmp.setZero();
+  // Eigen::Vector3f start(1,2,3);
+  // tmp.block<3, 1>(0, 0) = start;
+  // std::cerr<< "tmp " << tmp << std::endl;
+  // return 0;
   ////////////////// TODO: read paper to find out what's this /////////////////
   double m_threshold = std::numeric_limits<double>::infinity();
   //////////////////////////////////////////////////////
@@ -660,7 +806,6 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
         P -> points.push_back(pcl::PointXYZ(c.pos[0], c.pos[1], c.pos[2]));
         std::pair<int, double> new_pv(P->size() - 1, c.pos[2]);
-        // support_tree.cloud.push_back(P -> points.back())
 
         support_tree.tree.push_back(tree_node(current_point, P_v[m.first].first, new_pv.first, support_tree.tree[current_point].height + support_tree.tree[P_v[m.first].first].height));
         P_v.erase(P_v.begin() + m.first);
@@ -672,15 +817,14 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
       }
       else if(m.first == -1){ // plate-cone
         // support_tree
-        cone c;
-        // P_v.push_back(std::pair<int, double>(P->size(),  ));
         P -> points.push_back(pcl::PointXYZ(P -> points[current_point].x, P -> points[current_point].y, 0));
-        // C[P->size() ](c);
         support_tree.tree.push_back(tree_node(-3, current_point, P->size() - 1, support_tree.tree[current_point].height));
       }
       else if(m.first == -2){ // mesh-cone
+        // std::cerr<< "QQ " << std::endl;
         //////////////////// TODO ////////////////////////////////////////
         P -> points.push_back(pcl::PointXYZ(cm_point[0], cm_point[1], cm_point[2]));
+        std::cerr<< "P " << P->points.back() << std::endl;
         support_tree.tree.push_back(tree_node(-2, current_point, P->size() - 1, support_tree.tree[current_point].height));
         ////////////////////////////////////////////////////////////
       }
@@ -689,11 +833,11 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         assert(false);
       }
     }
-    // break;
   }
 
   // std::cout<< "tree " << support_tree << std::endl;
   // std::cout<< "support_tree.cloud " << support_tree.cloud -> size() << std::endl;
+  genearte_strut(P, support_tree, out_mesh);
   support_tree.out_as_js();
   return 0;
 }
@@ -903,8 +1047,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.filter(*P);
   std::cerr<< "P size after:"<< P->size() << std::endl;
   ////////////////////fake code //////////////////////////////
-  // pcl::io::savePCDFileASCII ("tmp.pcd", *P + *cloud);
-  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
+  pcl::io::savePCDFileASCII ("tmp.pcd", *P + *cloud);
+  // pcl::io::savePCDFileASCII ("tmp.pcd", *P);
   ////////////////////////////////////////////////////////////
 
   return 0;

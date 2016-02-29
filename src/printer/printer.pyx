@@ -29,6 +29,7 @@ cdef class MeshObj:
     def add_support(self, alpha):
         out_mesh = MeshObj([], [])
         add_support(self.meshobj, out_mesh.meshobj, alpha)
+        return out_mesh
 
     def apply_transform(self, transform_param):
         # transform_param:  x, y, z, rx, ry, rz, scale
