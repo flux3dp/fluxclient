@@ -488,13 +488,21 @@ float sub_in(float y, float z, Eigen::Vector3f f){
   return f(0) * y + f(1) * z + f(2);
 }
 
+bool check_valid_tri(float a, float b, float c){
+  if(a + b <= c || a + c <= b || b + c <= a){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
+
 int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
   // ref:http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.479.8237&rep=rep1&type=pdf
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(input_mesh->cloud, *cloud);
   for (size_t i = 0; i < input_mesh -> polygons.size(); i += 1){
-  // for (size_t i = 0; i < 1; i += 1){
-    // TODO:(check if ok for tri)
+  // for (size_t i = 825; i < 826; i += 1){
     tri_data a;
     Eigen::Matrix3f tri_before;
     Eigen::Matrix3f tri_after;
@@ -508,69 +516,72 @@ int preprocess(MeshPtr input_mesh, std::vector<tri_data> &preprocess_tri){
     float d12 = sqrt(pow(tri_before(0, 0) - tri_before(0, 1), 2) + pow(tri_before(1, 0) - tri_before(1, 1), 2) + pow(tri_before(2, 0) - tri_before(2, 1), 2));
     float d13 = sqrt(pow(tri_before(0, 0) - tri_before(0, 2), 2) + pow(tri_before(1, 0) - tri_before(1, 2), 2) + pow(tri_before(2, 0) - tri_before(2, 2), 2));
     float d23 = sqrt(pow(tri_before(0, 1) - tri_before(0, 2), 2) + pow(tri_before(1, 1) - tri_before(1, 2), 2) + pow(tri_before(2, 1) - tri_before(2, 2), 2));
-    tri_after(2, 1) = d12;
-    tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
-    tri_after(1, 2) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
-    a.tri_after = tri_after;
+    a.ok = check_valid_tri(d12, d13, d23);
+    if(a.ok){
+      tri_after(2, 1) = d12;
+      tri_after(2, 2) = (pow(d13, 2) - pow(d23, 2) + pow(d12, 2)) / 2 / d12;
+      tri_after(1, 2) = sqrt(pow(d13, 2) - pow(tri_after(2, 2), 2));
+      a.tri_after = tri_after;
 
-    for (size_t i = 0; i < 3; i += 1){
-      for (size_t j = 0; j < 3; j += 1){
-        tri_after(i, j) -= tri_before(i, 0);
+      for (size_t i = 0; i < 3; i += 1){
+        for (size_t j = 0; j < 3; j += 1){
+          tri_after(i, j) -= tri_before(i, 0);
+        }
       }
+      Eigen::Matrix4f tri_trans;
+      tri_trans.setIdentity();
+      tri_trans.block<3,3>(0,0) = tri_after * tri_before.inverse();
+      for (size_t j = 0; j < 3; j += 1){
+        tri_trans(j, 3) = tri_before(j, 0);
+      }
+      a.tri_trans = tri_trans;
+      tri_after = a.tri_after;
+      // std::cerr<< "tri_before " << tri_before << std::endl;
+      // std::cerr<< "a " << a.tri_trans * tri_before << std::endl;
+      // std::cerr<< "tri_after " << tri_after << std::endl;
+
+      float tmp;
+
+      a.L[13] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 2), tri_after(2, 2));
+      // std::cerr<< "a[13] " << a.L[13] << std::endl;
+      a.in_tri[13] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) >= 0;
+      // std::cerr<< "t " << sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) << std::endl;
+      // std::cerr<< "in 13 " << a.in_tri[13] << std::endl;
+
+      tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
+      a.L[111] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
+      a.in_tri[111] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[111]) >= 0;
+
+      tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
+      a.L[331] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
+      a.in_tri[331] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[331]) >= 0;
+
+
+      a.L[23] = sol_2(tri_after(1, 1), tri_after(2, 1), tri_after(1, 2), tri_after(2, 2));
+      // std::cerr<< "a[23] " << a.L[23] << std::endl;
+      a.in_tri[23] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[23]) >= 0;
+
+      tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
+      a.L[223] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
+      a.in_tri[223] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[223]) >= 0;
+
+      tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
+      a.L[332] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
+      a.in_tri[332] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[332]) >= 0;
+
+
+      a.L[12] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 1), tri_after(2, 1));
+      // std::cerr<< "a[12] " << a.L[12] << std::endl;
+      a.in_tri[12] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[12]) >= 0;
+
+      tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
+      a.L[112] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
+      a.in_tri[112] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[112]) >= 0;
+
+      tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
+      a.L[221] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
+      a.in_tri[221] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[221]) >= 0;
     }
-    Eigen::Matrix4f tri_trans;
-    tri_trans.setIdentity();
-    tri_trans.block<3,3>(0,0) = tri_after * tri_before.inverse();
-    for (size_t j = 0; j < 3; j += 1){
-      tri_trans(j, 3) = tri_before(j, 0);
-    }
-    a.tri_trans = tri_trans;
-    tri_after = a.tri_after;
-    // std::cerr<< "a " << a.tri_trans * tri_before << std::endl;
-    // std::cerr<< "tri_after " << tri_after << std::endl;
-
-    float tmp;
-
-    a.L[13] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 2), tri_after(2, 2));
-    // std::cerr<< "a[13] " << a.L[13] << std::endl;
-    a.in_tri[13] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) >= 0;
-    // std::cerr<< "t " << sub_in(tri_after(1, 1), tri_after(2, 1), a.L[13]) << std::endl;
-    // std::cerr<< "in 13 " << a.in_tri[13] << std::endl;
-
-    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
-    a.L[111] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
-    a.in_tri[111] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[111]) >= 0;
-
-    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[13](1), -a.L[13](0), 0));
-    a.L[331] = Eigen::Vector3f(a.L[13](1), -a.L[13](0), tmp);
-    a.in_tri[331] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[331]) >= 0;
-
-
-    a.L[23] = sol_2(tri_after(1, 1), tri_after(2, 1), tri_after(1, 2), tri_after(2, 2));
-    // std::cerr<< "a[23] " << a.L[23] << std::endl;
-    a.in_tri[23] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[23]) >= 0;
-
-    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
-    a.L[223] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
-    a.in_tri[223] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[223]) >= 0;
-
-    tmp = -sub_in(tri_after(1, 2), tri_after(2, 2) , Eigen::Vector3f(a.L[23](1), -a.L[23](0), 0));
-    a.L[332] = Eigen::Vector3f(a.L[23](1), -a.L[23](0), tmp);
-    a.in_tri[332] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[332]) >= 0;
-
-
-    a.L[12] = sol_2(tri_after(1, 0), tri_after(2, 0), tri_after(1, 1), tri_after(2, 1));
-    // std::cerr<< "a[12] " << a.L[12] << std::endl;
-    a.in_tri[12] = sub_in(tri_after(1, 2), tri_after(2, 2), a.L[12]) >= 0;
-
-    tmp = -sub_in(tri_after(1, 0), tri_after(2, 0) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
-    a.L[112] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
-    a.in_tri[112] = sub_in(tri_after(1, 1), tri_after(2, 1), a.L[112]) >= 0;
-
-    tmp = -sub_in(tri_after(1, 1), tri_after(2, 1) , Eigen::Vector3f(a.L[12](1), -a.L[12](0), 0));
-    a.L[221] = Eigen::Vector3f(a.L[12](1), -a.L[12](0), tmp);
-    a.in_tri[221] = sub_in(tri_after(1, 0), tri_after(2, 0), a.L[221]) >= 0;
-
     preprocess_tri.push_back(a);
   }
   return 0;
@@ -731,6 +742,9 @@ double cone_mesh_intersect(cone a, MeshPtr triangles, std::vector<tri_data> &pre
   Eigen::Vector3f tmp_p;
   int index, tmp_sum;
   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+    if(!preprocess_tri[i].ok){
+      continue;
+    }
     Eigen::Vector3f p_trans = preprocess_tri[i].tri_trans * a.pos;
     // Eigen::Vector3f p_yz(0, p_trans(1), p_trans(2));
     std::vector<int> record;
@@ -804,15 +818,15 @@ double cone_mesh_intersect(cone a, MeshPtr triangles, std::vector<tri_data> &pre
         if(d < m){
           m = d;
           p = tmp_p;
-          std::cerr<< "i " << i << " "<< record.size() << std::endl;
+          // std::cerr<< "i " << i << " "<< record.size() << std::endl;
         }
       }
     }
 
   }
-  std::cerr<< "m " << m << std::endl;
-  std::cerr<< "tmp_p " << tmp_p << std::endl;
-  std::cerr<< "p " << p << std::endl;
+  // std::cerr<< "m " << m << std::endl;
+  // std::cerr<< "tmp_p " << tmp_p << std::endl;
+  // std::cerr<< "p " << p << std::endl;
 
   return m;
 }
@@ -840,7 +854,6 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   std::vector<int> rec;
   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
   // for (size_t i = 0; i < 1; i += 1){
-
     a[0] = (*cloud)[(triangles->polygons[i]).vertices[1]].x - (*cloud)[(triangles->polygons[i]).vertices[0]].x;
     a[1] = (*cloud)[(triangles->polygons[i]).vertices[1]].y - (*cloud)[(triangles->polygons[i]).vertices[0]].y;
     a[2] = (*cloud)[(triangles->polygons[i]).vertices[1]].z - (*cloud)[(triangles->polygons[i]).vertices[0]].z;
@@ -890,9 +903,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
   grid.filter(*P);
   std::cerr<< "P size after:"<< P->size() << std::endl;
   ////////////////////fake code //////////////////////////////
-
-
-  pcl::io::savePCDFileASCII ("tmp.pcd", *P + *cloud);
+  // pcl::io::savePCDFileASCII ("tmp.pcd", *P + *cloud);
+  pcl::io::savePCDFileASCII ("tmp.pcd", *P);
   ////////////////////////////////////////////////////////////
 
   return 0;
