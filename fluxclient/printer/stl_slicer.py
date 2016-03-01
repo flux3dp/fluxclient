@@ -278,7 +278,7 @@ class StlSlicer(object):
                 print(raft_output, file=f)
 
         # analying gcode(even transform)
-        ws.send_progress('analyzing metadata', 0.99)
+        ws.send_progress('Analyzing Metadata', 0.99)
 
         fcode_output = BytesIO()
         with open(tmp_gcode_file, 'r') as f:

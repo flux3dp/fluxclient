@@ -18,7 +18,7 @@ logger = logging.getLogger("g_to_f")
 
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
-    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
+    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1.1
 
     this should done several thing:
       transform gcode into fcode
@@ -292,7 +292,10 @@ class GcodeToFcode(FcodeBase):
                         if line[0] == 'M107':
                             self.writer(packer_f(0.0), output_stream)
                         elif line[0] == 'M106':
-                            self.writer(packer_f(float(line[1].lstrip('S')) / 255.), output_stream)
+                            if len(line) != 1:
+                                self.writer(packer_f(float(line[1].lstrip('S')) / 255.), output_stream)
+                            else:
+                                self.writer(packer_f(1.), output_stream)
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
