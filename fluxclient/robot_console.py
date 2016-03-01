@@ -139,14 +139,18 @@ class RobotConsole(object):
     def fileinfo(self, path):
         path = shlex.split(path)[0]
         entry, filename = path.split("/", 1)
-        info, data = self.robot_obj.fileinfo(entry, filename)
+        info, images = self.robot_obj.fileinfo(entry, filename)
         logger.info("%s" % info)
 
-        ext = mimetypes.guess_extension(data[0])
-        if ext:
-            ntf = NamedTemporaryFile(suffix=ext, delete=False)
-            ntf.write(data[1])
-            os.system("open " + ntf.name)
+        previews = []
+        for img in images:
+            ext = mimetypes.guess_extension(img[0])
+            if ext:
+                ntf = NamedTemporaryFile(suffix=ext, delete=False)
+                ntf.write(img[1])
+                previews.append(ntf.name)
+        if previews:
+            os.system("open " + " ".join(previews))
 
     def mkdir(self, path):
         path = shlex.split(path)[0]
