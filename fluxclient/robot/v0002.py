@@ -158,9 +158,11 @@ class FluxRobotV0002(object):
         self._send_cmd(b"file info " + entry.encode() + b" " + path.encode())
 
         resp = self.get_resp().decode("utf8", "ignore")
-        if resp.startswith("binary "):
-            info[1] = self.recv_binary(resp)
+        images = []
+        while resp.startswith("binary "):
+            images.append(self.recv_binary(resp))
             resp = self.get_resp().decode("utf8", "ignore")
+        info[1] = images
 
         # TODO
         fixmeta = lambda key, value=None: (key, value)
