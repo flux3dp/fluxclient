@@ -38,15 +38,6 @@ struct tri_data{
   bool ok;
   Eigen::Matrix3f tri_after;
   Eigen::Affine3f tri_trans;
-  // Eigen::Vector3f L_13;
-  // Eigen::Vector3f L_111;
-  // Eigen::Vector3f L_331;
-  // Eigen::Vector3f L_23;
-  // Eigen::Vector3f L_223;
-  // Eigen::Vector3f L_332;
-  // Eigen::Vector3f L_12;
-  // Eigen::Vector3f L_112;
-  // Eigen::Vector3f L_221;
   std::map<int, Eigen::Vector3f> L;
   std::map<int, bool> in_tri;
 };
@@ -601,6 +592,34 @@ int add_triangle(Eigen::Matrix3f &tri, pcl::PointCloud<pcl::PointXYZ>::Ptr strut
   return 0;
 }
 
+int connect_tri(Eigen::Matrix3f &tri1, Eigen::Matrix3f &tri2, pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point, MeshPtr &strut_stl){
+  int index = strut_point->size();
+  for (size_t i = 0; i < 3; i += 1){
+    strut_point->push_back(pcl::PointXYZ(tri1(0, i), tri1(1, i), tri1(2, i)));
+  }
+
+  for (size_t i = 0; i < 3; i += 1){
+    strut_point->push_back(pcl::PointXYZ(tri2(0, i), tri2(1, i), tri2(2, i)));
+  }
+  int index_mapping[6][3] = {
+    {0, 2, 3},
+    {1, 4, 5},
+    {1, 5, 2},
+    {2, 5, 3},
+    {0, 3, 4},
+    {0, 4, 1}
+  };
+  for (size_t i = 0; i < 6; i += 1){
+    pcl::Vertices v;
+    v.vertices.resize(3);
+    for (size_t j = 0; j < 3; j += 1){
+      v.vertices[j] = index + index_mapping[i][j];
+    }
+    strut_stl->polygons.push_back(v);
+  }
+  return 0;
+}
+
 Eigen::Matrix3f find_strut_tri(float R, float shrink_d, Eigen::Vector3f start, Eigen::Vector3f end){
   Eigen::Matrix3f tri;
   tri(0, 0) = R;
@@ -637,22 +656,94 @@ Eigen::Matrix3f find_strut_tri(float R, float shrink_d, Eigen::Vector3f start, E
 }
 
 int re_strut(std::vector<int> input, int from, Eigen::Matrix3f tri, SupportTree &support_tree, MeshPtr &strut_stl, pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point, pcl::PointCloud<pcl::PointXYZ>::Ptr P){
-  float R=0.5, shrink_d = 2;
   // recursively generate strut
+  float R = 1, shrink_d = 2;
+  Eigen::Matrix3f new_tri1, new_tri2;
   for (size_t i = 0; i < input.size(); i += 1){
     if (support_tree.tree[input[i]].left >= 0){ // split into 2
-      // re_strut(input, tri, i, support_tree, strut_stl, strut_point, P);
+
+
+      // big triangle
+      new_tri1(0, 0) = P->points[support_tree.tree[input[i]].index].x + R;
+      new_tri1(1, 0) = P->points[support_tree.tree[input[i]].index].y + 0;
+      new_tri1(2, 0) = P->points[support_tree.tree[input[i]].index].z;
+
+      //  fake code
+      new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 );
+      new_tri1(1, 1) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 );
+      new_tri1(2, 1) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri1(0, 2) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
+      new_tri1(1, 2) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 * 2);
+      new_tri1(2, 2) = P->points[support_tree.tree[input[i]].index].z;
+      add_triangle(new_tri1, strut_point, strut_stl);
+      //
+
+      new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
+      new_tri1(1, 1) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 * 2);
+      new_tri1(2, 1) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri1(0, 2) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3);
+      new_tri1(1, 2) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3);
+      new_tri1(2, 2) = P->points[support_tree.tree[input[i]].index].z;
+
+      connect_tri(tri, new_tri1, strut_point, strut_stl);
+
+      Eigen::Vector3f left(P->points[support_tree.tree[input[i]].left].x, P->points[support_tree.tree[input[i]].left].y, P->points[support_tree.tree[input[i]].left].z);
+      Eigen::Vector3f right(P->points[support_tree.tree[input[i]].right].x, P->points[support_tree.tree[input[i]].right].y, P->points[support_tree.tree[input[i]].right].z);
+      Eigen::Vector3f t(P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3), P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3), P->points[support_tree.tree[input[i]].index].z);
+
+      // determine which connect to which, swap if needed
+      if (d_v3(left, t) > d_v3(right, t)){
+        int tmp;
+        tmp = support_tree.tree[input[i]].left;
+        support_tree.tree[input[i]].left = support_tree.tree[input[i]].right;
+        support_tree.tree[input[i]].right = tmp;
+      }
+
+
+      // split triangle 1
+      new_tri1(0, 0) = P->points[support_tree.tree[input[i]].index].x + R;
+      new_tri1(1, 0) = P->points[support_tree.tree[input[i]].index].y + 0;
+      new_tri1(2, 0) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x - 0.5 * R;
+      new_tri1(1, 1) = P->points[support_tree.tree[input[i]].index].y;
+      new_tri1(2, 1) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri1(0, 2) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3);
+      new_tri1(1, 2) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3);
+      new_tri1(2, 2) = P->points[support_tree.tree[input[i]].index].z;
+      std::vector<int> new_input1;
+      new_input1.push_back(support_tree.tree[input[i]].left);
+      re_strut(new_input1, input[i], new_tri1, support_tree, strut_stl, strut_point, P);
+
+      // split triangle 2
+      new_tri2(0, 0) = P->points[support_tree.tree[input[i]].index].x + R;
+      new_tri2(1, 0) = P->points[support_tree.tree[input[i]].index].y + 0;
+      new_tri2(2, 0) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri2(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
+      new_tri2(1, 1) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 * 2);
+      new_tri2(2, 1) = P->points[support_tree.tree[input[i]].index].z;
+
+      new_tri2(0, 2) = P->points[support_tree.tree[input[i]].index].x - 0.5 * R;
+      new_tri2(1, 2) = P->points[support_tree.tree[input[i]].index].y;
+      new_tri2(2, 2) = P->points[support_tree.tree[input[i]].index].z;
+      std::vector<int> new_input2;
+      new_input2.push_back(support_tree.tree[input[i]].right);
+      re_strut(new_input2, input[i], new_tri2, support_tree, strut_stl, strut_point, P);
     }
     else if(support_tree.tree[input[i]].left == -1){ // meet support point
       Eigen::Vector3f start = Eigen::Vector3f(P->points[support_tree.tree[input[i]].index].x, P->points[support_tree.tree[input[i]].index].y, P->points[support_tree.tree[input[i]].index].z);
-      Eigen::Matrix3f new_tri = find_strut_tri(R, shrink_d, start, Eigen::Vector3f(P->points[support_tree.tree[from].index].x, P->points[support_tree.tree[from].index].y, P->points[support_tree.tree[from].index].z));
-      // add_triangle(tri, strut_point, strut_stl);
+      new_tri1 = find_strut_tri(R, shrink_d, start, Eigen::Vector3f(P->points[support_tree.tree[from].index].x, P->points[support_tree.tree[from].index].y, P->points[support_tree.tree[from].index].z));
+      connect_tri(tri, new_tri1, strut_point, strut_stl);
       Eigen::Vector3f tmp;
       int tmp_index = strut_point -> size();
 
       strut_point -> push_back(pcl::PointXYZ(start(0), start(1), start(2)));
       for (size_t j = 0; j < 3; j += 1){
-        tmp = new_tri.block<3, 1>(0, j);
+        tmp = new_tri1.block<3, 1>(0, j);
         strut_point -> push_back(pcl::PointXYZ(tmp(0), tmp(1), tmp(2)));
       }
 
@@ -665,6 +756,7 @@ int re_strut(std::vector<int> input, int from, Eigen::Matrix3f tri, SupportTree 
 
         strut_stl->polygons.push_back(v);
       }
+
     }
   }
   return 0;
@@ -681,7 +773,7 @@ int genearte_strut(pcl::PointCloud<pcl::PointXYZ>::Ptr P, SupportTree &support_t
       input.push_back(support_tree.tree[i].right);
       Eigen::Matrix3f tri;
       if (support_tree.tree[i].left == -3){// dealing with strut start from plate
-        R = 0.5; // TODO: how to determine R, radius
+        R = 1; // TODO: how to determine R, radius
         tri(0, 0) = P->points[support_tree.tree[i].index].x + R;
         tri(1, 0) = P->points[support_tree.tree[i].index].y + 0;
         tri(2, 0) = 0;
@@ -821,10 +913,9 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
         support_tree.tree.push_back(tree_node(-3, current_point, P->size() - 1, support_tree.tree[current_point].height));
       }
       else if(m.first == -2){ // mesh-cone
-        // std::cerr<< "QQ " << std::endl;
         //////////////////// TODO ////////////////////////////////////////
         P -> points.push_back(pcl::PointXYZ(cm_point[0], cm_point[1], cm_point[2]));
-        std::cerr<< "P " << P->points.back() << std::endl;
+        // std::cerr<< "P " << P->points.back() << std::endl;
         support_tree.tree.push_back(tree_node(-2, current_point, P->size() - 1, support_tree.tree[current_point].height));
         ////////////////////////////////////////////////////////////
       }
