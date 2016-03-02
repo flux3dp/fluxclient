@@ -622,36 +622,42 @@ int connect_tri(Eigen::Matrix3f &tri1, Eigen::Matrix3f &tri2, pcl::PointCloud<pc
 
 Eigen::Matrix3f find_strut_tri(float R, float shrink_d, Eigen::Vector3f start, Eigen::Vector3f end){
   Eigen::Matrix3f tri;
+  shrink_d = 0.1 * d_v3(start, end);
   tri(0, 0) = R;
   tri(1, 0) = 0;
   tri(2, 0) = 0;
 
-  tri(0, 1) = R * cos(M_PI * 2 / 3);
-  tri(1, 1) = R * sin(M_PI * 2 / 3);
+  tri(0, 1) = R * cos(M_PI * 2 / 3 * 2);
+  tri(1, 1) = R * sin(M_PI * 2 / 3 * 2);
   tri(2, 1) = 0;
 
-  tri(0, 2) = R * cos(M_PI * 2 / 3 * 2);
-  tri(1, 2) = R * sin(M_PI * 2 / 3 * 2);
+  tri(0, 2) = R * cos(M_PI * 2 / 3);
+  tri(1, 2) = R * sin(M_PI * 2 / 3);
   tri(2, 2) = 0;
 
 
-  Eigen::Vector3f v(0, 0, 1);
-  Eigen::Quaternionf a;
-  // std::cerr<< "end - start " << end - start << std::endl;
-  a = a.FromTwoVectors(v, end - start);
-  v = (end - start).normalized();
-  // std::cerr<< "tri " << tri << std::endl;
-  // std::cerr<< "av " << a * v << std::endl;
-  // std::cerr<< "cc " << a * tri<< std::endl;
+  // Eigen::Vector3f v(0, 0, 1);
+  // Eigen::Quaternionf a;
+  // // std::cerr<< "end - start " << end - start << std::endl;
+  // a = a.FromTwoVectors(v, end - start);
+  // v = (end - start).normalized();
+  // // std::cerr<< "tri " << tri << std::endl;
+  // // std::cerr<< "av " << a * v << std::endl;
+  // // std::cerr<< "cc " << a * tri<< std::endl;
 
-  // Eigen::Matrix4f tri_trans;
-  tri = a * tri;
+  Eigen::Vector3f v = (end - start).normalized() * shrink_d;
+
+  // tri = a * tri;
   for (size_t i = 0; i < 3; i += 1){
     for (size_t j = 0; j < 3; j += 1){
-      tri(j, i) += start(j) + (v(j) * shrink_d);
+      tri(j, i) += start(j) + v(j);
     }
   }
-
+  // if(change){
+  //   Eigen::Vector3f tmp = tri.col(1);
+  //   tri.col(1) = tri.col(2);
+  //   tri.col(2) = tmp;
+  // }
   return tri;
 }
 
@@ -669,14 +675,14 @@ int re_strut(std::vector<int> input, int from, Eigen::Matrix3f tri, SupportTree 
       new_tri1(2, 0) = P->points[support_tree.tree[input[i]].index].z;
 
       //  fake code
-      new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 );
-      new_tri1(1, 1) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 );
-      new_tri1(2, 1) = P->points[support_tree.tree[input[i]].index].z;
+      // new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 );
+      // new_tri1(1, 1) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 );
+      // new_tri1(2, 1) = P->points[support_tree.tree[input[i]].index].z;
 
-      new_tri1(0, 2) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
-      new_tri1(1, 2) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 * 2);
-      new_tri1(2, 2) = P->points[support_tree.tree[input[i]].index].z;
-      add_triangle(new_tri1, strut_point, strut_stl);
+      // new_tri1(0, 2) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
+      // new_tri1(1, 2) = P->points[support_tree.tree[input[i]].index].y + R * sin(M_PI * 2 / 3 * 2);
+      // new_tri1(2, 2) = P->points[support_tree.tree[input[i]].index].z;
+      // add_triangle(new_tri1, strut_point, strut_stl);
       //
 
       new_tri1(0, 1) = P->points[support_tree.tree[input[i]].index].x + R * cos(M_PI * 2 / 3 * 2);
@@ -753,7 +759,6 @@ int re_strut(std::vector<int> input, int from, Eigen::Matrix3f tri, SupportTree 
         v.vertices[0] = tmp_index;
         v.vertices[1] = tmp_index + ((j + 1) % 3) + 1;
         v.vertices[2] = tmp_index + ((j + 0) % 3) + 1;
-
         strut_stl->polygons.push_back(v);
       }
 
@@ -767,7 +772,6 @@ int genearte_strut(pcl::PointCloud<pcl::PointXYZ>::Ptr P, SupportTree &support_t
   pcl::PointCloud<pcl::PointXYZ>::Ptr strut_point(new pcl::PointCloud<pcl::PointXYZ>);
   float R, shrink_d = 2;
   for (size_t i = 0; i < support_tree.tree.size(); i += 1){
-
     // (*cloud)[(triangles->polygons[i]).vertices[1]].x
     if(support_tree.tree[i].left == -3 || support_tree.tree[i].left == -2){
       input.push_back(support_tree.tree[i].right);
@@ -788,7 +792,7 @@ int genearte_strut(pcl::PointCloud<pcl::PointXYZ>::Ptr P, SupportTree &support_t
         add_triangle(tri, strut_point, strut_stl);
 
       }
-      else{// dealing with strut start from mesh
+      else{ // dealing with strut start from mesh
         Eigen::Vector3f start = Eigen::Vector3f(P->points[support_tree.tree[i].index].x, P->points[support_tree.tree[i].index].y, P->points[support_tree.tree[i].index].z);
         tri = find_strut_tri(R, shrink_d, start, Eigen::Vector3f(P->points[support_tree.tree[i].right].x, P->points[support_tree.tree[i].right].y, P->points[support_tree.tree[i].right].z));
 
@@ -805,8 +809,8 @@ int genearte_strut(pcl::PointCloud<pcl::PointXYZ>::Ptr P, SupportTree &support_t
           pcl::Vertices v;
           v.vertices.resize(3);
           v.vertices[0] = tmp_index;
-          v.vertices[1] = tmp_index + ((j + 1) % 3) + 1;
-          v.vertices[2] = tmp_index + ((j + 0) % 3) + 1;
+          v.vertices[1] = tmp_index + ((j + 0) % 3) + 1;
+          v.vertices[2] = tmp_index + ((j + 1) % 3) + 1;
 
           strut_stl->polygons.push_back(v);
         }
