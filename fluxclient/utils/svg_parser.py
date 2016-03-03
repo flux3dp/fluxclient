@@ -381,13 +381,13 @@ class SVGParser(object):
         and compute smallest viewBox
         """
         # note that there may be different language when read in a file in binary mode
-        # and be careful about the '\n', '\r\n' issue
-        svg_data = buf.decode('utf8')
-        root = ET.fromstring(svg_data)
+        # and be careful dealing with '\n', '\r\n' issue
+        warning = []
+        root = ET.fromstring(buf.decode('utf8'))
         tree = ET.ElementTree()
         tree._setroot(root)
-        newtree = ET.ElementTree()
         header = root.tag[:root.tag.find('}svg') + 1]
+
         for i in root.iter():
             thing = i
             tmp_thing = ET.Element(thing.tag)
@@ -427,8 +427,16 @@ class SVGParser(object):
             elif thing.tag == header + 'path':
                 tmp_thing.attrib['d'] = thing.attrib['d']
                 i.attrib = tmp_thing.attrib
+            elif thing.tag == header + 'style':
+                i.tag = 'delete'
+            elif thing.tag == header + 'text':
+                warning.append('TEXT_TAG')
+                i.tag = 'delete'
             else:
                 i.attrib = {}
+
+        for node_need_delete in root.findall('delete'):
+            root.remove(node_need_delete)
 
         path_data = SVGParser.elements_to_list(root)
 
@@ -458,27 +466,33 @@ class SVGParser(object):
         viewBox[2] = viewBox[2] - viewBox[0]
         viewBox[3] = viewBox[3] - viewBox[1]
 
-        root.attrib = {}
+        if any(i == float('inf') or i == float('-inf') for i in viewBox):
+            print(viewBox)
+            viewBox[2] = 0
+            viewBox[3] = 0
+            warning.append('FAIL_PARSING')
+        else:
 
-        root.attrib['width'] = str(viewBox[2])
-        root.attrib['height'] = str(viewBox[3])
+            root.attrib = {}
 
-        # stroke strip problem fake solution
-        # real solution ref: http://stackoverflow.com/questions/7241393/can-you-control-how-an-svgs-stroke-width-is-drawn
-        viewBox[0] -= .5
-        viewBox[1] -= .5
-        viewBox[2] += 1
-        viewBox[3] += 1
+            root.attrib['width'] = str(viewBox[2])
+            root.attrib['height'] = str(viewBox[3])
 
-        root.attrib['viewBox'] = " ".join(map(str, viewBox))
-        # root.attrib['style'] = "border: solid #ff0000;"  # TODO: delete this, this is only for debug
+            # stroke strip problem fake solution
+            # real solution ref: http://stackoverflow.com/questions/7241393/can-you-control-how-an-svgs-stroke-width-is-drawn
+            viewBox[0] -= .5
+            viewBox[1] -= .5
+            viewBox[2] += 1
+            viewBox[3] += 1
+
+            root.attrib['viewBox'] = " ".join(map(str, viewBox))
 
         ################ fake code ##############
         if environ.get("flux_debug") == '1':
             tree.write('preprocess.svg')
         ########################################
 
-        return [ET.tostring(root), viewBox[2], viewBox[3]]  # ET.tostring type: bytes
+        return warning, [ET.tostring(root), viewBox[2], viewBox[3]]  # ET.tostring type: bytes
 
     @staticmethod
     def process(path_data, params, viewBox, radius):
