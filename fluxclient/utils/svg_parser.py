@@ -1,7 +1,8 @@
-import xml.etree.ElementTree as ET
 from re import split
 from os import environ
 from math import sin, cos, pi, radians, sqrt, acos, copysign
+
+from lxml import etree as ET
 
 
 class SVGParser(object):
@@ -390,50 +391,58 @@ class SVGParser(object):
 
         for i in root.iter():
             thing = i
-            tmp_thing = ET.Element(thing.tag)
+            # tmp_thing = ET.Element(thing.tag)
             # tmp_thing.tag = thing.tag
-            tmp_thing.attrib['fill'] = 'None'
-            tmp_thing.attrib['stroke'] = '#000000'
-            tmp_thing.tail = '\n'
+            tmp_thing = {}
+            tmp_thing['fill'] = 'None'
+            tmp_thing['stroke'] = '#000000'
             if thing.tag == header + 'rect':
-                tmp_thing.attrib['x'] = thing.attrib.get('x', '0')
-                tmp_thing.attrib['y'] = thing.attrib.get('y', '0')
-                tmp_thing.attrib['height'] = thing.attrib['height']
-                tmp_thing.attrib['width'] = thing.attrib['width']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['x'] = thing.attrib.get('x', '0')
+                tmp_thing['y'] = thing.attrib.get('y', '0')
+                tmp_thing['height'] = thing.attrib['height']
+                tmp_thing['width'] = thing.attrib['width']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'circle':
-                tmp_thing.attrib['cx'] = thing.attrib['cx']
-                tmp_thing.attrib['cy'] = thing.attrib['cy']
-                tmp_thing.attrib['r'] = thing.attrib['r']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['cx'] = thing.attrib['cx']
+                tmp_thing['cy'] = thing.attrib['cy']
+                tmp_thing['r'] = thing.attrib['r']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'ellipse':
-                tmp_thing.attrib['cx'] = thing.attrib['cx']
-                tmp_thing.attrib['cy'] = thing.attrib['cy']
-                tmp_thing.attrib['rx'] = thing.attrib['rx']
-                tmp_thing.attrib['ry'] = thing.attrib['ry']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['cx'] = thing.attrib['cx']
+                tmp_thing['cy'] = thing.attrib['cy']
+                tmp_thing['rx'] = thing.attrib['rx']
+                tmp_thing['ry'] = thing.attrib['ry']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'line':
-                tmp_thing.attrib['x1'] = thing.attrib['x1']
-                tmp_thing.attrib['y1'] = thing.attrib['y1']
-                tmp_thing.attrib['x2'] = thing.attrib['x2']
-                tmp_thing.attrib['y2'] = thing.attrib['y2']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['x1'] = thing.attrib['x1']
+                tmp_thing['y1'] = thing.attrib['y1']
+                tmp_thing['x2'] = thing.attrib['x2']
+                tmp_thing['y2'] = thing.attrib['y2']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'polygon':
-                tmp_thing.attrib['points'] = thing.attrib['points']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['points'] = thing.attrib['points']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'polyline':
-                tmp_thing.attrib['points'] = thing.attrib['points']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['points'] = thing.attrib['points']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'path':
-                tmp_thing.attrib['d'] = thing.attrib['d']
-                i.attrib = tmp_thing.attrib
+                tmp_thing['d'] = thing.attrib['d']
+                i.clear()
+                i.attrib.update(tmp_thing)
             elif thing.tag == header + 'style':
                 i.tag = 'delete'
             elif thing.tag == header + 'text':
                 warning.append('TEXT_TAG')
                 i.tag = 'delete'
             else:
-                i.attrib = {}
+                # tmp_thing = ET.Element(thing.tag)
+                i.attrib.clear()
 
         for node_need_delete in root.findall('delete'):
             root.remove(node_need_delete)
@@ -473,7 +482,7 @@ class SVGParser(object):
             warning.append('FAIL_PARSING')
         else:
 
-            root.attrib = {}
+            root.attrib.clear()
 
             root.attrib['width'] = str(viewBox[2])
             root.attrib['height'] = str(viewBox[3])
@@ -703,3 +712,9 @@ class SVGParser(object):
 
             path_data[path] = in_path
         return path_data
+
+if __name__ == '__main__':
+    import sys
+    with open(sys.argv[1], 'rb') as f:
+        a, b = SVGParser.preprocess(f.read())
+        print(a)
