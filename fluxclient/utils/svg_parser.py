@@ -13,11 +13,17 @@ class SVGParser(object):
 
     @staticmethod
     def transform(coordinate, transform_string):
+        '''
+        transform the points in coordinate by a transform_string define in svg
+        coordinate: [(1, 2), (3, 4), ('\n', '\n'), (5, 6)]
+        transform_string: "translate(60,10) matrix(0.866,0.5,-0.5,0.866,0,0)"
+        return coordinate after being transform
+        '''
         if transform_string == '':
             return coordinate
 
         final = Matrix().set_I()
-        transform_s = findall('[a-z]+\([0-9., +-]+\)', transform_string)
+        transform_s = findall('[a-zXY]+\([0-9., +-]+\)', transform_string)
 
         for t in transform_s:
             t_type, x = t.split('(')
@@ -56,11 +62,12 @@ class SVGParser(object):
             elif t_type == 'skewY':
                 tmp[1][0] = tan(radians(x[0]))
             elif t_type == 'matrix':
-                for i in range(2):
-                    for j in range(3):
-                        tmp[i][j] = x[i * 3 + j]
+                for i in range(3):
+                    for j in range(2):
+                        tmp[j][i] = x[i * 2 + j]
 
             final = final * tmp
+
         new_coordinate = []
         for p in coordinate:
             if p != ('\n', '\n'):
@@ -435,7 +442,8 @@ class SVGParser(object):
     @staticmethod
     def clean_svg(node, header, warning):
         '''
-        recursively clean up and set the attrib
+        recursively clean up and set the attrib for each node
+        will pass the transform to children and delete transform when return from DFS
         '''
         parent = node.getparent()
         if parent is not None:
