@@ -2,7 +2,55 @@
 from math import sqrt, pi, cos, sin
 import sys
 
-from laser_base import LaserBase
+from .laser_base import LaserBase
+
+
+class Matrix(object):
+    def __init__(self, num=3):
+        self.M = [[0.0 for __ in range(3)] for _ in range(num)]
+
+    def __getitem__(self, index):
+        return self.M[index]
+
+    def __mul__(self, other):
+        tmp = Matrix()
+        for i in range(len(tmp.M)):
+            for j in range(len(tmp.M[0])):
+                tmp[i][j] = self[i][j]
+
+        if type(other) == float or type(other) == int:
+            for i in range(len(tmp.M)):
+                for j in range(len(tmp.M[0])):
+                    tmp[i][j] *= other
+        elif type(other) == type(tmp):
+            for i in range(3):
+                for j in range(3):
+                    tmp[i][j] = sum(self.M[i][k] * other.M[k][j] for k in range(3))
+
+        return tmp
+
+    def __rmul__(self, other):
+        if type(other) == int or type(other) == float:
+            return self.__mul__(other)
+        return other.__mul__(self)
+
+    def __repr__(self):
+        tmp = []
+        # tmp.append('[')
+        for i in range(3):
+            for j in range(3):
+                tmp.append(str(self.M[i][j]))
+                tmp.append(' ')
+            tmp.append('\n')
+        # tmp.append(']')
+        return ''.join(tmp)
+
+    def set_I(self):
+        for i in range(3):
+            for j in range(3):
+                self.M[i][j] = 0.
+            self[i][i] = 1.
+        return self
 
 
 class Circle(LaserBase):

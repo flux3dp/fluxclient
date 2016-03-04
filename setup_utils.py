@@ -21,6 +21,7 @@ from fluxclient import __version__ as _VERSION
 
 windows_program_files_sources = None
 
+
 # Base method to find package in system
 def has_package(package_name):
     return subprocess.call(["pkg-config", "--exists", package_name]) == 0
@@ -71,7 +72,7 @@ def get_version():
 
 
 def get_install_requires():
-    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy']
+    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy', 'lxml']
 
 
 def get_packages():

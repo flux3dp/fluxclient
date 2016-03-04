@@ -1,13 +1,80 @@
-import xml.etree.ElementTree as ET
-from re import split
+from re import split, findall
 from os import environ
-from math import sin, cos, pi, radians, sqrt, acos, copysign
+from math import sin, cos, tan, pi, radians, sqrt, acos, copysign
+
+from lxml import etree as ET
+from fluxclient.laser.tools import Matrix
 
 
 class SVGParser(object):
     """docstring for SVGParser"""
     def __init__(self):
         super(SVGParser, self).__init__()
+
+    @staticmethod
+    def transform(coordinate, transform_string):
+        '''
+        transform the points in coordinate by a transform_string define in svg
+        coordinate: [(1, 2), (3, 4), ('\n', '\n'), (5, 6)]
+        transform_string: "translate(60,10) matrix(0.866,0.5,-0.5,0.866,0,0)"
+        return coordinate after being transform
+        '''
+        if transform_string == '':
+            return coordinate
+
+        final = Matrix().set_I()
+        transform_s = findall('[a-zXY]+\([0-9., +-]+\)', transform_string)
+
+        for t in transform_s:
+            t_type, x = t.split('(')
+            x = list(map(float, (x[:-1]).split(',')))
+
+            tmp = Matrix().set_I()
+            if t_type == 'translate':
+                for j, n in enumerate(x):
+                    if j <= 1:
+                        tmp[j][2] = n
+            elif t_type == 'scale':
+                if len(x) == 2:
+                    tmp[0][0] = x[0]
+                    tmp[1][1] = x[1]
+
+                elif len(x) == 1:
+                    tmp[0][0] = x[0]
+                    tmp[1][1] = x[0]
+            elif t_type == 'rotate':
+                tmp[0][0] = cos(radians(x[0]))
+                tmp[0][1] = -sin(radians(x[0]))
+                tmp[1][0] = sin(radians(x[0]))
+                tmp[1][1] = cos(radians(x[0]))
+
+                if len(x) == 3:
+                    C = Matrix().set_I()
+                    C[0][2] = -x[1]
+                    C[1][2] = -x[2]
+
+                    C2 = Matrix().set_I()
+                    C2[0][2] = x[1]
+                    C2[1][2] = x[2]
+                    tmp = C2 * tmp * C
+            elif t_type == 'skewX':
+                tmp[0][1] = tan(radians(x[0]))
+            elif t_type == 'skewY':
+                tmp[1][0] = tan(radians(x[0]))
+            elif t_type == 'matrix':
+                for i in range(3):
+                    for j in range(2):
+                        tmp[j][i] = x[i * 2 + j]
+
+            final = final * tmp
+
+        new_coordinate = []
+        for p in coordinate:
+            if p != ('\n', '\n'):
+                p = [final[0][0] * p[0] + final[0][1] * p[1] + final[0][2], final[1][0] * p[0] + final[1][1] * p[1] + final[1][2]]
+            new_coordinate.append(p)
+
+        return new_coordinate
 
     @staticmethod
     def rect(node):
@@ -23,7 +90,7 @@ class SVGParser(object):
         coordinate.append((x + w, y + h))
         coordinate.append((x, y + h))
         coordinate.append((x, y))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def line(node):
@@ -35,7 +102,7 @@ class SVGParser(object):
 
         coordinate.append((x1, y1))
         coordinate.append((x2, y2))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def polyline(node):
@@ -52,7 +119,7 @@ class SVGParser(object):
 
         for i in range(len(points) // 2):
             coordinate.append((points[i * 2], points[i * 2 + 1]))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def circle(node, sample_n=100):
@@ -66,7 +133,7 @@ class SVGParser(object):
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
             coordinate.append((cx + (r * cos(theta)), cy + (r * sin(theta))))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def ellipse(node, sample_n=100):
@@ -81,7 +148,7 @@ class SVGParser(object):
         for i in range(sample_n + 1):
             theta = 2. * pi * i / sample_n
             coordinate.append((cx + (rx * cos(theta)), cy + (ry * sin(theta))))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def polygon(node):
@@ -100,7 +167,7 @@ class SVGParser(object):
             for i in range(len(points) // 2):
                 coordinate.append((points[i * 2], points[i * 2 + 1]))
             coordinate.append((points[0], points[1]))  # go back to the head
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def path(node, sample_n=100):
@@ -338,7 +405,7 @@ class SVGParser(object):
                 prev_control = None
             else:
                 raise ValueError('Undefine path command \'%s\'' % (i[0]))
-        return [coordinate]
+        return [SVGParser.transform(coordinate, node.get('transform', ''))]
 
     @staticmethod
     def elements_to_list(svg):
@@ -373,6 +440,76 @@ class SVGParser(object):
         return coordinates
 
     @staticmethod
+    def clean_svg(node, header, warning):
+        '''
+        recursively clean up and set the attrib for each node
+        will pass the transform to children and delete transform when return from DFS
+        '''
+        parent = node.getparent()
+        if parent is not None:
+            parent_trans = parent.attrib.get('transform', '')
+            if parent_trans:
+                kk = node.attrib.get('transform', '')
+                node.attrib.update({'transform': parent_trans + node.attrib.get('transform', '')})
+
+        for i in node:
+            if type(i) == ET._Element:
+                SVGParser.clean_svg(i, header, warning)
+
+        tmp_thing = {}
+        tmp_thing['fill'] = 'None'
+        tmp_thing['stroke'] = '#000000'
+        if node.attrib.get('transform', ''):
+            tmp_thing['transform'] = node.attrib.get('transform', '')
+        if node.tag == header + 'rect':
+            tmp_thing['x'] = node.attrib.get('x', '0')
+            tmp_thing['y'] = node.attrib.get('y', '0')
+            tmp_thing['height'] = node.attrib['height']
+            tmp_thing['width'] = node.attrib['width']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'circle':
+            tmp_thing['cx'] = node.attrib['cx']
+            tmp_thing['cy'] = node.attrib['cy']
+            tmp_thing['r'] = node.attrib['r']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'ellipse':
+            tmp_thing['cx'] = node.attrib['cx']
+            tmp_thing['cy'] = node.attrib['cy']
+            tmp_thing['rx'] = node.attrib['rx']
+            tmp_thing['ry'] = node.attrib['ry']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'line':
+            tmp_thing['x1'] = node.attrib['x1']
+            tmp_thing['y1'] = node.attrib['y1']
+            tmp_thing['x2'] = node.attrib['x2']
+            tmp_thing['y2'] = node.attrib['y2']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'polygon':
+            tmp_thing['points'] = node.attrib['points']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'polyline':
+            tmp_thing['points'] = node.attrib['points']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'path':
+            tmp_thing['d'] = node.attrib['d']
+            node.clear()
+            node.attrib.update(tmp_thing)
+        elif node.tag == header + 'style':
+            node.tag = 'delete'
+        elif node.tag == header + 'text':
+            warning.append('TEXT_TAG')
+            node.tag = 'delete'
+        else:
+            # tmp_thing = ET.Element(node.tag)
+            node.attrib.clear()
+
+    @staticmethod
     def preprocess(buf):
         """
         [buf]
@@ -383,57 +520,9 @@ class SVGParser(object):
         # note that there may be different language when read in a file in binary mode
         # and be careful dealing with '\n', '\r\n' issue
         warning = []
-        root = ET.fromstring(buf.decode('utf8'))
-        tree = ET.ElementTree()
-        tree._setroot(root)
+        root = ET.fromstring(buf)  # can't parse chinese
         header = root.tag[:root.tag.find('}svg') + 1]
-
-        for i in root.iter():
-            thing = i
-            tmp_thing = ET.Element(thing.tag)
-            # tmp_thing.tag = thing.tag
-            tmp_thing.attrib['fill'] = 'None'
-            tmp_thing.attrib['stroke'] = '#000000'
-            tmp_thing.tail = '\n'
-            if thing.tag == header + 'rect':
-                tmp_thing.attrib['x'] = thing.attrib.get('x', '0')
-                tmp_thing.attrib['y'] = thing.attrib.get('y', '0')
-                tmp_thing.attrib['height'] = thing.attrib['height']
-                tmp_thing.attrib['width'] = thing.attrib['width']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'circle':
-                tmp_thing.attrib['cx'] = thing.attrib['cx']
-                tmp_thing.attrib['cy'] = thing.attrib['cy']
-                tmp_thing.attrib['r'] = thing.attrib['r']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'ellipse':
-                tmp_thing.attrib['cx'] = thing.attrib['cx']
-                tmp_thing.attrib['cy'] = thing.attrib['cy']
-                tmp_thing.attrib['rx'] = thing.attrib['rx']
-                tmp_thing.attrib['ry'] = thing.attrib['ry']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'line':
-                tmp_thing.attrib['x1'] = thing.attrib['x1']
-                tmp_thing.attrib['y1'] = thing.attrib['y1']
-                tmp_thing.attrib['x2'] = thing.attrib['x2']
-                tmp_thing.attrib['y2'] = thing.attrib['y2']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'polygon':
-                tmp_thing.attrib['points'] = thing.attrib['points']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'polyline':
-                tmp_thing.attrib['points'] = thing.attrib['points']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'path':
-                tmp_thing.attrib['d'] = thing.attrib['d']
-                i.attrib = tmp_thing.attrib
-            elif thing.tag == header + 'style':
-                i.tag = 'delete'
-            elif thing.tag == header + 'text':
-                warning.append('TEXT_TAG')
-                i.tag = 'delete'
-            else:
-                i.attrib = {}
+        SVGParser.clean_svg(root, header, warning)
 
         for node_need_delete in root.findall('delete'):
             root.remove(node_need_delete)
@@ -467,13 +556,12 @@ class SVGParser(object):
         viewBox[3] = viewBox[3] - viewBox[1]
 
         if any(i == float('inf') or i == float('-inf') for i in viewBox):
-            print(viewBox)
             viewBox[2] = 0
             viewBox[3] = 0
             warning.append('FAIL_PARSING')
         else:
 
-            root.attrib = {}
+            root.attrib.clear()
 
             root.attrib['width'] = str(viewBox[2])
             root.attrib['height'] = str(viewBox[3])
@@ -489,7 +577,8 @@ class SVGParser(object):
 
         ################ fake code ##############
         if environ.get("flux_debug") == '1':
-            tree.write('preprocess.svg')
+            with open('preprocess.svg', 'wb') as f:
+                f.write(ET.tostring(root, pretty_print=True))
         ########################################
 
         return warning, [ET.tostring(root), viewBox[2], viewBox[3]]  # ET.tostring type: bytes
@@ -703,3 +792,25 @@ class SVGParser(object):
 
             path_data[path] = in_path
         return path_data
+
+if __name__ == '__main__':
+    import sys
+    with open(sys.argv[1], 'rt', encoding="utf-8") as f:
+        buf = f.read()
+        parser = ET.XMLParser(encoding="utf-8")
+        root = ET.fromstring(buf, parser=parser)
+        print(ET.tostring(root, pretty_print=True).decode('utf8'))
+
+    # # with open(sys.argv[1], 'rb') as f:
+    # with open(sys.argv[1], 'rb') as f:
+
+    #     buf = f.read()
+    #     # a, b = SVGParser.preprocess(buf)
+    #     # print(a)
+    #     root = ET.fromstring(buf)  # can't parse chinese
+    #     print(ET.tostring(root, pretty_print=True).decode('utf8'))
+
+
+    #     buf = buf.decode('utf8')
+    #     parser = etree.HTMLParser()
+    #     etree.parse(StringIO(buf), parser)

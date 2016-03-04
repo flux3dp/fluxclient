@@ -4,8 +4,8 @@ import sys
 from math import sin, cos, pi, sqrt
 import logging
 from os import environ
-# cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
-import xml.etree.ElementTree as ET
+
+from lxml import etree as ET
 
 from .laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
