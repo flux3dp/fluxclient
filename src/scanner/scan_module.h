@@ -15,7 +15,7 @@ void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32
 int loadPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud);
 void dumpPointCloudXYZRGB(const char* file, PointCloudXYZRGBPtr cloud);
 int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point);
-int get_w(PointCloudXYZRGBPtr cloud);
+size_t get_w(PointCloudXYZRGBPtr cloud);
 
 int SOR(PointCloudXYZRGBPtr cloud, int neighbors, float threshold);
 int Euclidean_Cluster(PointCloudXYZRGBPtr cloud, float thres_dist, std::vector< std::vector<int> > &output);

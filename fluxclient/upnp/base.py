@@ -25,10 +25,10 @@ class UpnpBase(object):
         else:
             self.reload_remote_profile(lookup_callback, lookup_timeout)
 
-        if self.remote_version < StrictVersion("1.0a0"):
-            raise RuntimeError("fluxmonitor version is too old")
+        if self.remote_version < StrictVersion("1.0b12"):
+            raise RuntimeError("FLUXMONITOR_VERSION_IS_TOO_OLD")
         elif self.remote_version >= StrictVersion("2.0a0"):
-            raise RuntimeError("fluxmonitor version is too new")
+            raise RuntimeError("FLUXMONITOR_VERSION_IS_TOO_NEW")
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)

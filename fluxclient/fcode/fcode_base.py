@@ -73,6 +73,6 @@ class FcodeBase(object):
             for layer in path:
                 tmp = []
                 for p in layer:
-                    tmp.append({'t': p[3], 'p': [p[0], p[1], p[2]]})
+                    tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
                 result.append(tmp)
             return dumps(result)

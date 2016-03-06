@@ -4,8 +4,8 @@ import sys
 from math import sin, cos, pi, sqrt
 import logging
 from os import environ
-# cElementTree is the c implement of ElementTree, much faster and memory friendly, but no need to specify in py3
-import xml.etree.ElementTree as ET
+
+from lxml import etree as ET
 
 from .laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
@@ -24,6 +24,8 @@ class LaserSvg(LaserBase, SVGParser):
         self.reset()
 
     def reset(self):
+        self.ext_metadata['HEAD_TYPE'] = 'LASER'
+
         self.svgs = {}
         self.ready_svgs = {}
 
@@ -82,9 +84,16 @@ class LaserSvg(LaserBase, SVGParser):
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
+
+        gcode = "\n".join(gcode) + "\n"
+        logger.debug("generate gcode done:%d bytes" % len(gcode))
+
         ################ fake code ##############
         if environ.get("flux_debug") == '1':
             self.dump('./preview.png')
+            with open('output.gcode', 'w') as f:
+                print(gcode, file=f)
+        #######################################################################
 
         # output only moving
         # tmp = []
@@ -96,10 +105,10 @@ class LaserSvg(LaserBase, SVGParser):
 
         ##########################################
 
-        return "\n".join(gcode) + "\n"
+        return gcode
 
 if __name__ == '__main__':
     m_laser_svg = LaserSvg()
     filename = sys.argv[1]
     with open(filename, 'rb') as f:
-        m_laser_svg.preprocess(f.read(), filename)
+        m_laser_svg.preprocess(f.read())

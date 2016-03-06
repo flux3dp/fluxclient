@@ -1,11 +1,10 @@
 # !/usr/bin/env python3
 
-import os
 import sys
-import io
+from io import BytesIO, StringIO
 from math import pi, sin, cos, sqrt, degrees
-import time
-import datetime
+from time import time
+from datetime import datetime
 
 from PIL import Image
 import numpy as np
@@ -17,8 +16,7 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 11.225  # focal z coordinate
-        self.focal_l = 7.44  # focal z coordinate
+        self.focal_l = 4.7  # focal z coordinate
 
         self.laser_speed = 300  # speed F= mm/minute
         self.travel_speed = 1000
@@ -43,6 +41,8 @@ class LaserBase(object):
 
         # ext meta data, used when converting to fcode
         self.ext_metadata = {}
+        self.ext_metadata['CORRECTION'] = 'N'
+        self.ext_metadata['FILAMENT_DETECT'] = 'N'
 
     def reset_image(self):
         w = self.pixel_per_mm * self.radius * 2
@@ -55,7 +55,7 @@ class LaserBase(object):
         gcode = []
 
         # header part
-        gcode.append(";Generate by Flux Studio %s" % (datetime.datetime.fromtimestamp(time.time()).strftime('on %Y-%m-%d at %H:%M:%S')))
+        gcode.append(";Generate by Flux Studio %s" % (datetime.fromtimestamp(time()).strftime('on %Y-%m-%d at %H:%M:%S')))
         gcode.append(";Laser Gcode")
         for i in header.split('\n'):
             gcode.append(";" + i)
@@ -304,7 +304,7 @@ class LaserBase(object):
         elif mode == 'preview':
             # get the preview (640 * 640) png in bytes
             img = img.resize((640, 640))
-            b = io.BytesIO()
+            b = BytesIO()
             img.save(b, 'png')
             image_bytes = b.getvalue()
             return image_bytes
@@ -312,17 +312,14 @@ class LaserBase(object):
             raise NotImplementedError("unsupport mode {}".format(mode), file=sys.stderr)
 
     def fcode_generate(self, *args):
-        f = io.StringIO()
+        f = StringIO()
         f.write(self.gcode_generate(*args))
         f.seek(0)
 
-        fcode_output = io.BytesIO()
+        fcode_output = BytesIO()
         m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
-        m_GcodeToFcode.md['HEAD_TYPE'] = 'laser'
-        m_GcodeToFcode.md['CORRECTION'] = 'N'
-        m_GcodeToFcode.md['FILAMENT_DETECT'] = 'N'
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
 
         m_GcodeToFcode.process(f, fcode_output)
-        return fcode_output.getvalue()
+        return fcode_output.getvalue(), m_GcodeToFcode

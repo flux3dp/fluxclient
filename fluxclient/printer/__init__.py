@@ -213,11 +213,14 @@ use_volumetric_e = 0
 vibration_limit = 0
 wipe = 0
 xy_size_compensation = 0
-z_offset = 0
+z_offset = -1
 flux_refill_empty = 0
 flux_first_layer = 0
 flux_raft = 0
-flux_floor = -1'''
+flux_floor = -1
+detect_filament_runout = 1
+detect_head_shake = 1
+detect_head_tilt = 1'''
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -349,9 +352,12 @@ ini_constraint = {
     'vibration_limit': [free],
     'wipe': False,
     'xy_size_compensation': False,
-    'z_offset': [float_range, 0, 23.5],
+    'z_offset': [float_range, -10, 10],
     'flux_refill_empty': [binary],
     'flux_first_layer': [binary],
     'flux_raft': [binary],
     'flux_floor': [float_range, -1, 240],
+    'detect_filament_runout': [binary],
+    'detect_head_shake': [binary],
+    'detect_head_tilt': [binary]
 }

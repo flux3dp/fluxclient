@@ -45,7 +45,7 @@ int get_item(PointCloudXYZRGBPtr cloud, int key, std::vector<float> &point){
   return 1;
 }
 
-int get_w(PointCloudXYZRGBPtr cloud){
+size_t get_w(PointCloudXYZRGBPtr cloud){
   return (*cloud).size();
 }
 void push_backPoint(PointCloudXYZRGBPtr cloud, float x, float y, float z, uint32_t r, uint32_t g, uint32_t b){
@@ -231,6 +231,10 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXY
   // poisson.setScale(1.0); // from 1.1 to 1.0
   poisson.setDepth (8);
   poisson.setIsoDivide(7);
+  // poisson.setSamplesPerNode(2);
+  // poisson.setDegree(2);
+  // poisson.setManifold(true);
+  // std::cout<< "Gk:" << std::endl;
   poisson.setInputCloud (cloud_with_normals);
   poisson.performReconstruction (*triangles);
 

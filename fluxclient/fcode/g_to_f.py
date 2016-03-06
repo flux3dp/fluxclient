@@ -18,7 +18,7 @@ logger = logging.getLogger("g_to_f")
 
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
-    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
+    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1.1
 
     this should done several thing:
       transform gcode into fcode
@@ -198,7 +198,6 @@ class GcodeToFcode(FcodeBase):
 
                         # # fix on slic3r bug slowing down in raft but not in real printing
                         if self.config is not None and self.config['flux_first_layer'] == '1' and self.layer_now == int(self.config['raft_layers']):
-                            print('hi')
                             data[0] = float(self.config['first_layer_speed']) * 60
                             subcommand |= (1 << 6)
 
@@ -293,7 +292,10 @@ class GcodeToFcode(FcodeBase):
                         if line[0] == 'M107':
                             self.writer(packer_f(0.0), output_stream)
                         elif line[0] == 'M106':
-                            self.writer(packer_f(float(line[1].lstrip('S')) / 255.), output_stream)
+                            if len(line) != 1:
+                                self.writer(packer_f(float(line[1].lstrip('S')) / 255.), output_stream)
+                            else:
+                                self.writer(packer_f(1.), output_stream)
 
                     elif line[0] in ['M84', 'M140']:  # loosen the motor
                         pass  # should only appear when printing done, not define in fcode yet
@@ -316,7 +318,9 @@ class GcodeToFcode(FcodeBase):
                 self.empty_layer.pop(0)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
-            self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+            if self.md['HEAD_TYPE'] == 'EXTRUDER':
+                self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
+
             self.md['TRAVEL_DIST'] = str(self.distance)
 
             self.max_range[3] = sqrt(self.max_range[3])
@@ -327,7 +331,7 @@ class GcodeToFcode(FcodeBase):
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
-                self.md['SETTING'] = str(comment_list[-130:])
+                self.md['SETTING'] = str(comment_list[-137:])
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)

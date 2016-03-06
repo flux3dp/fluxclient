@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import struct
-import io
+from io import BytesIO
 import sys
 
 import numpy as np
@@ -41,7 +41,7 @@ class image_to_pc():
         '''
             convert buffer_data(bytes readin from jpg) into image -> (numpy.ndarray, uint8)
         '''
-        f = io.BytesIO(buffer_data)
+        f = BytesIO(buffer_data)
         im = Image.open(f)
         im_array = np.array(im)
 
@@ -193,8 +193,13 @@ def after(l):
 if __name__ == '__main__':
     import subprocess
     from fluxclient.scanner.scan_settings import ScanSetting
-    ss = 10
-    m_image_to_pc = image_to_pc(ss, ScanSetting())
+    m, l, r = [314.0, 325.0, 316.0]
+    # m -
+    ss = 400
+    SS = ScanSetting()
+    SS.LLaserAdjustment = int(m) - (SS.img_width / 2)
+    SS.RLaserAdjustment = int(m) - (SS.img_width / 2)
+    m_image_to_pc = image_to_pc(ss, SS)
     img_location = sys.argv[1].rstrip('/')
     print(img_location)
 

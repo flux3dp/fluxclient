@@ -2,7 +2,7 @@
 import struct
 from operator import ge, le
 import logging
-import io
+from io import BytesIO, StringIO
 import sys
 import bisect
 import copy
@@ -174,7 +174,7 @@ class PcProcess():
                 pc_size.append(len(pc))
                 for p_i in range(pc_size[-1]):
                     pc_add.append(pc.get_item(p_i))
-            tmp = io.StringIO()
+            tmp = StringIO()
             write_pcd(pc_add, tmp)
             return tmp.getvalue().encode()
 
@@ -192,13 +192,13 @@ class PcProcess():
             pc_mesh = self.to_mesh(name)
             mesh_l = pc_mesh.STL_to_List()
             if mode == 'ascii':
-                strbuf = io.StringIO()
+                strbuf = StringIO()
                 write_stl(mesh_l, './output.stl', mode)
                 write_stl(mesh_l, strbuf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
-                buf = io.BytesIO()
+                buf = BytesIO()
                 write_stl(mesh_l, './output.stl', mode)
 
                 write_stl(mesh_l, buf, mode)

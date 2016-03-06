@@ -48,6 +48,7 @@ class RobotConsole(object):
             "rmdir": self.rmdir,
             "rmfile": self.rmfile,
             "cp": self.cpfile,
+            "download": self.download_file,
             "upload": self.upload_file,
             "md5": self.md5,
 
@@ -68,6 +69,8 @@ class RobotConsole(object):
             "load_filament": self.maintain_load_filament,
             "stop_load_filament": self.maintain_stop_load_filament,
             "unload_filament": self.maintain_unload_filament,
+            "extruder_temp": self.maintain_extruder_temp,
+            "update_hbfw": self.maintain_update_hbfw,
             "play": {
                 "info": self.play_info
             },
@@ -136,14 +139,18 @@ class RobotConsole(object):
     def fileinfo(self, path):
         path = shlex.split(path)[0]
         entry, filename = path.split("/", 1)
-        info, data = self.robot_obj.fileinfo(entry, filename)
+        info, images = self.robot_obj.fileinfo(entry, filename)
         logger.info("%s" % info)
 
-        ext = mimetypes.guess_extension(data[0])
-        if ext:
-            ntf = NamedTemporaryFile(suffix=ext, delete=False)
-            ntf.write(data[1])
-            os.system("open " + ntf.name)
+        previews = []
+        for img in images:
+            ext = mimetypes.guess_extension(img[0])
+            if ext:
+                ntf = NamedTemporaryFile(suffix=ext, delete=False)
+                ntf.write(img[1])
+                previews.append(ntf.name)
+        if previews:
+            os.system("open " + " ".join(previews))
 
     def mkdir(self, path):
         path = shlex.split(path)[0]
@@ -166,9 +173,8 @@ class RobotConsole(object):
         else:
             raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
 
-    def cpfile(self, args):
+    def cpfile(self, source, target):
         try:
-            source, target = shlex.split(args)
             if source.startswith("SD/"):
                 source_entry = "SD"
                 source = source[3:]
@@ -187,6 +193,14 @@ class RobotConsole(object):
         except ValueError:
             raise RuntimeError("BAD_PARAMS")
 
+    def download_file(self, source, target):
+        def callback(left, size):
+            logger.info("Download %i / %i" % (size - left, size))
+
+        entry, path = source.split("/", 1)
+        with open(target, "wb") as f:
+            self.robot_obj.download_file(entry, path, f, callback)
+
     def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
             source, upload_to, progress_callback=self.log_progress_callback)
@@ -202,7 +216,8 @@ class RobotConsole(object):
             progress_callback=self.log_progress_callback)
 
     def md5(self, filename):
-        md5 = self.robot_obj.md5(" ".join(filename.split("/", 1)))
+        entry, path = filename.split("/", 1)
+        md5 = self.robot_obj.md5(entry, path)
         logger.info("MD5 %s %s", filename, md5)
 
     def play_info(self):
@@ -303,6 +318,21 @@ class RobotConsole(object):
 
         self.robot_obj.maintain_unload_filament(int(index), float(temp),
                                                 callback)
+        logger.info("ok")
+
+    def maintain_extruder_temp(self, sindex, stemp):
+        self.robot_obj.maintain_extruder_temp(int(sindex), float(stemp))
+        logger.info("ok")
+
+    def maintain_update_hbfw(self, filename):
+        def callback(nav):
+            logger.info("--> %s", nav)
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            self.robot_obj.maintain_update_hbfw(mimetype, f, size, callback)
         logger.info("ok")
 
     def raw_mode(self):

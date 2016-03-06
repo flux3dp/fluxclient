@@ -17,7 +17,7 @@ def show_pc(name, pc_in):
     return '{} size:{}'.format(name, len(pc_in[0]))
 
 
-def main(in_file, out_file, command=''):
+def sub_command(in_file, out_file, command=''):
     _PcProcess = PcProcess(ScanSetting())
     tmp = out_file.rfind('.')
     prefix, suffix = out_file[:tmp], out_file[tmp + 1:]
@@ -75,19 +75,20 @@ def main(in_file, out_file, command=''):
             _PcProcess.clouds['in'] = tmp_pc
 
 
-parser = argparse.ArgumentParser(description='An experiment tool for scanning improve', formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-i', '--input', help='input filename', required=True)
-parser.add_argument('-o', '--output', help='output filename', default='output.pcd')
-parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
-                                                        'N[stddev]: noise del with dev [stddev]\n'
-                                                        'P: Possion Meshing\n'
-                                                        'A[fc][value]: add [floor] or [ceiling] at z = [value]'
-                                                        'E: export file\n'
-                                                        'C[s]?[value]: clustring points base on distance'
-                    )
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser(description='An experiment tool for scanning improve', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-i', '--input', help='input filename', required=True)
+    parser.add_argument('-o', '--output', help='output filename', default='output.pcd')
+    parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
+                                                            'N[stddev]: noise del with dev [stddev]\n'
+                                                            'P: Possion Meshing\n'
+                                                            'A[fc][value]: add [floor] or [ceiling] at z = [value]'
+                                                            'E: export file\n'
+                                                            'C[s]?[value]: clustring points base on distance'
+                        )
+    args = parser.parse_args()
 
-if args.output is None:
-    args.output = args.input[:-4] + "_out" + ".pcd"
-if __name__ == '__main__':
-    main(args.input, args.output, args.command)
+    if args.output is None:
+        args.output = args.input[:-4] + "_out" + ".pcd"
+
+    sub_command(args.input, args.output, args.command)

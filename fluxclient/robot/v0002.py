@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def raise_error(ret):
-    if ret.startswith("error "):
+    if ret.startswith("error ") or ret.startswith("er "):
         raise RuntimeError(*(ret.split(" ")[1:]))
     else:
         raise RuntimeError("UNKNOW_ERROR", ret)
@@ -83,7 +83,7 @@ class FluxRobotV0002(object):
     def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
-            raise TimeoutError("get resp timeout")
+            raise RuntimeError("get resp timeout")
         # bml = self.sock.recv(2, socket.MSG_WAITALL)
         bml = msg_waitall(self.sock, 2)
         if not bml:
@@ -108,17 +108,23 @@ class FluxRobotV0002(object):
         self._send_cmd(buf)
         return self.get_resp(timeout)
 
-    def recv_binary(self, binary_header):
+    def recv_binary_into(self, binary_header, stream, callback=None):
         mn, mimetype, ssize = binary_header.split(" ")
         assert mn == "binary"
         size = int(ssize)
         logger.debug("Recv %s %i" % (mimetype, size))
         if size == 0:
-            return (mimetype, b"")
-        buf = BytesIO()
+            return mimetype
         left = size
         while left > 0:
-            left -= buf.write(self.sock.recv(min(4096, left)))
+            left -= stream.write(self.sock.recv(min(4096, left)))
+            if callback:
+                callback(left, size)
+        return mimetype
+
+    def recv_binary(self, binary_header, callback=None):
+        buf = BytesIO()
+        mimetype = self.recv_binary_into(binary_header, buf, callback)
         return (mimetype, buf.getvalue())
 
     # Command Tasks
@@ -155,9 +161,11 @@ class FluxRobotV0002(object):
         self._send_cmd(b"file info " + entry.encode() + b" " + path.encode())
 
         resp = self.get_resp().decode("utf8", "ignore")
-        if resp.startswith("binary "):
-            info[1] = self.recv_binary(resp)
+        images = []
+        while resp.startswith("binary "):
+            images.append(self.recv_binary(resp))
             resp = self.get_resp().decode("utf8", "ignore")
+        info[1] = images
 
         # TODO
         fixmeta = lambda key, value=None: (key, value)
@@ -186,13 +194,27 @@ class FluxRobotV0002(object):
 
     @ok_or_error
     def rmfile(self, entry, path):
-        return self._make_cmd(b"rm " + entry.encode() + b" " + path.encode())
+        return self._make_cmd(b"file rm " + entry.encode() + b" " + path.encode())
 
     def md5(self, entry, path):
-        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " + path.encode())
+        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
+                               path.encode())
         resp = bresp.decode("ascii", "ignore")
         if resp.startswith("md5 "):
             return resp[4:]
+        else:
+            raise_error(resp)
+
+    def download_file(self, entry, path, stream, callback=None):
+        self._send_cmd(("file download %s %s" % (entry, path)).encode())
+        resp = self.get_resp().decode("utf8", "ignore")
+        if resp.startswith("binary "):
+            mimetype = self.recv_binary_into(resp, stream, callback)
+            ret = self.get_resp().decode("utf8", "ignore")
+            if ret == "ok":
+                return mimetype
+            else:
+                raise_error(resp)
         else:
             raise_error(resp)
 
@@ -240,7 +262,7 @@ class FluxRobotV0002(object):
 
     def play_info(self):
         self._send_cmd(b"player info")
-        metadata = imgbuf = None
+        metadata = None
 
         resp = self.get_resp().decode("ascii", "ignore")
         if resp.startswith("binary text/json"):
@@ -263,25 +285,17 @@ class FluxRobotV0002(object):
     def quit_play(self):
         return self._make_cmd(b"player quit")
 
-    def update_fw(self, filename, progress_callback=None):
-        mimetype, _ = mimetypes.guess_type(filename)
-        if not mimetype:
-            mimetype = "binary"
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            self.upload_stream(f, size, mimetype, upload_to, cmd,
-                               progress_callback)
-
-    def upload_stream(self, stream, length, mimetype, upload_to,
+    def upload_stream(self, stream, length, mimetype, upload_to=None,
                       cmd="file upload", progress_callback=None):
         if upload_to == "#":
             # cmd = [cmd] [mimetype] [length] #
             cmd = "%s %s %i #" % (cmd, mimetype, length)
-        else:
+        elif upload_to:
             entry, path = upload_to.split("/", 1)
             # cmd = [cmd] [mimetype] [length] [entry] [path]
             cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
+        else:
+            cmd = "%s %s %i" % (cmd, mimetype, length)
 
         upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
         if upload_ret == "continue":
@@ -313,8 +327,8 @@ class FluxRobotV0002(object):
             raise_error(final_ret.decode("ascii", "ignore"))
 
     # Others
-    def begin_upload(self, mimetype, length, cmd="upload", uploadto="#"):
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, uploadto)).encode()
+    def begin_upload(self, mimetype, length, cmd="upload", upload_to="#"):
+        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
         upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
         if upload_ret == "continue":
             return self.sock
@@ -515,6 +529,29 @@ class FluxRobotV0002(object):
                     raise_error(ret)
         else:
             raise_error(ret.decode("ascii", "utf8"))
+
+    @ok_or_error
+    def maintain_extruder_temp(self, index, temp):
+        ret = self._make_cmd(
+            ("extruder_temp %i %.1f" % (index, temp)).encode())
+        return ret
+
+    def maintain_update_hbfw(self, mimetype, stream, size,
+                             progress_callback=None):
+        def uplaod_process_callback(self, processed, total):
+            progress_callback("CTRL UPLOADING %i" % processed)
+
+        logger.debug("File opened")
+        self.upload_stream(stream, size, mimetype, None, "update_head",
+                           uplaod_process_callback)
+        while True:
+            ret = self.get_resp().decode("utf8", "ignore")
+            if ret == "ok":
+                return
+            elif ret.startswith("CTRL "):
+                progress_callback(ret)
+            else:
+                raise_error(ret)
 
     def raw_mode(self):
         ret = self._make_cmd(b"raw")

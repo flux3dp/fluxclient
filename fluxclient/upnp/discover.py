@@ -72,7 +72,12 @@ class UpnpDiscover(object):
         self.socks = (self.sock, ) + tuple(
             (h.sock for h in self.handlers if hasattr(h, "sock")))
 
-    def valied_uuid(self, uuid):
+    def poke(self, ipaddr):
+        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
+                              UUID(int=0).bytes)
+        self.touch_sock.sendto(payload, (ipaddr, DEFAULT_PORT))
+
+    def limited_uuid(self, uuid):
         if self.uuid:
             return self.uuid == uuid
         else:
@@ -181,7 +186,7 @@ class Version1Helper(object):
         l_master_pkey, l_signuture = args[3:]
 
         uuid = UUID(bytes=uuid_bytes)
-        if not self.server.valied_uuid(uuid):
+        if not self.server.limited_uuid(uuid):
             return
 
         f = BytesIO(payload[34:])
@@ -193,29 +198,35 @@ class Version1Helper(object):
             return
 
         master_pkey = KeyObject.load_keyobj(masterkey_doc)
+        uuid = UUID(bytes=uuid_bytes)
 
-        if self.server.in_history(uuid, master_ts):
-            try:
-                stbuf = f.read(64)
-                st_ts, st_id, st_prog, st_head, st_err = \
-                    struct.unpack("dif16s32s", stbuf)
+        if self.server.limited_uuid(uuid):
+            if self.server.in_history(uuid, master_ts):
+                try:
+                    stbuf = f.read(64)
+                    st_ts, st_id, st_prog, st_head, st_err = \
+                        struct.unpack("dif16s32s", stbuf)
 
-                head_module = st_head.decode("ascii",
-                                             "ignore").strip("\x00")
-                error_label = st_err.decode("ascii",
-                                            "ignore").strip("\x00")
-                self.server.update_history(uuid, {
-                    "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
-                    "st_ts": st_ts, "head_module": head_module,
-                    "error_label": error_label})
-                return uuid
-            except Exception:
-                logger.exception("Unpack status failed")
-        else:
-            self.server.add_master_key(uuid, sn.decode("ascii"), master_pkey)
-            payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-                                  2, uuid.bytes)
-            self.sock.sendto(payload, endpoint)
+                    head_module = st_head.decode("ascii",
+                                                 "ignore").strip("\x00")
+                    error_label = st_err.decode("ascii",
+                                                "ignore").strip("\x00")
+                    dataset = self.server.history[uuid]
+                    dataset.update({
+                        "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
+                        "st_ts": st_ts, "head_module": head_module,
+                        "error_label": error_label})
+                    return uuid
+                except Exception:
+                    basic_info = self.server.history[uuid]
+                    if basic_info["version"] > "0.13a":
+                        logger.exception("Unpack status failed")
+            else:
+                self.server.add_master_key(uuid, sn.decode("ascii"),
+                                           master_pkey)
+                payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
+                                      2, uuid.bytes)
+                self.sock.sendto(payload, endpoint)
 
     def handle_touch(self, endpoint, payload):
         f = BytesIO(payload)
@@ -223,7 +234,7 @@ class Version1Helper(object):
         buuid, master_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
         uuid = UUID(bytes=buuid)
 
-        if not self.server.valied_uuid(uuid):
+        if not self.server.limited_uuid(uuid):
             # Ingore this uuid
             return
 

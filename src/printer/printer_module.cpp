@@ -159,20 +159,21 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
     center[i] = (b_box[i] + b_box[i + 3]) / 2;
   }
   transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = - center[0];
-  transform(1, 3) = - center[1];
-  transform(2, 3) = - center[2];
+  transform(0, 3) = -center[0];
+  transform(1, 3) = -center[1];
+  transform(2, 3) = -center[2];
   pcl::transformPointCloud(*cloud, *cloud, transform);
 
   // rotate
   transform = Eigen::Matrix4f::Identity();
+
   tmpM = Eigen::Matrix4f::Identity();
   theta = rx; // The angle of rotation in radians
   tmpM(1, 1) = cos (theta); //x
   tmpM(1, 2) = -sin(theta);
   tmpM(2, 1) = sin (theta);
   tmpM(2, 2) = cos (theta);
-  transform *= tmpM;
+  pcl::transformPointCloud(*cloud, *cloud, tmpM);
 
   tmpM = Eigen::Matrix4f::Identity();
   theta = ry;
@@ -180,7 +181,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   tmpM(2, 0) = -sin(theta);
   tmpM(0, 2) = sin (theta);
   tmpM(2, 2) = cos (theta);
-  transform *= tmpM;
+  pcl::transformPointCloud(*cloud, *cloud, tmpM);
 
   tmpM = Eigen::Matrix4f::Identity();
   theta = rz;
@@ -188,8 +189,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   tmpM(0, 1) = -sin(theta);
   tmpM(1, 0) = sin (theta);
   tmpM(1, 1) = cos (theta);
-  transform *= tmpM;
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  pcl::transformPointCloud(*cloud, *cloud, tmpM);
 
   // move to proper position
   transform = Eigen::Matrix4f::Identity();
@@ -202,7 +202,7 @@ int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, floa
   return 0;
 }
 
-int find_intersect(pcl::PointXYZ a, pcl::PointXYZ b, float floor_v, pcl::PointXYZ &p){
+int find_intersect(pcl::PointXYZ &a, pcl::PointXYZ &b, float floor_v, pcl::PointXYZ &p){
   // find the intersect between line a, b and plane z=floor_v
   std::vector<float> v(3);  // vetor a->b
   v[0] = b.x - a.x;
