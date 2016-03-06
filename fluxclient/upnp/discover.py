@@ -1,12 +1,15 @@
 
-from time import time
 from io import BytesIO
 from uuid import UUID
+from time import time
 import platform
 import logging
 import select
 import socket
 import struct
+
+from .misc import DEFAULT_IPADDR, DEFAULT_PORT, validate_identify
+from fluxclient.encryptor import KeyObject
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +17,6 @@ logger = logging.getLogger(__name__)
 CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 MULTICAST_VERSION = 1
-
-from fluxclient import encryptor as E  # noqa
-from .misc import DEFAULT_IPADDR, DEFAULT_PORT
 
 
 """Discover Flux 3D Printer
@@ -54,34 +54,23 @@ class UpnpDiscover(object):
         self.port = port
         self.uuid = uuid
 
-        self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                       socket.IPPROTO_UDP)
-        self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        mreq = struct.pack("4sl", socket.inet_aton(ipaddr), socket.INADDR_ANY)
-        self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
-                                  mreq)
-        self.disc_sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP,
-                                  1)
-        self.disc_sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF,
-                                  socket.INADDR_ANY)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                  socket.IPPROTO_UDP)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
+                           socket.INADDR_ANY)
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                             mreq)
 
         if platform.system() == "Windows":
-            self.disc_sock.bind(("", self.port))
+            self.sock.bind(("", self.port))
         else:
-            self.disc_sock.bind((ipaddr, self.port))
+            self.sock.bind((DEFAULT_IPADDR, self.port))
 
-        self.touch_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                        socket.IPPROTO_UDP)
-        self.touch_sock.bind(('', 0))
+        self.handlers = (None, Version1Helper(self))
 
-        self.socks = (self.disc_sock, self.touch_sock)
-
-    def __del__(self):
-        self.disc_sock.close()
-        self.disc_sock = None
-        self.touch_sock.close()
-        self.touch_sock = None
+        self.socks = (self.sock, ) + tuple(
+            (h.sock for h in self.handlers if hasattr(h, "sock")))
 
     def poke(self, ipaddr):
         payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
@@ -111,8 +100,7 @@ class UpnpDiscover(object):
                 self.stop()
                 break
 
-            self.try_recive((self.disc_sock, self.touch_sock), callback,
-                            wait_time)
+            self.try_recive(self.socks, callback, wait_time)
 
             if lookup_callback:
                 lookup_callback(self)
@@ -126,9 +114,10 @@ class UpnpDiscover(object):
 
         while timeout > 0:
             for sock in select.select(socks, (), (), timeout)[0]:
-                data = self.on_recive(sock)
-                if data:
-                    callback(self, **data)
+                uuid = self.on_recive(sock)
+                if uuid:
+                    data = self.history[uuid]
+                    callback(self, uuid=uuid, **data)
 
             timeout = timeout_at - time()
 
@@ -144,28 +133,10 @@ class UpnpDiscover(object):
             # Bad magic number
             return
 
-        if proto_ver == 1:
-            if action_id == 0:
-                return self.unpack_v1_discover(buf[6:], endpoint)
-            elif action_id == 3:
-                return self.process_v1_touch(buf[6:], endpoint)
-        else:
-            # Can not handle protocol version
-            return
-
-    def add_master_key(self, uuid, sn, master_key):
-        if uuid in self.history:
-            self.history[uuid]["master_key"] = master_key
-            self.history[uuid]["serial"] = sn
-        else:
-            self.history[uuid] = {"master_key": master_key,
-                                  "serial": sn}
-
-    def get_master_key(self, uuid):
-        return self.history[uuid]["master_key"]
-
-    def get_serial(self, uuid):
-        return self.history[uuid]["serial"]
+        # TODO: err handle
+        ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
+                                                      buf[6:])
+        return ret
 
     def in_history(self, uuid, master_ts):
         if uuid in self.history:
@@ -173,24 +144,64 @@ class UpnpDiscover(object):
         else:
             return False
 
-    def unpack_v1_discover(self, payload, endpoint):
+    def update_history(self, uuid, dataset):
+        if "master_key" in dataset:
+            raise RuntimeError("Can not update master key")
+        self.history[uuid].update(dataset)
+
+    def add_master_key(self, uuid, sn, master_key):
+        if uuid in self.history:
+            logger.error("Master already in list: %s", uuid)
+        else:
+            self.history[uuid] = {"master_key": master_key, "serial": sn}
+
+    def get_master_key(self, uuid):
+        return self.history[uuid]["master_key"]
+
+    def get_serial(self, uuid):
+        return self.history[uuid]["serial"]
+
+
+class Version1Helper(object):
+    def __init__(self, server):
+        self.server = server
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                  socket.IPPROTO_UDP)
+        self.sock.bind(('', 0))
+
+    def fileno(self):
+        return self.sock.fileno()
+
+    def handle_message(self, endpoint, action_id, payload):
+        if action_id == 0:
+            return self.handle_discover(endpoint, payload)
+        elif action_id == 3:
+            return self.handle_touch(endpoint, payload)
+        else:
+            logger.error("Can not handle proto_ver=1, action_id=%s", action_id)
+
+    def handle_discover(self, endpoint, payload):
         args = struct.unpack("<16s10sfHH", payload[:34])
         uuid_bytes, sn, master_ts = args[:3]
-        l_master_pkey, l_identify = args[3:]
-
-        f = BytesIO(payload[34:])
-        try:
-            master_pkey = E.load_keyobj(f.read(l_master_pkey))
-            # TODO: validate identify
-            identify = f.read(l_identify)
-
-        except ValueError:
-            # Data error
-            return
+        l_master_pkey, l_signuture = args[3:]
 
         uuid = UUID(bytes=uuid_bytes)
-        if self.limited_uuid(uuid):
-            if self.in_history(uuid, master_ts):
+        if not self.server.limited_uuid(uuid):
+            return
+
+        f = BytesIO(payload[34:])
+        masterkey_doc = f.read(l_master_pkey)
+        signuture = f.read(l_signuture)
+        if not validate_identify(uuid, signuture, serial=sn.decode("ascii"),
+                                 masterkey_doc=masterkey_doc):
+            logger.error("Validate identify failed (uuid=%s)", uuid)
+            return
+
+        master_pkey = KeyObject.load_keyobj(masterkey_doc)
+        uuid = UUID(bytes=uuid_bytes)
+
+        if self.server.limited_uuid(uuid):
+            if self.server.in_history(uuid, master_ts):
                 try:
                     stbuf = f.read(64)
                     st_ts, st_id, st_prog, st_head, st_err = \
@@ -200,73 +211,69 @@ class UpnpDiscover(object):
                                                  "ignore").strip("\x00")
                     error_label = st_err.decode("ascii",
                                                 "ignore").strip("\x00")
-                    dataset = self.history[uuid]
+                    dataset = self.server.history[uuid]
                     dataset.update({
                         "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
                         "st_ts": st_ts, "head_module": head_module,
                         "error_label": error_label})
-                    return dataset
+                    return uuid
                 except Exception:
-                    basic_info = self.history[uuid]
+                    basic_info = self.server.history[uuid]
                     if basic_info["version"] > "0.13a":
                         logger.exception("Unpack status failed")
             else:
-                self.add_master_key(uuid, sn.decode("ascii"), master_pkey)
+                self.server.add_master_key(uuid, sn.decode("ascii"),
+                                           master_pkey)
                 payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
                                       2, uuid.bytes)
-                self.touch_sock.sendto(payload, endpoint)
+                self.sock.sendto(payload, endpoint)
 
-    def process_v1_touch(self, payload, endpoint):
+    def handle_touch(self, endpoint, payload):
         f = BytesIO(payload)
 
         buuid, master_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
         uuid = UUID(bytes=buuid)
 
-        if not self.limited_uuid(uuid):
+        if not self.server.limited_uuid(uuid):
             # Ingore this uuid
             return
 
-        try:
-            temp_pkey_str = f.read(l1)
-            temp_pkey = E.load_keyobj(temp_pkey_str)
-            temp_pkey_ca = f.read(l2)
+        slavekey_str = f.read(l1)
+        slavekey_signuture = f.read(l2)
+        temp_pkey = KeyObject.load_keyobj(slavekey_str)
 
-            bmeta = f.read(struct.unpack("<H", f.read(2))[0])
-            signuture = f.read()
+        bmeta = f.read(struct.unpack("<H", f.read(2))[0])
+        smeta = bmeta.decode("utf8")
+        rawdata = {}
+        for item in smeta.split("\x00"):
+            if "=" in item:
+                k, v = item.split("=", 1)
+                rawdata[k] = v
 
-            master_key = self.get_master_key(uuid)
-            if E.validate_signature(master_key,
-                                    payload[16:20] + temp_pkey_str,
-                                    temp_pkey_ca):
-                if E.validate_signature(temp_pkey, bmeta, signuture):
-                    meta_str = bmeta.decode("utf8")
-                    rawdata = {}
-                    for item in meta_str.split("\x00"):
-                        if "=" in item:
-                            k, v = item.split("=", 1)
-                            rawdata[k] = v
+        doc_signuture = f.read()
+        master_key = self.server.get_master_key(uuid)
 
-                    data = {"uuid": uuid, "serial": self.get_serial(uuid)}
-                    data["master_key"] = master_key
-                    data["slave_key"] = temp_pkey
-                    data["master_ts"] = master_ts
+        if master_key.verify(payload[16:20] + slavekey_str,
+                             slavekey_signuture):
+            if temp_pkey.verify(bmeta, doc_signuture):
+                data = {}
+                data["slave_key"] = temp_pkey
+                data["master_ts"] = master_ts
 
-                    data["model_id"] = rawdata.get("model", "UNKNOW")
-                    data["version"] = rawdata.get("ver")
-                    raw_has_password = rawdata.get("pwd", "F")
+                data["model_id"] = rawdata.get("model", "UNKNOW")
+                data["version"] = rawdata.get("ver")
+                raw_has_password = rawdata.get("pwd", "F")
 
-                    data["timestemp"] = float(rawdata.get("time", 0))
-                    data["timedelta"] = data["timestemp"] - time()
+                data["timestemp"] = float(rawdata.get("time", 0))
+                data["timedelta"] = data["timestemp"] - time()
 
-                    data["name"] = rawdata.get("name", "NONAME")
-                    data["has_password"] = raw_has_password == "T"
-                    data["ipaddr"] = endpoint
-                    self.history[uuid] = data
+                data["name"] = rawdata.get("name", "NONAME")
+                data["has_password"] = raw_has_password == "T"
+                data["ipaddr"] = endpoint
+                self.server.update_history(uuid, data)
 
-                    return data
-                else:
-                    logger.error("Slave key signuture error (V1)")
+                return uuid
             else:
-                logger.error("Master key signuture error (V1)")
-        except Exception:
-            logger.exception("Unhandle Error")
+                logger.error("Slave key signuture error (V1)")
+        else:
+            logger.error("Master key signuture error (V1)")

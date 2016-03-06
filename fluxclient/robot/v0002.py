@@ -11,7 +11,7 @@ import json
 import os
 
 from fluxclient.utils import mimetypes
-from fluxclient import encryptor as E  # noqa
+from fluxclient.encryptor import KeyObject
 
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
@@ -38,30 +38,33 @@ def ok_or_error(fn, resp="ok"):
 
 
 class FluxRobotV0002(object):
-    def __init__(self, sock, server_key=None):
+    def __init__(self, sock, server_key=None, client_key=None):
         sock.settimeout(300)
         buf = sock.recv(4096)
-        # TODO: check sign
-        sign, randbytes = buf[8:-128], buf[-128:]
+        sign, randbytes = buf[:-128], buf[-128:]
 
         if server_key:
-            logger.warn("Warning: server key checking not implement!")
+            if server_key.verify(randbytes, sign):
+                pass
+            else:
+                logger.error("Server identify validate failed")
+                # TODO raise error
         else:
-            logger.warn("Warning: can not validate remote")
+            logger.warn("Warning: can not validate remote, ignore")
 
-        rsakey = E.get_or_create_keyobj()
+        rsakey = KeyObject.get_or_create_keyobj()
         logger.info("Protocol: FLUX0002")
-        logger.info("Access ID: %s" % E.get_access_id(rsakey))
+        logger.info("Access ID: %s" % rsakey.get_access_id())
 
-        buf = E.get_access_id(rsakey, binary=True) + E.sign(rsakey, randbytes)
+        buf = rsakey.get_access_id(binary=True) + rsakey.sign(randbytes)
         sock.send(buf)
 
         status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
 
         if status == "OK":
             # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
-            aes_enc_init = msg_waitall(sock, E.rsa_size(rsakey))
-            aes_init = E.rsa_decrypt(rsakey, aes_enc_init)
+            aes_enc_init = msg_waitall(sock, rsakey.size)
+            aes_init = rsakey.decrypt(aes_enc_init)
 
             self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
         else:
