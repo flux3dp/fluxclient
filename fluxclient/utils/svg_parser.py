@@ -205,6 +205,9 @@ class SVGParser(object):
             return [[]]
 
         # there can be several set of parameter using same command ex: L12,34,56,78 -> L12,34 L56,78
+        # note that: M, m command is special case
+        # https://www.w3.org/TR/SVG/paths.html#PathDataMovetoCommands
+
         parameter_list = {'M': 2, 'm': 2, 'L': 2, 'l': 2, 'H': 1, 'h': 1, 'V': 1, 'v': 1, 'Z': 0, 'z': 0, 'C': 6, 'c': 6, 'S': 4, 's': 4, 'Q': 4, 'q': 4, 'T': 2, 't': 2, 'A': 7, 'a': 7}
         tmp = []
         for i in range(len(data)):
@@ -214,7 +217,12 @@ class SVGParser(object):
             else:
                 counter = 1
                 while counter < l:
-                    tmp.append([data[i][0]] + data[i][counter:counter + parameter_list[data[i][0]]])
+                    if counter > 2 and data[i][0] == 'M':
+                        tmp.append(['L'] + data[i][counter:counter + parameter_list[data[i][0]]])
+                    elif counter > 2 and data[i][0] == 'm':
+                        tmp.append(['l'] + data[i][counter:counter + parameter_list[data[i][0]]])
+                    else:
+                        tmp.append([data[i][0]] + data[i][counter:counter + parameter_list[data[i][0]]])
                     counter += parameter_list[data[i][0]]
         data = tmp
 
