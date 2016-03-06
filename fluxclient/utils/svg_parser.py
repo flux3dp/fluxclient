@@ -23,7 +23,7 @@ class SVGParser(object):
             return coordinate
 
         final = Matrix().set_I()
-        transform_s = findall('[a-zXY]+\([0-9., +-]+\)', transform_string)
+        transform_s = findall('[a-zXY]+\([0-9., e+-]+\)', transform_string)
 
         for t in transform_s:
             t_type, x = t.split('(')
@@ -507,7 +507,8 @@ class SVGParser(object):
             node.tag = 'delete'
         else:
             # tmp_thing = ET.Element(node.tag)
-            node.attrib.clear()
+            if parent is not None:
+                node.attrib.clear()
 
     @staticmethod
     def preprocess(buf):
