@@ -10,7 +10,7 @@ from serial import Serial
 import platform
 from serial.serialutil import SerialTimeoutException
 
-from fluxclient import encryptor as E  # noqa
+from fluxclient.encryptor import KeyObject
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class UsbTask(object):
                 else:
                     break
 
-        self.keyobj = E.get_or_create_keyobj()
+        self.keyobj = KeyObject.get_or_create_keyobj()
         self._discover()
 
     def _discover(self):
@@ -74,7 +74,7 @@ class UsbTask(object):
         self.remote_addrs = None
 
         rsakey = self._make_request(CODE_RSAKEY)
-        self.device_rsakey = E.load_keyobj(rsakey)
+        self.device_rsakey = KeyObject.load_keyobj(rsakey)
 
     def _make_request(self, code, buf=b"", timeout=6.0):
         header = struct.pack("<3sHH", b'\x97\xae\x02', code, len(buf))
@@ -125,8 +125,7 @@ class UsbTask(object):
                                    "Response too long")
 
     def require_auth(self, timeout=6.0):
-        ret = self._make_request(CODE_AUTH,
-                                 E.get_public_key_pem(self.keyobj),
+        ret = self._make_request(CODE_AUTH, self.keyobj.public_key_pem,
                                  timeout=timeout)
         if ret not in (b"OK", b"ALREADY_TRUSTED"):
             raise RuntimeError(ret)
@@ -134,9 +133,9 @@ class UsbTask(object):
     def auth(self, passwd=None):
         if passwd:
             payload = b"PASSWORD" + passwd.encode() + b"\x00" + \
-                      E.get_public_key_pem(self.keyobj)
+                      self.keyobj.public_key_pem
         else:
-            payload = E.get_public_key_pem(self.keyobj)
+            payload = self.keyobj.public_key_pem
 
         return self._make_request(CODE_AUTH, payload)
 
@@ -153,7 +152,7 @@ class UsbTask(object):
     def set_password(self, passwd):
         ret = self._make_request(
             CODE_SET_PASSWORD,
-            passwd.encode() + b"\x00" + E.get_public_key_pem(self.keyobj))
+            passwd.encode() + b"\x00" + self.keyobj.public_key_pem)
         return ret.decode("utf8", "ignore")
 
     def get_ssid(self):

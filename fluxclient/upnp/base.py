@@ -1,7 +1,6 @@
 
 from random import randint
 from select import select
-from hashlib import sha1
 from time import time
 import struct
 import socket
@@ -9,7 +8,7 @@ import json
 
 from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
-from fluxclient import encryptor
+from fluxclient.encryptor import KeyObject
 
 
 class UpnpBase(object):
@@ -19,7 +18,7 @@ class UpnpBase(object):
     def __init__(self, uuid, remote_profile=None, lookup_callback=None,
                  lookup_timeout=float("INF")):
         self.uuid = uuid
-        self.keyobj = encryptor.get_or_create_keyobj()
+        self.keyobj = KeyObject.get_or_create_keyobj()
 
         if remote_profile:
             self.update_remote_profile(**remote_profile)
@@ -64,13 +63,12 @@ class UpnpBase(object):
 
     @property
     def publickey_der(self):
-        return encryptor.get_public_key_der(self.keyobj)
+        return self.keyobj.public_key_der
 
     @property
     def access_id(self):
         if not self._access_id:
-            doc = encryptor.get_public_key_der(self.keyobj)
-            self._access_id = sha1(doc).digest()
+            self._access_id = self.keyobj.get_access_id(binary=True)
         return self._access_id
 
     def create_timestemp(self):
@@ -79,7 +77,7 @@ class UpnpBase(object):
     def make_request(self, req_code, resp_code, message, encrypt=True,
                      timeout=1.2):
         if message and encrypt:
-            message = encryptor.rsa_encrypt(self.slave_key, message)
+            message = self.slave_key.encrypt(message)
 
         payload = struct.pack("<4sBB16s", b"FLUX", 1, req_code,
                               self.uuid.bytes) + message
@@ -94,9 +92,7 @@ class UpnpBase(object):
         salt = ("%i" % randint(1000, 9999)).encode()
         ts = self.create_timestemp()
         message = struct.pack("<20sd4s", self.access_id, ts, salt) + body
-        signature = encryptor.sign(self.keyobj,
-                                   self.uuid.bytes + message)
-
+        signature = self.keyobj.sign(self.uuid.bytes + message)
         return message + signature
 
     def _parse_response(self, buf, resp_code):
@@ -119,7 +115,7 @@ class UpnpBase(object):
         body = buf[24:24 + l]
         signature = buf[24 + l:]
 
-        if encryptor.validate_signature(self.slave_key, body, signature):
+        if self.slave_key.verify(body, signature):
             message = body.decode("utf8")
             if message[0] == "E":
                 raise RuntimeError(message[1:])

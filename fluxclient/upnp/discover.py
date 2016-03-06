@@ -8,15 +8,15 @@ import select
 import socket
 import struct
 
+from .misc import DEFAULT_IPADDR, DEFAULT_PORT, validate_identify
+from fluxclient.encryptor import KeyObject
+
 logger = logging.getLogger(__name__)
 
 
 CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 MULTICAST_VERSION = 1
-
-from fluxclient import encryptor as E  # noqa
-from .misc import DEFAULT_IPADDR, DEFAULT_PORT, validate_identify
 
 
 """Discover Flux 3D Printer
@@ -146,7 +146,7 @@ class UpnpDiscover(object):
 
     def add_master_key(self, uuid, sn, master_key):
         if uuid in self.history:
-            logger.error("Master already in list")
+            logger.error("Master already in list: %s", uuid)
         else:
             self.history[uuid] = {"master_key": master_key, "serial": sn}
 
@@ -192,7 +192,7 @@ class Version1Helper(object):
             logger.error("Validate identify failed (uuid=%s)", uuid)
             return
 
-        master_pkey = E.load_keyobj(masterkey_doc)
+        master_pkey = KeyObject.load_keyobj(masterkey_doc)
 
         if self.server.in_history(uuid, master_ts):
             try:
@@ -229,7 +229,7 @@ class Version1Helper(object):
 
         slavekey_str = f.read(l1)
         slavekey_signuture = f.read(l2)
-        temp_pkey = E.load_keyobj(slavekey_str)
+        temp_pkey = KeyObject.load_keyobj(slavekey_str)
 
         bmeta = f.read(struct.unpack("<H", f.read(2))[0])
         smeta = bmeta.decode("utf8")
@@ -242,9 +242,9 @@ class Version1Helper(object):
         doc_signuture = f.read()
         master_key = self.server.get_master_key(uuid)
 
-        if E.validate_signature(master_key, payload[16:20] + slavekey_str,
-                                slavekey_signuture):
-            if E.validate_signature(temp_pkey, bmeta, doc_signuture):
+        if master_key.verify(payload[16:20] + slavekey_str,
+                             slavekey_signuture):
+            if temp_pkey.verify(bmeta, doc_signuture):
                 data = {}
                 data["slave_key"] = temp_pkey
                 data["master_ts"] = master_ts
