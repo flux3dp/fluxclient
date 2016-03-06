@@ -14,6 +14,8 @@ cdef extern from "printer_module.h":
     int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z)
     int bounding_box(MeshPtr triangles, vector[float] &b_box)
     int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v)
+
+cdef extern from "tree_support.h":
     int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha)
 
 cdef class MeshObj:
