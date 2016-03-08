@@ -110,7 +110,7 @@ class SVGParser(object):
         drawing a polyline
         '''
         coordinate = []
-        points = split('[^0-9.-]+', node.attrib['points'])  # split into numbers
+        points = split('[^0-9e.\-\+]+', node.attrib['points'])  # split into numbers
         points = filter(lambda x: x != "", points)
         points = list(map(float, points))
 
@@ -156,7 +156,7 @@ class SVGParser(object):
         drawing a polygon
         '''
         coordinate = []
-        points = split('[^0-9.-]+', node.attrib['points'])  # split into numbers
+        points = split('[^0-9e.\-\+]+', node.attrib['points'])  # split into numbers
         points = filter(lambda x: x != "", points)
         points = list(map(float, points))
 
