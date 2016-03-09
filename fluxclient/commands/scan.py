@@ -21,7 +21,8 @@ def prepare_robot(endpoint, server_key, client_key):
         sys.stdout.write(".")
         sys.stdout.flush()
         return True
-    robot = connect_robot(endpoint, server_key, client_key, conn_callback)
+    robot = connect_robot(endpoint, server_key=server_key,
+                          client_key=client_key, conn_callback=conn_callback)
     pos = robot.position()
     if pos == "CommandTask":
         robot.begin_scan()

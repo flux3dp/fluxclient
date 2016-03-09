@@ -3,13 +3,18 @@ from time import time, sleep
 import logging
 import socket
 
+# TODO:
+from fluxclient.commands.misc import get_or_create_default_key
 from .base import RobotError
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
 
 
-def connect_robot(ipaddr, server_key, client_key, conn_callback):
+def connect_robot(ipaddr, server_key, client_key=None, conn_callback=None):
+    # TODO: argument will be change after next fluxghost release
+    if not client_key:
+        client_key = get_or_create_default_key()
     sock = _connect(ipaddr, conn_callback)
     sock.settimeout(8)
 
@@ -19,7 +24,8 @@ def connect_robot(ipaddr, server_key, client_key, conn_callback):
         raise RobotError("Magic number error")
     elif version[4:] == b"0002":
         from .v0002 import FluxRobotV0002
-        return FluxRobotV0002(sock, server_key)
+        return FluxRobotV0002(sock, server_key=server_key,
+                              client_key=client_key)
     else:
         raise RobotError("Robot version not support")
 
