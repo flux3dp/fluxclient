@@ -23,7 +23,7 @@ def validate_identify(uuid, identify, serial=None, masterkey_doc=None):
     if "delta-1" in VK_CACHE:
         vk = VK_CACHE["delta-1"]
     else:
-        binkey = resource_string("fluxclient", "assets/key:delta-1")
+        binkey = resource_string("fluxclient", "assets/key-delta-1")
         vk = VK_CACHE["delta-1"] = ecdsa.VerifyingKey.from_der(binkey)
 
     try:
