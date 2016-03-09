@@ -4,8 +4,6 @@
 #include <pcl/io/pcd_io.h>
 // ref: http://hpcg.purdue.edu/bbenes/papers/Vanek14SGP.pdf
 
-#define likely(x)  __builtin_expect((x),1)
-
 float d_v3(Eigen::Vector3f &a, Eigen::Vector3f &b){
   // compute distance between two 3d vector
   return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2) + pow(a[2] - b[2], 2));
@@ -128,7 +126,7 @@ bool sort_by_z(const pcl::PointXYZ a,const pcl::PointXYZ b)
    return a.z < b.z;
 }
 bool sort_by_second(const std::pair<int, float> a, const std::pair<int, float> b){
-  if(likely(a.second != b.second)){
+  if(a.second != b.second){
     return a.second < b.second;
   }
   else{
