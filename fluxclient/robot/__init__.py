@@ -9,7 +9,7 @@ from .misc import msg_waitall
 logger = logging.getLogger(__name__)
 
 
-def connect_robot(ipaddr, server_key, conn_callback):
+def connect_robot(ipaddr, server_key, client_key, conn_callback):
     sock = _connect(ipaddr, conn_callback)
     sock.settimeout(8)
 

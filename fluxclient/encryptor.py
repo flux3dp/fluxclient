@@ -1,7 +1,7 @@
 
 from io import BytesIO
 from hashlib import sha1
-import os
+import warnings
 
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Cipher import PKCS1_OAEP
@@ -16,25 +16,15 @@ class KeyObject(object):
         return cls(ref)
 
     @classmethod
-    def get_or_create_keyobj(cls, path=None):
-        if path is None:
-            path = os.path.expanduser("~/.fluxclient_key.pem")
-
-        if os.path.exists(path):
-            try:
-                with open(path, "rb") as f:
-                    buf = f.read()
-                    ref = RSA.importKey(buf)
-                    return cls(ref)
-            except Exception:
-                raise
-                os.unlink(path)
-
-        ref = RSA.generate(1024)
-        with open(path, "wb") as f:
-            f.write(ref.exportKey("PEM"))
-
+    def new_keyobj(cls, size=4096):
+        ref = RSA.generate(size)
         return cls(ref)
+
+    @classmethod
+    def get_or_create_keyobj(cls, path=None):
+        warnings.warn("get_or_create_keyobj is deprecated", DeprecationWarning)
+        from fluxclient.commands.misc import get_or_create_default_key
+        return get_or_create_default_key(path)
 
     def __init__(self, ref_keyobj):
         self._key = ref_keyobj
@@ -76,6 +66,10 @@ class KeyObject(object):
     @property
     def public_key_der(self):
         return self._key.publickey().exportKey("DER")
+
+    @property
+    def private_key_pem(self):
+        return self._key.exportKey("PEM")
 
     def sign(self, message):
         chip = PKCS1_v1_5.new(self._key)

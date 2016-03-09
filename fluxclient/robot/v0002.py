@@ -52,7 +52,7 @@ class FluxRobotV0002(object):
         else:
             logger.warn("Warning: can not validate remote, ignore")
 
-        rsakey = KeyObject.get_or_create_keyobj()
+        rsakey = client_key if client_key else KeyObject.get_or_create_keyobj()
         logger.info("Protocol: FLUX0002")
         logger.info("Access ID: %s" % rsakey.get_access_id())
 

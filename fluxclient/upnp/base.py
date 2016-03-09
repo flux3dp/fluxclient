@@ -15,10 +15,12 @@ class UpnpBase(object):
     _access_id = None
     remote_addr = "239.255.255.250"
 
-    def __init__(self, uuid, remote_profile=None, lookup_callback=None,
+    def __init__(self, uuid, client_key=None,
+                 remote_profile=None, lookup_callback=None,
                  lookup_timeout=float("INF")):
         self.uuid = uuid
-        self.keyobj = KeyObject.get_or_create_keyobj()
+        self.keyobj = client_key if client_key else \
+            KeyObject.get_or_create_keyobj()
 
         if remote_profile:
             self.update_remote_profile(**remote_profile)
