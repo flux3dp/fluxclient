@@ -80,17 +80,49 @@ class SVGParser(object):
     def rect(node):
         '''
         drawing a rectangle
+
         '''
-        # not support rx, ry yet
+
         coordinate = []
         x, y, w, h = float(node.attrib['x']), float(node.attrib['y']), float(node.attrib['width']), float(node.attrib['height'])
 
-        coordinate.append((x, y))
-        coordinate.append((x + w, y))
-        coordinate.append((x + w, y + h))
-        coordinate.append((x, y + h))
-        coordinate.append((x, y))
-        return [SVGParser.transform(coordinate, node.get('transform', ''))]
+        # ref: https://www.w3.org/TR/SVG/shapes.html#RectElement
+        # see here for determin
+        try:
+            rx = float(node.attrib['rx'])
+        except:
+            rx = float('nan')
+        try:
+            ry = float(node.attrib['ry'])
+        except:
+            ry = float('nan')
+
+        if rx != rx and ry != ry:
+            rx = 0.
+            ry = 0.
+        elif rx == rx and ry != ry:
+            ry = rx
+        elif ry == ry and rx != rx:
+            rx = ry
+        if rx > w / 2.:
+            rx = w / 2.
+        if ry > h / 2.:
+            ry = h / 2.
+        tmp = []
+        tmp += ['M', rx + x, y]
+        tmp += ['H', x + w - rx]
+        tmp += ['A', rx, ry, 0, 0, 1, x + w, y + ry]
+        tmp += ['V', y + h - ry]
+        tmp += ['A', rx, ry, 0, 0, 1, x + w - rx, y + h]
+        tmp += ['H', x + rx]
+        tmp += ['A', rx, ry, 0, 0, 1, x, y + h - ry]
+        tmp += ['V', y + ry]
+        tmp += ['A', rx, ry, 0, 0, 1, x + rx, y]
+
+        new_rect = ET.Element('path')
+        new_rect.attrib['transform'] = node.get('transform', '')
+        new_rect.attrib['d'] = ' '.join(map(str, tmp))
+        return SVGParser.path(new_rect)
 
     @staticmethod
     def line(node):
@@ -472,6 +504,8 @@ class SVGParser(object):
         if node.tag == header + 'rect':
             tmp_thing['x'] = node.attrib.get('x', '0')
             tmp_thing['y'] = node.attrib.get('y', '0')
+            tmp_thing['rx'] = node.attrib.get('rx', 'GG')
+            tmp_thing['ry'] = node.attrib.get('ry', 'GG')
             tmp_thing['height'] = node.attrib['height']
             tmp_thing['width'] = node.attrib['width']
             node.clear()
