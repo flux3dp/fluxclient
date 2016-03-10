@@ -31,8 +31,6 @@ class FcodeBase(object):
         if move_flag:
             if 'infill' in comment:
                 line_type = 0
-            elif 'perimeter' in comment:
-                line_type = 1
             elif 'support' in comment:
                 line_type = 2
             elif 'move' in comment:
@@ -47,6 +45,8 @@ class FcodeBase(object):
                     self.layer_now = int(tmp)
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
                     self.filament_this_layer = self.filament[:]
+            elif 'perimeter' in comment:
+                line_type = 1
             elif 'skirt' in comment:
                 line_type = 4
             elif 'draw' in comment:
