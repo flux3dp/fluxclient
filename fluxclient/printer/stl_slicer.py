@@ -127,6 +127,7 @@ class StlSlicer(object):
         return error message of bad input
 
         """
+        # TODO: close ignore when changing back
         counter = 1
         bad_lines = []
         for line in lines:
@@ -439,7 +440,8 @@ class StlSlicer(object):
                     child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
-                slic3r_out = line
+                if line.strip():
+                    slic3r_out = line
         if subp.poll() != 0:
             fail_flag = True
 

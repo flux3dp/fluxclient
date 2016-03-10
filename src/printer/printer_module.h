@@ -4,8 +4,6 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/common/transforms.h>
 #include <pcl/conversions.h>
-// #include <pcl/io/pcd_io.h>
-// #include <pcl/io/vtk_lib_io.h>
 
 typedef pcl::PolygonMesh::Ptr MeshPtr;
 MeshPtr createMeshPtr();

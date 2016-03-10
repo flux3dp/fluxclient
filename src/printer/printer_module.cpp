@@ -1,7 +1,11 @@
-#include <limits>
 #include <iostream>
-#include "printer_module.h"
+#include <cmath>
+#include <map>
+#include <algorithm>
+#include <limits>
 
+#include <pcl/filters/voxel_grid.h>
+#include "printer_module.h"
 
 
 MeshPtr createMeshPtr(){
@@ -33,7 +37,7 @@ int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
   return 0;
 }
 
-int add_on(pcl::PolygonMesh::Ptr base, pcl::PolygonMesh::Ptr add_on_mesh){
+int add_on(MeshPtr base, MeshPtr add_on_mesh){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(base->cloud, *cloud);
   int size_to_add_on = cloud->size();
@@ -351,3 +355,13 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
   }
   return 0;
 }
+
+
+
+
+
+
+
+
+
+

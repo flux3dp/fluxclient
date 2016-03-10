@@ -1,4 +1,3 @@
-# !/usr/bin/env python3
 
 from pkgutil import walk_packages
 from setuptools import Extension
@@ -20,10 +19,7 @@ except ImportError:
 
 from fluxclient import __version__ as _VERSION
 
-
-build_ext.user_options.append(
-    ("without-pcl", None, "Do not install any extention depend on PCL")
-)
+windows_program_files_sources = None
 
 
 # Base method to find package in system
@@ -42,20 +38,20 @@ def locate_includes(package_name):
         raise RuntimeError("Looking for package error: %s" % package_name)
 
 
-def is_winsows():
+def is_windows():
     return platform.platform().startswith("Windows")
 
 
 def is_posix():
-    return not is_winsows()
+    return os.name == 'posix'
 
 
 def is_linux():
-    platform.platform().startswith("Linux")
+    return platform.platform().startswith("Linux")
 
 
 def is_darwin():
-    platform.platform().startswith("Darwin")
+    return platform.platform().startswith("Darwin")
 
 
 def prepare_setup():
@@ -67,11 +63,7 @@ def prepare_setup():
     # Ensure at correct working directory
     os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
-    options = {"pcl": True}
-    if "--without-pcl" in sys.argv:
-        sys.argv.pop(sys.argv.index("--without-pcl"))
-        options["pcl"] = False
-
+    options = {}
     return options
 
 
@@ -80,7 +72,8 @@ def get_version():
 
 
 def get_install_requires():
-    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy']
+    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy',
+            'ecdsa', 'lxml']
 
 
 def get_packages():
@@ -100,7 +93,6 @@ def get_entry_points():
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
-            "flux_fcode_conv=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",
             "flux_exp=fluxclient.commands.experiment_tool:main",
@@ -108,11 +100,7 @@ def get_entry_points():
     }
 
 
-def create_common_extentions():
-    return []
-
-
-def create_scanner_extentions():
+def create_pcl_extentions():
     # Process include_dirs
     include_dirs = []
     # Process libraries
@@ -135,40 +123,75 @@ def create_scanner_extentions():
             else:
                 raise RuntimeError("Can not locate pcl includes.")
 
-        if platform.platform().startswith("Darwin"):
+        if is_darwin():
             extra_compile_args += ["--stdlib=libc++",
                                    "-mmacosx-version-min=10.9"]
-        elif platform.platform().startswith("Linux"):
+        elif is_linux():
             extra_compile_args += ["-lstdc++"]
-
-        elif platform.platform().startswith("Windows"):
+        elif is_windows():
             libraries += ["pcl_common_release", "pcl_octree_release",
                           "pcl_io_release", "pcl_kdtree_release",
                           "pcl_search_release", "pcl_sample_consensus_release",
                           "pcl_filters_release", "pcl_features_release",
                           "pcl_segmentation_release", "pcl_surface_release",
                           "pcl_registration_release", "pcl_keypoints_release"]
-            include_dirs += ["C:/Program Files (x86)/Eigen/include",
-                             "C:/Program Files (x86)/flann/include",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/flann/include",
-                             "C:/Program Files/PCL 1.7.2/include/pcl-1.7",
-                             "C:/Program Files/PCL 1.7.2/lib",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/Eigen/eigen3",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/include/boost-1_57"]
-            library_dirs += ["C:/Program Files/PCL 1.7.2/lib",
-                             "C:/Program Files/PCL 1.7.2/3rdParty/Boost/lib"]
 
+            def find_in_program_files(label, names):
+                global windows_program_files_sources
+                if not windows_program_files_sources:
+                    s = []
+                    s.append(os.environ["ProgramFiles"])
+                    if "ProgramFiles(x86)" in os.environ:
+                        s.append(os.environ["ProgramFiles(x86)"])
+                    windows_program_files_sources = s
+
+                dirs = []
+                for sources in windows_program_files_sources:
+                    for name in names:
+                        path = os.path.join(sources, name)
+                        if os.path.isdir(path):
+                            return path
+                        else:
+                            dirs.append(path)
+
+                raise RuntimeError("Can not find `%s` in any of follow "
+                                   "directorys: %s" % (label, dirs))
+
+            eigen3_dir = os.path.join(
+                find_in_program_files("egin3", ["Eigen"]), "include")
+
+            flann_dir = os.path.join(
+                find_in_program_files("flann", ["flann"]), "include")
+
+            pcl_dir = find_in_program_files("pcl", ["PCL 1.7.2",
+                                                    "PCL 1.7.1"])
+
+            include_dirs += [
+                os.path.join(eigen3_dir, "include"),
+                os.path.join(flann_dir, "include"),
+                os.path.join(pcl_dir, "lib"),
+                os.path.join(pcl_dir, "include", "pcl-1.7"),
+                os.path.join(pcl_dir, "3rdParty", "flann", "include"),
+                os.path.join(pcl_dir, "3rdParty", "Eigen", "eigen3"),
+                os.path.join(pcl_dir, "3rdParty", "Boost", "include",
+                             "boost-1_57")]
+            library_dirs += [
+                os.path.join(pcl_dir, "lib"),
+                os.path.join(pcl_dir, "3rdParty", "Boost", "lib")]
         else:
             raise RuntimeError("Unknow platform!!")
 
     except (RuntimeError, FileNotFoundError):
-        print("""
-*********************************************************************
-* Can not build scanner module, maybe you don't have pcl installed, *
-* use `--without-pcl` if you don't need pcl functions.              *
-*********************************************************************
-""", file=sys.stderr)
-        raise
+        import traceback
+        print("\033[93m", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        print("""\033[93m
+*****************************************************************************
+* Can not find pcl libraries, `fluxclient.scanner` and `fluxclient.printer` *
+* will not work properly.                                                   *
+*****************************************************************************
+\033[0m""", file=sys.stderr)
+        return []
 
     extensions = []
     extensions.append(Extension(
@@ -187,6 +210,7 @@ def create_scanner_extentions():
         'fluxclient.printer._printer',
         sources=[
             "src/printer/printer_module.cpp",
+            "src/printer/tree_support.cpp",
             "src/printer/printer.pyx"],
         language="c++",
         extra_compile_args=extra_compile_args,
