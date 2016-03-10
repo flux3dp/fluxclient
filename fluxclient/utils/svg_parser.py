@@ -504,8 +504,10 @@ class SVGParser(object):
         if node.tag == header + 'rect':
             tmp_thing['x'] = node.attrib.get('x', '0')
             tmp_thing['y'] = node.attrib.get('y', '0')
-            tmp_thing['rx'] = node.attrib.get('rx', 'GG')
-            tmp_thing['ry'] = node.attrib.get('ry', 'GG')
+            if node.attrib.get('rx') is not None:
+                tmp_thing['rx'] = node.attrib.get('rx')
+            if node.attrib.get('ry') is not None:
+                tmp_thing['ry'] = node.attrib.get('ry')
             tmp_thing['height'] = node.attrib['height']
             tmp_thing['width'] = node.attrib['width']
             node.clear()
@@ -601,7 +603,7 @@ class SVGParser(object):
         if any(i == float('inf') or i == float('-inf') for i in viewBox):
             viewBox[2] = 0
             viewBox[3] = 0
-            warning.append('FAIL_PARSING')
+            warning.append('EMPTY')
         else:
 
             root.attrib.clear()
