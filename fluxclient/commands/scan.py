@@ -9,18 +9,20 @@ import os
 from fluxclient.robot.misc import require_robot
 from fluxclient.robot import connect_robot
 from fluxclient.hw_profile import HW_PROFILE
+from fluxclient.commands.misc import get_or_create_default_key
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
 logger = logging.getLogger('')
 
 
-def prepare_robot(endpoint, server_key):
+def prepare_robot(endpoint, server_key, client_key):
     def conn_callback(*args):
         sys.stdout.write(".")
         sys.stdout.flush()
         return True
-    robot = connect_robot(endpoint, server_key, conn_callback)
+    robot = connect_robot(endpoint, server_key=server_key,
+                          client_key=client_key, conn_callback=conn_callback)
     pos = robot.position()
     if pos == "CommandTask":
         robot.begin_scan()
@@ -147,15 +149,18 @@ def main():
                         help="Printer connect with. It can be printer UUID "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
+    parser.add_argument('--key', dest='clientkey', type=str, default=None,
+                        help='Client identify key (A RSA pem)')
     options = parser.parse_args()
+    options.clientkey = get_or_create_default_key(options.clientkey)
 
     if options.debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
 
-    endpoint, server_key = require_robot(options.target)
-    robot = prepare_robot(endpoint, server_key)
+    endpoint, server_key = require_robot(options.target, options.clientkey)
+    robot = prepare_robot(endpoint, server_key, options.clientkey)
     robot.set_scanlen(HW_PROFILE['model-1']['scan_full_len'] / 400.)
 
     if not options.auto:

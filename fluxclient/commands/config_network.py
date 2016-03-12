@@ -10,6 +10,7 @@ import logging
 import sys
 import re
 
+from fluxclient.commands.misc import get_or_create_default_key
 from fluxclient.upnp.misc import parse_network_config as parse_network
 from fluxclient.usb.misc import is_serial_port
 from fluxclient.upnp.task import UpnpTask
@@ -59,11 +60,13 @@ def main():
                         help='Route, example: 192.168.1.1')
     parser.add_argument('--dns', dest='ns', type=str, default=None,
                         help='Route, example: 192.168.1.1')
-
     parser.add_argument(dest='target', type=str,
                         help='Printer Serial ID or serial port')
+    parser.add_argument('--key', dest='clientkey', type=str, default=None,
+                        help='Client identify key (A RSA pem)')
 
     opt = parser.parse_args()
+    opt.clientkey = get_or_create_default_key(options.clientkey)
     if opt.debug:
         logger.setLevel(logging.DEBUG)
     else:
@@ -78,7 +81,7 @@ def main():
         if is_uuid(opt.target):
             logger.info("Config network over LAN...")
 
-            task = UpnpTask(opt.target)
+            task = UpnpTask(opt.target, opt.clientkey)
             task.require_auth()
 
             if not try_lan_config(task, c):

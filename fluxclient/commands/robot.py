@@ -4,12 +4,12 @@ import argparse
 import logging
 import atexit
 import sys
-import re
 import os
 
+from fluxclient.robot.misc import require_robot
 from fluxclient.robot_console import RobotConsole
-from fluxclient.robot.misc import parse_ipaddr, kill_robot, require_robot
 from fluxclient.robot import connect_robot
+from fluxclient.commands.misc import get_or_create_default_key
 
 
 def setup_logger(stdout=sys.stderr, level=logging.DEBUG):
@@ -41,8 +41,10 @@ def robot_shell(options):
 
         try:
             logger = setup_logger(console)
-            ipaddr, keyobj = require_robot(options.target, console)
+            ipaddr, keyobj = require_robot(options.target, options.clientkey,
+                                           console)
             client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+                                   client_key=options.clientkey,
                                    conn_callback=conn_callback)
             robot_client = RobotConsole(client)
             logger.info("----> READY")
@@ -70,8 +72,9 @@ def ipython_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, keyobj = require_robot(options.target)
-    robot_client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+    ipaddr, keyobj = require_robot(options.target, options.clientkey)
+    robot_client = connect_robot(ipaddr=ipaddr, server_key=keyobj,  # noqa
+                                 client_key=options.clientkey,
                                  conn_callback=conn_callback)
 
     logger.info("----> READY")
@@ -88,8 +91,9 @@ def simple_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, keyobj = require_robot(options.target)
+    ipaddr, keyobj = require_robot(options.target, options.clientkey)
     client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+                           client_key=options.clientkey,
                            conn_callback=conn_callback)
     robot_client = RobotConsole(client)
     logger.info("----> READY")
@@ -111,17 +115,16 @@ def main():
                         help="Printer connect with. It can be printer uuid "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
-    parser.add_argument('--kill', dest='do_kill', action='store_const',
-                        const=True, default=False, help='Use python shell')
     parser.add_argument('--ipython', dest='ipython', action='store_const',
                         const=True, default=False, help='Use python shell')
     parser.add_argument('--simple', dest='simple', action='store_const',
                         const=True, default=False, help='Use python shell')
+    parser.add_argument('--key', dest='clientkey', type=str, default=None,
+                        help='Client identify key (A RSA pem)')
     options = parser.parse_args()
+    options.clientkey = get_or_create_default_key(options.clientkey)
 
-    if options.do_kill:
-        kill_robot(options.target)
-    elif options.ipython:
+    if options.ipython:
         ipython_shell(options)
     elif options.simple:
         simple_shell(options)

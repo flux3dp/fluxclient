@@ -4,17 +4,21 @@ from uuid import UUID
 import argparse
 import sys
 
+from fluxclient.commands.misc import get_or_create_default_key
 from fluxclient.upnp.task import UpnpTask
 
 
 def main():
     parser = argparse.ArgumentParser(description='flux printer config tool')
     parser.add_argument(dest='uuid', type=str, help='Printer UUID')
+    parser.add_argument('--key', dest='clientkey', type=str, default=None,
+                        help='Client identify key (A RSA pem)')
 
     options = parser.parse_args()
+    options.clientkey = get_or_create_default_key(options.clientkey)
 
     uuid = UUID(hex=options.uuid)
-    task = UpnpTask(uuid)
+    task = UpnpTask(uuid, options.clientkey)
 
     sys.stdout.write("""UUID: %s
 Serial: %s
