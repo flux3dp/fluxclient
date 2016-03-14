@@ -21,6 +21,9 @@ class FcodeBase(object):
         self.counter_between_layers = 0
         self.record_z = 0.0
 
+    def get_path(self):
+        return self.path
+
     def process_path(self, comment, move_flag, extrude_flag):
         """
         convert to path list(for visualizing)

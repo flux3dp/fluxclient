@@ -7,6 +7,7 @@ import sys
 from fluxclient.fcode.fcode_base import FcodeBase
 
 FILE_BROKEN = "FILE_BROKEN"
+FCODE_FAIL = "FCODE_FAIL"
 uint_unpacker = lambda x: struct.Struct("<I").unpack(x)[0]  # 4 bytes uint
 uchar_unpacker = lambda x: struct.Struct("<B").unpack(x)[0]  # 1 byte uchar, use for command
 float_unpacker = lambda x: struct.Struct("<f").unpack(x)[0]  # 4 bytes float
@@ -120,7 +121,6 @@ class FcodeParser(FcodeBase):
             outstream.write("\n")
 
         index = 12
-        self.data[12:12 + self.script_size]
         while index < 12 + self.script_size:
             command = uchar_unpacker(self.data[index:index + 1])
             index += 1
@@ -225,7 +225,7 @@ class FcodeParser(FcodeBase):
                 move_flag = any(i is not None for i in line_segment[1:4])
                 self.process_path('', move_flag, self.laserflag or self.extrudeflag)
             else:
-                print('something wrong')
+                raise RuntimeError(FCODE_FAIL)
 
 
 if __name__ == '__main__':

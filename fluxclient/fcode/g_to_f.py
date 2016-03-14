@@ -13,7 +13,7 @@ from getpass import getuser
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
 
-logger = logging.getLogger("g_to_f")
+logger = logging.getLogger(__name__)
 
 
 class GcodeToFcode(FcodeBase):
@@ -49,6 +49,12 @@ class GcodeToFcode(FcodeBase):
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
         self.config = None
+
+    def get_metadata(self):
+        return self.md
+
+    def get_img(self):
+        return self.image
 
     def header(self):
         """
