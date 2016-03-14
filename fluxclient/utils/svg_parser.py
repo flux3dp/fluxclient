@@ -547,7 +547,16 @@ class SVGParser(object):
         elif node.tag == header + 'style':
             node.tag = 'delete'
         elif node.tag == header + 'text':
-            warning.append('TEXT_TAG')
+            warning.add('TEXT_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'defs':
+            warning.add('DEFS_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'clipPath':
+            warning.add('CLIP_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'filter':
+            warning.add('FILTER_TAG')
             node.tag = 'delete'
         else:
             # tmp_thing = ET.Element(node.tag)
@@ -564,10 +573,11 @@ class SVGParser(object):
         """
         # note that there may be different language when read in a file in binary mode
         # and be careful dealing with '\n', '\r\n' issue
-        warning = []
+        warning = set()
         root = ET.fromstring(buf)  # can't parse chinese
         header = root.tag[:root.tag.find('}svg') + 1]
         SVGParser.clean_svg(root, header, warning)
+        warning = list(warning)
 
         for node_need_delete in root.findall('delete'):
             root.remove(node_need_delete)
