@@ -13,7 +13,7 @@ from fluxclient.commands.misc import get_or_create_default_key
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger('')
+logger = logging.getLogger(__name__)
 
 
 def prepare_robot(endpoint, server_key, client_key):

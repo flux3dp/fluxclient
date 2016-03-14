@@ -17,7 +17,7 @@ from fluxclient.upnp.task import UpnpTask
 from fluxclient.usb.task import UsbTask, UsbTaskError
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger('')
+logger = logging.getLogger(__name__)
 
 
 def is_uuid(input):

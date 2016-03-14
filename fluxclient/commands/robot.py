@@ -14,7 +14,7 @@ from fluxclient.commands.misc import get_or_create_default_key
 
 def setup_logger(stdout=sys.stderr, level=logging.DEBUG):
     logging.basicConfig(format="%(message)s", stream=stdout)
-    logger = logging.getLogger('')
+    logger = logging.getLogger(__name__)
     logger.setLevel(level)
     return logger
 

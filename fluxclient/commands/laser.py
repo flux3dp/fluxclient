@@ -8,7 +8,7 @@ import os
 from PIL import Image
 
 logging.basicConfig(format="\033[1;93m%(message)s\033[0m", stream=sys.stderr)
-logger = logging.getLogger('')
+logger = logging.getLogger(__name__)
 
 
 def process_svg(options, stream):

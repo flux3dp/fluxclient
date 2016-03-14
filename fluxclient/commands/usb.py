@@ -9,7 +9,7 @@ from fluxclient.usb.task import UsbTask, UsbTaskError
 from fluxclient.upnp.misc import parse_network_config
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger('')
+logger = logging.getLogger(__name__)
 
 
 def do_auth(task):
@@ -97,6 +97,7 @@ def do_scan_wifi(task):
     for l in ret:
         print("%-30s %-4s %s" % (l.get("ssid"), l.get("rssi"),
                                  l.get("security")))
+
 
 def cmdline(task):
     while True:
