@@ -65,7 +65,7 @@ class LaserSvg(LaserBase, SVGParser):
 
             progress += offset
             if ws:
-                ws.send_progress('generating gcode on svg %d' % name_index, progress)
+                ws.send_progress('generating fcode on svg %d' % name_index, progress)
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:

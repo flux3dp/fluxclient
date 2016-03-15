@@ -48,25 +48,23 @@ class LaserBitmap(LaserBase):
         t = np.vectorize(lambda x: x if x <= self.thres else 255)
         self.image_map = t(self.image_map)
 
-        itera_o = list(range(0, len(self.image_map)))
-        itera_r = list(reversed(range(0, len(self.image_map))))
+        itera_o = list(range(0, len(self.image_map)))  # iterate left to right
+        itera_r = list(reversed(range(0, len(self.image_map))))  # iterate right to left
 
         #row iteration
         for h in range(0, len(self.image_map)):
             #column iteration
             if h % res != 0:
                 continue
-            if self.one_way:
+
+            if self.one_way or h & 1 == 0:
                 itera = itera_o
+                # this 0.5 is for fixing tiny difference between iter from "left to right " and "right to left"
                 abs_shift_x = len(self.image_map) / 2 + 0.5
-            else:
-                if h & 1 == 0:
-                    itera = itera_o
-                    # this 0.5 is for fixing tiny difference between iter from "left to right " and "right to left"
-                    abs_shift_x = len(self.image_map) / 2 + 0.5
-                elif h & 1 == 1:
-                    itera = itera_r
-                    abs_shift_x = len(self.image_map) / 2 - 0.5
+            elif h & 1 == 1:
+                itera = itera_r
+                abs_shift_x = len(self.image_map) / 2 - 0.5
+
             final_x = itera[-1]
 
             w = 0
@@ -74,7 +72,7 @@ class LaserBitmap(LaserBase):
             while w < len(itera):
                 if w % res != 0:
                     continue
-                # record starting point and value for this pixel
+                # record starting point and the value of this pixel
                 w_record = w
                 this = self.image_map[h][itera[w]]
                 while w < len(itera) and self.image_map[h][itera[w]] == this:
@@ -82,7 +80,11 @@ class LaserBitmap(LaserBase):
                 if this != 255:
                     if back:
                         back = False
-                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=8000)
+                        # gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=8000)
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x - 10, abs_shift - h, speed=5000)
+                        gcode += self.turnOff()
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
+
                     else:
                         gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
                     gcode += self.turnTo(255 - this)
