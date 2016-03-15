@@ -103,7 +103,7 @@ class GcodeToFcode(FcodeBase):
                 command |= (1 << (2 - self.tool))
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
-                print(i, file=sys.stderr)
+                logger.debug('XYZEF fail:' + i)
 
         return command, number
 
@@ -313,7 +313,7 @@ class GcodeToFcode(FcodeBase):
                         if line[0] in ['M400']:
                             pass
                         else:
-                            print('Undefine gcode', line, file=sys.stderr)
+                            logger.debug('Undefine gcode: {}'.format(line))
                         # raise ValueError('Undefine gcode', line)
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)

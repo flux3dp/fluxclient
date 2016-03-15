@@ -17,6 +17,7 @@ class FcodeBase(object):
         self.filament_this_layer = [0., 0., 0.]
         self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
+        self.path = [[]]  # recording the path extruder go through
         self.empty_layer = []
         self.counter_between_layers = 0
         self.record_z = 0.0
