@@ -6,6 +6,9 @@ from .laser_base import LaserBase
 
 
 class Matrix(object):
+    '''
+    A matrix class that support matrix multipying
+    '''
     def __init__(self, num=3):
         self.M = [[0.0 for __ in range(3)] for _ in range(num)]
 
@@ -87,7 +90,6 @@ class Logo(LaserBase):
         y += shift_y
         self.laser_speed = speed
         return self.moveTo(x, y)
-        # print "G4 P10"
 
     def close_and_move_and_on(self, x, y, power=0):  # 0 max, 255 min
         gcode = []

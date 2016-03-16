@@ -22,7 +22,7 @@ from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
 
-logger = logging.getLogger("printer.stl_slicer")
+logger = logging.getLogger(__name__)
 
 
 class StlSlicer(object):

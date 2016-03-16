@@ -13,7 +13,7 @@ from getpass import getuser
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
 
-logger = logging.getLogger("g_to_f")
+logger = logging.getLogger(__name__)
 
 
 class GcodeToFcode(FcodeBase):
@@ -49,6 +49,12 @@ class GcodeToFcode(FcodeBase):
         # self.path = [layers], layer = [points], point = [X, Y, Z, path type]
 
         self.config = None
+
+    def get_metadata(self):
+        return self.md
+
+    def get_img(self):
+        return self.image
 
     def header(self):
         """
@@ -97,7 +103,7 @@ class GcodeToFcode(FcodeBase):
                 command |= (1 << (2 - self.tool))
                 number[4 + self.tool] = float(i[1:]) * self.unit
             else:
-                print(i, file=sys.stderr)
+                logger.debug('XYZEF fail:' + i)
 
         return command, number
 
@@ -307,7 +313,7 @@ class GcodeToFcode(FcodeBase):
                         if line[0] in ['M400']:
                             pass
                         else:
-                            print('Undefine gcode', line, file=sys.stderr)
+                            logger.debug('Undefine gcode: {}'.format(line))
                         # raise ValueError('Undefine gcode', line)
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)

@@ -11,7 +11,6 @@ import json
 import os
 
 from fluxclient.utils import mimetypes
-from fluxclient.encryptor import KeyObject
 
 from .base import RobotError
 from .sock_v0002 import RobotSocketV2
@@ -52,7 +51,7 @@ class FluxRobotV0002(object):
         else:
             logger.warn("Warning: can not validate remote, ignore")
 
-        rsakey = KeyObject.get_or_create_keyobj()
+        rsakey = client_key
         logger.info("Protocol: FLUX0002")
         logger.info("Access ID: %s" % rsakey.get_access_id())
 

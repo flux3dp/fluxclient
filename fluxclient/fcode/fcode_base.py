@@ -17,9 +17,13 @@ class FcodeBase(object):
         self.filament_this_layer = [0., 0., 0.]
         self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
         self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
+        self.path = [[]]  # recording the path extruder go through
         self.empty_layer = []
         self.counter_between_layers = 0
         self.record_z = 0.0
+
+    def get_path(self):
+        return self.path
 
     def process_path(self, comment, move_flag, extrude_flag):
         """
@@ -31,8 +35,6 @@ class FcodeBase(object):
         if move_flag:
             if 'infill' in comment:
                 line_type = 0
-            elif 'perimeter' in comment:
-                line_type = 1
             elif 'support' in comment:
                 line_type = 2
             elif 'move' in comment:
@@ -47,6 +49,8 @@ class FcodeBase(object):
                     self.layer_now = int(tmp)
                     self.path.append([self.path[-1][-1][:3] + [line_type]])
                     self.filament_this_layer = self.filament[:]
+            elif 'perimeter' in comment:
+                line_type = 1
             elif 'skirt' in comment:
                 line_type = 4
             elif 'draw' in comment:

@@ -80,17 +80,49 @@ class SVGParser(object):
     def rect(node):
         '''
         drawing a rectangle
+
         '''
-        # not support rx, ry yet
+
         coordinate = []
         x, y, w, h = float(node.attrib['x']), float(node.attrib['y']), float(node.attrib['width']), float(node.attrib['height'])
 
-        coordinate.append((x, y))
-        coordinate.append((x + w, y))
-        coordinate.append((x + w, y + h))
-        coordinate.append((x, y + h))
-        coordinate.append((x, y))
-        return [SVGParser.transform(coordinate, node.get('transform', ''))]
+        # ref: https://www.w3.org/TR/SVG/shapes.html#RectElement
+        # see here for determin
+        try:
+            rx = float(node.attrib['rx'])
+        except:
+            rx = float('nan')
+        try:
+            ry = float(node.attrib['ry'])
+        except:
+            ry = float('nan')
+
+        if rx != rx and ry != ry:
+            rx = 0.
+            ry = 0.
+        elif rx == rx and ry != ry:
+            ry = rx
+        elif ry == ry and rx != rx:
+            rx = ry
+        if rx > w / 2.:
+            rx = w / 2.
+        if ry > h / 2.:
+            ry = h / 2.
+        tmp = []
+        tmp += ['M', rx + x, y]
+        tmp += ['H', x + w - rx]
+        tmp += ['A', rx, ry, 0, 0, 1, x + w, y + ry]
+        tmp += ['V', y + h - ry]
+        tmp += ['A', rx, ry, 0, 0, 1, x + w - rx, y + h]
+        tmp += ['H', x + rx]
+        tmp += ['A', rx, ry, 0, 0, 1, x, y + h - ry]
+        tmp += ['V', y + ry]
+        tmp += ['A', rx, ry, 0, 0, 1, x + rx, y]
+
+        new_rect = ET.Element('path')
+        new_rect.attrib['transform'] = node.get('transform', '')
+        new_rect.attrib['d'] = ' '.join(map(str, tmp))
+        return SVGParser.path(new_rect)
 
     @staticmethod
     def line(node):
@@ -472,6 +504,10 @@ class SVGParser(object):
         if node.tag == header + 'rect':
             tmp_thing['x'] = node.attrib.get('x', '0')
             tmp_thing['y'] = node.attrib.get('y', '0')
+            if node.attrib.get('rx') is not None:
+                tmp_thing['rx'] = node.attrib.get('rx')
+            if node.attrib.get('ry') is not None:
+                tmp_thing['ry'] = node.attrib.get('ry')
             tmp_thing['height'] = node.attrib['height']
             tmp_thing['width'] = node.attrib['width']
             node.clear()
@@ -511,7 +547,16 @@ class SVGParser(object):
         elif node.tag == header + 'style':
             node.tag = 'delete'
         elif node.tag == header + 'text':
-            warning.append('TEXT_TAG')
+            warning.add('TEXT_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'defs':
+            warning.add('DEFS_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'clipPath':
+            warning.add('CLIP_TAG')
+            node.tag = 'delete'
+        elif node.tag == header + 'filter':
+            warning.add('FILTER_TAG')
             node.tag = 'delete'
         else:
             # tmp_thing = ET.Element(node.tag)
@@ -528,10 +573,11 @@ class SVGParser(object):
         """
         # note that there may be different language when read in a file in binary mode
         # and be careful dealing with '\n', '\r\n' issue
-        warning = []
+        warning = set()
         root = ET.fromstring(buf)  # can't parse chinese
         header = root.tag[:root.tag.find('}svg') + 1]
         SVGParser.clean_svg(root, header, warning)
+        warning = list(warning)
 
         for node_need_delete in root.findall('delete'):
             root.remove(node_need_delete)
@@ -567,7 +613,7 @@ class SVGParser(object):
         if any(i == float('inf') or i == float('-inf') for i in viewBox):
             viewBox[2] = 0
             viewBox[3] = 0
-            warning.append('FAIL_PARSING')
+            warning.append('EMPTY')
         else:
 
             root.attrib.clear()

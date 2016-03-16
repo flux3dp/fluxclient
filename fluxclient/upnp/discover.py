@@ -151,7 +151,7 @@ class UpnpDiscover(object):
 
     def add_master_key(self, uuid, sn, master_key):
         if uuid in self.history:
-            logger.error("Master already in list: %s", uuid)
+            logger.warning("Master already in list: %s", uuid)
         else:
             self.history[uuid] = {"master_key": master_key, "serial": sn}
 

@@ -1,5 +1,4 @@
 
-from time import time, sleep
 from uuid import UUID
 import sys
 import re
@@ -19,7 +18,7 @@ def parse_ipaddr(target):
         return (target, 23811)
 
 
-def require_robot(target, logstream=sys.stdout):
+def require_robot(target, client_key, logstream=sys.stdout):
     def lookup_callback(discover):
         logstream.write(".")
         logstream.flush()
@@ -28,7 +27,8 @@ def require_robot(target, logstream=sys.stdout):
         logstream.write("Discover...")
         logstream.flush()
 
-        task = UpnpTask(UUID(hex=target), lookup_callback=lookup_callback)
+        task = UpnpTask(UUID(hex=target), client_key,
+                        lookup_callback=lookup_callback)
         ipaddr = task.endpoint[0]
         logstream.write(" OK\n")
         logstream.write("Name: %s\nUUID: %s\nModel: %s\nIP Addr: %s\n" %
@@ -45,70 +45,10 @@ def require_robot(target, logstream=sys.stdout):
         logstream.write("Wakeup Robot: ")
         logstream.flush()
 
-        while True:
-            try:
-                t1 = time()
-                resp = task.require_robot()
-                if resp:
-                    st = resp.get("status")
-                    if st == "initial":
-                        logstream.write("+")
-                        logstream.flush()
-                        td = 3 - time() + t1
-                        sleep(1.5)
-                    elif st == "launching":
-                        logstream.write(".")
-                        logstream.flush()
-                        sleep(1.5)
-                    elif st == "launched":
-                        logstream.write(" :-)")
-                        if "info" in resp:
-                            logstream.write(" (%s)" % resp["info"])
-                        logstream.write("\n")
-                        logstream.flush()
-                        return (ipaddr, 23811), task.slave_key
-                else:
-                    logstream.write("?")
-            except RuntimeError as e:
-                if e.args[0] == "TIMEOUT":
-                    logstream.write("Error: %s\n" % e.args[0])
-                    sleep(3)
-                    logstream.write("Retry require robot\n")
-                elif e.args[0] == "AUTH_ERROR":
-                    if task.timedelta < -15:
-                        logstream.write("Auth error, try fix time delta\n")
-                        logstream.flush()
-                        old_td = task.timedelta
-                        task.reload_remote_profile(
-                            lookup_timeout=30.,
-                            lookup_callback=lookup_callback)
-                        if task.timedelta - old_td < 0.5:
-                            raise
-                        else:
-                            # Fix timedelta issue let's retry
-                            continue
-                    else:
-                        logstream.write("AUTH ERROR(td=%s)\n" % task.timedelta)
-                        logstream.flush()
-                    raise
+        return (ipaddr, 23811), task.slave_key
 
     else:
         return parse_ipaddr(target), None
-
-
-def kill_robot(target):
-    if is_uuid(target):
-        uuid = UUID(hex=target)
-        task = UpnpTask(uuid)
-        ipaddr = task.endpoint[0]
-        print("UUID: %s\nSerial: %s\nModel: %s\nIP Addr: %s\n" %
-              (task.uuid.hex, task.serial, task.model_id, ipaddr))
-
-        task.require_auth()
-        task.kill_control()
-        print("Kill signal sent.")
-    else:
-        raise RuntimeError("Kill must give serial, not IP addr")
 
 
 def msg_waitall(sock, length):
