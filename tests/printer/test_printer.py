@@ -30,19 +30,27 @@ class TestPrinter:
         StlSlicer.read_stl(stl_binary)
 
     def test_upload(self, stl_binary):
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
         _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
 
     def test_duplicate(self, stl_binary):
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
         _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         _stl_slicer.duplicate('tmp', 'tmp2')
 
     def test_upload_image(self, img_buf):
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
         _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload_image(img_buf)
 
     def test_delete(self, stl_binary):
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
         _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         a, b = _stl_slicer.delete('tmp')
@@ -51,6 +59,8 @@ class TestPrinter:
         assert a is False
 
     def test_slicing(self, stl_binary):
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
         _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         _stl_slicer.set('tmp', [0, 0, 4.5, 0, 0, 0, 1, 1, 1])
