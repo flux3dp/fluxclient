@@ -16,7 +16,8 @@ def svg_buf(request):
 @pytest.fixture(scope="module")
 def clean_svg_buf(request):
     buf = open('tests/laser/data/Achtung.svg', 'rb').read()
-    data, w, h = SVGParser.preprocess(buf)
+    w, d = SVGParser.preprocess(buf)
+    data, w, h = d
     return data
 
 
@@ -120,7 +121,8 @@ class TestSVG:
         coordinates = SVGParser.polyline(node)
 
     def test_preprocess(self, svg_buf):
-        data, w, h = SVGParser.preprocess(svg_buf)
+        warning, d = SVGParser.preprocess(svg_buf)
+        data, w, h = d
 
         print(len(data), w, h)
         assert w == 618.858
