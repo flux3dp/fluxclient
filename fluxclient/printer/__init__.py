@@ -232,7 +232,7 @@ ini_constraint = {
     'bridge_fan_speed': [percentage],
     'bridge_flow_ratio': False,
     'bridge_speed': [int_range, 1, 150],
-    'brim_width': False,
+    'brim_width': [int_range, 0, 99],
     'complete_objects': False,
     'cooling': [binary],
     'default_acceleration': False,
