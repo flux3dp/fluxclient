@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, find_packages
-import sys
+from setuptools import setup
 
 import setup_utils
 
@@ -38,6 +37,8 @@ setup(
     test_suite="tests.main.everything",
     entry_points=setup_utils.get_entry_points(),
     install_requires=setup_utils.get_install_requires(),
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     cmdclass={'build_ext': setup_utils.build_ext},
     ext_modules=ext_modules,
 )
