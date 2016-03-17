@@ -120,6 +120,57 @@ class TestSVG:
         node = root.findall('*')[0]
         coordinates = SVGParser.polyline(node)
 
+    def test_warning(self):
+        testcase = [[
+            """<?xml version="1.0" encoding="utf-8"?>
+            <!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+            <svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 595.3 841.9" style="enable-background:new 0 0 595.3 841.9;" xml:space="preserve">
+            <text transform="matrix(1 0 0 1 139 286.9536)" class="st0 st1">Carpenter</text>
+            </svg>""", ['TEXT_TAG', 'EMPTY']],
+
+            ["""<?xml version="1.0" encoding="utf-8"?>
+            <!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+            <svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 595.3 841.9" style="enable-background:new 0 0 595.3 841.9;" xml:space="preserve">
+            </svg>""", ['EMPTY']],
+            ["""<?xml version="1.0" encoding="utf-8"?>
+            <!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+            <svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 595.3 841.9" style="enable-background:new 0 0 595.3 841.9;" xml:space="preserve">
+            <text transform="matrix(1 0 0 1 139 286.9536)" class="st0 st1">Carpenter</text>
+            <rect fill="none" width="60" height="60" x="0" y="0" stroke="#000" stroke-width="2"  />
+            </svg>
+            """, ['TEXT_TAG']],
+            ["""<?xml version="1.0" encoding="utf-8"?>
+            <!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+            <svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                 viewBox="0 0 595.3 841.9" style="enable-background:new 0 0 595.3 841.9;" xml:space="preserve">
+            <defs>
+                <g id="g1">
+                      <rect id="rect1" width="100" height="50" x="10" y="10" fill="#c00"/>
+                      <circle id="circle1" cx="30" cy="30" r="10" fill="#00c"/>
+                </g>
+            </defs>
+            </svg>
+            """, ['DEFS_TAG', 'EMPTY']],
+            ["""<?xml version="1.0" encoding="utf-8"?>
+            <!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+            <svg version="1.1"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                 viewBox="0 0 595.3 841.9" style="enable-background:new 0 0 595.3 841.9;" xml:space="preserve">
+            <clipPath id="b2">
+                  <use x="0" y="0" width="200" height="200" xlink:href="#a1Shape" />
+                  <use x="0" y="0" width="200" height="200" xlink:href="#a2Shape" />
+            </clipPath>
+            </svg>
+            """, ['CLIP_TAG', "EMPTY"]]
+        ]
+
+        for s, w in testcase:
+            s = s.encode()
+            warning, d = SVGParser.preprocess(s)
+            assert set(warning) == set(w)
+
     def test_preprocess(self, svg_buf):
         warning, d = SVGParser.preprocess(svg_buf)
         data, w, h = d
