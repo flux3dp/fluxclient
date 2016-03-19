@@ -17,7 +17,7 @@ def get_or_create_default_key(path=None):
             raise
             os.unlink(path)
 
-    key = KeyObject.get_or_create_keyobj(1024)
+    key = KeyObject.new_keyobj(1024)
     with open(path, "wb") as f:
         f.write(key.private_key_pem)
 
