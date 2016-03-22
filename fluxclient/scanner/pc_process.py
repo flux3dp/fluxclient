@@ -244,7 +244,11 @@ class PcProcess():
         self.clouds[name_out] = new_pc
 
     def merge(self, name_base, name_2, name_out):
-
+        """
+        simply add two pc together
+        [in] name_base, name_2
+        [out] name_out
+        """
         logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
         both_pc = []
         for i in range(2):
@@ -253,6 +257,9 @@ class PcProcess():
             both_pc.append(pc_new)
 
         self.clouds[name_out] = both_pc
+
+    def cone_bottom(self, name_in, name_out, z_value, thick=5):
+        pass
 
     def closure(self, name_in, name_out, z_value, floor, thick=5):
         if floor:

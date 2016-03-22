@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-import sys
 import argparse
 import logging
 from re import findall
 from time import time
 import datetime
+
 import numpy as np
 
-from fluxclient.scanner.pc_process import PcProcess
 from fluxclient.scanner.scan_settings import ScanSetting
 from fluxclient.scanner.tools import read_pcd, write_stl, write_pcd
 from fluxclient.scanner.pc_process import PcProcess

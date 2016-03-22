@@ -13,17 +13,25 @@ from io import StringIO
 # uint8_t b = (rgb)       & 0x0000ff;
 
 
-def dot(a, b):
-    return sum(a[i] * b[i] for i in range(3))
+def dot(vector_a, vector_b):
+    """
+    3d dot vector_a, vector_b
+    return float
+    """
+    return sum(vector_a[i] * vector_b[i] for i in range(3))
 
 
 def cross(p0, p1, p2):
+    """
+    2d cross v0, v1: return float
+    v0 = p0 -> p1, v1 = p0 -> p2
+    """
     return ((p1[0] - p0[0]) * (p2[1] - p0[1])) - ((p1[1] - p0[1]) * (p2[0] - p0[0]))
 
 
 def normalize(v):
     """
-    normalize vector v
+    normalize 3d vector v
     """
     l = sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
     if l != 0:
