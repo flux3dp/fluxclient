@@ -81,7 +81,7 @@ class LaserBitmap(LaserBase):
                     if back:
                         back = False
                         # gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=8000)
-                        gcode += self.moveTo(itera[w_record] - abs_shift_x - 10, abs_shift - h, speed=5000)
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x - 40, abs_shift - h, speed=5000)
                         gcode += self.turnOff()
                         gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
 
