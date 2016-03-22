@@ -68,7 +68,7 @@ class TestPrinter:
         sleep(1)
         while True:
             a = _stl_slicer.report_slicing()
-            if a[-1].startswith('{"status": "complete"'):
+            if a and a[-1].startswith('{"status": "complete"'):
                 break
             sleep(0.5)
 

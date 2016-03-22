@@ -545,8 +545,7 @@ class StlSlicer(object):
         """
         ret = []
         if self.working_p:
-            l = len(self.working_p[-1][2])
-            for _ in range(l):
+            for _ in range(len(self.working_p[-1][2])):
                 message = self.working_p[-1][2][0]
                 self.working_p[-1][2].pop(0)
                 if type(message) == str:
