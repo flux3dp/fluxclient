@@ -2,7 +2,7 @@
 
 # This is a shell script running unit test on jenkins
 # One should not run this manually (run "setup.py test" or "py.test")
-
+set -x
 
 SLIC3R=$2
 CLIENT_BRANCH=$1
