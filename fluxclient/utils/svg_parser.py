@@ -237,7 +237,7 @@ class SVGParser(object):
             return [[]]
 
         # there can be several set of parameter using same command ex: L12,34,56,78 -> L12,34 L56,78
-        # note that: M, m command is special case
+        # note that: M, m command is special case, M12,34,56,78 -> M12,34 L56,78
         # https://www.w3.org/TR/SVG/paths.html#PathDataMovetoCommands
 
         parameter_list = {'M': 2, 'm': 2, 'L': 2, 'l': 2, 'H': 1, 'h': 1, 'V': 1, 'v': 1, 'Z': 0, 'z': 0, 'C': 6, 'c': 6, 'S': 4, 's': 4, 'Q': 4, 'q': 4, 'T': 2, 't': 2, 'A': 7, 'a': 7}
@@ -649,7 +649,9 @@ class SVGParser(object):
         # scale: go through and find x, y
         # transform: rotate the points
         w, h, x1_real, y1_real, x2_real, y2_real, rotation = params
-        dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2
+        dis = lambda x, y: (x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2  # distance function
+        rotate_vector = lambda v, r: [(v[0] * cos(r) - v[1] * sin(r)), (v[0] * sin(r) + v[1] * cos(r))]
+        # put all points in viewBox
         for path in range(len(path_data)):
             new_path = []
             for p in range(len(path_data[path]) - 1):
@@ -762,13 +764,17 @@ class SVGParser(object):
                 new_path = tmp_new_path
 
             # transformation
-            vx = [w, 0]
-            vx = [(vx[0] * cos(rotation) - vx[1] * sin(rotation)), (vx[0] * sin(rotation) + vx[1] * cos(rotation))]
+            # reverse v_diagonal to find vx, vy as if no rotation
+            v_diagonal = [x2_real - x1_real, y2_real - y1_real]
+            v_diagonal = rotate_vector(v_diagonal, -rotation)
+            vx = [v_diagonal[0], 0]
+            vy = [0, v_diagonal[1]]
 
-            vy = [0, -h]
-            vy = [(vy[0] * cos(rotation) - vy[1] * sin(rotation)), (vy[0] * sin(rotation) + vy[1] * cos(rotation))]
+            # rotete vx, vy for rotation degree
+            vx = rotate_vector(vx, rotation)
+            vy = rotate_vector(vy, rotation)
 
-            # make points into real world coordinate
+            # make points into real world coordinate by mapping them with vector
             for i in range(len(new_path)):
                 if new_path[i][0] != '\n':
                     new_path[i][0] -= viewBox[0]
@@ -782,6 +788,7 @@ class SVGParser(object):
                     new_path[i] = [x, y]
                 else:
                     pass
+
             # make every points inside the boundary circle -> (cx, cy, r) = (0, 0, radius)
             in_path = []
             for i in range(1, len(new_path)):
@@ -808,6 +815,7 @@ class SVGParser(object):
                         x2, y2 = new_path[i]
                         if x1 == x2 and y1 == y2:
                             continue
+                        # (-b +- sqrt(b^2-4ac)) / 2a
                         a = (x2 - x1) ** 2 + (y2 - y1) ** 2
                         b = 2 * ((x1 * x2) - (x1 ** 2) + (y1 * y2) - (y1 ** 2))
                         c = (x1 ** 2) + (y1 ** 2) - (radius ** 2)

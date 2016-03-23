@@ -73,9 +73,8 @@ class UpnpDiscover(object):
             (h.sock for h in self.handlers if hasattr(h, "sock")))
 
     def poke(self, ipaddr):
-        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
-                              UUID(int=0).bytes)
-        self.touch_sock.sendto(payload, (ipaddr, DEFAULT_PORT))
+        # TODO
+        self.handlers[-1].poke(ipaddr)
 
     def limited_uuid(self, uuid):
         if self.uuid:
@@ -171,6 +170,11 @@ class Version1Helper(object):
 
     def fileno(self):
         return self.sock.fileno()
+
+    def poke(self, ipaddr):
+        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
+                              UUID(int=0).bytes)
+        self.sock.sendto(payload, (ipaddr, DEFAULT_PORT))
 
     def handle_message(self, endpoint, action_id, payload):
         if action_id == 0:

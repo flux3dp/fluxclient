@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 import pytest
 import sys
+import os
 from time import sleep
 
 from fluxclient.printer.stl_slicer import StlSlicer
@@ -29,20 +30,28 @@ class TestPrinter:
         StlSlicer.read_stl(stl_binary)
 
     def test_upload(self, stl_binary):
-        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
+        _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
 
     def test_duplicate(self, stl_binary):
-        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
+        _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         _stl_slicer.duplicate('tmp', 'tmp2')
 
     def test_upload_image(self, img_buf):
-        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
+        _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload_image(img_buf)
 
     def test_delete(self, stl_binary):
-        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
+        _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         a, b = _stl_slicer.delete('tmp')
         assert a is True
@@ -50,14 +59,16 @@ class TestPrinter:
         assert a is False
 
     def test_slicing(self, stl_binary):
-        _stl_slicer = StlSlicer('../Slic3r/slic3r.pl')
+        if not 'slic3r' in os.environ:
+            os.environ['slic3r'] = '../Slic3r/slic3r.pl'
+        _stl_slicer = StlSlicer(os.environ['slic3r'])
         _stl_slicer.upload('tmp', stl_binary)
         _stl_slicer.set('tmp', [0, 0, 4.5, 0, 0, 0, 1, 1, 1])
         _stl_slicer.begin_slicing(['tmp'], None, '-f')
         sleep(1)
         while True:
             a = _stl_slicer.report_slicing()
-            if a[-1].startswith('{"status": "complete"'):
+            if a and a[-1].startswith('{"status": "complete"'):
                 break
             sleep(0.5)
 

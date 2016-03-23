@@ -10,6 +10,8 @@ from Crypto.Hash import SHA as CryptoSHA  # noqa
 
 
 class KeyObject(object):
+    _size = None
+
     @classmethod
     def load_keyobj(cls, pem_or_der):
         ref = RSA.importKey(pem_or_der)
@@ -31,7 +33,7 @@ class KeyObject(object):
 
     def encrypt(self, message):
         chip = PKCS1_OAEP.new(self._key)
-        size = ((self._key.size() + 1) // 8) - 42
+        size = self.size - 42
         in_buf = BytesIO(message)
         out_buf = BytesIO()
 
@@ -44,7 +46,7 @@ class KeyObject(object):
 
     def decrypt(self, buf):
         chip = PKCS1_OAEP.new(self._key)
-        size = (self._key.size() + 1) // 8
+        size = self.size
         in_buf = BytesIO(buf)
         out_buf = BytesIO()
 
@@ -57,7 +59,12 @@ class KeyObject(object):
 
     @property
     def size(self):
-        return (self._key.size() + 1) // 8
+        if self._size is None:
+            s = self._key.size()
+            while s % 8 > 0:
+                s += 1
+            self._size = s // 8
+        return self._size
 
     @property
     def public_key_pem(self):
