@@ -16,15 +16,16 @@ class PenSvg(LaserSvg, SVGParser):
         self.ext_metadata['HEAD_TYPE'] = 'N/A'
         self.lift_height = 100
         self.draw_height = 0
+        self.nozzle_height = 5
         # override
         self.turnOn = self.draw
         self.turnOff = self.lift
 
     def set_lift_height(self, h):
-        self.lift_height = h
+        self.lift_height = h - self.nozzle_height
 
     def set_draw_height(self, h):
-        self.draw_height = h
+        self.draw_height = h - self.nozzle_height
 
     def draw(self):
         if self.laser_on is True:
