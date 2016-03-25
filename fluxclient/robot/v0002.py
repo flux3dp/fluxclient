@@ -75,6 +75,9 @@ class ProtocolV2(object):
     def fileno(self):
         return self.sock.fileno()
 
+    def close(self):
+        self.sock.close()
+
 
 class FluxRobot(ProtocolV2):
     def _send_cmd(self, buf):
@@ -612,5 +615,41 @@ class FluxRobot(ProtocolV2):
         else:
             raise_error(ret)
 
-    def close(self):
-        self.sock.close()
+
+class FluxCamera(ProtocolV2):
+    __running__ = False
+    __buffer__ = b""
+
+    def capture(self, image_callback):
+        self.__running__ = True
+
+        length = 0
+        while self.__running__:
+            rl = select((self.sock, ), (), (), 0.05)[0]
+            if rl:
+                b = rl[0].recv(4096)
+                if b:
+                    self.__buffer__ += b
+                else:
+                    raise RuntimeError("Broken pipe")
+            else:
+                continue
+
+            while True:
+                if length:
+                    if len(self.__buffer__) >= length:
+                        image = self.__buffer__[4:length]
+                        self.__buffer__ = self.__buffer__[length:]
+                        length = 0
+                        image_callback(self, image)
+                    else:
+                        break
+                else:
+                    if len(self.__buffer__) >= 4:
+                        length = struct.unpack("<I",
+                                               self.__buffer__[:4])[0] + 4
+                    else:
+                        break
+
+    def abort(self):
+        self.__running__ = False
