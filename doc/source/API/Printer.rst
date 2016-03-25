@@ -1,13 +1,9 @@
-=================
-Document
-=================
-
-Delta
+Printer
 ==================================================
 
 This is something I want to say that is not in the docstring.
 
-.. automodule:: fluxclient.sdk.delta
+.. automodule:: fluxclient.printer.stl_slicer
    :members:
 
 I don't **know** what's going *on*::

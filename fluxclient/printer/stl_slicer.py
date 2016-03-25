@@ -173,10 +173,12 @@ class StlSlicer(object):
         """
         input: names of stl that need to be sliced
         output:
+
             if success:
                 gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
             else:
                 False, [error message]
+
         """
 
         # check if names are all seted
@@ -337,8 +339,9 @@ class StlSlicer(object):
 
     def begin_slicing(self, names, ws, output_type):
         """
-        input: names of stl that need to be sliced
-        output:
+        :param list names: names of stl that need to be sliced
+
+        :return:
             if success:
                 gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
             else:

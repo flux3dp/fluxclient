@@ -13,7 +13,7 @@ Contents:
 
    Installation.rst
    Tutorial.rst
-   Document.rst
+   API/Document.rst
 
 
 Indices and tables
