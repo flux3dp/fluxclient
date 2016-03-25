@@ -7,7 +7,6 @@ import sys
 import os
 
 from fluxclient.robot.misc import require_robot
-from fluxclient.robot_console import RobotConsole
 from fluxclient.robot import connect_robot
 from fluxclient.commands.misc import get_or_create_default_key
 
@@ -46,6 +45,7 @@ def robot_shell(options):
             client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
                                    client_key=options.clientkey,
                                    conn_callback=conn_callback)
+            from fluxclient.robot_console import RobotConsole
             robot_client = RobotConsole(client)
             logger.info("----> READY")
             while True:
@@ -95,6 +95,7 @@ def simple_shell(options):
     client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
+    from fluxclient.robot_console import RobotConsole
     robot_client = RobotConsole(client)
     logger.info("----> READY")
 
