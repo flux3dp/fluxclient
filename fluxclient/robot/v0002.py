@@ -13,7 +13,7 @@ import os
 from fluxclient.utils import mimetypes
 
 from .base import RobotError
-from .sock_v0002 import RobotSocketV2
+from .socket_wrapper import AESEncryptedSocket
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,9 @@ def ok_or_error(fn, resp="ok"):
     return wrap
 
 
-class FluxRobotV0002(object):
-    def __init__(self, sock, server_key=None, client_key=None):
+class ProtocolV2(object):
+    def __init__(self, sock, server_key=None, client_key=None,
+                 ignore_key_validation=False):
         sock.settimeout(300)
         buf = sock.recv(4096)
         sign, randbytes = buf[:-128], buf[-128:]
@@ -47,7 +48,8 @@ class FluxRobotV0002(object):
                 pass
             else:
                 logger.error("Server identify validate failed")
-                # TODO raise error
+                if not ignore_key_validation:
+                    RobotError("Server identify validate failed")
         else:
             logger.warn("Warning: can not validate remote, ignore")
 
@@ -65,16 +67,16 @@ class FluxRobotV0002(object):
             aes_enc_init = msg_waitall(sock, rsakey.size)
             aes_init = rsakey.decrypt(aes_enc_init)
 
-            self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
+            self.sock = AESEncryptedSocket(sock, aes_init[:32],
+                                           aes_init[32:48])
         else:
             raise RuntimeError(status)
 
     def fileno(self):
         return self.sock.fileno()
 
-    def on_recv(self):
-        return self.sock.recv(4096)
 
+class FluxRobot(ProtocolV2):
     def _send_cmd(self, buf):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
@@ -166,8 +168,8 @@ class FluxRobotV0002(object):
             resp = self.get_resp().decode("utf8", "ignore")
         info[1] = images
 
-        # TODO
-        fixmeta = lambda key, value=None: (key, value)
+        def fixmeta(key, value=None):
+            return key, value
         if resp.startswith("ok "):
             info[0] = dict(fixmeta(*pair.split("=", 1)) for pair in
                            resp[3:].split("\x00"))
@@ -188,12 +190,13 @@ class FluxRobotV0002(object):
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"file cp " + source_entry.encode() + b" " + source.encode() + b" "
-            + target_entry.encode() + b" " + target.encode())
+            b"file cp " + source_entry.encode() + b" " + source.encode() +
+            b" " + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
     def rmfile(self, entry, path):
-        return self._make_cmd(b"file rm " + entry.encode() + b" " + path.encode())
+        return self._make_cmd(b"file rm " + entry.encode() + b" " +
+                              path.encode())
 
     def md5(self, entry, path):
         bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +

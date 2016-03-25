@@ -3,7 +3,6 @@ from time import time, sleep
 import logging
 import socket
 
-# TODO:
 from fluxclient.commands.misc import get_or_create_default_key
 from .base import RobotError
 from .misc import msg_waitall
@@ -23,9 +22,8 @@ def connect_robot(ipaddr, server_key, client_key=None, conn_callback=None):
     if version[:4] != b"FLUX":
         raise RobotError("Magic number error")
     elif version[4:] == b"0002":
-        from .v0002 import FluxRobotV0002
-        return FluxRobotV0002(sock, server_key=server_key,
-                              client_key=client_key)
+        from .v0002 import FluxRobot
+        return FluxRobot(sock, server_key=server_key, client_key=client_key)
     else:
         raise RobotError("Robot version not support")
 
