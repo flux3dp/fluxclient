@@ -11,9 +11,7 @@ import json
 import os
 
 from fluxclient.utils import mimetypes
-
-from .base import RobotError
-from .socket_wrapper import AESEncryptedSocket
+from .errors import RobotError
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -36,41 +34,9 @@ def ok_or_error(fn, resp="ok"):
     return wrap
 
 
-class ProtocolV2(object):
-    def __init__(self, sock, server_key=None, client_key=None,
-                 ignore_key_validation=False):
-        sock.settimeout(300)
-        buf = sock.recv(4096)
-        sign, randbytes = buf[:-128], buf[-128:]
-
-        if server_key:
-            if server_key.verify(randbytes, sign):
-                pass
-            else:
-                logger.error("Server identify validate failed")
-                if not ignore_key_validation:
-                    RobotError("Server identify validate failed")
-        else:
-            logger.warn("Warning: can not validate remote, ignore")
-
-        rsakey = client_key
-        logger.info("Protocol: FLUX0002")
-        logger.info("Access ID: %s" % rsakey.get_access_id())
-
-        buf = rsakey.get_access_id(binary=True) + rsakey.sign(randbytes)
-        sock.send(buf)
-
-        status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
-
-        if status == "OK":
-            # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
-            aes_enc_init = msg_waitall(sock, rsakey.size)
-            aes_init = rsakey.decrypt(aes_enc_init)
-
-            self.sock = AESEncryptedSocket(sock, aes_init[:32],
-                                           aes_init[32:48])
-        else:
-            raise RuntimeError(status)
+class FluxRobot(object):
+    def __init__(self, sock):
+        self.sock = sock
 
     def fileno(self):
         return self.sock.fileno()
@@ -78,8 +44,6 @@ class ProtocolV2(object):
     def close(self):
         self.sock.close()
 
-
-class FluxRobot(ProtocolV2):
     def _send_cmd(self, buf):
         l = len(buf) + 2
         self.sock.send(struct.pack("<H", l) + buf)
@@ -614,48 +578,3 @@ class FluxRobot(ProtocolV2):
             return info
         else:
             raise_error(ret)
-
-
-class FluxCamera(ProtocolV2):
-    __running__ = False
-    __buffer__ = b""
-    __image_length__ = 0
-
-    def feed(self, image_callback):
-        b = self.sock.recv(4096)
-        if b:
-            self.__buffer__ += b
-        else:
-            self.close()
-            raise RuntimeError("Broken pipe")
-        self.unpack_image(image_callback)
-
-    def capture(self, image_callback):
-        self.__running__ = True
-
-        while self.__running__:
-            rl = select((self.sock, ), (), (), 0.05)[0]
-            if rl:
-                self.feed(image_callback)
-
-    def unpack_image(self, image_callback):
-        length = self.__image_length__
-        while True:
-            if length:
-                if len(self.__buffer__) >= length:
-                    image = self.__buffer__[4:length]
-                    self.__buffer__ = self.__buffer__[length:]
-                    length = 0
-                    image_callback(self, image)
-                else:
-                    break
-            else:
-                if len(self.__buffer__) >= 4:
-                    length = struct.unpack("<I",
-                                           self.__buffer__[:4])[0] + 4
-                else:
-                    break
-        self.__image_length__ = length
-
-    def abort(self):
-        self.__running__ = False

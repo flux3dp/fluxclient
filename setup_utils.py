@@ -90,6 +90,7 @@ def get_entry_points():
             "flux_auth=fluxclient.commands.auth:main",
             "flux_config_network=fluxclient.commands.config_network:main",
             "flux_robot=fluxclient.commands.robot:main",
+            "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
