@@ -158,7 +158,7 @@ def create_pcl_extentions():
                                    "directorys: %s" % (label, dirs))
 
             eigen3_dir = os.path.join(
-                find_in_program_files("egin3", ["Eigen"]), "include")
+                find_in_program_files("eigin3", ["Eigen"]), "include")
 
             flann_dir = os.path.join(
                 find_in_program_files("flann", ["flann"]), "include")
