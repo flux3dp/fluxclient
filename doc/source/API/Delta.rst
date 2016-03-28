@@ -3,7 +3,7 @@ Delta
 
 Blah blah blah in delta.rst.
 
-.. automodule:: fluxclient.sdk.delta
+.. autoclass:: fluxclient.sdk.delta.Delta
    :members:
 
 I don't **know** what's going *on*::
