@@ -31,3 +31,10 @@ fluxclient contains all toolsets to control FLUX 3D Printer
 
 * Scipy
 `pip install scipy`
+
+
+## Document
+* sphinx
+`pip install sphinx`
+
+run `make html` under `fluxclient/doc` directory
