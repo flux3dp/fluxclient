@@ -13,7 +13,29 @@ import logging
 
 from fluxclient.hw_profile import HW_PROFILE
 
+from fluxclient.robot.misc import require_robot
+from fluxclient.robot import connect_robot
+from fluxclient.commands.misc import get_or_create_default_key
+
 logger = logging.getLogger(__name__)
+
+
+def prepare_robot(endpoint, server_key, client_key):
+    def conn_callback(*args):
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        return True
+    robot = connect_robot(endpoint, server_key=server_key,
+                          client_key=client_key, conn_callback=conn_callback)
+    pos = robot.position()
+    if pos == "CommandTask":
+        robot.begin_scan()
+    elif pos == "ScanTask":
+        pass
+    else:
+        raise RuntimeError("Unknow position: %s" % pos)
+
+    return robot
 
 
 class Delta(object):
@@ -26,11 +48,19 @@ class Delta(object):
       hi
 
     """
-    def __init__(self):
+    def __init__(self, target):
         super(Delta, self).__init__()
-        self.robot = robot
+
+        clientkey = get_or_create_default_key(None)
+        endpoint, server_key = require_robot(target, clientkey)
+        self.robot = prepare_robot(endpoint, server_key, clientkey)
+
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
         self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
+
+    def __del__(self):
+        pass
+        # turn off laser
 
     def get_position(self):
         """
@@ -141,7 +171,7 @@ class Delta(object):
         else:
             raise ValueError("Undifine motor name")
 
-    def move_motor(self, *kargs):
+    def move_motor(self, e0=None, e1=None, e2=None):
         """
         Move the motors
 
@@ -153,17 +183,82 @@ class Delta(object):
         >>> f.move_motor(e0=10, e1=10)
 
         """
-        tmp_motor = {}
-        for k in self.motor_pos:
-            if k in kargs:
-                tmp_motor[k] = kargs[k]
-        self.move(**tmp_motor)
+        self.move(e0=e0, e1=e1, e2=e2)
 
-    def lock_motor(self):
+    def lock_motor(self, motor):
+        """
+        Lock the specified motor.
+
+        :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2", "XYZ"``
+
+        >>> f.lock_motor('XYZ')
+
+        """
+        # self.robot
         pass
 
-    def releace_motor():
-           pass
+    def release_motor(self):
+        """
+
+
+        Lock the specified motor.
+
+
+        :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2", "XYZ"``
+
+        .. note::
+
+            If you ever released motor "XYZ", You have to :meth:`home` before calling :meth:`move` them.
+
+        >>> f.release_motor('XYZ')
+
+        """
+        if motor == 'XYZ':
+            self.loose_flag = True
+
+    def get_position_laser(self, laser):
+        """
+        Find out whether the laser is on
+
+        :param str laser: Which laser, should be ``"L"`` or ``"R"``
+        :raises ValueError: if the laser parameter is not ``"L"`` or ``"R"``
+
+        >>> f.get_position_laser('L')
+        True
+
+        """
+        if laser == "L":
+            pass
+        elif laser == "R":
+            pass
+        else:
+            raise ValueError("Wrong laser name")
+
+    def turn_laser(self, laser, on):
+        """
+        Control the red laser on machine
+
+        :param str laser: Which laser, should be ``"L"`` or ``"R"``
+        :param bool on: turn *on* or *off* the laser
+        :raises ValueError: if the laser parameter is not ``"L"`` or ``"R"``
+
+        >>> f.turn_laser('L', True)  # Turn on left laser
+        True
+        >>> f.turn_laser('R', False)  # Turn off right laser
+        False
+
+        """
+
+        if laser == "L":
+            pass
+        elif laser == "R":
+            pass
+        else:
+            raise ValueError("Wrong laser name")
+        return bool(on)
+
+    def function(self):
+        pass
     # def function(self):
     #     """This function prints hello with a name
     #     function:: format_exception(etype, value, tb[, limit=None])
@@ -183,3 +278,6 @@ class Delta(object):
 
     #     """
     #     pass
+
+if __name__ == '__main__':
+    Delta('ffffffffffffffffd81a71e9dcab085c')
