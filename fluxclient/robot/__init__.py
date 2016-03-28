@@ -4,8 +4,10 @@ import logging
 import socket
 
 from .aes_socket import AESSocket
+from .ssl_socket import SSLSocket
 from .errors import RobotError
 from .robot import FluxRobot
+from .camera import FluxCamera
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -20,8 +22,15 @@ def connect_camera(endpoint, server_key, client_key, conn_callback=None):
     if version[:4] != b"FLUX":
         raise RobotError("Magic number error")
     elif version[4:] == b"0002":
-        from .v0002 import FluxCamera
-        return FluxCamera(sock, server_key=server_key, client_key=client_key)
+        aessock = AESSocket(sock, server_key=server_key, client_key=client_key)
+        while not aessock.do_handshake():
+            pass
+        return FluxCamera(aessock)
+    elif version[4:] == b"0003":
+        sslsock = SSLSocket(sock, server_key=server_key, client_key=client_key)
+        while sslsock.do_handshake() != 0:
+            pass
+        return FluxCamera(sslsock)
     else:
         raise RobotError("Robot version not support")
 
