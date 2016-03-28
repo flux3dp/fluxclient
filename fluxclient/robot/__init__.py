@@ -3,7 +3,9 @@ from time import time, sleep
 import logging
 import socket
 
-from .base import RobotError
+from .aes_socket import AESSocket
+from .errors import RobotError
+from .robot import FluxRobot
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -37,8 +39,10 @@ def connect_robot(ipaddr, server_key, client_key=None, conn_callback=None):
     if version[:4] != b"FLUX":
         raise RobotError("Magic number error")
     elif version[4:] == b"0002":
-        from .v0002 import FluxRobot
-        return FluxRobot(sock, server_key=server_key, client_key=client_key)
+        aessock = AESSocket(sock, server_key=server_key, client_key=client_key)
+        while not aessock.do_handshake():
+            pass
+        return FluxRobot(aessock)
     else:
         raise RobotError("Robot version not support")
 
