@@ -1,7 +1,7 @@
 Delta
 ==================================================
 
-This is something I want to say that is not in the docstring.
+Blah blah blah in delta.rst.
 
 .. automodule:: fluxclient.sdk.delta
    :members:
@@ -12,4 +12,4 @@ I don't **know** what's going *on*::
 
 hi
 
-.. sectionauthor:: Guido van Rossum <guido@python.org>
+.. sectionauthor:: Yen Feng <yen@flux3dp.com>
