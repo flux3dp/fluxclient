@@ -91,6 +91,13 @@ class FcodeParser(FcodeBase):
         else:
             return None
 
+    def change_img(self, buf):
+        if self.data:
+            self.data = b''.join([self.data[:-(self.image_size + 4)], struct.pack('<I', len(buf)), buf])
+            return True
+        else:
+            return False
+
     def get_metadata(self):
         """
         get the metadata

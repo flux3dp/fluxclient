@@ -7,6 +7,7 @@ import shlex
 import os
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class RobotConsole(object):

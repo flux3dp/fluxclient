@@ -11,9 +11,7 @@ import json
 import os
 
 from fluxclient.utils import mimetypes
-
-from .base import RobotError
-from .sock_v0002 import RobotSocketV2
+from .errors import RobotError
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -36,44 +34,15 @@ def ok_or_error(fn, resp="ok"):
     return wrap
 
 
-class FluxRobotV0002(object):
-    def __init__(self, sock, server_key=None, client_key=None):
-        sock.settimeout(300)
-        buf = sock.recv(4096)
-        sign, randbytes = buf[:-128], buf[-128:]
-
-        if server_key:
-            if server_key.verify(randbytes, sign):
-                pass
-            else:
-                logger.error("Server identify validate failed")
-                # TODO raise error
-        else:
-            logger.warn("Warning: can not validate remote, ignore")
-
-        rsakey = client_key
-        logger.info("Protocol: FLUX0002")
-        logger.info("Access ID: %s" % rsakey.get_access_id())
-
-        buf = rsakey.get_access_id(binary=True) + rsakey.sign(randbytes)
-        sock.send(buf)
-
-        status = msg_waitall(sock, 16).rstrip(b"\x00").decode()
-
-        if status == "OK":
-            # aes_enc_init = sock.recv(E.rsa_size(rsakey), socket.MSG_WAITALL)
-            aes_enc_init = msg_waitall(sock, rsakey.size)
-            aes_init = rsakey.decrypt(aes_enc_init)
-
-            self.sock = RobotSocketV2(sock, aes_init[:32], aes_init[32:48])
-        else:
-            raise RuntimeError(status)
+class FluxRobot(object):
+    def __init__(self, sock):
+        self.sock = sock
 
     def fileno(self):
         return self.sock.fileno()
 
-    def on_recv(self):
-        return self.sock.recv(4096)
+    def close(self):
+        self.sock.close()
 
     def _send_cmd(self, buf):
         l = len(buf) + 2
@@ -166,8 +135,8 @@ class FluxRobotV0002(object):
             resp = self.get_resp().decode("utf8", "ignore")
         info[1] = images
 
-        # TODO
-        fixmeta = lambda key, value=None: (key, value)
+        def fixmeta(key, value=None):
+            return key, value
         if resp.startswith("ok "):
             info[0] = dict(fixmeta(*pair.split("=", 1)) for pair in
                            resp[3:].split("\x00"))
@@ -188,12 +157,13 @@ class FluxRobotV0002(object):
     @ok_or_error
     def cpfile(self, source_entry, source, target_entry, target):
         return self._make_cmd(
-            b"file cp " + source_entry.encode() + b" " + source.encode() + b" "
-            + target_entry.encode() + b" " + target.encode())
+            b"file cp " + source_entry.encode() + b" " + source.encode() +
+            b" " + target_entry.encode() + b" " + target.encode())
 
     @ok_or_error
     def rmfile(self, entry, path):
-        return self._make_cmd(b"file rm " + entry.encode() + b" " + path.encode())
+        return self._make_cmd(b"file rm " + entry.encode() + b" " +
+                              path.encode())
 
     def md5(self, entry, path):
         bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
@@ -608,6 +578,3 @@ class FluxRobotV0002(object):
             return info
         else:
             raise_error(ret)
-
-    def close(self):
-        self.sock.close()

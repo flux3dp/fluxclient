@@ -73,7 +73,7 @@ def get_version():
 
 def get_install_requires():
     return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy',
-            'ecdsa', 'lxml']
+            'ecdsa', 'lxml', 'pyasn1']
 
 
 def get_packages():
@@ -90,6 +90,7 @@ def get_entry_points():
             "flux_auth=fluxclient.commands.auth:main",
             "flux_config_network=fluxclient.commands.config_network:main",
             "flux_robot=fluxclient.commands.robot:main",
+            "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
@@ -158,7 +159,7 @@ def create_pcl_extentions():
                                    "directorys: %s" % (label, dirs))
 
             eigen3_dir = os.path.join(
-                find_in_program_files("egin3", ["Eigen"]), "include")
+                find_in_program_files("eigin3", ["Eigen"]), "include")
 
             flann_dir = os.path.join(
                 find_in_program_files("flann", ["flann"]), "include")

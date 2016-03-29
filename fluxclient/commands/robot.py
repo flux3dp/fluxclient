@@ -6,10 +6,9 @@ import atexit
 import sys
 import os
 
-from fluxclient.robot.misc import require_robot
-from fluxclient.robot_console import RobotConsole
+from fluxclient.commands.misc import (get_or_create_default_key,
+                                      get_robot_endpoint)
 from fluxclient.robot import connect_robot
-from fluxclient.commands.misc import get_or_create_default_key
 
 
 def setup_logger(stdout=sys.stderr, level=logging.DEBUG):
@@ -41,11 +40,12 @@ def robot_shell(options):
 
         try:
             logger = setup_logger(console)
-            ipaddr, keyobj = require_robot(options.target, options.clientkey,
-                                           console)
-            client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+            ipaddr, device = get_robot_endpoint(options.target,
+                                                options.clientkey, console)
+            client = connect_robot(ipaddr=ipaddr, server_key=device.slave_key,
                                    client_key=options.clientkey,
                                    conn_callback=conn_callback)
+            from fluxclient.robot_console import RobotConsole
             robot_client = RobotConsole(client)
             logger.info("----> READY")
             while True:
@@ -72,8 +72,9 @@ def ipython_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, keyobj = require_robot(options.target, options.clientkey)
-    robot_client = connect_robot(ipaddr=ipaddr, server_key=keyobj,  # noqa
+    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
+    robot_client = connect_robot(ipaddr=ipaddr,  # noqa
+                                 server_key=device.slave_key,
                                  client_key=options.clientkey,
                                  conn_callback=conn_callback)
 
@@ -91,10 +92,11 @@ def simple_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, keyobj = require_robot(options.target, options.clientkey)
-    client = connect_robot(ipaddr=ipaddr, server_key=keyobj,
+    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
+    client = connect_robot(ipaddr=ipaddr, server_key=device.slave_key,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
+    from fluxclient.robot_console import RobotConsole
     robot_client = RobotConsole(client)
     logger.info("----> READY")
 
