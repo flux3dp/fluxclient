@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 
 def raise_error(ret):
     if ret.startswith("error ") or ret.startswith("er "):
-        raise RuntimeError(*(ret.split(" ")[1:]))
+        raise RobotError(*(ret.split(" ")[1:]))
     else:
-        raise RuntimeError("UNKNOW_ERROR", ret)
+        raise RobotError("UNKNOW_ERROR", ret)
 
 
 def ok_or_error(fn, resp="ok"):
@@ -51,7 +51,7 @@ class FluxRobot(object):
     def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
-            raise RuntimeError("get resp timeout")
+            raise RobotError("get resp timeout")
         # bml = self.sock.recv(2, socket.MSG_WAITALL)
         bml = msg_waitall(self.sock, 2)
         if not bml:
@@ -99,7 +99,7 @@ class FluxRobot(object):
     def position(self):
         ret = self._make_cmd(b"position").decode("ascii", "ignore")
         if ret.startswith("error "):
-            raise RuntimeError(*(ret.split(" ")[1:]))
+            raise RobotError(*(ret.split(" ")[1:]))
         else:
             return ret
 
@@ -248,7 +248,7 @@ class FluxRobot(object):
             elif resp == "ok":
                 return metadata, images
             else:
-                raise RuntimeError(resp)
+                raise RobotError(resp)
 
     @ok_or_error
     def quit_play(self):
@@ -270,7 +270,7 @@ class FluxRobot(object):
         if upload_ret == "continue":
             logger.info(upload_ret)
         if upload_ret != "continue":
-            raise RuntimeError(upload_ret)
+            raise RobotError(upload_ret)
 
         logger.debug("Upload stream length: %i" % length)
 
@@ -302,7 +302,7 @@ class FluxRobot(object):
         if upload_ret == "continue":
             return self.sock
         else:
-            raise RuntimeError(upload_ret)
+            raise RobotError(upload_ret)
 
     @ok_or_error
     def begin_scan(self):
@@ -359,7 +359,7 @@ class FluxRobot(object):
                 return images
 
             else:
-                raise RuntimeError(resp)
+                raise RobotError(resp)
 
     def scanimages(self):
         self._send_cmd(b"scanimages")
@@ -374,7 +374,7 @@ class FluxRobot(object):
                 return images
 
             else:
-                raise RuntimeError(resp)
+                raise RobotError(resp)
 
     # Scan Tasks
     def taks_scanshot(self):

@@ -115,7 +115,7 @@ class AESSocket(object):
 
     def recv(self, size, flag=0):
         if flag & socket.MSG_PEEK > 0:
-            raise RuntimeError("MSG_PEEK is not allowed here!")
+            raise RobotError("BAD_PARAMS", "MSG_PEEK_NOT_ALLOWED")
 
         if self._decoder:
             buf = self._sock.recv(size, flag)
