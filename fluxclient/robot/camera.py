@@ -2,6 +2,8 @@
 from select import select
 import struct
 
+from .errors import RobotError
+
 
 class FluxCamera(object):
     __running__ = False
@@ -17,7 +19,7 @@ class FluxCamera(object):
             self.__buffer__ += b
         else:
             self.close()
-            raise RuntimeError("Broken pipe")
+            raise RobotError("DISCONNECTED")
         self.unpack_image(image_callback)
 
     def capture(self, image_callback):

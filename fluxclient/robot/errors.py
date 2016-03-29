@@ -3,9 +3,9 @@ class RobotError(Exception):
     pass
 
 
-class RobotNotReadyError(Exception):
+class RobotNotReadyError(RobotError):
     pass
 
 
-class RobotDisconnected(Exception):
+class RobotDisconnected(RobotError):
     pass
