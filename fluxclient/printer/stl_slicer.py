@@ -663,22 +663,32 @@ class StlSlicer(object):
         if cls.ascii_or_binary(file_data, byte_order):
             # ascii stl file
             instl = StringIO(file_data.decode('utf8'))
-            instl.readline()  # read in: "solid [name]"
 
+            def read_until(f):
+                """
+                eat all the empty line
+                """
+                while True:
+                    l = f.readline()
+                    if len(l.strip()) != 0:
+                        return l
+
+            read_until(instl)  # read in: "solid [name]"
             while True:
-                t = instl.readline()  # read in: "facet normal 0 0 0"
+                t = read_until(instl)  # read in: "facet normal 0 0 0"
+
                 if t[:8] != 'endsolid':  # end of file
                     read_normal = tuple(map(float, (t.split()[-3:])))
-                    instl.readline()   # outer loop
-                    v0 = tuple(map(float, (instl.readline().split()[-3:])))
-                    v1 = tuple(map(float, (instl.readline().split()[-3:])))
-                    v2 = tuple(map(float, (instl.readline().split()[-3:])))
+                    read_until(instl)   # outer loop
+                    v0 = tuple(map(float, (read_until(instl).split()[-3:])))
+                    v1 = tuple(map(float, (read_until(instl).split()[-3:])))
+                    v2 = tuple(map(float, (read_until(instl).split()[-3:])))
                     right_hand_mormal = normalize(normal([v0, v1, v2]))
                     if dot(right_hand_mormal, read_normal) < 0:
                         v1, v2 = v2, v1
 
-                    instl.readline()  # read in: "endloop"
-                    instl.readline()  # read in: "endfacet"
+                    read_until(instl)  # read in: "endloop"
+                    read_until(instl)  # read in: "endfacet"
 
                 else:
                     break
