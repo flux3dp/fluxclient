@@ -16,7 +16,7 @@ def connect(options):
         sys.stdout.flush()
         return True
 
-    camera = connect_camera(endpoint=endpoint, server_key=device.slave_key,
+    camera = connect_camera(endpoint=endpoint, device=device,
                             client_key=options.clientkey,
                             conn_callback=conn_callback)
 
@@ -24,9 +24,14 @@ def connect(options):
 
 
 def serve_forever(options, device, camera):
-    dataset = {"name": device.name, "uuid": device.uuid.hex,
-               "ip": device.endpoint[0], "model": device.model_id,
-               "serial": device.serial}
+    if device:
+        dataset = {"name": device.name, "uuid": device.uuid.hex,
+                   "ip": device.endpoint[0], "model": device.model_id,
+                   "serial": device.serial, "target": options.target}
+    else:
+        dataset = {"name": "unknown", "uuid": "unknown", "ip": "unknown",
+                   "model": "unknown", "serial": "unknown",
+                   "target": options.target}
 
     def callback(c, imagebuf):
         ts = datetime.now().strftime(options.strftime)
@@ -47,7 +52,7 @@ def main():
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
     parser.add_argument('--filename', dest='filename', type=str,
-                        default="%(uuid)s-%(time)s.jpg",
+                        default="%(target)s-%(time)s.jpg",
                         help='Save photo as filename')
     parser.add_argument('--strftime', dest='strftime', type=str,
                         default="%Y-%m-%d-%H-%M-%S-%f",

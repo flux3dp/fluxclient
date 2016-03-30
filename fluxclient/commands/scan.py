@@ -6,32 +6,36 @@ import logging
 import sys
 import os
 
-from fluxclient.robot.misc import require_robot
+from fluxclient.commands.misc import (get_or_create_default_key,
+                                      get_robot_endpoint)
 from fluxclient.robot import connect_robot
 from fluxclient.hw_profile import HW_PROFILE
-from fluxclient.commands.misc import get_or_create_default_key
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 
-def prepare_robot(endpoint, server_key, client_key):
+def prepare_robot(options):
     def conn_callback(*args):
         sys.stdout.write(".")
         sys.stdout.flush()
         return True
-    robot = connect_robot(endpoint, server_key=server_key,
-                          client_key=client_key, conn_callback=conn_callback)
-    pos = robot.position()
+
+    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
+    client = connect_robot(ipaddr, device=device,
+                           client_key=options.clientkey,
+                           conn_callback=conn_callback)
+
+    pos = client.position()
     if pos == "CommandTask":
-        robot.begin_scan()
+        client.begin_scan()
     elif pos == "ScanTask":
         pass
     else:
         raise RuntimeError("Unknow position: %s" % pos)
 
-    return robot
+    return client
 
 
 def logger_info(logger):
@@ -51,8 +55,8 @@ def logger_info(logger):
 def interactive(robot):
     logger_info(logger)
     total_steps = None
-    laser_Left = False
-    laser_Right = False
+    laser_left = False
+    laser_right = False
     while True:
         sys.stdout.write("> ")
         sys.stdout.flush()
@@ -102,11 +106,11 @@ def interactive(robot):
             robot.set_scanlen(step_len)
 
         elif l.startswith('L'):
-            laser_Left = not laser_Left
-            robot.scan_laser(laser_Left, laser_Right)
+            laser_left = not laser_left
+            robot.scan_laser(laser_left, laser_right)
         elif l.startswith('R'):
-            laser_Right = not laser_Right
-            robot.scan_laser(laser_Left, laser_Right)
+            laser_right = not laser_right
+            robot.scan_laser(laser_left, laser_right)
         elif l.startswith('q') or l.startswith('e'):
             robot.quit_task()
             robot.close()
@@ -159,8 +163,7 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    endpoint, server_key = require_robot(options.target, options.clientkey)
-    robot = prepare_robot(endpoint, server_key, options.clientkey)
+    robot = prepare_robot(options)
     robot.set_scanlen(HW_PROFILE['model-1']['scan_full_len'] / 400.)
 
     if not options.auto:
