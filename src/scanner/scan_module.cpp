@@ -229,12 +229,13 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXY
 
   // poisson.setConfidence(true);
   // poisson.setScale(1.0); // from 1.1 to 1.0
-  poisson.setDepth (8);
-  poisson.setIsoDivide(7);
-  // poisson.setSamplesPerNode(2);
+  poisson.setDepth (9);
+  poisson.setIsoDivide(5);
+  poisson.setSamplesPerNode(5.5); // smooth
+  // std::cout<< "Gk: " << poisson.getSamplesPerNode() << std::endl;
   // poisson.setDegree(2);
-  // poisson.setManifold(true);
-  // std::cout<< "Gk:" << std::endl;
+  poisson.setManifold(true);
+
   poisson.setInputCloud (cloud_with_normals);
   poisson.performReconstruction (*triangles);
 

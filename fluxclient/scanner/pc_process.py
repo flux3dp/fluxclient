@@ -110,6 +110,7 @@ class PcProcess():
         self.clouds[name_out] = pc_both
 
         self.cluster(name_out, name_out, self.settings.SegmentationDistance)
+
         self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
         self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
 
