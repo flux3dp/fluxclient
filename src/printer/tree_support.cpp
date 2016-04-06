@@ -28,6 +28,12 @@ struct cone{
     pos[2] = cone2.pos[2];
     theta = cone2.theta;
   }
+  cone(const cone &cone2){
+    pos[0] = cone2.pos[0];
+    pos[1] = cone2.pos[1];
+    pos[2] = cone2.pos[2];
+    theta = cone2.theta;
+  }
 };
 
 struct tri_data{

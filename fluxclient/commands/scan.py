@@ -118,6 +118,7 @@ def interactive(robot):
         elif l.startswith('c'):
             res = robot.scan_check()
             print(res)
+            print('(0: closed, 1: open, 3: open and find chess board)')
 
         elif l.startswith('d'):
             res = robot.calibrate()
