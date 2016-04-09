@@ -672,26 +672,33 @@ class StlSlicer(object):
                     l = f.readline()
                     if len(l.strip()) != 0:
                         return l
+                    if f.tell() == len(f.getvalue()):
+                        return ''
 
             read_until(instl)  # read in: "solid [name]"
             while True:
                 t = read_until(instl)  # read in: "facet normal 0 0 0"
 
-                if t[:8] != 'endsolid':  # end of file
-                    read_normal = tuple(map(float, (t.split()[-3:])))
-                    read_until(instl)   # outer loop
-                    v0 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    v1 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    v2 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    right_hand_mormal = normalize(normal([v0, v1, v2]))
-                    if dot(right_hand_mormal, read_normal) < 0:
-                        v1, v2 = v2, v1
+                # if not t.startswith('endsolid'):  # end of file
+                if t.startswith('endsolid'):
+                    tt = read_until(instl)
+                    if len(tt) == 0:
+                        break
+                    else:
+                        continue
 
-                    read_until(instl)  # read in: "endloop"
-                    read_until(instl)  # read in: "endfacet"
+                read_normal = tuple(map(float, (t.split()[-3:])))
+                read_until(instl)   # outer loop
+                v0 = tuple(map(float, (read_until(instl).split()[-3:])))
+                v1 = tuple(map(float, (read_until(instl).split()[-3:])))
+                v2 = tuple(map(float, (read_until(instl).split()[-3:])))
+                right_hand_mormal = normalize(normal([v0, v1, v2]))
+                if dot(right_hand_mormal, read_normal) < 0:
+                    v1, v2 = v2, v1
 
-                else:
-                    break
+                read_until(instl)  # read in: "endloop"
+                read_until(instl)  # read in: "endfacet"
+
                 face = []
                 for v in [v0, v1, v2]:
                     if v not in points:
