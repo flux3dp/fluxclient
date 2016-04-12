@@ -44,7 +44,7 @@ cdef extern from "scan_module.h":
 
     PointXYZRGBNormalPtr concatenatePointsNormal(PointCloudXYZRGBPtr cloud, NormalPtr normals)
 
-    int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
+    int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud, float smooth)
     int GPT(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
     int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
     int STL_to_List(MeshPtr triangles, vector[vector[vector [float]]] &data)
@@ -137,12 +137,12 @@ cdef class PointCloudXYZRGBObj:
         self.bothobj = concatenatePointsNormal(self.obj, self.normalObj)
         return 0
 
-    cpdef to_mesh(self, method='POS'):
+    cpdef to_mesh(self, param, method='POS'):
 
         self.concatenatePointsNormal()
         new_c = PointCloudXYZRGBObj()
         if method == 'POS':
-            POS(self.bothobj, self.meshobj, self.obj)
+            POS(self.bothobj, self.meshobj, self.obj, param[0])
         elif method == 'GPT':
             GPT(self.bothobj, self.meshobj, self.obj)
         return 0

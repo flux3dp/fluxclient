@@ -142,7 +142,7 @@ class PcProcess():
         pc = pc_both[0].add(pc_both[1])
         pc.ne_viewpoint(self.settings.NeighborhoodDistance)
         # pc.ne()
-        pc.to_mesh(method='POS')  # compute mesh
+        pc.to_mesh([5.5], method='POS')  # compute mesh
         return pc
 
     def dump(self, name):

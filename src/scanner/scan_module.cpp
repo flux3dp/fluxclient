@@ -1,8 +1,5 @@
 #include <iostream>
 #include <limits>
-// #include <functional>
-
-#include "scan_module.h"
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -12,11 +9,11 @@
 #include <pcl/surface/poisson.h>
 #include <pcl/conversions.h>
 #include <pcl/segmentation/extract_clusters.h>
-
 #include <pcl/console/print.h>
-
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/gp3.h>
+
+#include "scan_module.h"
 
 PointCloudXYZRGBPtr createPointCloudXYZRGB() {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (
@@ -222,7 +219,7 @@ MeshPtr createMeshPtr(){
   return mesh;
 }
 
-int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud){
+int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud, float smooth){
   puts("poisson computing");
 
   pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
@@ -231,8 +228,7 @@ int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXY
   // poisson.setScale(1.0); // from 1.1 to 1.0
   poisson.setDepth (9);
   poisson.setIsoDivide(5);
-  poisson.setSamplesPerNode(5.5); // smooth
-  // std::cout<< "Gk: " << poisson.getSamplesPerNode() << std::endl;
+  poisson.setSamplesPerNode(smooth); // smooth
   // poisson.setDegree(2);
   poisson.setManifold(true);
 

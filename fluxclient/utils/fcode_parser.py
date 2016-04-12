@@ -94,6 +94,7 @@ class FcodeParser(FcodeBase):
     def change_img(self, buf):
         if self.data:
             self.data = b''.join([self.data[:-(self.image_size + 4)], struct.pack('<I', len(buf)), buf])
+            self.image_size = len(buf)
             return True
         else:
             return False
