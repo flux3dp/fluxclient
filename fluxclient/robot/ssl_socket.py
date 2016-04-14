@@ -134,7 +134,7 @@ class SSLSocket(ssl.SSLSocket):
                     self.__buffered = None
                     self.__handshake_flag = __READY__
                 else:
-                    raise RobotError(repr(st))
+                    raise RobotError(st)
             else:
                 return __WAIT_ACK__
 

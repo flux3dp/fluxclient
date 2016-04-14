@@ -193,10 +193,13 @@ def after(l):
 if __name__ == '__main__':
     import subprocess
     from fluxclient.scanner.scan_settings import ScanSetting
-    m, l, r = [314.0, 325.0, 316.0]
-    # m -
+
+    m, l, r = 326.0, 320.0, 328.0
+
     ss = 400
     SS = ScanSetting()
+    SS.cab_m, SS.cab_l, SS.cab_r = m, l, r
+
     SS.LLaserAdjustment = int(m) - (SS.img_width / 2)
     SS.RLaserAdjustment = int(m) - (SS.img_width / 2)
     m_image_to_pc = image_to_pc(ss, SS)
@@ -205,7 +208,8 @@ if __name__ == '__main__':
 
     for i in range(ss):
         tmp = [open(img_location + '/' + str(i).zfill(3) + '_' + j + '.jpg', 'rb').read() for j in ['O', 'L', 'R']]
-        m_image_to_pc.feed(*tmp, step=i, l_cab=-10, r_cab=-10)
+        m_image_to_pc.feed(*tmp, step=i, l_cab=-SS.LLaserAdjustment, r_cab=-SS.RLaserAdjustment)
+
         print_progress(i, 400)
     print('')
     output = img_location + '.pcd'
@@ -213,4 +217,4 @@ if __name__ == '__main__':
     m_image_to_pc.merge()
     print('merge done')
     write_pcd(after(m_image_to_pc.points_M), output)
-    subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
+    subprocess.call(['python2', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))

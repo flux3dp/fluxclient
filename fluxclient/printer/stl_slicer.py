@@ -169,173 +169,6 @@ class StlSlicer(object):
         if self.path:
             return GcodeToFcode.path_to_js(self.path)
 
-    def gcode_generate(self, names, ws, output_type):
-        """
-        input: names of stl that need to be sliced
-        output:
-            if success:
-                gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
-            else:
-                False, [error message]
-        """
-        raise
-
-        # check if names are all seted
-        for n in names:
-            if not (n in self.models and n in self.parameter):
-                return False, '%s not set yet' % (n)
-
-        ws.send_progress('merging', 0.2)
-        m_mesh_merge = _printer.MeshObj([], [])
-        for n in names:
-            try:
-                points, faces = self.read_stl(self.models[n])
-            except:
-                return False, 'can\'t parse file, may not ba a stl file'
-            m_mesh = _printer.MeshObj(points, faces)
-            m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
-        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
-
-        bounding_box = m_mesh_merge.bounding_box()
-        cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
-
-        tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
-        tmp_stl_file = tmp.name  # store merged stl
-
-        m_mesh_merge.write_stl(tmp_stl_file)
-
-        tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
-        tmp_gcode_file = tmp.name  # store gcode
-
-        tmp = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
-        tmp_slic3r_setting_file = tmp.name  # store gcode
-
-        command = [self.slic3r, tmp_stl_file]
-
-        command += ['--output', tmp_gcode_file]
-        command += ['--print-center', '%f,%f' % (cx, cy)]
-
-        for key in self.user_setting:
-            if self.user_setting[key] != "default":
-                if key == 'print_peed':
-                    pass  # TODO
-                elif key == 'material':
-                    pass  # TODO
-                elif key == 'raft':
-                    if self.user_setting[key] == '0':
-                        self.config['raft_layers'] = '0'
-                    elif self.user_setting[key] == '1':
-                        self.config['raft_layers'] = '4'  # TODO?
-                elif key == 'support':
-                    self.config['support_material'] = self.user_setting[key]
-                elif key == 'layer_height':
-                    self.config['first_layer_height'] = self.user_setting[key]
-                    self.config['layer_height'] = self.user_setting[key]
-                elif key == 'infill':
-                    fill_density = float(self.user_setting[key]) * 100
-                    fill_density = max(min(fill_density, 99), 0)
-                    self.config['fill_density'] = str(fill_density) + '%'
-                elif key == 'traveling_speed':
-                    self.config['travel_speed'] = self.user_setting[key]
-                elif key == 'extruding_speed':
-                    self.config['perimeter_speed'] = self.user_setting[key]
-                    self.config['infill_speed'] = self.user_setting[key]
-                elif key == 'temperature':
-                    self.config['temperature'] = self.user_setting[key]
-                    self.config['first_layer_temperature'] = self.user_setting[key] + 5
-
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config)
-
-        command += ['--load', tmp_slic3r_setting_file]
-
-        logger.debug('command: ' + ' '.join(command))
-
-        fail_flag = False
-
-        p = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-        progress = 0.2
-        slic3r_error = False
-        while p.poll() is None:
-            line = p.stdout.readline()
-            logger.debug(line.rstrip())
-            sys.stderr.flush()
-            if line:
-                if line.startswith('=> ') and not line.startswith('=> Exporting'):
-                    progress += 0.12
-                    ws.send_progress((line.rstrip())[3:], progress)
-                elif "Unable to close this loop" in line:
-                    slic3r_error = True
-                slic3r_out = line.strip()
-        if p.poll() != 0:
-            fail_flag = True
-
-        # TODO: design a intermedia data structure for gcode and write a general preprocessor
-        if self.config['flux_raft'] == '1':
-            m_preprocessor = Raft()
-            raft_output = StringIO()
-            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
-            raft_output = raft_output.getvalue()
-            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
-                print(raft_output, file=f)
-
-        # analying gcode(even transform)
-        ws.send_progress('Analyzing Metadata', 0.99)
-
-        fcode_output = BytesIO()
-        with open(tmp_gcode_file, 'r') as f:
-            m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
-            m_GcodeToFcode.config = self.config
-            m_GcodeToFcode.image = self.image
-            m_GcodeToFcode.process(f, fcode_output)
-
-            self.path = m_GcodeToFcode.path
-            metadata = m_GcodeToFcode.md
-            metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-            if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                ws.send_warning("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer)))
-
-            if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
-                fail_flag = True
-                slic3r_out = "gcode area too big"
-            del m_GcodeToFcode
-
-        if output_type == '-g':
-            with open(tmp_gcode_file, 'rb') as f:
-                output = f.read()
-        elif output_type == '-f':
-            output = fcode_output.getvalue()
-        else:
-            raise('wrong output type, only support gcode and fcode')
-
-        ##################### fake code ###########################
-        if environ.get("flux_debug") == '1':
-            with open('output.gcode', 'wb') as f:
-                with open(tmp_gcode_file, 'rb') as f2:
-                    f.write(f2.read())
-
-            with open(tmp_stl_file, 'rb') as f:
-                with open('merged.stl', 'wb') as f2:
-                    f2.write(f.read())
-
-            with open('output.fc', 'wb') as f:
-                f.write(fcode_output.getvalue())
-
-            self.my_ini_writer("output.ini", self.config)
-        ###########################################################
-
-        # clean up tmp files
-        fcode_output.close()
-        for f in [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file]:
-            try:
-                remove(f)
-            except:
-                pass
-        if fail_flag:
-            return False, slic3r_out
-        else:
-            return output, metadata
-
     def begin_slicing(self, names, ws, output_type):
         """
         input: names of stl that need to be sliced
@@ -672,26 +505,33 @@ class StlSlicer(object):
                     l = f.readline()
                     if len(l.strip()) != 0:
                         return l
+                    if f.tell() == len(f.getvalue()):
+                        return ''
 
             read_until(instl)  # read in: "solid [name]"
             while True:
                 t = read_until(instl)  # read in: "facet normal 0 0 0"
 
-                if t[:8] != 'endsolid':  # end of file
-                    read_normal = tuple(map(float, (t.split()[-3:])))
-                    read_until(instl)   # outer loop
-                    v0 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    v1 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    v2 = tuple(map(float, (read_until(instl).split()[-3:])))
-                    right_hand_mormal = normalize(normal([v0, v1, v2]))
-                    if dot(right_hand_mormal, read_normal) < 0:
-                        v1, v2 = v2, v1
+                # if not t.startswith('endsolid'):  # end of file
+                if t.startswith('endsolid'):
+                    tt = read_until(instl)
+                    if len(tt) == 0:
+                        break
+                    else:
+                        continue
 
-                    read_until(instl)  # read in: "endloop"
-                    read_until(instl)  # read in: "endfacet"
+                read_normal = tuple(map(float, (t.split()[-3:])))
+                read_until(instl)   # outer loop
+                v0 = tuple(map(float, (read_until(instl).split()[-3:])))
+                v1 = tuple(map(float, (read_until(instl).split()[-3:])))
+                v2 = tuple(map(float, (read_until(instl).split()[-3:])))
+                right_hand_mormal = normalize(normal([v0, v1, v2]))
+                if dot(right_hand_mormal, read_normal) < 0:
+                    v1, v2 = v2, v1
 
-                else:
-                    break
+                read_until(instl)  # read in: "endloop"
+                read_until(instl)  # read in: "endfacet"
+
                 face = []
                 for v in [v0, v1, v2]:
                     if v not in points:

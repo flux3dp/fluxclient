@@ -14,6 +14,7 @@ cdef extern from "printer_module.h":
     int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z)
     int bounding_box(MeshPtr triangles, vector[float] &b_box)
     int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v)
+    int mesh_len(MeshPtr input_mesh)
 
 cdef extern from "tree_support.h":
     int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha)
@@ -45,6 +46,9 @@ cdef class MeshObj:
         out_mesh = MeshObj([], [])
         cut(self.meshobj, out_mesh.meshobj, floor_v)
         return out_mesh
+
+    def __len__(self):
+        return mesh_len(self.meshobj)
 
     cpdef write_stl(self, file_name, flag=None):
         cpdef vector[vector [vector [float]]] tri

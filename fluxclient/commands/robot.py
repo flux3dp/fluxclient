@@ -42,7 +42,7 @@ def robot_shell(options):
             logger = setup_logger(console)
             ipaddr, device = get_robot_endpoint(options.target,
                                                 options.clientkey, console)
-            client = connect_robot(ipaddr=ipaddr, server_key=device.slave_key,
+            client = connect_robot(ipaddr, device=device,
                                    client_key=options.clientkey,
                                    conn_callback=conn_callback)
             from fluxclient.robot_console import RobotConsole
@@ -73,8 +73,8 @@ def ipython_shell(options):
         return True
 
     ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
-    robot_client = connect_robot(ipaddr=ipaddr,  # noqa
-                                 server_key=device.slave_key,
+    robot_client = connect_robot(ipaddr,  # noqa
+                                 device=device,
                                  client_key=options.clientkey,
                                  conn_callback=conn_callback)
 
@@ -93,7 +93,7 @@ def simple_shell(options):
         return True
 
     ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
-    client = connect_robot(ipaddr=ipaddr, server_key=device.slave_key,
+    client = connect_robot(ipaddr, device=device,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
     from fluxclient.robot_console import RobotConsole

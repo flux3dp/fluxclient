@@ -32,7 +32,7 @@ def is_windows():
 class UsbTask(object):
     s = None
 
-    def __init__(self, port, baudrate=115200):
+    def __init__(self, port, client_key=None, baudrate=115200):
         # Select does not work with windows..
         if is_windows():
             self.s = Serial(port=port, baudrate=115200, timeout=0.1)
@@ -52,7 +52,10 @@ class UsbTask(object):
                 else:
                     break
 
-        self.keyobj = KeyObject.get_or_create_keyobj()
+        if client_key:
+            self.keyobj = client_key
+        else:
+            self.keyobj = KeyObject.get_or_create_keyobj()
         self._discover()
 
     def _discover(self):

@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <limits>
 
-#include <pcl/filters/voxel_grid.h>
 #include "printer_module.h"
 
 
@@ -356,12 +355,6 @@ int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
   return 0;
 }
 
-
-
-
-
-
-
-
-
-
+int mesh_len(MeshPtr triangles){
+  return triangles->polygons.size();
+}

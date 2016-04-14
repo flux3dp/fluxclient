@@ -28,6 +28,12 @@ struct cone{
     pos[2] = cone2.pos[2];
     theta = cone2.theta;
   }
+  cone(const cone &cone2){
+    pos[0] = cone2.pos[0];
+    pos[1] = cone2.pos[1];
+    pos[2] = cone2.pos[2];
+    theta = cone2.theta;
+  }
 };
 
 struct tri_data{
@@ -182,7 +188,7 @@ int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha){
 
   std::vector< std::pair<int, float> > P_v;  // main index list, first = index of P, second = z-coordinate
   for (size_t i = 0; i < P -> points.size(); i += 1){
-    C[i] = cone(P -> points[i].x, P -> points[i].y, P -> points[i].z, alpha);
+    C[i] = cone((float)P -> points[i].x, (float)P -> points[i].y, (float)P -> points[i].z, alpha);
     P_v.push_back(std::pair<int, float>(i, P -> points[i].z));
   }
   sort(P_v.begin(), P_v.end(), sort_by_second);
@@ -410,8 +416,8 @@ int find_support_point(MeshPtr triangles, float alpha, float sample_rate, pcl::P
       b[2] = (*cloud)[(triangles->polygons[i]).vertices[2]].z - (*cloud)[(triangles->polygons[i]).vertices[1]].z;
       la = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
       lb = sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-      int ia = (int)(la / (sample_rate / 10.));
-      int ib = (int)(lb / (sample_rate / 10.));
+      size_t ia = (size_t)(la / (sample_rate / 10.));
+      size_t ib = (size_t)(lb / (sample_rate / 10.));
       // std::cout<< "ia:"<< ia << " " << ib << std::endl;
 
       for (size_t j = 0; j < ia; j += 1){
