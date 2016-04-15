@@ -13,17 +13,17 @@ from .misc import msg_waitall
 logger = logging.getLogger(__name__)
 
 
-def connect_camera(endpoint, device=None, server_key=None, client_key=None,
+def connect_camera(endpoint, metadata=None, server_key=None, client_key=None,
                    conn_callback=None):
     s = _connect(endpoint, conn_callback)
     s.settimeout(8)
 
     version = msg_waitall(s, 8)
-    wrap_sock = _select_wrapper(s, version, device, server_key, client_key)
+    wrap_sock = _select_wrapper(s, version, metadata, server_key, client_key)
     return FluxCamera(wrap_sock)
 
 
-def connect_robot(endpoint, device=None, server_key=None, client_key=None,
+def connect_robot(endpoint, metadata=None, server_key=None, client_key=None,
                   conn_callback=None):
     # TODO: argument will be change after next fluxghost release
     if not client_key:
@@ -34,7 +34,7 @@ def connect_robot(endpoint, device=None, server_key=None, client_key=None,
     s.settimeout(8)
 
     version = msg_waitall(s, 8)
-    wrap_sock = _select_wrapper(s, version, device, server_key, client_key)
+    wrap_sock = _select_wrapper(s, version, metadata, server_key, client_key)
     return FluxRobot(wrap_sock)
 
 
@@ -56,21 +56,21 @@ def _connect(endpoint, conn_callback):
             raise
 
 
-def _select_wrapper(sock, version, device=None, server_key=None,
+def _select_wrapper(sock, version, metadata=None, server_key=None,
                     client_key=None):
     if version[:4] != b"FLUX":
         raise RobotError("Magic number error")
     elif version[4:] == b"0002":
-        if not server_key and device:
-            server_key = device.slave_key
+        if not server_key and metadata:
+            server_key = metadata["slave_key"]
 
         aessock = AESSocket(sock, server_key=server_key, client_key=client_key)
         while not aessock.do_handshake():
             pass
         return aessock
     elif version[4:] == b"0003":
-        if not server_key and device:
-            server_key = device.master_key
+        if not server_key and metadata:
+            server_key = metadata["master_key"]
         sslsock = SSLSocket(sock, server_key=server_key, client_key=client_key)
         while sslsock.do_handshake() != 0:
             pass

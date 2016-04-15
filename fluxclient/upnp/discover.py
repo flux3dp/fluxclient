@@ -8,7 +8,7 @@ import select
 import socket
 import struct
 
-from .misc import DEFAULT_IPADDR, DEFAULT_PORT, validate_identify
+from .misc import validate_identify
 from fluxclient.encryptor import KeyObject
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
+MULTICAST_IPADDR = "239.255.255.250"
+MULTICAST_PORT = 1901
 MULTICAST_VERSION = 1
 
 
@@ -47,25 +49,25 @@ class UpnpDiscover(object):
     _last_sent = 0
     _send_freq = INIT_PING_FREQ
 
-    def __init__(self, uuid=None, ipaddr=DEFAULT_IPADDR, port=DEFAULT_PORT):
+    def __init__(self, uuid=None, device_ipaddr=None,
+                 mcst_ipaddr=MULTICAST_IPADDR, mcst_port=MULTICAST_PORT):
         self.history = {}
 
-        self.ipaddr = ipaddr
-        self.port = port
         self.uuid = uuid
+        self.device_ipaddr = device_ipaddr
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        mreq = struct.pack("4sl", socket.inet_aton(DEFAULT_IPADDR),
+        mreq = struct.pack("4sl", socket.inet_aton(mcst_ipaddr),
                            socket.INADDR_ANY)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
                              mreq)
 
         if platform.system() == "Windows":
-            self.sock.bind(("", self.port))
+            self.sock.bind(("", mcst_port))
         else:
-            self.sock.bind((DEFAULT_IPADDR, self.port))
+            self.sock.bind((mcst_ipaddr, mcst_port))
 
         self.handlers = (None, Version1Helper(self))
 
@@ -76,9 +78,11 @@ class UpnpDiscover(object):
         # TODO
         self.handlers[-1].poke(ipaddr)
 
-    def limited_uuid(self, uuid):
-        if self.uuid:
-            return self.uuid == uuid
+    def source_filter(self, uuid, endpoint):
+        if self.uuid and self.uuid != uuid:
+            return False
+        elif self.device_ipaddr and self.device_ipaddr != endpoint[0]:
+            return False
         else:
             return True
 
@@ -174,7 +178,7 @@ class Version1Helper(object):
     def poke(self, ipaddr):
         payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
                               UUID(int=0).bytes)
-        self.sock.sendto(payload, (ipaddr, DEFAULT_PORT))
+        self.sock.sendto(payload, (ipaddr, MULTICAST_PORT))
 
     def handle_message(self, endpoint, action_id, payload):
         if action_id == 0:
@@ -190,7 +194,7 @@ class Version1Helper(object):
         l_master_pkey, l_signuture = args[3:]
 
         uuid = UUID(bytes=uuid_bytes)
-        if not self.server.limited_uuid(uuid):
+        if not self.server.source_filter(uuid, endpoint):
             return
 
         f = BytesIO(payload[34:])
@@ -204,33 +208,32 @@ class Version1Helper(object):
         master_pkey = KeyObject.load_keyobj(masterkey_doc)
         uuid = UUID(bytes=uuid_bytes)
 
-        if self.server.limited_uuid(uuid):
-            if self.server.in_history(uuid, master_ts):
-                try:
-                    stbuf = f.read(64)
-                    st_ts, st_id, st_prog, st_head, st_err = \
-                        struct.unpack("dif16s32s", stbuf)
+        if self.server.in_history(uuid, master_ts):
+            try:
+                stbuf = f.read(64)
+                st_ts, st_id, st_prog, st_head, st_err = \
+                    struct.unpack("dif16s32s", stbuf)
 
-                    head_module = st_head.decode("ascii",
-                                                 "ignore").strip("\x00")
-                    error_label = st_err.decode("ascii",
-                                                "ignore").strip("\x00")
-                    dataset = self.server.history[uuid]
-                    dataset.update({
-                        "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
-                        "st_ts": st_ts, "head_module": head_module,
-                        "error_label": error_label})
-                    return uuid
-                except Exception:
-                    basic_info = self.server.history[uuid]
-                    if basic_info["version"] > "0.13a":
-                        logger.exception("Unpack status failed")
-            else:
-                self.server.add_master_key(uuid, sn.decode("ascii"),
-                                           master_pkey)
-                payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-                                      2, uuid.bytes)
-                self.sock.sendto(payload, endpoint)
+                head_module = st_head.decode("ascii",
+                                             "ignore").strip("\x00")
+                error_label = st_err.decode("ascii",
+                                            "ignore").strip("\x00")
+                dataset = self.server.history[uuid]
+                dataset.update({
+                    "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
+                    "st_ts": st_ts, "head_module": head_module,
+                    "error_label": error_label})
+                return uuid
+            except Exception:
+                basic_info = self.server.history[uuid]
+                if basic_info["version"] > "0.13a":
+                    logger.exception("Unpack status failed")
+        else:
+            self.server.add_master_key(uuid, sn.decode("ascii"),
+                                       master_pkey)
+            payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
+                                  2, uuid.bytes)
+            self.sock.sendto(payload, endpoint)
 
     def handle_touch(self, endpoint, payload):
         f = BytesIO(payload)
@@ -238,7 +241,7 @@ class Version1Helper(object):
         buuid, master_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
         uuid = UUID(bytes=buuid)
 
-        if not self.server.limited_uuid(uuid):
+        if not self.server.source_filter(uuid, endpoint):
             # Ingore this uuid
             return
 
@@ -274,6 +277,7 @@ class Version1Helper(object):
                 data["name"] = rawdata.get("name", "NONAME")
                 data["has_password"] = raw_has_password == "T"
                 data["ipaddr"] = endpoint
+                data["endpoint"] = endpoint
                 self.server.update_history(uuid, data)
 
                 return uuid
