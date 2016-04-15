@@ -6,9 +6,9 @@ from .laser_base import LaserBase
 
 
 class Matrix(object):
-    '''
+    """
     A matrix class that support matrix multipying
-    '''
+    """
     def __init__(self, num=3):
         self.M = [[0.0 for __ in range(3)] for _ in range(num)]
 

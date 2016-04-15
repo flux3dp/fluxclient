@@ -3,8 +3,7 @@ import struct
 from operator import ge, le
 import logging
 from io import BytesIO, StringIO
-import sys
-import bisect
+from bisect import bisect
 import copy
 from math import sqrt, asin, pi, radians, cos, sin
 
@@ -34,6 +33,12 @@ class PcProcess():
         logger.debug('all:' + " ".join(self.clouds.keys()))
 
     def import_file(self, name, buf, filetype):
+        """
+        import file from file not from machine
+        [in] name: name of the point cloud
+        [in] buf: file content
+        [in] filetype: filetype, now only support pcd, should support ply in the future
+        """
         if filetype == 'pcd':
             try:
                 tmp = read_pcd(buf)
@@ -43,12 +48,13 @@ class PcProcess():
             except:
                 return False, "Import fail, file broken?"
         else:
-            print("can't parse {} file".format(filetype), file=sys.stderr)
+            logger.warning("can't parse {} file".format(filetype))
             raise NotImplementedError
 
     def unpack_data(self, buffer_data):
         """
-            unpack buffer data into [[x, y, z, r, g, b]]
+        unpack buffer data into [[x, y, z, r, g, b]]
+        [in] buffer_data:
         """
         assert len(buffer_data) % 24 == 0, "wrong buffer size %d (can't devide by 24)" % (len(buffer_data) % 24)
         pc = []
@@ -79,9 +85,9 @@ class PcProcess():
 
     def cut(self, name_in, name_out, mode, direction, value):
         """
-            manually cut the point cloud
-            mode = 'x', 'y', 'z' ,'r'
-            direction = True(>=), False(<=)
+        manually cut the point cloud
+        mode = 'x', 'y', 'z' ,'r'
+        direction = True(>=), False(<=)
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
@@ -95,7 +101,6 @@ class PcProcess():
         """
         delete noise base on distance of each point
         pc_source could be a string indcating the point cloud that we want
-
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
         pc = [i.clone() for i in self.clouds[name_in]]
@@ -115,6 +120,9 @@ class PcProcess():
         self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
 
     def cluster(self, name_in, name_out, thres=2):
+        """
+        make a cluster from the input cloud, can help deleting the noise by removing cluster that are too small
+        """
         pc = self.clouds[name_in]
         logger.debug('cluster {} points'.format(len(pc[0]) + len(pc[1])))
         pc0_size = len(pc[0])
@@ -134,9 +142,12 @@ class PcProcess():
         self.clouds[name_out] = tmp_pc
 
     def to_mesh(self, name_in):
+        """
+        convert point cloud to mesh
+        """
         logger.debug('to_mesh name:%s' % name_in)
-        pc_both = self.clouds[name_in]
 
+        pc_both = self.clouds[name_in]
         # WARNING: merge L and R here!
         # pc = pc_both[0].clone()
         pc = pc_both[0].add(pc_both[1])
@@ -147,7 +158,7 @@ class PcProcess():
 
     def dump(self, name):
         """
-        dump the indicated(name) cloud
+        dump the indicated(name) cloud, dumping
         """
         logger.debug('dumping ' + name)
 
@@ -166,6 +177,12 @@ class PcProcess():
         return pc_size[0], pc_size[1], buffer_data
 
     def export(self, name, file_format, mode='binary'):
+        """
+        export as a file
+        [in] name: the name of desired pc
+        [in] file_format: output as .pcd, .ply, .stl file
+        [in] mode: if using stl mode, you can specified ascii or binary stl file
+        """
         if file_format == 'pcd':
             pc_both = self.clouds[name]
             # WARNING: merge L and R here!
@@ -228,6 +245,11 @@ class PcProcess():
         self.clouds[name_out] = new_pc
 
     def merge(self, name_base, name_2, name_out):
+        """
+        simply add two pc together
+        [in] name_base, name_2
+        [out] name_out
+        """
         logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
         both_pc = []
         for i in range(2):
@@ -236,6 +258,9 @@ class PcProcess():
             both_pc.append(pc_new)
 
         self.clouds[name_out] = both_pc
+
+    def cone_bottom(self, name_in, name_out, z_value, thick=5):
+        pass
 
     def closure(self, name_in, name_out, z_value, floor, thick=5):
         if floor:
@@ -261,7 +286,7 @@ class PcProcess():
         after = [points[0]]  # find out the boarder points
 
         for p in points[1:]:
-            tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
+            tmp_index = bisect(rec, p[1])  # binary search where to insert
             if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval and abs(after[0][0][2] - p[0][2]) < thick:
                 rec.insert(tmp_index, p[1])
                 after.append(p)
@@ -365,36 +390,3 @@ class PcProcess():
 
         self.clouds[name_out] = new_pc
         return True
-
-
-class PcProcessNoPCL(PcProcess):
-    """docstring for PcProcessNoPCL"""
-    def __init__(self):
-        super(PcProcessNoPCL, self).__init__()
-
-    def delete_noise(self, name_in, name_out, stddev):
-        """
-        delete noise base on distance of each point
-        pc_source could be a string indcating the point cloud that we want
-
-        """
-        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = self.clouds[name_in]
-        pc_both_o = []
-        for pc in pc_both:
-            pc_o = []
-            for p in pc:
-                # pc_o.append([p[0], p[1], p[2], len(pc_both), 0, 0])
-                pc_o.append([p[0], p[1], p[2], 255 - 255 * len(pc_both_o), 0, 0])
-            pc_both_o.append(pc_o)
-
-        pc_both_o.reverse()
-        self.clouds[name_out] = pc_both_o
-        return 0
-
-    def merge(self, name_base, name_2, name_out):
-        self.clouds[name_out] = self.clouds[name_base]
-        return True
-
-    def export(self, name, file_format):
-        return b"FLUX 3d printer: flux3dp.com, 2015                                              \x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00"
