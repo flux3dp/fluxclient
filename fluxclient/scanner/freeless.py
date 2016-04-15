@@ -21,16 +21,16 @@ def pre_cut(img, x=0, y=0, w=None, h=None):
 
 class freeless():
 
-    '''
+    """
       freeless algorithm base on: http://www.freelss.org/
-    '''
+    """
 
     def __init__(self, laserX, laserZ, scan_settings):
-        '''
+        """
           m_maxLaserWidth, m_minLaserWidth: red dots width within this range will be considered valid laser points
           firstRowLaserCol : red dot location of previous scanning step, reference for next step
           RANGE_DISTANCE_THRESHOLD : two range will be merged if their distance is small than this variable
-        '''
+        """
         self.settings = scan_settings
         self.m_laserRanges = []
         self.m_maxLaserWidth = scan_settings.MAXLaserRange
@@ -50,7 +50,7 @@ class freeless():
         self.place = {}
 
     def img_to_points(self, img_o, img_red, indices, step, side, cab_offset, clock=False):
-        '''
+        """
         convert indices on the image into x-y-z-rgb points
         return  [
                                 p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y],
@@ -61,7 +61,7 @@ class freeless():
 
         [WARNING] coordinate change here!!!!!!!!!!!
                   switch y, z
-        '''
+        """
         points = []
         _step = step  # real step
 
@@ -105,9 +105,9 @@ class freeless():
         return new_points
 
     def intersectLaserPlane(self, ray):
-        '''
+        """
 
-        '''
+        """
         # Reference: http://www.scratchapixel.com/lessons/3d-basic-lessons/lesson-7-intersecting-simple-shapes/ray-plane-and-ray-disk-intersection/
         # d = ((p0 - l0) * n) / (l * n)
 
@@ -137,12 +137,12 @@ class freeless():
         return True, point
 
     def calculateCameraRay(self, x, y):
-        '''
+        """
           calculate a ray at x, y, z, direction from camera to x, y, z
           return ray : [[x,y,z], [direction_x, direction_y, direction_z]]
           warning coord change!!!!!!!!!!!
           in image:y goes down, in realworld :y goes up
-        '''
+        """
         # if (x, y) in self.place:
         #     return self.place[(x, y)]
 
@@ -161,8 +161,8 @@ class freeless():
         return ray
 
     def writeTrianglesForColumn(self, lastFrame, currentFrame, tri):
-        '''
-        '''
+        """
+        """
         iCur = 0
         for iLst in range(len(lastFrame) - 1):
             l1 = lastFrame[iLst]
@@ -191,8 +191,8 @@ class freeless():
         return tri
 
     def stl_writer(self, results, file_name):
-        '''
-        '''
+        """
+        """
         step = 0
         tri = []
         lastFrame = []
@@ -220,10 +220,10 @@ class freeless():
         write_stl(tri, file_name)
 
     def subProcess(self, img1, img2, maxNumLocations):
-        '''
+        """
           find out the location of the laser dots
           return a list of indices [[x,y], [x,y], [x,y]]
-        '''
+        """
         laserLocations = []
         numMerged = 0
         prevLaserCol = self.firstRowLaserCol
@@ -317,11 +317,11 @@ class freeless():
         return laserLocations
 
     def detectBestLaserRange(self, laserRanges, prevLaserCol):
-        '''
+        """
           determine which is the best candidate from laserRanges
           i.e. the nearest one to the previous row's
           return index of the best one
-        '''
+        """
         bestRange_index = 0
         dis_best = abs(laserRanges[0][2] - prevLaserCol)
         for i in range(1, len(laserRanges) - 1):  # last one is [-1, -1, None]
@@ -332,13 +332,13 @@ class freeless():
         return bestRange_index
 
     def detectLaserRangeCenter(self, bestRange, img1, img2, row):
-        '''
+        """
           find the Center of bestrange
           use Weighted arithmetic mean
           return int
 
           [TODO] in freelss/src/ImageProcessor.cpp ImageProcessor::detectLaserRangeCenter: two more center algorithm to try?
-        '''
+        """
         d = abs((img1[row][bestRange[0]:bestRange[1]]).astype(int) - (img2[row][bestRange[0]:bestRange[1]]).astype(int))
         d = d.astype(int)
         d = np.multiply(d, d)

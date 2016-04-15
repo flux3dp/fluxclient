@@ -38,9 +38,9 @@ class image_to_pc():
         self.steps = steps
 
     def to_image(self, buffer_data):
-        '''
+        """
             convert buffer_data(bytes readin from jpg) into image -> (numpy.ndarray, uint8)
-        '''
+        """
         f = BytesIO(buffer_data)
         im = Image.open(f)
         im_array = np.array(im)
@@ -50,11 +50,11 @@ class image_to_pc():
         return im_array
 
     def feed(self, buffer_O, buffer_L, buffer_R, step, l_cab, r_cab):
-        '''
+        """
             feed 3 picture buffer and a step index
             note that this step index is the input
             p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y]
-        '''
+        """
 
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
@@ -76,16 +76,17 @@ class image_to_pc():
         return [self.points_to_bytes(point_L_this), self.points_to_bytes(point_R_this)]
 
     def points_to_bytes(self, points):
-        '''
+        """
         convert points to bytes
-        input format: [
-                                    p1[x-coordinate, y-coord, z-coord, r, g, b],
-                                    p2[x-coordinate, y-coord, z-coord, r, g, b],
-                                    p3[x-coordinate, y-coord, z-coord, r, g, b],
-                                      ...
-                      ]
+        input format::
+
+        [[x-coordinate, y-coord, z-coord, r, g, b],
+         [x-coordinate, y-coord, z-coord, r, g, b],
+         [x-coordinate, y-coord, z-coord, r, g, b]
+         ]
+
         output format: check https://github.com/flux3dp/fluxghost/wiki/websocket-3dscan-control
-        '''
+        """
         return [struct.pack('<ffffff', p[0], p[1], p[2], p[3] / 255., p[4] / 255., p[5] / 255.) for p in points]
 
     def merge(self):
