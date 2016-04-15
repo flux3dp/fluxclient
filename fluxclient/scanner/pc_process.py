@@ -239,17 +239,17 @@ class PcProcess():
 
     def closure(self, name_in, name_out, z_value, floor, thick=5):
         if floor:
-            logger.debug('adding floor at {}'.format(floor))
+            logger.debug('adding floor at {}'.format(z_value))
         else:
-            logger.debug('adding ceiling at {}'.format(floor))
+            logger.debug('adding ceiling at {}'.format(z_value))
 
         points = []
         out_pc = [i.clone() for i in self.clouds[name_in]]
 
-        self.cut(name_out, name_out, 'z', floor, z_value)
+        self.cut(name_out, name_out, 'z', floor, z_value)  # what the fuck
         for i in range(2):
-            for z in range(len(out_pc[i])):
-                points.append(out_pc[i][z])
+            for p in range(len(out_pc[i])):
+                points.append(out_pc[i][p])
 
         # get near floor and a ring point set
         points = [[p, asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2)) if p[0] > 0 else pi - asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2))] for p in points]  # add theta data
@@ -302,6 +302,7 @@ class PcProcess():
         x = np.array([p[0] for p in plane])
         y = np.array([p[1] for p in plane])
         z = np.array([p[2] for p in plane])
+        rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
 
         # for p in plane:
         #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
@@ -316,7 +317,6 @@ class PcProcess():
             for j in range(3):
                 color[j] += i[j + 3]
         color = [i / len(after) for i in color]
-        rbf = Rbf(x, y, z, function='linear', smooth=1)
         # color = [255, 0, 0]
 
         ZI = rbf(XI, YI)
