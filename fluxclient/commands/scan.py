@@ -22,9 +22,9 @@ def prepare_robot(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, device = get_device_endpoint(options.target, options.clientkey,
-                                         23811)
-    client = connect_robot(ipaddr, device=device,
+    ipaddr, metadata = get_device_endpoint(options.target, options.clientkey,
+                                           23811)
+    client = connect_robot(ipaddr, metadata=metadata,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
 
