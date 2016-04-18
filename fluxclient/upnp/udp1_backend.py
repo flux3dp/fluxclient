@@ -25,7 +25,7 @@ CODE_RESPONSE_CHANGE_PWD = 0xa1
 CODE_SET_NETWORK = 0xa2
 CODE_RESPONSE_SET_NETWORK = 0xa3
 
-SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b2"))
+SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b1"))
 
 
 class UpnpUdp1Backend(UpnpAbstractBackend):
@@ -174,7 +174,10 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
     def rename(self, new_name):
         raise NotSupportError(self.model_id, self.version)
 
-    def modify_password(self, old_password, new_password):
+    def modify_password(self, old_password, new_password, reset_acl):
+        if reset_acl is False:
+            raise NotSupportError("Reset ACL can not be false on this version")
+
         req_code = CODE_CHANGE_PWD
         resp_code = CODE_RESPONSE_CHANGE_PWD
 

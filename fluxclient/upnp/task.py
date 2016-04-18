@@ -3,8 +3,11 @@ from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
 from .abstract_backend import NotSupportError
 from .udp1_backend import UpnpUdp1Backend
+from .ssl1_backend import UpnpSSL1Backend
 
-BACKENDS = [UpnpUdp1Backend]
+BACKENDS = [
+    UpnpSSL1Backend,
+    UpnpUdp1Backend]
 
 
 class UpnpTask(object):
@@ -22,6 +25,7 @@ class UpnpTask(object):
                  backend_options={}, lookup_callback=None,
                  lookup_timeout=float("INF")):
         self.uuid = uuid
+        self.ipaddr = ipaddr
         self.client_key = client_key
         self.backend_options = backend_options
 
@@ -69,11 +73,11 @@ class UpnpTask(object):
     def rename(self, new_name):
         self._backend.rename(new_name)
 
-    def modify_password(self, old_password, new_password):
-        self._backend.modify_password(old_password, new_password)
+    def modify_password(self, old_password, new_password, reset_acl=True):
+        self._backend.modify_password(old_password, new_password, reset_acl)
 
-    def modify_network(self, settings):
-        self._backend.modify_network(settings)
+    def modify_network(self, **settings):
+        self._backend.modify_network(**settings)
 
     def get_wifi_list(self):
         return self._backend.get_wifi_list()

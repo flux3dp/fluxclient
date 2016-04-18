@@ -9,7 +9,9 @@ from fluxclient.encryptor import KeyObject
 from fluxclient.upnp import UpnpDiscover
 
 
-def setup_logger(name, stdout=sys.stderr, level=logging.INFO):
+def setup_logger(name, stdout=sys.stderr, debug=False):
+    level = logging.DEBUG if debug else logging.INFO
+
     logging.basicConfig(format="%(message)s", stream=stdout)
     logger = logging.getLogger(name)
     logger.setLevel(level)

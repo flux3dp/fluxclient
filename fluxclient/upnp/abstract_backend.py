@@ -32,7 +32,7 @@ class UpnpAbstractBackend(object):
         pass
 
     @abc.abstractmethod
-    def modify_password(self, old_password, new_password):
+    def modify_password(self, old_password, new_password, reset_acl):
         pass
 
     @abc.abstractmethod
@@ -45,20 +45,27 @@ class UpnpAbstractBackend(object):
 
 
 class UpnpError(RuntimeError):
-    error_label = "UNKNOWN_ERROR"
+    def __init__(self, *args, **kw):
+        super(UpnpError, self).__init__(*args)
+        if "err_symbol" in kw:
+            self.err_symbol = kw["err_symbol"]
+        else:
+            self.err_symbol = ("UNKNOWN_ERROR")
 
 
-class NotSupportError(UpnpError):
-    error_label = "NOT_SUPPORT"
-
-    def __init__(self, model_id, version):
-        super(NotSupportError, self).__init__(
-            "Device '%s' with '%s' is not supported" % (model_id, version))
+def NotSupportError(model_id, version):  # noqa
+    return UpnpError(
+        "Device '%s' with '%s' is not supported" % (model_id, version),
+        err_symbol=("NOT_SUPPORT", ))
 
 
-class AuthError(UpnpError):
-    error_label = "AUTH_ERROR"
+def AuthError(reason):  # noqa
+    return UpnpError(reason, err_symbol=("AUTH_ERROR",))
 
 
-class TimeoutError(UpnpError):
-    error_label = "TIMEOUT"
+def TimeoutError():  # noqa
+    return UpnpError("Connection timeout", err_symbol=("TIMEOUT", ))
+
+
+def ConnectionBroken():  # noqa
+    return UpnpError("Connection broken", err_symbol=("CONNECTION_BROKEN", ))
