@@ -5,6 +5,7 @@ import argparse
 import logging
 import sys
 
+from fluxclient.commands.misc import get_or_create_default_key
 from fluxclient.usb.task import UsbTask, UsbTaskError
 from fluxclient.upnp.misc import parse_network_config
 
@@ -136,7 +137,8 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    task = UsbTask(options.serial, options.baudrate)
+    task = UsbTask(options.serial, get_or_create_default_key(),
+                   options.baudrate)
     logger.info("""Device:
     Nickname: %(name)s
     Serial: %(serial)s

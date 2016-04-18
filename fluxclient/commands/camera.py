@@ -4,34 +4,34 @@ import argparse
 import sys
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      get_camera_endpoint)
+                                      get_device_endpoint)
 from fluxclient.robot import connect_camera
 
 
 def connect(options):
-    endpoint, device = get_camera_endpoint(options.target, options.clientkey)
+    endpoint, metadata = get_device_endpoint(options.target, options.clientkey,
+                                             23812)
 
     def conn_callback(*args):
         sys.stdout.write(".")
         sys.stdout.flush()
         return True
 
-    camera = connect_camera(endpoint=endpoint, device=device,
+    camera = connect_camera(endpoint=endpoint, metadata=metadata,
                             client_key=options.clientkey,
                             conn_callback=conn_callback)
 
-    return device, camera
+    return camera, metadata
 
 
-def serve_forever(options, device, camera):
-    if device:
-        dataset = {"name": device.name, "uuid": device.uuid.hex,
-                   "ip": device.endpoint[0], "model": device.model_id,
-                   "serial": device.serial, "target": options.target}
-    else:
-        dataset = {"name": "unknown", "uuid": "unknown", "ip": "unknown",
-                   "model": "unknown", "serial": "unknown",
-                   "target": options.target}
+def serve_forever(options, camera, metadata={}):
+    dataset = {
+        "name": metadata.get("name", "unknown"),
+        "uuid": metadata["uuid"].hex if "uuid" in metadata else "unknown",
+        "ip": metadata.get("ipaddr", "unknown"),
+        "model": metadata.get("model_id", "unknown"),
+        "serial": metadata.get("serial", "unknown"),
+        "target": options.target}
 
     def callback(c, imagebuf):
         ts = datetime.now().strftime(options.strftime)
@@ -62,10 +62,10 @@ def main():
     options = parser.parse_args()
     options.clientkey = get_or_create_default_key(options.clientkey)
 
-    device, camera = connect(options)
+    camera, metadata = connect(options)
 
     try:
-        serve_forever(options, device, camera)
+        serve_forever(options, camera, metadata)
     finally:
         camera.close()
 

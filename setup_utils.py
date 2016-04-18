@@ -86,10 +86,8 @@ def get_entry_points():
     return {
         "console_scripts": [
             "flux_discover=fluxclient.commands.discover:main",
-            "flux_passwd=fluxclient.commands.passwd:main",
-            "flux_auth=fluxclient.commands.auth:main",
-            "flux_config_network=fluxclient.commands.config_network:main",
             "flux_robot=fluxclient.commands.robot:main",
+            "flux_upnp=fluxclient.commands.upnp:main",
             "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
             "flux_usb=fluxclient.commands.usb:main",
