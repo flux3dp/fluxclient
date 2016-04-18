@@ -6,7 +6,7 @@ import os
 
 from fluxclient.robot.misc import is_uuid
 from fluxclient.encryptor import KeyObject
-from fluxclient.upnp.discover import UpnpDiscover
+from fluxclient.upnp import UpnpDiscover
 
 
 def setup_logger(name, stdout=sys.stderr, level=logging.INFO):
