@@ -15,7 +15,7 @@ from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
 
-from fluxclient.robot.misc import require_robot
+from fluxclient.commands.misc import get_device_endpoint
 from fluxclient.robot import connect_robot
 from fluxclient.commands.misc import get_or_create_default_key
 
@@ -53,9 +53,9 @@ class Delta(object):
     def __init__(self, target):
         super(Delta, self).__init__()
 
-        clientkey = get_or_create_default_key(None)
-        endpoint, server_key = require_robot(target, clientkey)
-        self.robot = prepare_robot(endpoint, server_key, clientkey)
+        client_key = get_or_create_default_key(None)
+        ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
+        self.robot = connect_robot(ipaddr, metadata=metadata, client_key=client_key)
 
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
         self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
@@ -64,9 +64,10 @@ class Delta(object):
         self.loose_flag = False
 
     def __del__(self):
-        self.turn_laser("L", False)
-        self.turn_laser("R", False)
         # turn off laser
+        # self.turn_laser("L", False)
+        # self.turn_laser("R", False)
+        pass
 
     def get_position(self):
         """
@@ -93,7 +94,7 @@ class Delta(object):
         (0, 0, 280)
         """
         self.loose_flag = False
-        # self.robot._make_cmd(b"G28")
+        self.robot._make_cmd(b"G28")
 
     def move(self, x=None, y=None, z=None, speed=None, relative=False, **kargs):
         """
@@ -429,7 +430,7 @@ class Delta(object):
                 if power <= 1.0 and power >= 0.0:
                     pass  # TODO
                 else:
-                    raise ValueError("Invalid laser power")
+                    raise ValueError("Invalid laser power, should be within [0.0, 1.0]")
             else:
                 raise TypeError("unsupported power type: {}".format(type(power)))
         else:
@@ -457,8 +458,9 @@ class Delta(object):
     #     pass
 
 if __name__ == '__main__':
-    f = Delta('ffffffffffffffffd81a71e9dcab085c')
-    from time import sleep
-    sleep(5)
-    f.get_headinfo()
+    f = Delta('4231314200084974f3d5981d70f44e1a')
+
+    print(f.get_position())
+    print(f.home())
+    input('a')
     # from fluxclient.sdk.delta import Delta

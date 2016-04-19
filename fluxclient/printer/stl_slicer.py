@@ -11,6 +11,7 @@ import sys
 from multiprocessing import Pipe
 from threading import Thread
 import logging
+import copy
 
 from PIL import Image
 # import pkg_resources
@@ -23,6 +24,18 @@ from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
 
 logger = logging.getLogger(__name__)
+
+
+def read_until(f):
+    """
+    eat all the empty line
+    """
+    while True:
+        l = f.readline().strip()
+        if len(l) != 0:
+            return l
+        if f.tell() == len(f.getvalue()):
+            return ''
 
 
 class StlSlicer(object):
@@ -52,11 +65,16 @@ class StlSlicer(object):
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
 
-    def upload(self, name, buf):
+    def upload(self, name, buf, buf_type='stl'):
         """
         upload a model's data in stl as bytes data
         """
-        self.models[name] = buf
+        if buf_type == 'stl':
+            self.models[name] = self.read_stl(buf)
+        elif buf_type == 'obj':
+            self.models[name] = self.read_obj(buf)
+        else:
+            raise('uknow file type')
 
     def duplicate(self, name_in, name_out):
         """
@@ -65,8 +83,9 @@ class StlSlicer(object):
 
         duplicate a model in models(but not set position yet)
         """
+        logger.debug('duplicate in:{} out:{}'.format(name_in, name_out))
         if name_in in self.models:
-            self.models[name_out] = self.models[name_in]  # no need to copy, bytes is immutable
+            self.models[name_out] = copy.deepcopy(self.models[name_in])
             return True
         else:
             return False
@@ -202,7 +221,7 @@ class StlSlicer(object):
 
         m_mesh_merge = _printer.MeshObj([], [])
         for n in names:
-            points, faces = self.read_stl(self.models[n])
+            points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
             m_mesh_merge.add_on(m_mesh)
@@ -498,17 +517,6 @@ class StlSlicer(object):
             # ascii stl file
             instl = StringIO(file_data.decode('utf8'))
 
-            def read_until(f):
-                """
-                eat all the empty line
-                """
-                while True:
-                    l = f.readline()
-                    if len(l.strip()) != 0:
-                        return l
-                    if f.tell() == len(f.getvalue()):
-                        return ''
-
             read_until(instl)  # read in: "solid [name]"
             while True:
                 t = read_until(instl)  # read in: "facet normal 0 0 0"
@@ -571,4 +579,40 @@ class StlSlicer(object):
         points_list = []
         for i in range(counter):
             points_list.append(points[i])
+        return points_list, faces
+
+    @classmethod
+    def read_obj(cls, file_data):
+        if type(file_data) == str:
+            with open(file_data, 'rb') as f:
+                file_data = f.read()
+        elif type(file_data) == bytes:
+            pass
+        else:
+            raise ValueError('wrong stl data type: %s' % str(type(file_data)))
+
+        in_obj = StringIO(file_data.decode('utf8'))
+        points_list = []
+        faces = []
+        while True:
+            t = read_until(in_obj)
+            if len(t) == 0:
+                break
+            elif t.startswith('#'):  # comment
+                continue
+            t = t.split()
+            if t[0] == 'v':
+                points_list.append(tuple(float(t[j]) for j in range(1, 4)))
+            elif t[0] == 'f':
+                t = [i.split('/') for i in t]
+                faces.append([int(t[j][0]) for j in range(1, 4)])
+            else:
+                pass
+        for i in range(len(faces)):
+            for j in range(3):
+                if faces[i][j] > 0:
+                    faces[i][j] -= 1
+                else:
+                    faces[i][j] = len(points_list) + faces[i][j]
+
         return points_list, faces
