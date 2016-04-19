@@ -15,7 +15,6 @@ from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
 
-from fluxclient.robot.misc import require_robot
 from fluxclient.robot import connect_robot
 from fluxclient.commands.misc import get_or_create_default_key
 
