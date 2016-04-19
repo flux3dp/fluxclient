@@ -212,7 +212,7 @@ def create_pcl_extentions():
         'fluxclient.printer._printer',
         sources=[
             "src/printer/printer_module.cpp",
-            "src/printer/tree_support.cpp",
+            # "src/printer/tree_support.cpp",
             "src/printer/printer.pyx"],
         language="c++",
         extra_compile_args=extra_compile_args,
