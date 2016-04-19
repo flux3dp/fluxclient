@@ -22,7 +22,7 @@ class AESSocket(object):
     _decoder = None
     __handshake_flag = None
 
-    def __init__(self, sock, server_key=None, client_key=None,
+    def __init__(self, sock, client_key=None, server_key=None,
                  ignore_key_validation=False):
         self._buffer = bytearray(4096)
         self._bufferv = memoryview(self._buffer)

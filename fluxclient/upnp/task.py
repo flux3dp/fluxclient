@@ -11,6 +11,18 @@ BACKENDS = [
 
 
 class UpnpTask(object):
+    """UpnpTask provide basic configuration method to device
+
+    :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying connect \
+via ip address.
+    :param encrypt.KeyObject client_key: Client key to connect to device.
+    :param str ipaddr: IP Address to connect to.
+    :param dict device_metadata: Device metadata
+    :param dict backend_options: More configuration for UpnpTask
+    :param callable lookup_callback: Invoke repeated while finding device
+    :param float lookup_timeout: Raise error if device can not be found after \
+timeout value
+"""
     name = None
     uuid = None
     serial = None
@@ -21,15 +33,17 @@ class UpnpTask(object):
 
     _backend = None
 
-    def __init__(self, uuid, client_key, ipaddr=None, remote_profile=None,
-                 backend_options={}, lookup_callback=None,
+    def __init__(self, uuid, client_key, ipaddr=None, device_metadata=None,
+                 remote_profile=None, backend_options={}, lookup_callback=None,
                  lookup_timeout=float("INF")):
         self.uuid = uuid
         self.ipaddr = ipaddr
         self.client_key = client_key
         self.backend_options = backend_options
 
-        if remote_profile:
+        if device_metadata:
+            self.update_remote_profile(**device_metadata)
+        elif remote_profile:
             self.update_remote_profile(**remote_profile)
         else:
             self.reload_remote_profile(lookup_callback, lookup_timeout)
@@ -71,13 +85,26 @@ class UpnpTask(object):
         raise NotSupportError(self.model_id, self.version)
 
     def rename(self, new_name):
+        """Rename device
+
+        :param str new_name: New device name"""
         self._backend.rename(new_name)
 
     def modify_password(self, old_password, new_password, reset_acl=True):
+        """Change device password, if **reset_acl** set to True, all other \
+authorized user will be deauthorized.
+
+        :param str old_password: Old device password
+        :param str new_password: New device password
+        :param bool reset_acl: Clear authorized user list in device"""
         self._backend.modify_password(old_password, new_password, reset_acl)
 
     def modify_network(self, **settings):
+        """Modify network settings TODO"""
+
         self._backend.modify_network(**settings)
 
     def get_wifi_list(self):
+        """Get wifi list discovered from device"""
+
         return self._backend.get_wifi_list()

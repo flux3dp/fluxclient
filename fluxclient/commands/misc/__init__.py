@@ -77,6 +77,6 @@ def get_device_endpoint(target, client_key, default_port,
         if not ipaddr:
             raise RuntimeError("Can not get ipaddress from target %s" % target)
 
-        return (ipaddr[0], default_port), metadata
+        return (ipaddr, default_port), metadata
     else:
         return parse_ipaddr(target, default_port), {}

@@ -41,8 +41,7 @@ class DiscoverPrinter(object):
 
         sys.stdout.write("\r%s %-10s %-9s ## %s\n" % (
             uuid.hex, serial, has_password and "YES" or "NO", name))
-        sys.stdout.write("%32s %-10s %-10s\n" % (ipaddr[0], version,
-                                                 model_id,))
+        sys.stdout.write("%32s %-10s %-10s\n" % (ipaddr, version, model_id,))
         sys.stdout.flush()
 
 

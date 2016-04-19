@@ -1,4 +1,20 @@
 
+"""
+Basic usage example::
+
+    from fluxclient.upnp import UpnpDiscover
+
+    def my_callback(discover, uuid, serial, model_id, name, version, ipaddr, \
+**kw):
+        print("Device '%s' found at %s" % (name, ipaddr))
+
+        # We find only one printer in this example
+        discover.stop()
+
+    d = UpnpDiscover()
+    d.discover(my_callback)
+"""
+
 from io import BytesIO
 from uuid import UUID
 from time import time
@@ -20,31 +36,20 @@ MULTICAST_IPADDR = "239.255.255.250"
 MULTICAST_PORT = 1901
 MULTICAST_VERSION = 1
 
-
-"""Discover Flux 3D Printer
-
-Here is a simple example:
-
-from fluxclient.upnp_discover import UpnpDiscover
-
-def my_callback(discover, serial, model_id, timestemp, version,
-                has_passwd, ipaddrs):
-    print("Find Printer at: " + ipaddrs)
-
-    # We find only one printer in this example
-    discover.stop()
-
-
-d = UpnpDiscover()
-d.discover(my_callback)
-"""
-
 INIT_PING_FREQ = 0.5
 PING_RREQ_RATIO = 1.3
 MAX_PING_FREQ = 3.0
 
 
 class UpnpDiscover(object):
+    """The uuid and device_ipaddr param can limit UpnpDiscover to find device \
+    with specified uuid or IP address. These params usually be used when you \
+    want recive specified status continuously.
+
+    :param uuid.UUID uuid: Discover specified uuid of device only
+    :param str device_ipaddr: Discover device from specified IP address only.
+    """
+
     _break = True
     _last_sent = 0
     _send_freq = INIT_PING_FREQ
@@ -88,12 +93,20 @@ class UpnpDiscover(object):
 
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
-        Call this method to execute discover task
+        Call this method to execute discover task. The callback function has \
+minimum define::
 
-        @callback: when find a flux printer, it will invoke
-        `callback(instance, serial, model_id, timestemp, version,
-                     has_passwd, ipaddrs)` where ipaddrs is a list.
+            def callback(upnp_discover_instance, **metadata):
+                pass
+
+        * `upnp_discover_instance` is the instance who calls this method.
+        * `metadata` is a key-value set of device informations
+
+        :param callable callback: Thie method will be invoked when a device \
+has been found or recive new status from device.
+        :param float timeout: The method will return when when timeout.
         """
+
         self._break = False
         timeout_at = time() + timeout
 
@@ -109,7 +122,7 @@ class UpnpDiscover(object):
                 lookup_callback(self)
 
     def stop(self):
-        """Call this function to break discover task"""
+        """Invoke this function to break discover task"""
         self._break = True
 
     def try_recive(self, socks, callback, timeout=1.5):
@@ -221,8 +234,7 @@ class Version1Helper(object):
                 dataset = self.server.history[uuid]
                 dataset.update({
                     "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
-                    "st_ts": st_ts, "head_module": head_module,
-                    "error_label": error_label})
+                    "head_module": head_module, "error_label": error_label})
                 return uuid
             except Exception:
                 basic_info = self.server.history[uuid]
@@ -276,7 +288,7 @@ class Version1Helper(object):
 
                 data["name"] = rawdata.get("name", "NONAME")
                 data["has_password"] = raw_has_password == "T"
-                data["ipaddr"] = endpoint
+                data["ipaddr"] = endpoint[0]
                 data["endpoint"] = endpoint
                 self.server.update_history(uuid, data)
 
