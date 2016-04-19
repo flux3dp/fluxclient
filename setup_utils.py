@@ -155,19 +155,22 @@ def create_pcl_extentions():
 
                 raise RuntimeError("Can not find `%s` in any of follow "
                                    "directorys: %s" % (label, dirs))
+            try:
+                eigen3_dir = os.path.join(
+                    find_in_program_files("eigin3", ["Eigen"]), "include")
 
-            eigen3_dir = os.path.join(
-                find_in_program_files("eigin3", ["Eigen"]), "include")
-
-            flann_dir = os.path.join(
-                find_in_program_files("flann", ["flann"]), "include")
+                flann_dir = os.path.join(
+                    find_in_program_files("flann", ["flann"]), "include")
+                include_dirs += [
+                    os.path.join(eigen3_dir, "include"),
+                    os.path.join(flann_dir, "include")]
+            except:
+                pass
 
             pcl_dir = find_in_program_files("pcl", ["PCL 1.7.2",
                                                     "PCL 1.7.1"])
 
             include_dirs += [
-                os.path.join(eigen3_dir, "include"),
-                os.path.join(flann_dir, "include"),
                 os.path.join(pcl_dir, "lib"),
                 os.path.join(pcl_dir, "include", "pcl-1.7"),
                 os.path.join(pcl_dir, "3rdParty", "flann", "include"),
