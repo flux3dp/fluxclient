@@ -6,6 +6,8 @@ from .laser_svg import LaserSvg
 from .laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
 
+logger = logging.getLogger(__name__)
+
 
 class PenSvg(LaserSvg, SVGParser):
     """docstring for PenSvg"""
@@ -20,12 +22,6 @@ class PenSvg(LaserSvg, SVGParser):
         # override
         self.turnOn = self.draw
         self.turnOff = self.lift
-
-    def set_lift_height(self, h):
-        self.lift_height = h - self.nozzle_height
-
-    def set_draw_height(self, h):
-        self.draw_height = h - self.nozzle_height
 
     def draw(self):
         if self.laser_on is True:
@@ -70,10 +66,10 @@ class PenSvg(LaserSvg, SVGParser):
         set parameters for setting
         """
         if key == 'lift_height':
-            self.lift_height = float(value)
+            self.lift_height = float(value) - self.nozzle_height
 
         elif key == 'draw_height':
-            self.draw_height = float(value)
+            self.draw_height = float(value) - self.nozzle_height
 
         elif key == 'speed':
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
