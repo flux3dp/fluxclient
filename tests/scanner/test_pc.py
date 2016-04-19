@@ -84,5 +84,3 @@ class scan_toolTest(unittest.TestCase):
             tmp = tools.normalize(i)
             for k in range(3):
                 self.assertAlmostEqual(tmp[k], j[k])
-    def function():
-        pass

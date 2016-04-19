@@ -107,17 +107,20 @@ class PcProcess():
         pc0_size = len(pc[0])
 
         pc = pc[0].add(pc[1])
-        logger.debug('start with %d point' % len(pc))
-        pc.SOR(int(self.settings.NoiseNeighbors), stddev)
-        logger.debug('finished with %d point' % len(pc))
-        pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
 
-        self.clouds[name_out] = pc_both
-
-        self.cluster(name_out, name_out, self.settings.SegmentationDistance)
-
-        self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
-        self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
+        if len(pc) == 0:
+            logger.debug('empty pc')
+            pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
+            self.clouds[name_out] = pc_both
+        else:
+            logger.debug('start with %d point' % len(pc))
+            pc.SOR(int(self.settings.NoiseNeighbors), stddev)
+            logger.debug('finished with %d point' % len(pc))
+            pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
+            self.clouds[name_out] = pc_both
+            self.cluster(name_out, name_out, self.settings.SegmentationDistance)
+            self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
+            self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
 
     def cluster(self, name_in, name_out, thres=2):
         """
@@ -327,35 +330,41 @@ class PcProcess():
         x = np.array([p[0] for p in plane])
         y = np.array([p[1] for p in plane])
         z = np.array([p[2] for p in plane])
-        rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
+        print('plane len', len(plane))
+        try:
 
-        # for p in plane:
-        #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
+            rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
 
-        if floor:
-            color = [255, 0, 0]
-        else:
-            color = [0, 255, 0]
+            # for p in plane:
+            #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
 
-        color = [0., 0., 0.]
-        for i in after:
-            for j in range(3):
-                color[j] += i[j + 3]
-        color = [i / len(after) for i in color]
-        # color = [255, 0, 0]
+            if floor:
+                color = [255, 0, 0]
+            else:
+                color = [0, 255, 0]
 
-        ZI = rbf(XI, YI)
-        for xx in range(grid_leaf):
-            for yy in range(grid_leaf):
-                p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
-                flag = True
-                for b in range(len(boarder)):
-                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
-                        flag = False
-                        break
-                if flag:
-                    tmp.append(p)
-        del rbf
+            color = [0., 0., 0.]
+            for i in after:
+                for j in range(3):
+                    color[j] += i[j + 3]
+            color = [i / len(after) for i in color]
+            # color = [255, 0, 0]
+
+            ZI = rbf(XI, YI)
+            for xx in range(grid_leaf):
+                for yy in range(grid_leaf):
+                    p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
+                    flag = True
+                    for b in range(len(boarder)):  # check whether inside the boundary
+                        if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                            flag = False
+                            break
+                    if flag:
+                        tmp.append(p)
+            del rbf
+        except Exception as e:
+            print('rbf error')
+            print(e.args)
 
         plane += tmp
         for p in plane:
