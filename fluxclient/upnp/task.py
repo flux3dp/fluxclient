@@ -100,7 +100,7 @@ authorized user will be deauthorized.
         self._backend.modify_password(old_password, new_password, reset_acl)
 
     def modify_network(self, **settings):
-        """Modify network settings TODO"""
+        """Mofify device modify_network, look document for more help"""
 
         self._backend.modify_network(**settings)
 
