@@ -15,9 +15,10 @@ Basic usage example::
     d.discover(my_callback)
 """
 
-from io import BytesIO
+from weakref import proxy
 from uuid import UUID
 from time import time
+from io import BytesIO
 import platform
 import logging
 import select
@@ -79,6 +80,12 @@ class UpnpDiscover(object):
         self.socks = (self.sock, ) + tuple(
             (h.sock for h in self.handlers if hasattr(h, "sock")))
 
+    def add_listen_socket(self, sock, callback):
+        pass
+
+    def remove_listen_socket(self, sock):
+        pass
+
     def poke(self, ipaddr):
         # TODO
         self.handlers[-1].poke(ipaddr)
@@ -122,7 +129,11 @@ has been found or recive new status from device.
                 lookup_callback(self)
 
     def stop(self):
-        """Invoke this function to break discover task"""
+        """Invoke this function to break discover task
+
+        .. note:: Note: discover method will still invoke callback even user \
+already call this method because data already in local socket buffer."""
+
         self._break = True
 
     def try_recive(self, socks, callback, timeout=1.5):
@@ -180,7 +191,7 @@ has been found or recive new status from device.
 
 class Version1Helper(object):
     def __init__(self, server):
-        self.server = server
+        self.server = proxy(server)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
         self.sock.bind(('', 0))
