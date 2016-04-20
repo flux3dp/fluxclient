@@ -5,6 +5,7 @@ import time
 from .laser_svg import LaserSvg
 from .laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
+from fluxclient.hw_profile import HW_PROFILE
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class PenSvg(LaserSvg, SVGParser):
         self.ext_metadata['HEAD_TYPE'] = 'N/A'
         self.lift_height = 100
         self.draw_height = 0
-        self.nozzle_height = 5
+        self.nozzle_height = HW_PROFILE['model-1']['nozzle_height']
         # override
         self.turnOn = self.draw
         self.turnOff = self.lift
