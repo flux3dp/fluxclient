@@ -26,9 +26,9 @@ Metadata contain at least follow key-values:
 * model_id (str) - Model ID
 * version (str) - Device firmware version
 * ipaddr (str) - Device IP address
-* endpoint ((str, int)) - Endpoint device response from
+* endpoint ((str, int)) - Endpoint device response from (ip, port number)
 
-Metada has other usable optional values:
+Metada has other usable optional values(will only appear after receiving multiple discover result):
 
 * st_id (int) - Device current status ID.
 * st_ts (int) - Timestemp (Device status last update).
@@ -68,15 +68,17 @@ Metada has other usable optional values:
       - Occupied for maintain 
     * - -2
       - Occupied for scan 
+    * - -3
+      - Occupied by sdk mode
 
 Authorize and manage the device
 =================================
 
-FLUX device use password and RSA key for access authorize. At first time user connect to device, a RSA key and password is required. After password authorized, Only RSA key is required.
+FLUX delta use password and RSA key authorizing access. At the first time a user connect to device, a RSA key and password is required. After the password is authorized, Only RSA key is required.
 
 .. autoclass:: fluxclient.upnp.task.UpnpTask
 
-When create UpnpTask instance, the argument **uuid** is required. If param **device_metadata** not given, UpnpTask will use lookup_callback and lookup_timeout to create a Discover instance and try to get metadata from network.
+When creating UpnpTask instance, the argument **uuid** is required. If param **device_metadata** not given, UpnpTask will use lookup_callback and lookup_timeout to create a Discover instance and try to get metadata from network.
 
 .. note:: Note: Assign **device_metadata** can skip discover process in UpnpTask constructor.
 

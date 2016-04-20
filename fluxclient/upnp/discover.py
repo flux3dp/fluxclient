@@ -109,7 +109,7 @@ minimum define::
         * `upnp_discover_instance` is the instance who calls this method.
         * `metadata` is a key-value set of device informations
 
-        :param callable callback: Thie method will be invoked when a device \
+        :param callable callback: This method will be invoked when a device \
 has been found or recive new status from device.
         :param float timeout: The method will return when when timeout.
         """
