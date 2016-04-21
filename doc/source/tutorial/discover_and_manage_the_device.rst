@@ -98,6 +98,7 @@ Manage device name, network and security
 ++++++++++++++++++++++++++++++++++++++++++
 
 .. automethod:: fluxclient.upnp.task.UpnpTask.add_trust
+.. automethod:: fluxclient.upnp.task.UpnpTask.close
 .. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_password
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_network

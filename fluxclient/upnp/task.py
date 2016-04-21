@@ -86,6 +86,12 @@ timeout value
 
         raise NotSupportError(self.model_id, self.version)
 
+    def close(self):
+        """Close upnp socket connection. After close(), any other method \
+should not be called anymore."""
+
+        self._backend.close()
+
     def add_trust(self):
         """Add client_key to device trust list"""
         self._backend.add_trust()
