@@ -7,7 +7,7 @@ import sys
 import os
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      get_robot_endpoint)
+                                      get_device_endpoint)
 from fluxclient.robot import connect_robot
 
 
@@ -28,7 +28,7 @@ def setup_readline():
 
 
 def robot_shell(options):
-    from fluxclient.console import Console
+    from fluxclient.commands.misc.console import Console
 
     with Console() as console:
         console.setup()
@@ -40,12 +40,13 @@ def robot_shell(options):
 
         try:
             logger = setup_logger(console)
-            ipaddr, device = get_robot_endpoint(options.target,
-                                                options.clientkey, console)
-            client = connect_robot(ipaddr, device=device,
+            ipaddr, metadata = get_device_endpoint(options.target,
+                                                   options.clientkey, 23811,
+                                                   console)
+            client = connect_robot(ipaddr, metadata=metadata,
                                    client_key=options.clientkey,
                                    conn_callback=conn_callback)
-            from fluxclient.robot_console import RobotConsole
+            from fluxclient.commands.misc.robot_console import RobotConsole
             robot_client = RobotConsole(client)
             logger.info("----> READY")
             while True:
@@ -72,9 +73,10 @@ def ipython_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
+    ipaddr, metadata = get_device_endpoint(options.target, options.clientkey,
+                                           23811)
     robot_client = connect_robot(ipaddr,  # noqa
-                                 device=device,
+                                 metadata=metadata,
                                  client_key=options.clientkey,
                                  conn_callback=conn_callback)
 
@@ -92,11 +94,12 @@ def simple_shell(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
-    client = connect_robot(ipaddr, device=device,
+    ipaddr, metadata = get_device_endpoint(options.target, options.clientkey,
+                                           23811)
+    client = connect_robot(ipaddr, metadata=metadata,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
-    from fluxclient.robot_console import RobotConsole
+    from fluxclient.commands.misc.robot_console import RobotConsole
     robot_client = RobotConsole(client)
     logger.info("----> READY")
 

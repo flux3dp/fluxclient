@@ -13,12 +13,12 @@ class SVGParser(object):
 
     @staticmethod
     def transform(coordinate, transform_string):
-        '''
+        """
         transform the points in coordinate by a transform_string define in svg
         coordinate: [(1, 2), (3, 4), ('\n', '\n'), (5, 6)]
         transform_string: "translate(60,10) matrix(0.866,0.5,-0.5,0.866,0,0)"
         return coordinate after being transform
-        '''
+        """
         if transform_string == '':
             return coordinate
 
@@ -78,10 +78,10 @@ class SVGParser(object):
 
     @staticmethod
     def rect(node):
-        '''
+        """
         drawing a rectangle
 
-        '''
+        """
 
         coordinate = []
         x, y, w, h = float(node.attrib['x']), float(node.attrib['y']), float(node.attrib['width']), float(node.attrib['height'])
@@ -126,9 +126,9 @@ class SVGParser(object):
 
     @staticmethod
     def line(node):
-        '''
+        """
         drawing a Line
-        '''
+        """
         coordinate = []
         x1, y1, x2, y2 = float(node.attrib['x1']), float(node.attrib['y1']), float(node.attrib['x2']), float(node.attrib['y2'])
 
@@ -138,9 +138,9 @@ class SVGParser(object):
 
     @staticmethod
     def polyline(node):
-        '''
+        """
         drawing a polyline
-        '''
+        """
         coordinate = []
         points = split('[^0-9e.\-\+]+', node.attrib['points'])  # split into numbers
         points = filter(lambda x: x != "", points)
@@ -155,9 +155,9 @@ class SVGParser(object):
 
     @staticmethod
     def circle(node, sample_n=100):
-        '''
+        """
         drawing a circle, sample_n indicate the sample rate or the straight line
-        '''
+        """
         coordinate = []
         # center of circle and radius
         cx, cy, r = float(node.attrib['cx']), float(node.attrib['cy']), float(node.attrib['r'])
@@ -169,9 +169,9 @@ class SVGParser(object):
 
     @staticmethod
     def ellipse(node, sample_n=100):
-        '''
+        """
         drawing a ellipse, sample_n indicate the sample rate or the straight line
-        '''
+        """
         coordinate = []
 
         cx, cy, rx, ry = float(node.attrib['cx']), float(node.attrib['cy']), float(node.attrib['rx']), float(node.attrib['ry'])
@@ -184,9 +184,9 @@ class SVGParser(object):
 
     @staticmethod
     def polygon(node):
-        '''
+        """
         drawing a polygon
-        '''
+        """
         coordinate = []
         points = split('[^0-9e.\-\+]+', node.attrib['points'])  # split into numbers
         points = filter(lambda x: x != "", points)
@@ -203,10 +203,10 @@ class SVGParser(object):
 
     @staticmethod
     def path(node, sample_n=100):
-        '''
+        """
         reference:http://www.w3.org/TR/SVG/paths.html
         command supported: M, m, L, l, H, h, V, v, Z, z, C, c, S, s, Q, q, T, t, A, a
-        '''
+        """
         def angle_between(v1, v2):
             angle = (v1[0] * v2[0] + v1[1] * v2[1]) / sqrt(v1[0] ** 2 + v1[1] ** 2) / sqrt(v2[0] ** 2 + v2[1] ** 2)
             if abs(angle) - 1 < 1e-10:  # precision problem will cause error on Domain of a function
@@ -481,10 +481,10 @@ class SVGParser(object):
 
     @staticmethod
     def clean_svg(node, header, warning):
-        '''
+        """
         recursively clean up and set the attrib for each node
         will pass the transform to children and delete transform when return from DFS
-        '''
+        """
         parent = node.getparent()
         if parent is not None:
             parent_trans = parent.attrib.get('transform', '')

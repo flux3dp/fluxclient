@@ -63,7 +63,7 @@ def parse_cert(der_cert):
 
 
 class SSLSocket(ssl.SSLSocket):
-    def __init__(self, sock, server_key=None, client_key=None,
+    def __init__(self, sock, client_key=None, server_key=None,
                  ignore_key_validation=False):
         super(SSLSocket, self).__init__(sock, do_handshake_on_connect=False)
 

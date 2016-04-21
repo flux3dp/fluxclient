@@ -7,7 +7,7 @@ import sys
 import os
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      get_robot_endpoint)
+                                      get_device_endpoint)
 from fluxclient.robot import connect_robot
 from fluxclient.hw_profile import HW_PROFILE
 
@@ -22,8 +22,9 @@ def prepare_robot(options):
         sys.stdout.flush()
         return True
 
-    ipaddr, device = get_robot_endpoint(options.target, options.clientkey)
-    client = connect_robot(ipaddr, device=device,
+    ipaddr, metadata = get_device_endpoint(options.target, options.clientkey,
+                                           23811)
+    client = connect_robot(ipaddr, metadata=metadata,
                            client_key=options.clientkey,
                            conn_callback=conn_callback)
 

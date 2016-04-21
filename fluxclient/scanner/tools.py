@@ -13,17 +13,25 @@ from io import StringIO
 # uint8_t b = (rgb)       & 0x0000ff;
 
 
-def dot(a, b):
-    return sum(a[i] * b[i] for i in range(3))
+def dot(vector_a, vector_b):
+    """
+    3d dot vector_a, vector_b
+    return float
+    """
+    return sum(vector_a[i] * vector_b[i] for i in range(3))
 
 
 def cross(p0, p1, p2):
+    """
+    2d cross v0, v1: return float
+    v0 = p0 -> p1, v1 = p0 -> p2
+    """
     return ((p1[0] - p0[0]) * (p2[1] - p0[1])) - ((p1[1] - p0[1]) * (p2[0] - p0[0]))
 
 
 def normalize(v):
     """
-    normalize vector v
+    normalize 3d vector v
     """
     l = sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
     if l != 0:
@@ -32,10 +40,10 @@ def normalize(v):
 
 
 def normal(tri):
-    '''
+    """
       compute normal of a triangle surface
       tri = [[x, y, z], [x, y, z], [x, y, z]]
-    '''
+    """
     a = [tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]]  # vector v0 -> v1
     b = [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]  # vector v0 -> v2
     return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
@@ -46,11 +54,11 @@ def point_dis_sq(a, b):
 
 
 def check_tri(tri, thres=25):
-    '''
+    """
       check if a triangle is valid
       return True if each edge is smaller than thres, False otherwise
       tri = [[x, y, z], [x, y, z], [x, y, z]]
-    '''
+    """
     thres **= 2
 
     if point_dis_sq(tri[0], tri[1]) > thres:
@@ -87,7 +95,7 @@ def read_pcd(data):
 
 
 def write_pcd(points, file_name="model.pcd"):
-    '''
+    """
       write a pointclooud as .pcd file, in binary mode or ascii mode. (compact or readable)
       points should look like this:
                             [
@@ -98,7 +106,7 @@ def write_pcd(points, file_name="model.pcd"):
                             ]
                             (coordinate and color data for each point, in a list of points for a pointclooud)
     use StringsIO for output
-    '''
+    """
     if type(file_name) == str:
         f = open(file_name, 'w')
     else:
@@ -123,7 +131,7 @@ def write_pcd(points, file_name="model.pcd"):
 
 
 def write_stl(tri, output='model.stl', mode='binary'):
-    '''
+    """
     write a 3d model as stl file, in binary mode or ascii mode. (compact or readable)
     tri should look like this:
                             [
@@ -136,7 +144,7 @@ def write_stl(tri, output='model.stl', mode='binary'):
     use bytesIO for binary output
     use StringsIO for ascii output
 
-    '''
+    """
     if type(output) == str:
         if mode == 'binary':
             outstl = open(output, 'wb')

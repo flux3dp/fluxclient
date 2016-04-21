@@ -1,108 +1,110 @@
 
-from time import time
-import binascii
-import struct
+from fluxclient.utils.version import StrictVersion
+from fluxclient.upnp.discover import UpnpDiscover
+from .abstract_backend import NotSupportError
+from .udp1_backend import UpnpUdp1Backend
+from .ssl1_backend import UpnpSSL1Backend
 
-from fluxclient.upnp.base import UpnpBase
-
-
-CODE_NOPWD_ACCESS = 0x04
-CODE_RESPONSE_NOPWD_ACCESS = 0x05
-
-CODE_PWD_ACCESS = 0x06
-CODE_RESPONSE_PWD_ACCESS = 0x07
-
-CODE_CHANGE_PWD = 0xa0
-CODE_RESPONSE_CHANGE_PWD = 0xa1
-
-CODE_SET_NETWORK = 0xa2
-CODE_RESPONSE_SET_NETWORK = 0xa3
-
-CODE_CONTROL_STATUS = 0x80
-CODE_RESPONSE_CONTROL_STATUS = 0x81
-
-CODE_RESET_CONTROL = 0x82
-CODE_RESPONSE_RESET_CONTROL = 0x83
-
-CODE_REQUEST_ROBOT = 0x84
-CODE_RESPONSE_REQUEST_ROBOT = 0x85
+BACKENDS = [
+    UpnpSSL1Backend,
+    UpnpUdp1Backend]
 
 
-class UpnpTask(UpnpBase):
-    def auth_with_password(self, passwd, timeout=1.2):
-        der = self.publickey_der
+class UpnpTask(object):
+    """UpnpTask provide basic configuration method to device
 
-        req_code = CODE_PWD_ACCESS
-        resp_code = CODE_RESPONSE_PWD_ACCESS
+    :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying connect \
+via ip address.
+    :param encrypt.KeyObject client_key: Client key to connect to device.
+    :param str ipaddr: IP Address to connect to.
+    :param dict device_metadata: Device metadata
+    :param dict backend_options: More configuration for UpnpTask
+    :param callable lookup_callback: Invoke repeated while finding device
+    :param float lookup_timeout: Raise error if device can not be found after \
+timeout value
+"""
+    name = None
+    uuid = None
+    serial = None
+    model_id = None
+    version = None
+    ipaddr = None
+    meta = None
 
-        buf = b"\x00".join([
-            str(self.create_timestemp()).encode(),
-            passwd.encode(),
-            der
-        ])
-        resp = self.make_request(req_code, resp_code, buf, encrypt=True)
-        return resp
+    _backend = None
 
-    def auth_without_password(self, timeout=1.2):
-        der = self.publickey_der
+    def __init__(self, uuid, client_key, ipaddr=None, device_metadata=None,
+                 remote_profile=None, backend_options={}, lookup_callback=None,
+                 lookup_timeout=float("INF")):
+        self.uuid = uuid
+        self.ipaddr = ipaddr
+        self.client_key = client_key
+        self.backend_options = backend_options
 
-        req_code = CODE_NOPWD_ACCESS
-        resp_code = CODE_RESPONSE_NOPWD_ACCESS
-        msg = struct.pack("<d%ss" % len(der), self.create_timestemp(), der)
+        if device_metadata:
+            self.update_remote_profile(**device_metadata)
+        elif remote_profile:
+            self.update_remote_profile(**remote_profile)
+        else:
+            self.reload_remote_profile(lookup_callback, lookup_timeout)
 
-        resp = self.make_request(req_code, resp_code, msg,
-                                 encrypt=False, timeout=timeout)
-        return resp
+        self.initialize_backend()
 
-    def passwd(self, password, old_password=""):
-        req_code = CODE_CHANGE_PWD
-        resp_code = CODE_RESPONSE_CHANGE_PWD
+    def reload_remote_profile(self, lookup_callback=None,
+                              lookup_timeout=float("INF")):
+        def on_discovered(instance, **kw):
+            self.update_remote_profile(**kw)
+            instance.stop()
 
-        message = "\x00".join((password, old_password))
-        request = self.sign_request(message.encode())
+        if self.uuid.int:
+            d = UpnpDiscover(uuid=self.uuid)
+        else:
+            d = UpnpDiscover(device_ipaddr=self.ipaddr)
 
-        return self.make_request(req_code, resp_code, request)
+        d.discover(on_discovered, lookup_callback, lookup_timeout)
 
-    def config_network(self, options):
-        req_code = CODE_SET_NETWORK
-        resp_code = CODE_RESPONSE_SET_NETWORK
+    def update_remote_profile(self, uuid, name, serial, model_id, version,
+                              ipaddr, **meta):
+        if not self.uuid or self.uuid.int == 0:
+            self.uuid = uuid
+        self.name = name
+        self.serial = serial
+        self.model_id = model_id
+        self.version = StrictVersion(version)
+        self.ipaddr = ipaddr
+        self.device_meta = meta
 
-        message = "\x00".join(("%s=%s" % i for i in options.items()))
-        request = self.sign_request(message.encode())
+    def initialize_backend(self):
+        for klass in BACKENDS:
+            if klass.support_device(self.model_id, self.version):
+                self._backend = klass(self.client_key, self.uuid, self.version,
+                                      self.model_id, self.ipaddr,
+                                      self.device_meta, self.backend_options)
+                return
 
-        return self.make_request(req_code, resp_code, request)
+        raise NotSupportError(self.model_id, self.version)
 
-    def kill_control(self):
-        req_code = CODE_RESET_CONTROL
-        resp_code = CODE_RESPONSE_RESET_CONTROL
+    def rename(self, new_name):
+        """Rename device
 
-        message = b""
-        request = self.sign_request(message)
+        :param str new_name: New device name"""
+        self._backend.rename(new_name)
 
-        return self.make_request(req_code, resp_code, request)
+    def modify_password(self, old_password, new_password, reset_acl=True):
+        """Change device password, if **reset_acl** set to True, all other \
+authorized user will be deauthorized.
 
-    def require_robot(self, timeout=6):
-        req_code = CODE_REQUEST_ROBOT
-        resp_code = CODE_RESPONSE_REQUEST_ROBOT
-        start_at = time()
+        :param str old_password: Old device password
+        :param str new_password: New device password
+        :param bool reset_acl: Clear authorized user list in device"""
+        self._backend.modify_password(old_password, new_password, reset_acl)
 
-        while timeout >= (time() - start_at):
-            request = self.sign_request(b"")
-            resp = self.make_request(req_code, resp_code, request)
-            if resp:
-                return resp
+    def modify_network(self, **settings):
+        """Modify network settings TODO"""
 
-        raise RuntimeError("TIMEOUT")
+        self._backend.modify_network(**settings)
 
-    def require_auth(self, timeout=6):
-        start_at = time()
-        while timeout >= (time() - start_at):
-            resp = self.auth_without_password()
-            if resp:
-                if resp.get("status") == "ok":
-                    return resp
-                elif resp.get("status") == "deny":
-                    raise RuntimeError("AUTH_ERROR", "deny")
-                else:
-                    raise RuntimeError("UNKNOW_ERROR", resp.get("status"))
-        raise RuntimeError("TIMEOUT")
+    def get_wifi_list(self):
+        """Get wifi list discovered from device"""
+
+        return self._backend.get_wifi_list()

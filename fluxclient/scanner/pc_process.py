@@ -3,8 +3,7 @@ import struct
 from operator import ge, le
 import logging
 from io import BytesIO, StringIO
-import sys
-import bisect
+from bisect import bisect
 import copy
 from math import sqrt, asin, pi, radians, cos, sin
 
@@ -34,6 +33,12 @@ class PcProcess():
         logger.debug('all:' + " ".join(self.clouds.keys()))
 
     def import_file(self, name, buf, filetype):
+        """
+        import file from file not from machine
+        [in] name: name of the point cloud
+        [in] buf: file content
+        [in] filetype: filetype, now only support pcd, should support ply in the future
+        """
         if filetype == 'pcd':
             try:
                 tmp = read_pcd(buf)
@@ -43,12 +48,13 @@ class PcProcess():
             except:
                 return False, "Import fail, file broken?"
         else:
-            print("can't parse {} file".format(filetype), file=sys.stderr)
+            logger.warning("can't parse {} file".format(filetype))
             raise NotImplementedError
 
     def unpack_data(self, buffer_data):
         """
-            unpack buffer data into [[x, y, z, r, g, b]]
+        unpack buffer data into [[x, y, z, r, g, b]]
+        [in] buffer_data:
         """
         assert len(buffer_data) % 24 == 0, "wrong buffer size %d (can't devide by 24)" % (len(buffer_data) % 24)
         pc = []
@@ -79,9 +85,9 @@ class PcProcess():
 
     def cut(self, name_in, name_out, mode, direction, value):
         """
-            manually cut the point cloud
-            mode = 'x', 'y', 'z' ,'r'
-            direction = True(>=), False(<=)
+        manually cut the point cloud
+        mode = 'x', 'y', 'z' ,'r'
+        direction = True(>=), False(<=)
         """
         logger.debug('cut name_in[%s] name_out[%s] mode[%s] direction[%s] value[%.4f]' % (name_in, name_out, mode, direction, value))
         pc_both = self.clouds[name_in]
@@ -95,26 +101,31 @@ class PcProcess():
         """
         delete noise base on distance of each point
         pc_source could be a string indcating the point cloud that we want
-
         """
         logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
         pc = [i.clone() for i in self.clouds[name_in]]
         pc0_size = len(pc[0])
 
         pc = pc[0].add(pc[1])
-        logger.debug('start with %d point' % len(pc))
-        pc.SOR(int(self.settings.NoiseNeighbors), stddev)
-        logger.debug('finished with %d point' % len(pc))
-        pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
 
-        self.clouds[name_out] = pc_both
-
-        self.cluster(name_out, name_out, self.settings.SegmentationDistance)
-
-        self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
-        self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
+        if len(pc) == 0:
+            logger.debug('empty pc')
+            pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
+            self.clouds[name_out] = pc_both
+        else:
+            logger.debug('start with %d point' % len(pc))
+            pc.SOR(int(self.settings.NoiseNeighbors), stddev)
+            logger.debug('finished with %d point' % len(pc))
+            pc_both = [pc, _scanner.PointCloudXYZRGBObj()]
+            self.clouds[name_out] = pc_both
+            self.cluster(name_out, name_out, self.settings.SegmentationDistance)
+            self.closure(name_out, name_out, self.settings.CloseTop, False, 10)
+            self.closure(name_out, name_out, self.settings.CloseBottom, True, 10)
 
     def cluster(self, name_in, name_out, thres=2):
+        """
+        make a cluster from the input cloud, can help deleting the noise by removing cluster that are too small
+        """
         pc = self.clouds[name_in]
         logger.debug('cluster {} points'.format(len(pc[0]) + len(pc[1])))
         pc0_size = len(pc[0])
@@ -134,9 +145,12 @@ class PcProcess():
         self.clouds[name_out] = tmp_pc
 
     def to_mesh(self, name_in):
+        """
+        convert point cloud to mesh
+        """
         logger.debug('to_mesh name:%s' % name_in)
-        pc_both = self.clouds[name_in]
 
+        pc_both = self.clouds[name_in]
         # WARNING: merge L and R here!
         # pc = pc_both[0].clone()
         pc = pc_both[0].add(pc_both[1])
@@ -147,7 +161,7 @@ class PcProcess():
 
     def dump(self, name):
         """
-        dump the indicated(name) cloud
+        dump the indicated(name) cloud, dumping
         """
         logger.debug('dumping ' + name)
 
@@ -166,6 +180,12 @@ class PcProcess():
         return pc_size[0], pc_size[1], buffer_data
 
     def export(self, name, file_format, mode='binary'):
+        """
+        export as a file
+        [in] name: the name of desired pc
+        [in] file_format: output as .pcd, .ply, .stl file
+        [in] mode: if using stl mode, you can specified ascii or binary stl file
+        """
         if file_format == 'pcd':
             pc_both = self.clouds[name]
             # WARNING: merge L and R here!
@@ -228,6 +248,11 @@ class PcProcess():
         self.clouds[name_out] = new_pc
 
     def merge(self, name_base, name_2, name_out):
+        """
+        simply add two pc together
+        [in] name_base, name_2
+        [out] name_out
+        """
         logger.debug('merge %s, %s as %s' % (name_base, name_2, name_out))
         both_pc = []
         for i in range(2):
@@ -237,19 +262,22 @@ class PcProcess():
 
         self.clouds[name_out] = both_pc
 
+    def cone_bottom(self, name_in, name_out, z_value, thick=5):
+        pass
+
     def closure(self, name_in, name_out, z_value, floor, thick=5):
         if floor:
-            logger.debug('adding floor at {}'.format(floor))
+            logger.debug('adding floor at {}'.format(z_value))
         else:
-            logger.debug('adding ceiling at {}'.format(floor))
+            logger.debug('adding ceiling at {}'.format(z_value))
 
         points = []
         out_pc = [i.clone() for i in self.clouds[name_in]]
 
-        self.cut(name_out, name_out, 'z', floor, z_value)
+        self.cut(name_out, name_out, 'z', floor, z_value)  # what the fuck
         for i in range(2):
-            for z in range(len(out_pc[i])):
-                points.append(out_pc[i][z])
+            for p in range(len(out_pc[i])):
+                points.append(out_pc[i][p])
 
         # get near floor and a ring point set
         points = [[p, asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2)) if p[0] > 0 else pi - asin(p[1] / sqrt(p[0] ** 2 + p[1] ** 2))] for p in points]  # add theta data
@@ -261,7 +289,7 @@ class PcProcess():
         after = [points[0]]  # find out the boarder points
 
         for p in points[1:]:
-            tmp_index = bisect.bisect(rec, p[1])  # binary search where to insert
+            tmp_index = bisect(rec, p[1])  # binary search where to insert
             if p[1] - rec[tmp_index - 1] > interval and rec[tmp_index] - p[1] > interval and abs(after[0][0][2] - p[0][2]) < thick:
                 rec.insert(tmp_index, p[1])
                 after.append(p)
@@ -302,35 +330,41 @@ class PcProcess():
         x = np.array([p[0] for p in plane])
         y = np.array([p[1] for p in plane])
         z = np.array([p[2] for p in plane])
+        print('plane len', len(plane))
+        try:
 
-        # for p in plane:
-        #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
+            rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
 
-        if floor:
-            color = [255, 0, 0]
-        else:
-            color = [0, 255, 0]
+            # for p in plane:
+            #     tmp.append([p[0], p[1], p[2], 255, 0, 0])
 
-        color = [0., 0., 0.]
-        for i in after:
-            for j in range(3):
-                color[j] += i[j + 3]
-        color = [i / len(after) for i in color]
-        rbf = Rbf(x, y, z, function='linear', smooth=1)
-        # color = [255, 0, 0]
+            if floor:
+                color = [255, 0, 0]
+            else:
+                color = [0, 255, 0]
 
-        ZI = rbf(XI, YI)
-        for xx in range(grid_leaf):
-            for yy in range(grid_leaf):
-                p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
-                flag = True
-                for b in range(len(boarder)):
-                    if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
-                        flag = False
-                        break
-                if flag:
-                    tmp.append(p)
-        del rbf
+            color = [0., 0., 0.]
+            for i in after:
+                for j in range(3):
+                    color[j] += i[j + 3]
+            color = [i / len(after) for i in color]
+            # color = [255, 0, 0]
+
+            ZI = rbf(XI, YI)
+            for xx in range(grid_leaf):
+                for yy in range(grid_leaf):
+                    p = [XI[xx][yy], YI[xx][yy], ZI[xx][yy]] + color[:]
+                    flag = True
+                    for b in range(len(boarder)):  # check whether inside the boundary
+                        if (cross(boarder[b], boarder[(b + 1) % len(boarder)], p)) < 0:
+                            flag = False
+                            break
+                    if flag:
+                        tmp.append(p)
+            del rbf
+        except Exception as e:
+            print('rbf error')
+            print(e.args)
 
         plane += tmp
         for p in plane:
@@ -365,36 +399,3 @@ class PcProcess():
 
         self.clouds[name_out] = new_pc
         return True
-
-
-class PcProcessNoPCL(PcProcess):
-    """docstring for PcProcessNoPCL"""
-    def __init__(self):
-        super(PcProcessNoPCL, self).__init__()
-
-    def delete_noise(self, name_in, name_out, stddev):
-        """
-        delete noise base on distance of each point
-        pc_source could be a string indcating the point cloud that we want
-
-        """
-        logger.debug('delete_noise [%s] [%s] [%.4f]' % (name_in, name_out, stddev))
-        pc_both = self.clouds[name_in]
-        pc_both_o = []
-        for pc in pc_both:
-            pc_o = []
-            for p in pc:
-                # pc_o.append([p[0], p[1], p[2], len(pc_both), 0, 0])
-                pc_o.append([p[0], p[1], p[2], 255 - 255 * len(pc_both_o), 0, 0])
-            pc_both_o.append(pc_o)
-
-        pc_both_o.reverse()
-        self.clouds[name_out] = pc_both_o
-        return 0
-
-    def merge(self, name_base, name_2, name_out):
-        self.clouds[name_out] = self.clouds[name_base]
-        return True
-
-    def export(self, name, file_format):
-        return b"FLUX 3d printer: flux3dp.com, 2015                                              \x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00 A\x00\x00\x00\x00\x00\x00 A\x00\x00"
