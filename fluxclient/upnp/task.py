@@ -22,6 +22,8 @@ via ip address.
     :param callable lookup_callback: Invoke repeated while finding device
     :param float lookup_timeout: Raise error if device can not be found after \
 timeout value
+    :raises UpnpError: For protocol or operation error
+    :raises socket.error: For socket error
 """
     name = None
     uuid = None
