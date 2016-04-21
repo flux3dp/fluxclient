@@ -41,7 +41,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         super(UpnpUdp1Backend, self).__init__(
             client_key, uuid, version, model_id, ipaddr, metadata, options)
 
-        self.endpoint = metadata["endpoint"] if options else (ipaddr, 1901)
+        self.endpoint = metadata["endpoint"] if metadata else (ipaddr, 1901)
         self.timedelta = metadata["timedelta"]
         self.has_password = metadata["has_password"]
         self.master_key = metadata["master_key"]

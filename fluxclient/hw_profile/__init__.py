@@ -3,6 +3,7 @@ HW_PROFILE = {
         'radius': 85.,
         'scan_full_len': 360.,
         'height': 240.,
+        'nozzle_height': 4.45,
         # 'step_setting': {400: (3, 2.7), 800: (7, 3.15)}
         'step_setting': {100: (1, 3.6), 200: (1, 1.8), 400: (1, 0.9), 800: (1, 0.45), 1200: (1, 0.3)}
         # {N: (alpha, step_len)}

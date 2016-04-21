@@ -71,7 +71,7 @@ timeout value
         self.serial = serial
         self.model_id = model_id
         self.version = StrictVersion(version)
-        self.ipaddr = ipaddr[0]
+        self.ipaddr = ipaddr
         self.device_meta = meta
 
     def initialize_backend(self):
