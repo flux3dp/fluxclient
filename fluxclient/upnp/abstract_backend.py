@@ -28,6 +28,10 @@ class UpnpAbstractBackend(object):
         pass
 
     @abc.abstractmethod
+    def add_trust(self):
+        pass
+
+    @abc.abstractmethod
     def rename(self, new_device_name):
         pass
 

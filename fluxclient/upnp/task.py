@@ -84,6 +84,10 @@ timeout value
 
         raise NotSupportError(self.model_id, self.version)
 
+    def add_trust(self):
+        """Add client_key to device trust list"""
+        self._backend.add_trust()
+
     def rename(self, new_name):
         """Rename device
 

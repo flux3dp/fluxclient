@@ -97,10 +97,11 @@ To authorize with password, simply add a key value pair to param **backend_optio
 Manage device name, network and security
 ++++++++++++++++++++++++++++++++++++++++++
 
-.. automethod:: fluxclient.upnp.task.UpnpTask.rename
+.. automethod:: fluxclient.upnp.task.UpnpTask.add_trust
+.. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_password
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_network
-.. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
+.. automethod:: fluxclient.upnp.task.UpnpTask.rename
 
 Network config settings:
 
