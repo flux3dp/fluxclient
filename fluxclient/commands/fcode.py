@@ -49,9 +49,9 @@ def fcode_2_gcode():
 
     options = parser.parse_args()
 
-    from fluxclient.utils.fcode_parser import FcodeParser
+    from fluxclient.utils.f_to_g import FcodeToGcode
 
     with open(options.input, "rb") as f, open(options.output, "w") as t:
-        parser = FcodeParser()
+        parser = FcodeToGcode()
         parser.upload_content(f.read())
         parser.f_to_g(t, include_meta=True)

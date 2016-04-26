@@ -24,7 +24,7 @@ class GcodeToFcode(FcodeBase):
       transform gcode into fcode
       analyze metadata
     """
-    def __init__(self, version=1, head_type="EXTRUDER", ext_metadata={}):
+    def __init__(self, version=1, head_type=None, ext_metadata={}):
         super(GcodeToFcode, self).__init__()
 
         self.tool = 0  # set by T command
@@ -41,7 +41,10 @@ class GcodeToFcode(FcodeBase):
         self.max_range = [0., 0., 0., 0.]  # recording max coordinate, [x, y, z, r]
         self.filament = [0., 0., 0.]  # recording the filament needed, in mm
         self.previous = [0., 0., 0.]  # recording previous filament/path
-        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        if head_type:
+            self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        else:
+            self.md = {}
         self.md.update(ext_metadata)
 
         self.record_path = True
@@ -224,6 +227,9 @@ class GcodeToFcode(FcodeBase):
                             strength = 0
                         self.writer(packer_f(strength), output_stream)
 
+                        if 'HEAD_TYPE' not in self.md:
+                            self.md['HEAD_TYPE'] = 'LASER'
+
                     elif line[0] == 'G28':  # home
                         self.writer(packer(1), output_stream)
                         for i in range(2):
@@ -324,6 +330,9 @@ class GcodeToFcode(FcodeBase):
                 self.empty_layer.pop(0)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
+            if self.filament[0] and 'HEAD_TYPE' not in self.md:
+                self.md['HEAD_TYPE'] = 'EXTRUDER'
+
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
                 self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
 
@@ -338,6 +347,10 @@ class GcodeToFcode(FcodeBase):
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
                 self.md['SETTING'] = str(comment_list[-137:])
+
+            if "CORRECTION" not in self.md and self.md['HEAD_TYPE'] == "EXTRUDER":
+                self.md['CORRECTION'] = 'A'
+
             self.write_metadata(output_stream)
         except Exception as e:
             print('FcodeError:', file=sys.stderr)
