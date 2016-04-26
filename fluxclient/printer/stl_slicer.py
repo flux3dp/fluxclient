@@ -51,7 +51,6 @@ class StlSlicer(object):
         self.working_p = []  # process that are slicing
         self.models = {}  # models data, store the buf(stl file)
         self.parameter = {}  # model's parameter
-        self.user_setting = {}  # slcing setting
 
         # self.slic3r = '../Slic3r/slic3r.pl'  # slic3r's location
         # self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
@@ -127,16 +126,6 @@ class StlSlicer(object):
             self.parameter[name] = parameter
         else:
             raise ValueError("%s not upload yet" % (name))
-
-    def set_params(self, key, value):
-        """
-        basic printing parameter in front end
-        """
-        if key in ['print_speed', 'material', 'raft', 'support', 'layer_height', 'infill', 'traveling_speed', 'extruding_speed', 'temperature']:
-            self.user_setting[key] = value
-            return True
-        else:
-            return False
 
     def advanced_setting(self, lines):
         """
@@ -230,35 +219,6 @@ class StlSlicer(object):
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
-
-        for key in self.user_setting:
-            if self.user_setting[key] != "default":
-                if key == 'print_speed':
-                    pass  # TODO
-                elif key == 'material':
-                    pass  # TODO
-                elif key == 'raft':
-                    if self.user_setting[key] == '0':
-                        self.config['raft_layers'] = '0'
-                    elif self.user_setting[key] == '1':
-                        self.config['raft_layers'] = '4'  # TODO?
-                elif key == 'support':
-                    self.config['support_material'] = self.user_setting[key]
-                elif key == 'layer_height':
-                    self.config['first_layer_height'] = self.user_setting[key]
-                    self.config['layer_height'] = self.user_setting[key]
-                elif key == 'infill':
-                    fill_density = float(self.user_setting[key]) * 100
-                    fill_density = max(min(fill_density, 99), 0)
-                    self.config['fill_density'] = str(fill_density) + '%'
-                elif key == 'traveling_speed':
-                    self.config['travel_speed'] = self.user_setting[key]
-                elif key == 'extruding_speed':
-                    self.config['perimeter_speed'] = self.user_setting[key]
-                    self.config['infill_speed'] = self.user_setting[key]
-                elif key == 'temperature':
-                    self.config['temperature'] = self.user_setting[key]
-                    self.config['first_layer_temperature'] = self.user_setting[key] + 5
 
         self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
 
@@ -469,6 +429,7 @@ class StlSlicer(object):
         file_path[in]: str, output file_path
         content[in]: dict
         write a .ini file
+        specify delete not to write some key in content
         """
         with open(file_path, 'w') as f:
             for i in content:
@@ -616,3 +577,219 @@ class StlSlicer(object):
                     faces[i][j] = len(points_list) + faces[i][j]
 
         return points_list, faces
+
+
+class StlSlicerCura(StlSlicer):
+    def __init__(self, slic3r):
+        super(StlSlicerCura, self).__init__(slic3r)
+        self.slic3r = '/Applications/Cura/Cura.app/Contents/Resources/CuraEngine'
+
+    def begin_slicing(self, names, ws, output_type):
+        """
+        :param list names: names of stl that need to be sliced
+
+        :return:
+            if success:
+                gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
+            else:
+                False, [error message]
+        """
+        # check if names are all seted
+        for n in names:
+            if not (n in self.models and n in self.parameter):
+                return False, '%s not set yet' % (n)
+        # tmp files
+        if platform.platform().startswith("Windows"):
+            if not os.path.isdir('C:\Temp'):
+                os.mkdir('C:\Temp')
+            temp_dir = 'C:\Temp'
+        else:
+            temp_dir = None
+
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.stl', delete=False)
+        tmp_stl_file = tmp.name  # store merged stl
+
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.gcode', delete=False)
+        tmp_gcode_file = tmp.name  # store gcode
+
+        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
+        tmp_slic3r_setting_file = tmp.name  # store gcode
+
+        m_mesh_merge = _printer.MeshObj([], [])
+        for n in names:
+            points, faces = self.models[n]
+            m_mesh = _printer.MeshObj(points, faces)
+            m_mesh.apply_transform(self.parameter[n])
+            m_mesh_merge.add_on(m_mesh)
+        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
+
+        m_mesh_merge.write_stl(tmp_stl_file)
+        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
+
+        command = [self.slic3r]
+        command += ['-o', tmp_gcode_file]
+        command += ['-c', tmp_slic3r_setting_file]
+        command.append(tmp_stl_file)
+
+        logger.debug('command: ' + ' '.join(command))
+        self.end_slicing()
+
+        # parent_pipe, child_pipe = Pipe()
+        pipe = []
+        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
+        p.start()
+
+    def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
+        tmp_gcode_file = command[2]
+        tmp_slic3r_setting_file = command[4]
+        fail_flag = False
+        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+
+        self.working_p[p_index].append(subp)
+        # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        progress = 0.2
+        slic3r_error = False
+        slic3r_out = ''
+        while subp.poll() is None:
+            chunck = subp.stdout.read()
+            for line in chunck.split('\n'):
+                logger.debug(line.rstrip())
+                if line:
+                    if line.startswith('=> ') and not line.startswith('=> Exporting'):
+                        progress += 0.12
+                        child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
+                    elif "Unable to close this loop" in line:
+                        slic3r_error = True
+                    if line.strip():
+                        slic3r_out = line
+                # break
+        if subp.poll() != 0:
+            fail_flag = True
+
+        if config['flux_raft'] == '1':
+            m_preprocessor = Raft()
+            raft_output = StringIO()
+            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
+            raft_output = raft_output.getvalue()
+            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
+                print(raft_output, file=f)
+
+        if not fail_flag:
+            # analying gcode(even transform)
+            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+
+            fcode_output = BytesIO()
+
+            if config['detect_filament_runout'] == '1':
+                ext_metadata['FILAMENT_DETECT'] = 'Y'
+            else:
+                ext_metadata['FILAMENT_DETECT'] = 'N'
+
+            tmp = 8191
+            if config['detect_head_tilt'] == '0':
+                tmp -= 32
+            if config['detect_head_shake'] == '0':
+                tmp -= 16
+            ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
+
+            with open('output.gcode', 'wb') as f:
+                    with open(tmp_gcode_file, 'rb') as f2:
+                        f.write(f2.read())
+
+            with open(tmp_gcode_file, 'r') as f:
+                m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode.config = config
+                m_GcodeToFcode.image = image
+                m_GcodeToFcode.process(f, fcode_output)
+                path = m_GcodeToFcode.path
+                metadata = m_GcodeToFcode.md
+                metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
+                if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                    child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+
+                if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
+                    fail_flag = True
+                    slic3r_out = "gcode area too big"
+
+                del m_GcodeToFcode
+
+            if output_type == '-g':
+                with open(tmp_gcode_file, 'rb') as f:
+                    output = f.read()
+            elif output_type == '-f':
+                output = fcode_output.getvalue()
+            else:
+                raise('wrong output type, only support gcode and fcode')
+
+            ##################### fake code ###########################
+            if environ.get("flux_debug") == '1':
+                with open('output.gcode', 'wb') as f:
+                    with open(tmp_gcode_file, 'rb') as f2:
+                        f.write(f2.read())
+
+                tmp_stl_file = command[5]
+                with open(tmp_stl_file, 'rb') as f:
+                    with open('merged.stl', 'wb') as f2:
+                        f2.write(f.read())
+
+                with open('output.fc', 'wb') as f:
+                    f.write(fcode_output.getvalue())
+
+                with open(tmp_slic3r_setting_file, 'rb') as f:
+                    with open('output.ini', 'wb') as f2:
+                        f2.write(f.read())
+            ###########################################################
+
+            # # clean up tmp files
+            fcode_output.close()
+        if fail_flag:
+            child_pipe.append([False, slic3r_out, []])
+            ###########################################################
+
+            with open(tmp_slic3r_setting_file, 'rb') as f:
+                    with open('output.ini', 'wb') as f2:
+                        f2.write(f.read())
+            ###########################################################
+        else:
+            child_pipe.append([output, metadata, path])
+
+    @classmethod
+    def cura_ini_writer(cls, file_path, content, delete=None):
+        """
+        file_path[in]: str, output file_path
+        content[in]: dict
+        write a .ini file
+        specify delete not to write some key in content
+        """
+        new_content = {}
+        new_content['objectPosition.X'] = -10.0
+        new_content['objectPosition.Y'] = -10.0
+        new_content['autoCenter'] = 0
+        new_content['gcodeFlavor'] = 0
+        new_content['raftMargin'] = 5000
+        new_content['raftLineSpacing'] = 3000
+        new_content['raftBaseThickness'] = 300
+        new_content['raftBaseLinewidth'] = 1000
+        new_content['raftInterfaceThickness'] = 300
+        new_content['raftInterfaceLinewidth'] = 1000
+        new_content['raftInterfaceLineSpacing'] = 3000
+        new_content['raftAirGap'] = 220
+        new_content['raftAirGapLayer0'] = 0
+        new_content['raftBaseSpeed'] = 0
+        new_content['raftFanSpeed'] = 0
+        new_content['raftSurfaceThickness'] = 270
+        new_content['raftSurfaceLinewidth'] = 400
+        new_content['raftSurfaceLineSpacing'] = 3000
+        new_content['raftSurfaceLayers'] = 10
+        new_content['raftSurfaceSpeed'] = 0
+        new_content['layerThickness'] = float(content['layer_height']) * 1000
+        if content['support_material'] == '0':
+            new_content['supportAngle'] = -1
+        else:
+            new_content['supportAngle'] = content['support_material_angle']
+
+        new_content['raftSurfaceLayers'] = content['raft_layers']
+
+        cls.my_ini_writer(file_path, new_content, delete)
+        return
