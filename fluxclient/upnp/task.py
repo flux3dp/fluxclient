@@ -110,7 +110,7 @@ from device.
 
         :param str password: Device password
 
-        :raises UpnpError: Raise if password error"""
+        :raises UpnpError: Raise if wrong password"""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")
@@ -125,7 +125,8 @@ from device.
         :param str pem: A vailed RSA key pem
         :return: Key hash
         :rtype: str
-        :raises UpnpError: Raise if key is already in list"""
+        :raises UpnpError: Raise if key is already in list or other device \
+error"""
 
         raise NotSupportError(self.model_id, self.version)
 
@@ -140,7 +141,8 @@ from device.
         """Remove trusted key
 
         :param str key_hash: Key hash which will be removed
-        :raises UpnpError: Raise if key is not in trust list"""
+        :raises UpnpError: Raise if key is not in trust list or other device \
+error"""
 
         raise NotSupportError(self.model_id, self.version)
 
@@ -161,7 +163,8 @@ authorized user will be deauthorized.
 
         :param str old_password: Old device password
         :param str new_password: New device password
-        :param bool reset_acl: Clear authorized user list in device"""
+        :param bool reset_acl: Clear authorized user list in device
+        :raises UpnpError: Raise if wrong password or other device error"""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")
