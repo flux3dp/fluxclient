@@ -1,7 +1,7 @@
 
 from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
-from .abstract_backend import NotSupportError
+from .abstract_backend import UpnpError, NotSupportError
 from .udp1_backend import UpnpUdp1Backend
 from .ssl1_backend import UpnpSSL1Backend
 
@@ -92,6 +92,23 @@ should not be called anymore."""
 
         self._backend.close()
 
+    @property
+    def authorized(self):
+        "Is connection authorized. If connection not authorized, it must \
+call `authorize_with_password` first to complete authorize."
+        return self._backend.authorized
+
+    @property
+    def connected(self):
+        return self._backend.connected
+
+    def authorize_with_password(self, password):
+        if not self._backend.connected:
+            raise UpnpError("Disconnected")
+        if self._backend.authorized:
+            raise UpnpError("Already authorized")
+        self._backend.authorize_with_password(password)
+
     def add_trust(self):
         """Add client_key to device trust list"""
         self._backend.add_trust()
@@ -100,6 +117,11 @@ should not be called anymore."""
         """Rename device
 
         :param str new_name: New device name"""
+
+        if not self._backend.connected:
+            raise UpnpError("Disconnected")
+        if not self._backend.authorized:
+            raise UpnpError("Authorize required")
         self._backend.rename(new_name)
 
     def modify_password(self, old_password, new_password, reset_acl=True):
@@ -109,14 +131,27 @@ authorized user will be deauthorized.
         :param str old_password: Old device password
         :param str new_password: New device password
         :param bool reset_acl: Clear authorized user list in device"""
+
+        if not self._backend.connected:
+            raise UpnpError("Disconnected")
+        if not self._backend.authorized:
+            raise UpnpError("Authorize required")
         self._backend.modify_password(old_password, new_password, reset_acl)
 
     def modify_network(self, **settings):
         """Mofify device modify_network, look document for more help"""
 
+        if not self._backend.connected:
+            raise UpnpError("Disconnected")
+        if not self._backend.authorized:
+            raise UpnpError("Authorize required")
         self._backend.modify_network(**settings)
 
     def get_wifi_list(self):
         """Get wifi list discovered from device"""
 
+        if not self._backend.connected:
+            raise UpnpError("Disconnected")
+        if not self._backend.authorized:
+            raise UpnpError("Authorize required")
         return self._backend.get_wifi_list()

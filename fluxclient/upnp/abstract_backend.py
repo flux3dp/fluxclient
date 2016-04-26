@@ -6,6 +6,7 @@ __all__ = ["UpnpAbstractBackend"]
 
 class UpnpAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
+    _authorized = False
 
     def __init__(self, client_key, uuid, version, model_id, ipaddr,
                  metadata=None, options=None):
@@ -19,12 +20,24 @@ class UpnpAbstractBackend(object):
     def support_device(cls, model_id, version):
         return False
 
+    @abc.abstractproperty
+    def authorized(self):
+        return self._authorized
+
     @abc.abstractmethod
     def connect(self):
         pass
 
+    @abc.abstractproperty
+    def connected(self):
+        pass
+
     @abc.abstractmethod
     def close(self):
+        pass
+
+    @abc.abstractmethod
+    def authorize_with_password(self, password):
         pass
 
     @abc.abstractmethod

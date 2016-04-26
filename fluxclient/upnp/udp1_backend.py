@@ -7,7 +7,7 @@ import struct
 import json
 
 from fluxclient.utils.version import StrictVersion
-from .abstract_backend import (UpnpAbstractBackend, AuthError, TimeoutError,
+from .abstract_backend import (UpnpAbstractBackend, TimeoutError, AuthError,
                                NotSupportError, UpnpError)
 
 __all__ = ["UpnpUdp1Backend"]
@@ -31,6 +31,7 @@ SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b1"))
 class UpnpUdp1Backend(UpnpAbstractBackend):
     sock = None
     _access_id = None
+    _authorized = False
 
     @classmethod
     def support_device(cls, model_id, version):
@@ -63,14 +64,21 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
     def connect(self):
         if self.sock:
             self.close()
+
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                   socket.IPPROTO_UDP)
-        self._try_auth(self.options.get("password"))
+        self._authorized = False
+        self._try_auth()
+
+    @property
+    def connected(self):
+        return self.sock is not None
 
     def close(self):
         if self.sock:
             self.sock.close()
             self.sock = None
+            self._authorized = False
 
     def create_timestemp(self):
         return time() + self.timedelta
@@ -123,42 +131,22 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
             else:
                 return json.loads(message)
 
-    def _try_auth(self, password, timeout=6):
+    def _try_auth(self, timeout=6):
         start_at = time()
         while timeout >= (time() - start_at):
             resp = self._auth_without_password()
             if resp:
                 if resp.get("status") == "ok":
+                    self._authorized = True
                     return
+
                 elif resp.get("status") == "deny":
-                    if callable(password):
-                        resp = self._auth_with_password(password(self))
-                    elif isinstance(password, str):
-                        resp = self._auth_with_password(password)
-                    else:
-                        raise AuthError("Access deny")
-
-                    if resp and resp.get("status") == "ok":
-                        return
-                    else:
-                        raise AuthError("Wrong password")
+                    return
                 else:
+
                     raise UpnpError("Unknown status '%s'" % resp.get("status"))
+
         raise TimeoutError()
-
-    def _auth_with_password(self, passwd, timeout=1.2):
-        der = self.publickey_der
-
-        req_code = CODE_PWD_ACCESS
-        resp_code = CODE_RESPONSE_PWD_ACCESS
-
-        buf = b"\x00".join([
-            str(self.create_timestemp()).encode(),
-            passwd.encode(),
-            der
-        ])
-        resp = self.make_request(req_code, resp_code, buf, encrypt=True)
-        return resp
 
     def _auth_without_password(self, timeout=1.2):
         der = self.publickey_der
@@ -170,6 +158,23 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         resp = self.make_request(req_code, resp_code, msg,
                                  encrypt=False, timeout=timeout)
         return resp
+
+    def authorize_with_password(self, passwd, timeout=1.2):
+        der = self.publickey_der
+
+        req_code = CODE_PWD_ACCESS
+        resp_code = CODE_RESPONSE_PWD_ACCESS
+
+        buf = b"\x00".join([
+            str(self.create_timestemp()).encode(),
+            passwd.encode(),
+            der
+        ])
+        resp = self.make_request(req_code, resp_code, buf, encrypt=True)
+        if resp.get("status") == "ok":
+            self._authorized = True
+        else:
+            raise AuthError("Bad password")
 
     def add_trust(self):
         raise NotSupportError(self.model_id, self.version)

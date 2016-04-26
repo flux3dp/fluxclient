@@ -105,15 +105,8 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
 
         elif resp == "password":
             # Stage 4.b: Send password
-            pwd_src = self.options.get("password")
-            if callable(pwd_src):
-                password = pwd_src(self).encode()
-            elif isinstance(pwd_src, str):
-                password = pwd_src.encode()
-            else:
-                raise AuthError("Require password")
+            return
 
-            self.send_text(password)
         elif resp.startswith("error "):
             raise raise_error(resp)
         else:
@@ -121,6 +114,7 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
 
         resp = self.recv_text()
         if resp == "ok":
+            self._authorized = True
             return
         elif resp.startswith("error "):
             err = resp[6:]
@@ -129,9 +123,25 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
             else:
                 raise UpnpError(err)
 
+    @property
+    def connected(self):
+        return self.sock
+
     def close(self):
         if self.sock:
             self.sock.close()
+            self.sock = None
+            self._authorized = False
+
+    def authorize_with_password(self, password):
+        # Stage 4.b: Send password
+        self.send_text(password)
+        resp = self.recv_text()
+        if resp == "ok":
+            self._authorized = True
+        else:
+            self.close()
+            raise AuthError("Bad password")
 
     def add_trust(self):
         self.send_text("add_trust")

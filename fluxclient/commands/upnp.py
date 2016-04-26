@@ -98,16 +98,14 @@ def main():
     logger = setup_logger(__name__, debug=options.debug)
     client_key = get_or_create_default_key(options.client_key)
 
-    backend_options = {
-        "password": lambda _: getpass("Device Password: ")
-    }
-
     if is_uuid(options.target):
-        upnp = UpnpTask(UUID(hex=options.target), client_key,
-                        backend_options=backend_options)
+        upnp = UpnpTask(UUID(hex=options.target), client_key)
     else:
-        upnp = UpnpTask(UUID(int=0), client_key, ipaddr=options.target,
-                        backend_options=backend_options)
+        upnp = UpnpTask(UUID(int=0), client_key, ipaddr=options.target)
+
+    if not upnp.authorized:
+        password = getpass("Device Password: ")
+        upnp.authorize_with_password(password)
 
     logger.info("\n"
                 "Serial: %s (uuid={%s})\n"
