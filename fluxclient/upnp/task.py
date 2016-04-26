@@ -96,22 +96,53 @@ should not be called anymore."""
     def authorized(self):
         "Is connection authorized. If connection not authorized, it must \
 call `authorize_with_password` first to complete authorize."
+
         return self._backend.authorized
 
     @property
     def connected(self):
+        """Return True if Upnp is connected with device"""
         return self._backend.connected
 
     def authorize_with_password(self, password):
+        """Authorize via password, only use when RSA key is not been trusted \
+from device.
+
+        :param str password: Device password
+
+        :raises UpnpError: Raise if password error"""
+
         if not self._backend.connected:
             raise UpnpError("Disconnected")
         if self._backend.authorized:
             raise UpnpError("Already authorized")
         self._backend.authorize_with_password(password)
 
-    def add_trust(self):
-        """Add client_key to device trust list"""
-        self._backend.add_trust()
+    def add_trust(self, label, pem):
+        """Add client_key to device trust list
+
+        :param str label: Key label will show for human only
+        :param str pem: A vailed RSA key pem
+        :return: Key hash
+        :rtype: str
+        :raises UpnpError: Raise if key is already in list"""
+
+        raise NotSupportError(self.model_id, self.version)
+
+    def list_trust(self):
+        """Get all trusted key in device
+
+        :return: ((label, key hash), (label, key hash), ...)"""
+
+        raise NotSupportError(self.model_id, self.version)
+
+    def remove_trust(self, key_hash):
+        """Remove trusted key
+
+        :param str key_hash: Key hash which will be removed
+        :raises UpnpError: Raise if key is not in trust list"""
+
+        raise NotSupportError(self.model_id, self.version)
 
     def rename(self, new_name):
         """Rename device
