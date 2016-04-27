@@ -64,6 +64,16 @@ class StlSlicer(object):
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
 
+    def from_other(self, other):
+        self.working_p = other.working_p
+        self.models = other.models
+        self.parameter = other.parameter
+        self.config = other.config
+        self.path = None
+        self.image = b''
+        self.ext_metadata = {'CORRECTION': 'A'}
+        return self
+
     def upload(self, name, buf, buf_type='stl'):
         """
         upload a model's data in stl as bytes data
@@ -784,12 +794,25 @@ class StlSlicerCura(StlSlicer):
         new_content['raftSurfaceLayers'] = 10
         new_content['raftSurfaceSpeed'] = 0
         new_content['layerThickness'] = float(content['layer_height']) * 1000
+
         if content['support_material'] == '0':
             new_content['supportAngle'] = -1
         else:
             new_content['supportAngle'] = content['support_material_angle']
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
+
+        # brim
+        # temperature
+        # 'skirt_distance': [float_range, 0],
+        # 'skirt_height': [int_range, 0],
+
+        new_content['skirtLineCount'] = content['skirts']
+        new_content['skirtDistance'] = float(content['skirt_distance']) * 1000
+
+        # other
+        new_content['upSkinCount'] = content['top_solid_layers']
+        new_content['downSkinCount'] = content['bottom_solid_layers']
 
         cls.my_ini_writer(file_path, new_content, delete)
         return
