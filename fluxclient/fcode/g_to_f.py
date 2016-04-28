@@ -315,6 +315,18 @@ class GcodeToFcode(FcodeBase):
                         else:
                             logger.debug('Undefine gcode: {}'.format(line))
                         # raise ValueError('Undefine gcode', line)
+                else:
+                    if self.engine == 'cura':
+                        if 'FILL' in comment:
+                            self.now_type = 0
+                        elif 'SUPPORT' in comment:
+                            self.now_type = 2
+                        elif 'LAYER:' in comment:
+                            self.now_type = -1
+                        elif 'WALL-OUTER' in comment or 'WALL-INNER' in comment:
+                            self.now_type = 1
+                        elif 'RAFT' in comment:
+                            self.now_type = 4
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)
             output_stream.write(struct.pack('<I', self.script_length))

@@ -593,6 +593,7 @@ class StlSlicerCura(StlSlicer):
     def __init__(self, slic3r):
         super(StlSlicerCura, self).__init__(slic3r)
         self.slic3r = '/Applications/Cura/Cura.app/Contents/Resources/CuraEngine'
+        self.now_type = 3
 
     def begin_slicing(self, names, ws, output_type):
         """
@@ -709,6 +710,8 @@ class StlSlicerCura(StlSlicer):
 
             with open(tmp_gcode_file, 'r') as f:
                 m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode.engine = 'cura'
+                # m_GcodeToFcode.process_path = self.process_path
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)

@@ -21,6 +21,8 @@ class FcodeBase(object):
         self.empty_layer = []
         self.counter_between_layers = 0
         self.record_z = 0.0
+        self.engine = 'slic3r'
+        self.now_type = 3
 
     def get_path(self):
         return self.path
@@ -30,43 +32,73 @@ class FcodeBase(object):
         convert to path list(for visualizing)
         """
         # TODO?: reconsider if theese two flag necessary
-        already_split = False
-        self.counter_between_layers += 1
-        if move_flag:
-            if 'infill' in comment:
-                line_type = 0
-            elif 'support' in comment:
-                line_type = 2
-            elif 'move' in comment:
-                line_type = 3
-                if 'to next layer' in comment:
-                    self.record_z = self.current_pos[2]
-                    already_split = True
-                    if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
-                        self.empty_layer.append(self.layer_now)
-                    tmp = findall('[0-9]+', comment)[-1]
-                    self.counter_between_layers = 0
-                    self.layer_now = int(tmp)
-                    self.path.append([self.path[-1][-1][:3] + [line_type]])
-                    self.filament_this_layer = self.filament[:]
-            elif 'perimeter' in comment:
-                line_type = 1
-            elif 'skirt' in comment:
-                line_type = 4
-            elif 'draw' in comment:
-                line_type = 0
-            else:   # no data in comment
-                if extrude_flag:
+        if self.engine == 'slic3r':
+            already_split = False
+            self.counter_between_layers += 1
+            if move_flag:
+                if 'infill' in comment:
+                    line_type = 0
+                elif 'support' in comment:
+                    line_type = 2
+                elif 'move' in comment:
+                    line_type = 3
+                    if 'to next layer' in comment:
+                        self.record_z = self.current_pos[2]
+                        already_split = True
+                        if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
+                            self.empty_layer.append(self.layer_now)
+                        tmp = findall('[0-9]+', comment)[-1]
+                        self.counter_between_layers = 0
+                        self.layer_now = int(tmp)
+                        self.path.append([self.path[-1][-1][:3] + [line_type]])
+                        self.filament_this_layer = self.filament[:]
+                elif 'perimeter' in comment:
                     line_type = 1
-                else:
+                elif 'skirt' in comment:
+                    line_type = 4
+                elif 'draw' in comment:
+                    line_type = 0
+                else:   # no data in comment
+                    if extrude_flag:
+                        line_type = 1
+                    else:
+                        line_type = 3
+
+                self.path[-1].append(self.current_pos[:3] + [line_type])
+
+                if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
+                    self.path.append([self.path[-1][-1][:3] + [line_type]])
+                    self.record_z = self.current_pos[2]
+                    self.layer_now = len(self.path)
+
+        elif self.engine == 'cura':
+            already_split = False
+            self.counter_between_layers += 1
+            line_type = 3
+            if self.now_type == -1:
+                self.record_z = self.current_pos[2]
+                already_split = True
+                if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
+                    self.empty_layer.append(self.layer_now)
+                # tmp = findall('[0-9]+', comment)[-1]
+                self.counter_between_layers = 0
+                # self.layer_now = int(tmp)
+                self.layer_now = len(self.path)
+                self.path.append([self.path[-1][-1][:3] + [self.now_type]])
+                self.filament_this_layer = self.filament[:]
+
+            if move_flag:
+                if extrude_flag:
+                    line_type = self.now_type
+                elif not extrude_flag:
                     line_type = 3
 
-            self.path[-1].append(self.current_pos[:3] + [line_type])
+                self.path[-1].append(self.current_pos[:3] + [line_type])
 
-            if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
-                self.path.append([self.path[-1][-1][:3] + [line_type]])
-                self.record_z = self.current_pos[2]
-                self.layer_now = len(self.path)
+                if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
+                    self.path.append([self.path[-1][-1][:3] + [line_type]])
+                    self.record_z = self.current_pos[2]
+                    self.layer_now = len(self.path)
 
     @classmethod
     def path_to_js(cls, path):
