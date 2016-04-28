@@ -776,6 +776,7 @@ class StlSlicerCura(StlSlicer):
         specify delete not to write some key in content
         """
         new_content = {}
+        new_content['extrusionWidth'] = int(1000 * float(content['nozzle_diameter']))
         new_content['objectPosition.X'] = -10.0
         new_content['objectPosition.Y'] = -10.0
         new_content['autoCenter'] = 0
@@ -816,6 +817,16 @@ class StlSlicerCura(StlSlicer):
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
         new_content['downSkinCount'] = content['bottom_solid_layers']
+
+        fill_density = float(content['fill_density'].rstrip('%'))
+        if fill_density == 0:
+            new_content['sparseInfillLineDistance'] = -1
+        elif fill_density == 100:
+            new_content['sparseInfillLineDistance'] = new_content['extrusionWidth']
+            new_content['downSkinCount'] = 10000
+            new_content['upSkinCount'] = 10000
+        else:
+            new_content['sparseInfillLineDistance'] = int(100 * float(content['nozzle_diameter']) * 1000 / fill_density)
 
         cls.my_ini_writer(file_path, new_content, delete)
         return
