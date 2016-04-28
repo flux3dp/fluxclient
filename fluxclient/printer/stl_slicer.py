@@ -261,7 +261,7 @@ class StlSlicer(object):
             logger.debug(line.rstrip())
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
-                    progress += 0.12
+                    progress += 0.11
                     child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
