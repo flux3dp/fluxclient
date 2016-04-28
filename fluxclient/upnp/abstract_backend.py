@@ -41,7 +41,15 @@ class UpnpAbstractBackend(object):
         pass
 
     @abc.abstractmethod
-    def add_trust(self):
+    def add_trust(self, label, pem):
+        pass
+
+    @abc.abstractmethod
+    def list_trust(self):
+        pass
+
+    @abc.abstractmethod
+    def remove_trust(self, access_id):
         pass
 
     @abc.abstractmethod
@@ -70,6 +78,15 @@ class UpnpError(RuntimeError):
             self.err_symbol = ("UNKNOWN_ERROR")
 
 
+class UpnpException(Exception):
+    def __init__(self, *args, **kw):
+        super(UpnpError, self).__init__(*args)
+        if "err_symbol" in kw:
+            self.err_symbol = kw["err_symbol"]
+        else:
+            self.err_symbol = ("UNKNOWN_ERROR")
+
+
 def NotSupportError(model_id, version):  # noqa
     return UpnpError(
         "Device '%s' with '%s' is not supported" % (model_id, version),
@@ -81,8 +98,9 @@ def AuthError(reason):  # noqa
 
 
 def TimeoutError():  # noqa
-    return UpnpError("Connection timeout", err_symbol=("TIMEOUT", ))
+    return UpnpException("Connection timeout", err_symbol=("TIMEOUT", ))
 
 
 def ConnectionBroken():  # noqa
-    return UpnpError("Connection broken", err_symbol=("CONNECTION_BROKEN", ))
+    return UpnpException("Connection broken",
+                         err_symbol=("CONNECTION_BROKEN", ))

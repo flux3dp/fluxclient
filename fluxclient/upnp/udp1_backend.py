@@ -176,7 +176,13 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         else:
             raise AuthError("Bad password")
 
-    def add_trust(self):
+    def add_trust(self, label, pem):
+        raise NotSupportError(self.model_id, self.version)
+
+    def list_trust(self):
+        raise NotSupportError(self.model_id, self.version)
+
+    def remove_trust(self, access_id):
         raise NotSupportError(self.model_id, self.version)
 
     def rename(self, new_name):

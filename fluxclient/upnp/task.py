@@ -128,23 +128,23 @@ from device.
         :raises UpnpError: Raise if key is already in list or other device \
 error"""
 
-        raise NotSupportError(self.model_id, self.version)
+        self._backend.add_trust(label, pem)
 
     def list_trust(self):
         """Get all trusted key in device
 
         :return: ((label, key hash), (label, key hash), ...)"""
 
-        raise NotSupportError(self.model_id, self.version)
+        return self._backend.list_trust()
 
-    def remove_trust(self, key_hash):
+    def remove_trust(self, access_id):
         """Remove trusted key
 
-        :param str key_hash: Key hash which will be removed
+        :param str access_id: Key hash which will be removed
         :raises UpnpError: Raise if key is not in trust list or other device \
 error"""
 
-        raise NotSupportError(self.model_id, self.version)
+        return self._backend.remove_trust(access_id)
 
     def rename(self, new_name):
         """Rename device

@@ -1,5 +1,5 @@
 
-from getpass import getpass
+from getpass import getpass, getuser
 from uuid import UUID
 import argparse
 import sys
@@ -54,6 +54,38 @@ def get_wifi_list(upnp, logger):
     logger.info("--\n")
 
 
+def add_trust(upnp, logger):
+    """Add an ID to trusted list"""
+
+    filename = input("Keyfile (keep emptry to use current session key): ")
+    if filename:
+        with open(filename, "r") as f:
+            aid = upnp.add_trust(getuser(), f.read())
+    else:
+        aid = upnp.add_trust(getuser(),
+                             upnp.client_key.public_key_pem.decode())
+
+    logger.info("Key added with Access ID: %s\n", aid)
+
+
+def list_trust(upnp, logger):
+    """List trusted ID"""
+
+    logger.info("=" * 79)
+    logger.info("%40s  %s", "access_id", "label")
+    logger.info("-" * 79)
+    for meta in upnp.list_trust():
+        logger.info("%40s  %s", meta["access_id"], meta.get("label"))
+    logger.info("=" * 79 + "\n")
+
+
+def remove_trust(upnp, logger):
+    """Remove trusted ID"""
+    access_id = input("Access id to remove: ")
+    upnp.remove_trust(access_id)
+    logger.info("Access ID %s REMOVED.\n", access_id)
+
+
 def run_commands(upnp, logger):
     tasks = [
         quit_program,
@@ -61,6 +93,9 @@ def run_commands(upnp, logger):
         change_device_password,
         change_network_settings,
         get_wifi_list,
+        add_trust,
+        list_trust,
+        remove_trust,
     ]
 
     while True:
@@ -78,10 +113,12 @@ def run_commands(upnp, logger):
             t = tasks[i]
             t(upnp, logger)
         except UpnpError as e:
-            logger.error("Error %s", e)
+            logger.error("Error '%s'", e)
         except KeyboardInterrupt as e:
             logger.info("\n")
             return
+
+        logger.info("")
 
 
 def main():

@@ -17,11 +17,19 @@ SHORT_PACKER = Struct("<H")
 SUPPORT_VERSION = (StrictVersion("1.1b1"), StrictVersion("1.2b1"))
 
 
-def raise_error(ret):
+def raise_error(ret, **ref):
     if ret.startswith("error ") or ret.startswith("er "):
-        return UpnpError(err_symbol=ret.split(" ")[1:])
+        errno = ret.split(" ")[1:]
+        message = ref.get(errno[0])
+        if not message:
+            message = "Error: " + " ".join(errno)
+        return UpnpError(message, err_symbol=errno)
     else:
         return UpnpError(ret, err_symbol=("UNKNOW_ERROR", ))
+
+
+def ensure_pair(key, value=None):
+    return (key, value)
 
 
 class UpnpSSL1Backend(UpnpAbstractBackend):
@@ -143,10 +151,35 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
             self.close()
             raise AuthError("Bad password")
 
-    def add_trust(self):
-        self.send_text("add_trust")
+    def add_trust(self, label, pem):
+        self.send_text("add_trust\x00%s\x00%s" % (label, pem))
         resp = self.recv_text()
         if resp != "ok":
+            raise raise_error(resp, OPERATION_ERROR="Key already in list")
+
+    def list_trust(self):
+        data = []
+        self.send_text("list_trust")
+        while True:
+            resp = self.recv_text()
+            if resp.startswith("data "):
+                d = {}
+                for strpair in resp[5:].split("\x00"):
+                    key, value = ensure_pair(*(strpair.split("=", 1)))
+                    d[key] = value
+                data.append(d)
+
+            elif resp == "ok":
+                return data
+            else:
+                raise raise_error(resp)
+
+    def remove_trust(self, access_id):
+        self.send_text("remove_trust\x00%s" % access_id)
+        resp = self.recv_text()
+        if resp == "ok":
+            return
+        else:
             raise raise_error(resp)
 
     def rename(self, new_name):
