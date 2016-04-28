@@ -76,6 +76,7 @@ class FcodeBase(object):
             self.counter_between_layers += 1
             line_type = 3
             if self.now_type == -1:
+                self.now_type = 3
                 self.record_z = self.current_pos[2]
                 already_split = True
                 if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
@@ -94,11 +95,6 @@ class FcodeBase(object):
                     line_type = 3
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
-
-                if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
-                    self.path.append([self.path[-1][-1][:3] + [line_type]])
-                    self.record_z = self.current_pos[2]
-                    self.layer_now = len(self.path)
 
     @classmethod
     def path_to_js(cls, path):
