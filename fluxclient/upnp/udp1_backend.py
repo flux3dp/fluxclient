@@ -142,8 +142,12 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
 
                 elif resp.get("status") == "deny":
                     return
-                else:
 
+                elif resp.get("status") == "padding":
+                    raise UpnpError("Can not auth because device does not has "
+                                    "password", err_symbol=("NOT_SUPPORT", ))
+
+                else:
                     raise UpnpError("Unknown status '%s'" % resp.get("status"))
 
         raise TimeoutError()
