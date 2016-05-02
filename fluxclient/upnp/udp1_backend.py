@@ -171,6 +171,9 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
                                  encrypt=False, timeout=timeout)
         return resp
 
+    def add_trust(self):
+        raise NotSupportError(self.model_id, self.version)
+
     def rename(self, new_name):
         raise NotSupportError(self.model_id, self.version)
 

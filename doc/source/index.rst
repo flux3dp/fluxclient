@@ -12,7 +12,7 @@ Contents:
     :numbered:
     :maxdepth: 2
 
-    Installation.rst
+    installation.rst
     tutorial/index.rst
     API/Document.rst
 

@@ -29,12 +29,12 @@ def XYZE(command):
     return tmp
 
 
-class FcodeParser(FcodeBase):
+class FcodeToGcode(FcodeBase):
     """
     https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
     """
     def __init__(self, buf=''):
-        super(FcodeParser, self).__init__()
+        super(FcodeToGcode, self).__init__()
         self.data = None
         self.metadata = None
 
@@ -237,9 +237,9 @@ class FcodeParser(FcodeBase):
 
 
 if __name__ == '__main__':
-    m_FcodeParser = FcodeParser()
+    m_FcodeToGcode = FcodeToGcode()
     with open(sys.argv[1], 'rb') as f, open('tmp.gcode', 'w') as f2, open('tmp.js', 'w') as f3:
-        m_FcodeParser.upload_content(f.read())
-        m_FcodeParser.f_to_g(f2)
-        print(m_FcodeParser.path_to_js(m_FcodeParser.get_path()), file=f3)
-        print(m_FcodeParser.get_metadata())
+        m_FcodeToGcode.upload_content(f.read())
+        m_FcodeToGcode.f_to_g(f2)
+        print(m_FcodeToGcode.path_to_js(m_FcodeToGcode.get_path()), file=f3)
+        print(m_FcodeToGcode.get_metadata()['CORRECTION'])

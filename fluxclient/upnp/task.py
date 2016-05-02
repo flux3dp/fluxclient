@@ -22,6 +22,8 @@ via ip address.
     :param callable lookup_callback: Invoke repeated while finding device
     :param float lookup_timeout: Raise error if device can not be found after \
 timeout value
+    :raises UpnpError: For protocol or operation error
+    :raises socket.error: For socket error
 """
     name = None
     uuid = None
@@ -84,6 +86,16 @@ timeout value
 
         raise NotSupportError(self.model_id, self.version)
 
+    def close(self):
+        """Close upnp socket connection. After close(), any other method \
+should not be called anymore."""
+
+        self._backend.close()
+
+    def add_trust(self):
+        """Add client_key to device trust list"""
+        self._backend.add_trust()
+
     def rename(self, new_name):
         """Rename device
 
@@ -100,7 +112,7 @@ authorized user will be deauthorized.
         self._backend.modify_password(old_password, new_password, reset_acl)
 
     def modify_network(self, **settings):
-        """Modify network settings TODO"""
+        """Mofify device modify_network, look document for more help"""
 
         self._backend.modify_network(**settings)
 

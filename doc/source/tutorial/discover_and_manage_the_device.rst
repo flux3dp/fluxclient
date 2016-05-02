@@ -26,9 +26,9 @@ Metadata contain at least follow key-values:
 * model_id (str) - Model ID
 * version (str) - Device firmware version
 * ipaddr (str) - Device IP address
-* endpoint ((str, int)) - Endpoint device response from
+* endpoint ((str, int)) - Endpoint device response from (ip, port number)
 
-Metada has other usable optional values:
+Metada has other usable optional values(will only appear after receiving multiple discover result):
 
 * st_id (int) - Device current status ID.
 * st_ts (int) - Timestemp (Device status last update).
@@ -68,15 +68,17 @@ Metada has other usable optional values:
       - Occupied for maintain 
     * - -2
       - Occupied for scan 
+    * - -3
+      - Occupied by sdk mode
 
 Authorize and manage the device
 =================================
 
-FLUX device use password and RSA key for access authorize. At first time user connect to device, a RSA key and password is required. After password authorized, Only RSA key is required.
+FLUX delta use password and RSA key authorizing access. At the first time a user connect to device, a RSA key and password is required. After the password is authorized, Only RSA key is required.
 
 .. autoclass:: fluxclient.upnp.task.UpnpTask
 
-When create UpnpTask instance, the argument **uuid** is required. If param **device_metadata** not given, UpnpTask will use lookup_callback and lookup_timeout to create a Discover instance and try to get metadata from network.
+When creating UpnpTask instance, the argument **uuid** is required. If param **device_metadata** not given, UpnpTask will use lookup_callback and lookup_timeout to create a Discover instance and try to get metadata from network.
 
 .. note:: Note: Assign **device_metadata** can skip discover process in UpnpTask constructor.
 
@@ -95,9 +97,49 @@ To authorize with password, simply add a key value pair to param **backend_optio
 Manage device name, network and security
 ++++++++++++++++++++++++++++++++++++++++++
 
-.. automethod:: fluxclient.upnp.task.UpnpTask.rename
+.. automethod:: fluxclient.upnp.task.UpnpTask.add_trust
+.. automethod:: fluxclient.upnp.task.UpnpTask.close
+.. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_password
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_network
-.. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
+.. automethod:: fluxclient.upnp.task.UpnpTask.rename
+
+Network config settings:
+
++---------------+---------------------------+------------------------------------+
+| key           | value example             | Describe                           |
++===============+===========================+====================================+
+| method        | ("static"|"dhcp")         |                                    |
++---------------+---------------------------+------------------------------------+
++---------------+---------------------------+------------------------------------+
+| **Only required when *method*="static"**                                       |
++---------------+---------------------------+------------------------------------+
+| ipaddr        | "192.168.1.2"             | Device ip address (IPv4, str)      |
++---------------+---------------------------+------------------------------------+
+| mask          | 24                        | Network mask, int                  |
++---------------+---------------------------+------------------------------------+
+| route         | "192.168.1.1"             | Default gateway                    |
++---------------+---------------------------+------------------------------------+
+| ns            | ["8.8.8.8"]               | DNS, a list of IPv4 address, str   |
++---------------+---------------------------+------------------------------------+
++---------------+---------------------------+------------------------------------+
+| **Only required when config a wifi device**                                    |
++---------------+---------------------------+------------------------------------+
+| wifi_mode     | ("host"|"client")         |                                    |
++---------------+---------------------------+------------------------------------+
+| ssid          | "A valid SSID"            | A valid ssid to join or hosted     |
++---------------+---------------------------+------------------------------------+
+| security      | (None, "WEP", "WPA2-PSK") | Wifi security, None if no security |
++---------------+---------------------------+------------------------------------+
++---------------+---------------------------+------------------------------------+
+| **Only required when wifi security="WEP"**                                     |
++---------------+---------------------------+------------------------------------+
+| wepkey        | "PASSWORD"                | WEP security password              |
++---------------+---------------------------+------------------------------------+
++---------------+---------------------------+------------------------------------+
+| **Only required when wifi security="WPA2-PSK"**                                |
++---------------+---------------------------+------------------------------------+
+| psk           | "PASSWORD"                | WPA-PSK security password          |
++---------------+---------------------------+------------------------------------+
 
 .. sectionauthor:: Cerberus Yagami <cerberus@flux3dp.com>

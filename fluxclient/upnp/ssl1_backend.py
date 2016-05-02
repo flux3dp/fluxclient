@@ -133,6 +133,12 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
         if self.sock:
             self.sock.close()
 
+    def add_trust(self):
+        self.send_text("add_trust")
+        resp = self.recv_text()
+        if resp != "ok":
+            raise raise_error(resp)
+
     def rename(self, new_name):
         self.send_text(("\x00".join(("rename", new_name))).encode())
         resp = self.recv_text()
