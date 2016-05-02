@@ -75,7 +75,7 @@ class UpnpError(RuntimeError):
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
-            self.err_symbol = ("UNKNOWN_ERROR")
+            self.err_symbol = ("UNKNOWN_ERROR", )
 
 
 class UpnpException(Exception):
@@ -84,7 +84,7 @@ class UpnpException(Exception):
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
-            self.err_symbol = ("UNKNOWN_ERROR")
+            self.err_symbol = ("UNKNOWN_ERROR", )
 
 
 def NotSupportError(model_id, version):  # noqa
