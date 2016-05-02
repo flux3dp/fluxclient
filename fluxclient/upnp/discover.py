@@ -154,16 +154,19 @@ already call this method because data already in local socket buffer."""
             # Message too short to be process
             return
 
-        magic_num, proto_ver, action_id = struct.unpack("4sBB", buf[:6])
+        try:
+            magic_num, proto_ver, action_id = struct.unpack("4sBB", buf[:6])
 
-        if magic_num != b"FLUX":
-            # Bad magic number
-            return
+            if magic_num != b"FLUX":
+                # Bad magic number
+                return
 
-        # TODO: err handle
-        ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
-                                                      buf[6:])
-        return ret
+            # TODO: err handle
+            ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
+                                                          buf[6:])
+            return ret
+        except struct.error:
+            logger.warning("Payload error: %s", repr(buf))
 
     def in_history(self, uuid, master_ts):
         if uuid in self.history:
