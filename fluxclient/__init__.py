@@ -7,5 +7,5 @@ def check_pcl():
         return False
 
 
-__version__ = "0.8b21"
+__version__ = "0.8b22"
 SUPPORT_PCL = check_pcl()
