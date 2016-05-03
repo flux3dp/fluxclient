@@ -12,6 +12,9 @@ __WAIT_RESPONSE__ = 2
 __WAIT_AESKEY__ = 3
 __READY__ = 4
 
+SOCKET_ERRORS = (ConnectionResetError, BrokenPipeError, OSError, # noqa
+                 socket.timeout)
+
 
 class AESSocket(object):
     _sock = None
@@ -41,7 +44,7 @@ class AESSocket(object):
 
         try:
             l = self._sock.recv_into(self._bufferv[self._buffered:length])
-        except (ConnectionResetError, BrokenPipeError, OSError):  # noqa
+        except SOCKET_ERRORS:
             raise RobotDisconnected()
 
         if l:
@@ -127,7 +130,7 @@ class AESSocket(object):
                 return self._decoder.decrypt(buf)
             else:
                 raise RobotNotReadyError()
-        except (ConnectionResetError, BrokenPipeError, OSError): # noqa
+        except SOCKET_ERRORS:
             raise RobotDisconnected()
 
     def send(self, buf):
@@ -142,7 +145,7 @@ class AESSocket(object):
             sent = self._sock.send(chiptext)
             while sent < length:
                 sent += self._sock.send(chiptext[sent:])
-        except (ConnectionResetError, BrokenPipeError, OSError): # noqa
+        except SOCKET_ERRORS:
             raise RobotDisconnected()
         return sent
 
