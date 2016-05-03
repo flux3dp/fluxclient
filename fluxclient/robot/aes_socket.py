@@ -39,7 +39,11 @@ class AESSocket(object):
         if length <= self._buffered:
             return
 
-        l = self._sock.recv_into(self._bufferv[self._buffered:length])
+        try:
+            l = self._sock.recv_into(self._bufferv[self._buffered:length])
+        except (ConnectionResetError, BrokenPipeError, OSError):  # noqa
+            raise RobotDisconnected()
+
         if l:
             self._buffered += l
             return l
@@ -114,14 +118,17 @@ class AESSocket(object):
             return True
 
     def recv(self, size, flag=0):
-        if flag & socket.MSG_PEEK > 0:
-            raise RobotError("BAD_PARAMS", "MSG_PEEK_NOT_ALLOWED")
+        try:
+            if flag & socket.MSG_PEEK > 0:
+                raise RobotError("BAD_PARAMS", "MSG_PEEK_NOT_ALLOWED")
 
-        if self._decoder:
-            buf = self._sock.recv(size, flag)
-            return self._decoder.decrypt(buf)
-        else:
-            raise RobotNotReadyError()
+            if self._decoder:
+                buf = self._sock.recv(size, flag)
+                return self._decoder.decrypt(buf)
+            else:
+                raise RobotNotReadyError()
+        except (ConnectionResetError, BrokenPipeError, OSError): # noqa
+            raise RobotDisconnected()
 
     def send(self, buf):
         if not self._encoder:
@@ -131,9 +138,12 @@ class AESSocket(object):
         length = l
         chiptext = memoryview(self._encoder.encrypt(buf))
 
-        sent = self._sock.send(chiptext)
-        while sent < length:
-            sent += self._sock.send(chiptext[sent:])
+        try:
+            sent = self._sock.send(chiptext)
+            while sent < length:
+                sent += self._sock.send(chiptext[sent:])
+        except (ConnectionResetError, BrokenPipeError, OSError): # noqa
+            raise RobotDisconnected()
         return sent
 
     def fileno(self):
