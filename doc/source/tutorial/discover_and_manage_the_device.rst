@@ -85,23 +85,35 @@ When creating UpnpTask instance, the argument **uuid** is required. If param **d
 Authorize with password
 +++++++++++++++++++++++++
 
-To authorize with password, simply add a key value pair to param **backend_options**::
+When create a UpnpTask instance, call `upnptask.authorized` to ensure your connection grant permission to operation. If `upnptask.authorized` return False, you have to call `upnptask.authorize_with_password("DEVICE_PASSWORD")` to complete authorize.::
 
-  backend_options = {"password": "YOUR_ACCESS_PASSWORD"}
+    upnptask = UpnpTask(uuid)
+    if upnptask.authorized:
+      pass  # authorized
 
-**password** key also accept a callable object as value like::
+    else:
+      password = getpass("Password: ")
+      try:
+        upnptask.authorize_with_password(password)
+        print("Authorized")
+      except UpnpError as e:
+        print("Authorize failed: %s" % e)
+        raise
 
-  # instance is the UpnpTask instance who call the lambda
-  backend_options = {"password": lambda instance: getpass("Please input device password: ")}
 
 Manage device name, network and security
 ++++++++++++++++++++++++++++++++++++++++++
 
 .. automethod:: fluxclient.upnp.task.UpnpTask.add_trust
+.. automethod:: fluxclient.upnp.task.UpnpTask.authorize_with_password
+.. automethod:: fluxclient.upnp.task.UpnpTask.authorized
 .. automethod:: fluxclient.upnp.task.UpnpTask.close
+.. automethod:: fluxclient.upnp.task.UpnpTask.connected
 .. automethod:: fluxclient.upnp.task.UpnpTask.get_wifi_list
+.. automethod:: fluxclient.upnp.task.UpnpTask.list_trust
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_password
 .. automethod:: fluxclient.upnp.task.UpnpTask.modify_network
+.. automethod:: fluxclient.upnp.task.UpnpTask.remove_trust
 .. automethod:: fluxclient.upnp.task.UpnpTask.rename
 
 Network config settings:
