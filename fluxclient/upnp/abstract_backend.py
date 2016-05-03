@@ -80,7 +80,7 @@ class UpnpError(RuntimeError):
 
 class UpnpException(Exception):
     def __init__(self, *args, **kw):
-        super(UpnpError, self).__init__(*args)
+        super(UpnpException, self).__init__(*args)
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
