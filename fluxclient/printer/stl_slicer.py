@@ -258,15 +258,16 @@ class StlSlicer(object):
         slic3r_out = ''
         while subp.poll() is None:
             line = subp.stdout.readline()
-            logger.debug(line.rstrip())
+            # subp.stdout.read()
+            # for line in chunck.split('\n'):
+            #     logger.debug(line.rstrip())
             if line:
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.11
                     child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
-                if line.strip():
-                    slic3r_out = line
+                slic3r_out = line
         if subp.poll() != 0:
             fail_flag = True
 
@@ -641,6 +642,7 @@ class StlSlicerCura(StlSlicer):
         command += ['-o', tmp_gcode_file]
         command += ['-c', tmp_slic3r_setting_file]
         command.append(tmp_stl_file)
+        command.append('-v')
 
         logger.debug('command: ' + ' '.join(command))
         self.end_slicing()
@@ -655,7 +657,7 @@ class StlSlicerCura(StlSlicer):
         tmp_gcode_file = command[2]
         tmp_slic3r_setting_file = command[4]
         fail_flag = False
-        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
 
         self.working_p[p_index].append(subp)
         # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
@@ -663,17 +665,17 @@ class StlSlicerCura(StlSlicer):
         slic3r_error = False
         slic3r_out = ''
         while subp.poll() is None:
-            chunck = subp.stdout.read()
+            chunck = subp.stdout.readline()
             for line in chunck.split('\n'):
-                logger.debug(line.rstrip())
+                line = line.rstrip()
+                logger.debug(line)
                 if line:
-                    if line.startswith('=> ') and not line.startswith('=> Exporting'):
+                    if line.endswith('s'):
                         progress += 0.12
-                        child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
+                        child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
                     elif "Unable to close this loop" in line:
                         slic3r_error = True
-                    if line.strip():
-                        slic3r_out = line
+                    slic3r_out = line
                 # break
         if subp.poll() != 0:
             fail_flag = True
