@@ -593,7 +593,7 @@ class StlSlicer(object):
 class StlSlicerCura(StlSlicer):
     def __init__(self, slic3r):
         super(StlSlicerCura, self).__init__(slic3r)
-        self.slic3r = '/Applications/Cura/Cura.app/Contents/Resources/CuraEngine'
+        self.slic3r = slic3r
         self.now_type = 3
 
     def begin_slicing(self, names, ws, output_type):
