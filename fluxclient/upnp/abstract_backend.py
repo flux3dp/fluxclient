@@ -70,6 +70,7 @@ class UpnpAbstractBackend(object):
 
 
 class UpnpError(RuntimeError):
+    """When a request can not be processed, UpnpError will be raised"""
     def __init__(self, *args, **kw):
         super(UpnpError, self).__init__(*args)
         if "err_symbol" in kw:
@@ -79,6 +80,9 @@ class UpnpError(RuntimeError):
 
 
 class UpnpException(Exception):
+    """When upnp session got a fatel error, UpnpException will be raised and \
+the UpnpTask instance should be closed and can not be used anymore."""
+
     def __init__(self, *args, **kw):
         super(UpnpException, self).__init__(*args)
         if "err_symbol" in kw:

@@ -1,9 +1,11 @@
 
 from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
-from .abstract_backend import UpnpError, NotSupportError
+from .abstract_backend import UpnpError, UpnpException, NotSupportError
 from .udp1_backend import UpnpUdp1Backend
 from .ssl1_backend import UpnpSSL1Backend
+
+__all__ = ["UpnpTask", "UpnpError", "UpnpException"]
 
 BACKENDS = [
     UpnpSSL1Backend,
@@ -108,9 +110,7 @@ call `authorize_with_password` first to complete authorize."
         """Authorize via password, only use when RSA key is not been trusted \
 from device.
 
-        :param str password: Device password
-
-        :raises UpnpError: Raise if wrong password"""
+        :param str password: Device password"""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")
@@ -124,9 +124,7 @@ from device.
         :param str label: Key label will show for human only
         :param str pem: A vailed RSA key pem
         :return: Key hash
-        :rtype: str
-        :raises UpnpError: Raise if key is already in list or other device \
-error"""
+        :rtype: str"""
 
         self._backend.add_trust(label, pem)
 
@@ -140,9 +138,7 @@ error"""
     def remove_trust(self, access_id):
         """Remove trusted key
 
-        :param str access_id: Key hash which will be removed
-        :raises UpnpError: Raise if key is not in trust list or other device \
-error"""
+        :param str access_id: Key hash which will be removed"""
 
         return self._backend.remove_trust(access_id)
 
@@ -163,8 +159,7 @@ authorized user will be deauthorized.
 
         :param str old_password: Old device password
         :param str new_password: New device password
-        :param bool reset_acl: Clear authorized user list in device
-        :raises UpnpError: Raise if wrong password or other device error"""
+        :param bool reset_acl: Clear authorized user list in device"""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")
