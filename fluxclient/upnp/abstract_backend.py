@@ -6,6 +6,7 @@ __all__ = ["UpnpAbstractBackend"]
 
 class UpnpAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
+    _authorized = False
 
     def __init__(self, client_key, uuid, version, model_id, ipaddr,
                  metadata=None, options=None):
@@ -19,8 +20,16 @@ class UpnpAbstractBackend(object):
     def support_device(cls, model_id, version):
         return False
 
+    @abc.abstractproperty
+    def authorized(self):
+        return self._authorized
+
     @abc.abstractmethod
     def connect(self):
+        pass
+
+    @abc.abstractproperty
+    def connected(self):
         pass
 
     @abc.abstractmethod
@@ -28,7 +37,19 @@ class UpnpAbstractBackend(object):
         pass
 
     @abc.abstractmethod
-    def add_trust(self):
+    def authorize_with_password(self, password):
+        pass
+
+    @abc.abstractmethod
+    def add_trust(self, label, pem):
+        pass
+
+    @abc.abstractmethod
+    def list_trust(self):
+        pass
+
+    @abc.abstractmethod
+    def remove_trust(self, access_id):
         pass
 
     @abc.abstractmethod
@@ -54,7 +75,16 @@ class UpnpError(RuntimeError):
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
-            self.err_symbol = ("UNKNOWN_ERROR")
+            self.err_symbol = ("UNKNOWN_ERROR", )
+
+
+class UpnpException(Exception):
+    def __init__(self, *args, **kw):
+        super(UpnpException, self).__init__(*args)
+        if "err_symbol" in kw:
+            self.err_symbol = kw["err_symbol"]
+        else:
+            self.err_symbol = ("UNKNOWN_ERROR", )
 
 
 def NotSupportError(model_id, version):  # noqa
@@ -68,8 +98,9 @@ def AuthError(reason):  # noqa
 
 
 def TimeoutError():  # noqa
-    return UpnpError("Connection timeout", err_symbol=("TIMEOUT", ))
+    return UpnpException("Connection timeout", err_symbol=("TIMEOUT", ))
 
 
 def ConnectionBroken():  # noqa
-    return UpnpError("Connection broken", err_symbol=("CONNECTION_BROKEN", ))
+    return UpnpException("Connection broken",
+                         err_symbol=("CONNECTION_BROKEN", ))

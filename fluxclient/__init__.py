@@ -7,5 +7,18 @@ def check_pcl():
         return False
 
 
-__version__ = "0.8b20"
+def check_platform():
+    import platform
+    p = platform.platform()
+    if p.startswith("Windows"):
+        p = "Windows"
+    elif p.startswith("Linux"):
+        p = "Linux"
+    elif p.startswith("Darwin"):
+        p = "OSX"
+    else:
+        p = p
+    return (p, platform.architecture()[0])
+
+__version__ = "0.8b22"
 SUPPORT_PCL = check_pcl()

@@ -31,6 +31,11 @@ class KeyObject(object):
     def __init__(self, ref_keyobj):
         self._key = ref_keyobj
 
+    def __eq__(self, obj):
+        if isinstance(obj, KeyObject):
+            return self.public_key_der == obj.public_key_der
+        return False
+
     def encrypt(self, message):
         chip = PKCS1_OAEP.new(self._key)
         size = self.size - 42
