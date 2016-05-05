@@ -657,28 +657,32 @@ class StlSlicerCura(StlSlicer):
         tmp_gcode_file = command[2]
         tmp_slic3r_setting_file = command[4]
         fail_flag = False
-        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
-
-        self.working_p[p_index].append(subp)
-        # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-        progress = 0.2
-        slic3r_error = False
-        slic3r_out = ''
-        while subp.poll() is None:
-            chunck = subp.stdout.readline()
-            for line in chunck.split('\n'):
-                line = line.rstrip()
-                logger.debug(line)
-                if line:
-                    if line.endswith('s'):
-                        progress += 0.12
-                        child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
-                    elif "Unable to close this loop" in line:
-                        slic3r_error = True
-                    slic3r_out = line
-                # break
-        if subp.poll() != 0:
+        try:
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
+            self.working_p[p_index].append(subp)
+            # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+            progress = 0.2
+            slic3r_error = False
+            slic3r_out = ''
+            while subp.poll() is None:
+                chunck = subp.stdout.readline()
+                for line in chunck.split('\n'):
+                    line = line.rstrip()
+                    logger.debug(line)
+                    if line:
+                        if line.endswith('s'):
+                            progress += 0.12
+                            child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
+                        elif "Unable to close this loop" in line:
+                            slic3r_error = True
+                        slic3r_out = line
+                    # break
+            print('>>>>>>>>>>>>>>>>>>>>>> done <<<<<<<<<<<<<<<<<<<<<<<<<')
+            if subp.poll() != 0:
+                fail_flag = True
+        except:
             fail_flag = True
+            slic3r_out = 'CuraEngine fail'
 
         if config['flux_raft'] == '1':
             m_preprocessor = Raft()
@@ -777,12 +781,15 @@ class StlSlicerCura(StlSlicer):
         write a .ini file
         specify delete not to write some key in content
         """
+        thousand = lambda x: float(x) * 1000
+
         new_content = {}
-        new_content['extrusionWidth'] = int(1000 * float(content['nozzle_diameter']))
+        new_content['extrusionWidth'] = int(thousand(content['nozzle_diameter']))
         new_content['objectPosition.X'] = -10.0
         new_content['objectPosition.Y'] = -10.0
         new_content['autoCenter'] = 0
         new_content['gcodeFlavor'] = 0
+
         new_content['raftMargin'] = 5000
         new_content['raftLineSpacing'] = 3000
         new_content['raftBaseThickness'] = 300
@@ -799,12 +806,17 @@ class StlSlicerCura(StlSlicer):
         new_content['raftSurfaceLineSpacing'] = 3000
         new_content['raftSurfaceLayers'] = 10
         new_content['raftSurfaceSpeed'] = 0
-        new_content['layerThickness'] = float(content['layer_height']) * 1000
+
+        new_content['layerThickness'] = thousand(content['layer_height'])
+        new_content['initialLayerThickness'] = thousand(content['first_layer_height'])
+        new_content['insetCount'] = content['perimeters']
 
         if content['support_material'] == '0':
             new_content['supportAngle'] = -1
         else:
             new_content['supportAngle'] = content['support_material_angle']
+        new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
+        new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 
@@ -812,9 +824,10 @@ class StlSlicerCura(StlSlicer):
         # temperature
         # 'skirt_distance': [float_range, 0],
         # 'skirt_height': [int_range, 0],
+        new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['support_material_pattern'], 0)
 
         new_content['skirtLineCount'] = content['skirts']
-        new_content['skirtDistance'] = float(content['skirt_distance']) * 1000
+        new_content['skirtDistance'] = thousand(content['skirt_distance'])
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
@@ -829,6 +842,18 @@ class StlSlicerCura(StlSlicer):
             new_content['upSkinCount'] = 10000
         else:
             new_content['sparseInfillLineDistance'] = int(100 * float(content['nozzle_diameter']) * 1000 / fill_density)
+
+        # speed
+        new_content['moveSpeed'] = content['travel_speed']
+        # = ['support_material_speed']
+
+        new_content['printSpeed'] = content['infill_speed']
+        new_content['inset0Speed'] = new_content['printSpeed']
+        new_content['inset0Speed'] = new_content['printSpeed']
+        new_content['infillSpeed'] = content['infill_speed']
+        new_content['skinSpeed'] = content['perimeter_speed']
+
+        new_content['initialLayerSpeed'] = content['first_layer_speed']
 
         cls.my_ini_writer(file_path, new_content, delete)
         return
