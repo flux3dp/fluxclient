@@ -817,6 +817,7 @@ class StlSlicerCura(StlSlicer):
             new_content['supportAngle'] = content['support_material_angle']
         new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
         new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
+        new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 
@@ -824,7 +825,7 @@ class StlSlicerCura(StlSlicer):
         # temperature
         # 'skirt_distance': [float_range, 0],
         # 'skirt_height': [int_range, 0],
-        new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['support_material_pattern'], 0)
+        new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
         new_content['skirtLineCount'] = content['skirts']
         new_content['skirtDistance'] = thousand(content['skirt_distance'])
