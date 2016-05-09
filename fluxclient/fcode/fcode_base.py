@@ -6,6 +6,15 @@ from json import dumps
 
 from fluxclient.hw_profile import HW_PROFILE
 
+POINT_TYPE = {'infill': 0,
+              'perimeter': 1,
+              'support': 2,
+              'move': 3,
+              'skirt': 4,
+              'inner-wall': 5,
+              'brim': 5,
+              'raft': 2}
+
 
 class FcodeBase(object):
     """
@@ -16,8 +25,7 @@ class FcodeBase(object):
         super(FcodeBase, self).__init__()
         self.filament_this_layer = [0., 0., 0.]
         self.current_pos = [0.0, 0.0, HW_PROFILE['model-1']['height'], 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the position of each axis
-        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], 3]]]  # recording the path extruder go through
-        self.path = [[]]  # recording the path extruder go through
+        self.path = [[[0.0, 0.0, HW_PROFILE['model-1']['height'], POINT_TYPE['move']]]]  # recording the path extruder go through
         self.empty_layer = []
         self.counter_between_layers = 0
         self.record_z = 0.0
@@ -37,11 +45,13 @@ class FcodeBase(object):
             self.counter_between_layers += 1
             if move_flag:
                 if 'infill' in comment:
-                    line_type = 0
+                    line_type = POINT_TYPE['infill']
                 elif 'support' in comment:
-                    line_type = 2
+                    line_type = POINT_TYPE['support']
+                elif 'brim' in comment:
+                    line_type = POINT_TYPE['brim']
                 elif 'move' in comment:
-                    line_type = 3
+                    line_type = POINT_TYPE['move']
                     if 'to next layer' in comment:
                         self.record_z = self.current_pos[2]
                         already_split = True
@@ -62,7 +72,7 @@ class FcodeBase(object):
                     if extrude_flag:
                         line_type = 1
                     else:
-                        line_type = 3
+                        line_type = POINT_TYPE['move']
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
 
@@ -74,9 +84,9 @@ class FcodeBase(object):
         elif self.engine == 'cura':
             already_split = False
             self.counter_between_layers += 1
-            line_type = 3
+            line_type = POINT_TYPE['move']
             if self.now_type == -1:
-                self.now_type = 3
+                self.now_type = POINT_TYPE['move']
                 self.record_z = self.current_pos[2]
                 already_split = True
                 if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
@@ -92,12 +102,15 @@ class FcodeBase(object):
                 if extrude_flag:
                     line_type = self.now_type
                 elif not extrude_flag:
-                    line_type = 3
+                    line_type = POINT_TYPE['move']
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
 
     @classmethod
     def path_to_js(cls, path):
+        """
+        transform path:[[[],[]]] to js object
+        """
         if path is None:
                 return ''
         else:
@@ -108,3 +121,19 @@ class FcodeBase(object):
                     tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
                 result.append(tmp)
             return dumps(result)
+
+    @classmethod
+    def trim_ends(cls, path):
+        """
+        trim the moving(non-extruding) path in path's both end
+        """
+        for layer in [0, -1]:
+            while True:
+                if path[layer]:
+                    if path[layer][layer][3] == POINT_TYPE['move']:
+                        path[layer].pop(layer)
+                    else:
+                        break
+                else:
+                    path.pop(layer)
+        return path

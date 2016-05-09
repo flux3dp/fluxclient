@@ -302,7 +302,7 @@ class StlSlicer(object):
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)
-                path = m_GcodeToFcode.path
+                path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -677,7 +677,6 @@ class StlSlicerCura(StlSlicer):
                             slic3r_error = True
                         slic3r_out = line
                     # break
-            print('>>>>>>>>>>>>>>>>>>>>>> done <<<<<<<<<<<<<<<<<<<<<<<<<')
             if subp.poll() != 0:
                 fail_flag = True
         except:
@@ -721,7 +720,7 @@ class StlSlicerCura(StlSlicer):
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)
-                path = m_GcodeToFcode.path
+                path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -855,6 +854,9 @@ class StlSlicerCura(StlSlicer):
         new_content['skinSpeed'] = content['perimeter_speed']
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
+
+        new_content['startCode'] = content['start_gcode']
+        new_content['endCode'] = content['end_gcode']
 
         cls.my_ini_writer(file_path, new_content, delete)
         return

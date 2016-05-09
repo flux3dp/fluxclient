@@ -10,7 +10,7 @@ import time
 from re import findall
 from getpass import getuser
 
-from fluxclient.fcode.fcode_base import FcodeBase
+from fluxclient.fcode.fcode_base import FcodeBase, POINT_TYPE
 from fluxclient.hw_profile import HW_PROFILE
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ class GcodeToFcode(FcodeBase):
 
         extrudeflag = False
         for i in range(4, 7):  # extruder
-            if input_list[i] is not None:
+            if input_list[i] is not None and input_list[i] > 0:
                 extrudeflag = True
                 if self.absolute:
                     if self.config is not None and self.config['flux_refill_empty'] == '1' and tmp_path != 0:
@@ -285,11 +285,11 @@ class GcodeToFcode(FcodeBase):
                         self.writer(packer(command), output_stream)
                         self.writer(packer_f(temp), output_stream)
 
-                    elif line[0] == 'G20' or line[0] == 'G21':  # set for inch or mm
-                        if line == 'G20':  # inch
-                            self.unit = 25.4
-                        elif line == 'G21':  # mm
-                            self.unit = 1
+                    # set for inch or mm
+                    elif line[0] == 'G20':  # inch
+                        self.unit = 25.4
+                    elif line[0] == 'G21':  # mm
+                        self.unit = 1
 
                     elif line[0] == 'T0' or line[0] == 'T1':  # change tool
                         if line[0] == 'T0':
@@ -324,17 +324,17 @@ class GcodeToFcode(FcodeBase):
                 else:
                     if self.engine == 'cura':
                         if 'FILL' in comment:
-                            self.now_type = 0
+                            self.now_type = POINT_TYPE['infill']
                         elif 'SUPPORT' in comment:
-                            self.now_type = 2
+                            self.now_type = POINT_TYPE['support']
                         elif 'LAYER:' in comment:
                             self.now_type = -1
                         elif 'WALL-OUTER' in comment:
-                            self.now_type = 1
+                            self.now_type = POINT_TYPE['perimeter']
                         elif 'WALL-INNER' in comment:
-                            self.now_type = 5
+                            self.now_type = POINT_TYPE['inner-wall']
                         elif 'RAFT' in comment:
-                            self.now_type = 4
+                            self.now_type = POINT_TYPE['raft']
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)
             output_stream.write(struct.pack('<I', self.script_length))
