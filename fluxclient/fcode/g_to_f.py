@@ -291,11 +291,11 @@ class GcodeToFcode(FcodeBase):
                     elif line[0] == 'G21':  # mm
                         self.unit = 1
 
-                    elif line[0] == 'T0' or line[0] == 'T1':  # change tool
-                        if line[0] == 'T0':
-                            self.tool = 0
-                        if line[0] == 'T1':
-                            self.tool = 1
+                    # change tool
+                    elif line[0] == 'T0':
+                        self.tool = 0
+                    elif line[0] == 'T1':
+                        self.tool = 1
 
                     elif line[0] == 'M107' or line[0] == 'M106':  # fan control
                         command = 48

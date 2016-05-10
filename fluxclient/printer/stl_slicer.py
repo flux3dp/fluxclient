@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 
-from struct import unpack
+from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
 import subprocess
 import tempfile
@@ -109,6 +109,19 @@ class StlSlicer(object):
         img.save(b, 'png')
         image_bytes = b.getvalue()
         self.image = image_bytes
+
+        uint_unpacker = lambda x: Struct("<I").unpack(x)[0]  # 4 bytes uint
+        if self.output:
+            script_size = uint_unpacker(self.output[8:12])
+            index = 16 + script_size
+            self.meta_size = uint_unpacker(self.output[index:index + 4])
+            index += 4
+            # assert crc32(self.output[index:index + self.meta_size]) == uint_unpacker(self.output[index + self.meta_size:index + self.meta_size + 4])
+            index = index + self.meta_size + 4
+            self.image_size = uint_unpacker(self.output[index:index + 4])
+            index += 4
+            self.output = b''.join([self.output[:-(self.image_size + 4)], pack('<I', len(self.image)), self.image])
+
         ######################### fake code ###################################
         if environ.get("flux_debug") == '1':
             with open('preview.png', 'wb') as f:
