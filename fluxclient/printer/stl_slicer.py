@@ -61,6 +61,7 @@ class StlSlicer(object):
         # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
+        self.output = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
 
