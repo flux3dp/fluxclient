@@ -12,3 +12,4 @@ HW_PROFILE = {
         # step_len = alpha * scan_full_len / N
     },
 }
+# HW_PROFILE['model-1']['radius']
