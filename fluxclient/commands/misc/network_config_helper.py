@@ -1,10 +1,10 @@
 
 from ipaddress import IPv4Interface, IPv4Address
 
-from fluxclient.upnp.misc import parse_network_config
-
 
 def run():
+    from fluxclient.upnp.misc import parse_network_config
+
     kw = {}
     ret = input("Wifi Mode (0=host,1=client)[1]: ").strip("\n")
     if ret == "0":

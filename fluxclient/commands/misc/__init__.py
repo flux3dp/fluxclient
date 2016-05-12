@@ -1,24 +1,42 @@
 
 from uuid import UUID
-import logging
+import logging.config
 import sys
 import os
-
-from fluxclient.robot.misc import is_uuid
-from fluxclient.encryptor import KeyObject
-from fluxclient.upnp import UpnpDiscover
 
 
 def setup_logger(name, stdout=sys.stderr, debug=False):
     level = logging.DEBUG if debug else logging.INFO
 
-    logging.basicConfig(format="%(message)s", stream=stdout)
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    return logger
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'default': {
+                'format': "%(message)s"
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': level,
+                'formatter': 'default',
+                'class': 'logging.StreamHandler',
+            }
+        },
+        'loggers': {},
+        'root': {
+            'handlers': ['console'],
+            'level': level,
+            'propagate': True
+        }
+    })
+
+    return logging.getLogger(name)
 
 
 def get_or_create_default_key(path=None):
+    from fluxclient.encryptor import KeyObject
+
     if path is None:
         path = os.path.expanduser("~/.fluxclient_key.pem")
 
@@ -60,6 +78,8 @@ def discover_device(uuid, client_key, logstream=sys.stdout):
     logstream.write("Discover...")
     logstream.flush()
 
+    from fluxclient.upnp import UpnpDiscover
+
     discover = UpnpDiscover(uuid)
     discover.discover(found_callback, lookup_callback)
 
@@ -71,6 +91,8 @@ def discover_device(uuid, client_key, logstream=sys.stdout):
 
 def get_device_endpoint(target, client_key, default_port,
                         logstream=sys.stdout):
+    from fluxclient.robot.misc import is_uuid
+
     if is_uuid(target):
         metadata = discover_device(UUID(hex=target), client_key, logstream)
         ipaddr = metadata.get("ipaddr")

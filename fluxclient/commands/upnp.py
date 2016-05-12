@@ -4,9 +4,7 @@ from uuid import UUID
 import argparse
 import sys
 
-from fluxclient.upnp import UpnpTask, UpnpError
-
-from .misc import (get_or_create_default_key, setup_logger, is_uuid,
+from .misc import (get_or_create_default_key, setup_logger,
                    network_config_helper)
 
 
@@ -87,6 +85,8 @@ def remove_trust(upnp, logger):
 
 
 def run_commands(upnp, logger):
+    from fluxclient.upnp import UpnpError
+
     tasks = [
         quit_program,
         change_device_name,
@@ -133,6 +133,10 @@ def main():
     options = parser.parse_args()
 
     logger = setup_logger(__name__, debug=options.debug)
+
+    from fluxclient.robot.misc import is_uuid
+    from fluxclient.upnp import UpnpTask
+
     client_key = get_or_create_default_key(options.client_key)
 
     if is_uuid(options.target):
@@ -148,10 +152,8 @@ def main():
                 "Serial: %s (uuid={%s})\n"
                 "Model: %s\n"
                 "Version: %s\n"
-                "IP Address: %s", upnp.serial, upnp.uuid, upnp.model_id,
+                "IP Address: %s\n", upnp.serial, upnp.uuid, upnp.model_id,
                 upnp.version, upnp.ipaddr)
-    logger.debug("Backend: %s", upnp._backend)
-    logger.info("\n")
 
     run_commands(upnp, logger)
 
