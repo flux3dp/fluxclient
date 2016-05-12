@@ -794,6 +794,7 @@ class StlSlicerCura(StlSlicer):
         write a .ini file
         specify delete not to write some key in content
         """
+        # ref: https://github.com/daid/Cura/blob/b878f7dc28698d4d605a5fe8401f9c5a57a55367/Cura/util/sliceEngine.py
         thousand = lambda x: float(x) * 1000
 
         new_content = {}
@@ -807,18 +808,18 @@ class StlSlicerCura(StlSlicer):
         new_content['raftLineSpacing'] = 3000
         new_content['raftBaseThickness'] = 300
         new_content['raftBaseLinewidth'] = 1000
-        new_content['raftInterfaceThickness'] = 300
-        new_content['raftInterfaceLinewidth'] = 1000
-        new_content['raftInterfaceLineSpacing'] = 3000
-        new_content['raftAirGap'] = 220
-        new_content['raftAirGapLayer0'] = 0
-        new_content['raftBaseSpeed'] = 0
+        new_content['raftInterfaceThickness'] = 270
+        new_content['raftInterfaceLinewidth'] = 400
+        new_content['raftInterfaceLineSpacing'] = new_content['raftInterfaceLinewidth'] * 2
+        new_content['raftAirGap'] = 0
+        new_content['raftAirGapLayer0'] = 220
+        new_content['raftBaseSpeed'] = content['first_layer_speed']
         new_content['raftFanSpeed'] = 0
         new_content['raftSurfaceThickness'] = 270
         new_content['raftSurfaceLinewidth'] = 400
-        new_content['raftSurfaceLineSpacing'] = 3000
+        new_content['raftSurfaceLineSpacing'] = new_content['raftSurfaceLinewidth']
         new_content['raftSurfaceLayers'] = 10
-        new_content['raftSurfaceSpeed'] = 0
+        new_content['raftSurfaceSpeed'] = content['first_layer_speed']
 
         new_content['layerThickness'] = thousand(content['layer_height'])
         new_content['initialLayerThickness'] = thousand(content['first_layer_height'])
@@ -869,8 +870,13 @@ class StlSlicerCura(StlSlicer):
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
-        new_content['startCode'] = content['start_gcode']
+        new_content['startCode'] = 'M109 S{}\\n'.format(content['temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
+        new_content['nozzleSize'] = 400
+        new_content['filamentDiameter'] = 1750
+
+        new_content['retractionSpeed'] = 60
+        new_content['retractionAmount'] = 5500
 
         cls.my_ini_writer(file_path, new_content, delete)
         return
