@@ -1,4 +1,6 @@
 
+import logging
+
 from fluxclient.utils.version import StrictVersion
 from fluxclient.upnp.discover import UpnpDiscover
 from .abstract_backend import UpnpError, UpnpException, NotSupportError
@@ -10,6 +12,8 @@ __all__ = ["UpnpTask", "UpnpError", "UpnpException"]
 BACKENDS = [
     UpnpSSL1Backend,
     UpnpUdp1Backend]
+
+logger = logging.getLogger(__name__)
 
 
 class UpnpTask(object):
@@ -84,7 +88,12 @@ timeout value
                 self._backend = klass(self.client_key, self.uuid, self.version,
                                       self.model_id, self.ipaddr,
                                       self.device_meta, self.backend_options)
+                # TODO: debug information, remove after bugfix
+                logger.info("Backend %s selected", klass.__name__)
                 return
+            # TODO: debug information, remove after bugfix
+            logger.warn("Backend %s does not support device version `%s`",
+                        klass.__name__, self.version)
 
         raise NotSupportError(self.model_id, self.version)
 
