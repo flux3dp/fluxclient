@@ -295,7 +295,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            child_pipe.append('{"status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
