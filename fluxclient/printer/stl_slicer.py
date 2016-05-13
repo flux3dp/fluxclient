@@ -870,13 +870,20 @@ class StlSlicerCura(StlSlicer):
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
-        new_content['startCode'] = 'M109 S{}\\n'.format(content['temperature']) + content['start_gcode']
-        new_content['endCode'] = content['end_gcode']
         new_content['nozzleSize'] = 400
         new_content['filamentDiameter'] = 1750
 
         new_content['retractionSpeed'] = 60
         new_content['retractionAmount'] = 5500
+
+        new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
+        new_content['endCode'] = content['end_gcode']
+
+        # special function for cura's setting file
+        # replace '\\n' by '\n', add two lines of '""" indicating multiple lines of settings
+        add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
+        new_content['startCode'] = add_multi_line(new_content['startCode'])
+        new_content['endCode'] = add_multi_line(new_content['endCode'])
 
         cls.my_ini_writer(file_path, new_content, delete)
         return
