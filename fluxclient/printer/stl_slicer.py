@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 
-from struct import unpack
+from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
 import subprocess
 import tempfile
@@ -61,6 +61,7 @@ class StlSlicer(object):
         # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
+        self.output = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
 
@@ -109,6 +110,19 @@ class StlSlicer(object):
         img.save(b, 'png')
         image_bytes = b.getvalue()
         self.image = image_bytes
+
+        uint_unpacker = lambda x: Struct("<I").unpack(x)[0]  # 4 bytes uint
+        if self.output:
+            script_size = uint_unpacker(self.output[8:12])
+            index = 16 + script_size
+            self.meta_size = uint_unpacker(self.output[index:index + 4])
+            index += 4
+            # assert crc32(self.output[index:index + self.meta_size]) == uint_unpacker(self.output[index + self.meta_size:index + self.meta_size + 4])
+            index = index + self.meta_size + 4
+            self.image_size = uint_unpacker(self.output[index:index + 4])
+            index += 4
+            self.output = b''.join([self.output[:-(self.image_size + 4)], pack('<I', len(self.image)), self.image])
+
         ######################### fake code ###################################
         if environ.get("flux_debug") == '1':
             with open('preview.png', 'wb') as f:
@@ -281,7 +295,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            child_pipe.append('{"status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -302,7 +316,7 @@ class StlSlicer(object):
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)
-                path = m_GcodeToFcode.path
+                path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -657,28 +671,31 @@ class StlSlicerCura(StlSlicer):
         tmp_gcode_file = command[2]
         tmp_slic3r_setting_file = command[4]
         fail_flag = False
-        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
-
-        self.working_p[p_index].append(subp)
-        # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-        progress = 0.2
-        slic3r_error = False
-        slic3r_out = ''
-        while subp.poll() is None:
-            chunck = subp.stdout.readline()
-            for line in chunck.split('\n'):
-                line = line.rstrip()
-                logger.debug(line)
-                if line:
-                    if line.endswith('s'):
-                        progress += 0.12
-                        child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
-                    elif "Unable to close this loop" in line:
-                        slic3r_error = True
-                    slic3r_out = line
-                # break
-        if subp.poll() != 0:
+        try:
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
+            self.working_p[p_index].append(subp)
+            # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+            progress = 0.2
+            slic3r_error = False
+            slic3r_out = ''
+            while subp.poll() is None:
+                chunck = subp.stdout.readline()
+                for line in chunck.split('\n'):
+                    line = line.rstrip()
+                    logger.debug(line)
+                    if line:
+                        if line.endswith('s'):
+                            progress += 0.12
+                            child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
+                        elif "Unable to close this loop" in line:
+                            slic3r_error = True
+                        slic3r_out = line
+                    # break
+            if subp.poll() != 0:
+                fail_flag = True
+        except:
             fail_flag = True
+            slic3r_out = 'CuraEngine fail'
 
         if config['flux_raft'] == '1':
             m_preprocessor = Raft()
@@ -717,7 +734,7 @@ class StlSlicerCura(StlSlicer):
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)
-                path = m_GcodeToFcode.path
+                path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -777,34 +794,44 @@ class StlSlicerCura(StlSlicer):
         write a .ini file
         specify delete not to write some key in content
         """
+        # ref: https://github.com/daid/Cura/blob/b878f7dc28698d4d605a5fe8401f9c5a57a55367/Cura/util/sliceEngine.py
+        thousand = lambda x: float(x) * 1000
+
         new_content = {}
-        new_content['extrusionWidth'] = int(1000 * float(content['nozzle_diameter']))
+        new_content['extrusionWidth'] = int(thousand(content['nozzle_diameter']))
         new_content['objectPosition.X'] = -10.0
         new_content['objectPosition.Y'] = -10.0
         new_content['autoCenter'] = 0
         new_content['gcodeFlavor'] = 0
+
         new_content['raftMargin'] = 5000
         new_content['raftLineSpacing'] = 3000
         new_content['raftBaseThickness'] = 300
         new_content['raftBaseLinewidth'] = 1000
-        new_content['raftInterfaceThickness'] = 300
-        new_content['raftInterfaceLinewidth'] = 1000
-        new_content['raftInterfaceLineSpacing'] = 3000
-        new_content['raftAirGap'] = 220
-        new_content['raftAirGapLayer0'] = 0
-        new_content['raftBaseSpeed'] = 0
+        new_content['raftInterfaceThickness'] = 270
+        new_content['raftInterfaceLinewidth'] = 400
+        new_content['raftInterfaceLineSpacing'] = new_content['raftInterfaceLinewidth'] * 2
+        new_content['raftAirGap'] = 0
+        new_content['raftAirGapLayer0'] = 220
+        new_content['raftBaseSpeed'] = content['first_layer_speed']
         new_content['raftFanSpeed'] = 0
         new_content['raftSurfaceThickness'] = 270
         new_content['raftSurfaceLinewidth'] = 400
-        new_content['raftSurfaceLineSpacing'] = 3000
+        new_content['raftSurfaceLineSpacing'] = new_content['raftSurfaceLinewidth']
         new_content['raftSurfaceLayers'] = 10
-        new_content['raftSurfaceSpeed'] = 0
-        new_content['layerThickness'] = float(content['layer_height']) * 1000
+        new_content['raftSurfaceSpeed'] = content['first_layer_speed']
+
+        new_content['layerThickness'] = thousand(content['layer_height'])
+        new_content['initialLayerThickness'] = thousand(content['first_layer_height'])
+        new_content['insetCount'] = content['perimeters']
 
         if content['support_material'] == '0':
             new_content['supportAngle'] = -1
         else:
             new_content['supportAngle'] = content['support_material_angle']
+        new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
+        new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
+        new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 
@@ -812,9 +839,10 @@ class StlSlicerCura(StlSlicer):
         # temperature
         # 'skirt_distance': [float_range, 0],
         # 'skirt_height': [int_range, 0],
+        new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
         new_content['skirtLineCount'] = content['skirts']
-        new_content['skirtDistance'] = float(content['skirt_distance']) * 1000
+        new_content['skirtDistance'] = thousand(content['skirt_distance'])
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
@@ -829,6 +857,33 @@ class StlSlicerCura(StlSlicer):
             new_content['upSkinCount'] = 10000
         else:
             new_content['sparseInfillLineDistance'] = int(100 * float(content['nozzle_diameter']) * 1000 / fill_density)
+
+        # speed
+        new_content['moveSpeed'] = content['travel_speed']
+        # = ['support_material_speed']
+
+        new_content['printSpeed'] = content['infill_speed']
+        new_content['inset0Speed'] = new_content['printSpeed']
+        new_content['inset0Speed'] = new_content['printSpeed']
+        new_content['infillSpeed'] = content['infill_speed']
+        new_content['skinSpeed'] = content['perimeter_speed']
+
+        new_content['initialLayerSpeed'] = content['first_layer_speed']
+
+        new_content['nozzleSize'] = 400
+        new_content['filamentDiameter'] = 1750
+
+        new_content['retractionSpeed'] = 60
+        new_content['retractionAmount'] = 5500
+
+        new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
+        new_content['endCode'] = content['end_gcode']
+
+        # special function for cura's setting file
+        # replace '\\n' by '\n', add two lines of '""" indicating multiple lines of settings
+        add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
+        new_content['startCode'] = add_multi_line(new_content['startCode'])
+        new_content['endCode'] = add_multi_line(new_content['endCode'])
 
         cls.my_ini_writer(file_path, new_content, delete)
         return

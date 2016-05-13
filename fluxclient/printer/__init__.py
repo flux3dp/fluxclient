@@ -100,7 +100,7 @@ default_acceleration = 0
 disable_fan_first_layers = 5
 dont_support_bridges = 1
 duplicate_distance = 6
-end_gcode = M104 S0 ; turn off temperature\\nG28 X0  ; home X axis\\nM84     ; disable motors\\n
+end_gcode = M104 S0 ; turn off temperature\\nG91\\nG1 E-1 F300\\nG1 Z+5 E-5 F9000\\nG28 X0  ; home X axis\\nM84     ; disable motors\\n
 external_fill_pattern = rectilinear
 external_perimeter_extrusion_width = 0.4
 external_perimeter_speed = 70%
@@ -240,7 +240,7 @@ ini_constraint = {
     'dont_support_bridges': [binary],
     'duplicate_distance': False,
     'end_gcode': [free],
-    'external_fill_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb']],
+    'external_fill_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb', 'AUTOMATIC', 'GRID', 'LINES', 'CONCENTRIC']],
     'external_perimeter_extrusion_width': False,
     'external_perimeter_speed': [float_or_percent],
     'external_perimeters_first': False,
@@ -257,7 +257,7 @@ ini_constraint = {
     'filament_diameter': False,
     'fill_angle': False,
     'fill_density': [percentage],
-    'fill_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb']],
+    'fill_pattern': [finite_choice, ['rectilinear-grid', 'line', 'rectilinear', 'honeycomb', 'AUTOMATIC', 'GRID', 'LINES', 'CONCENTRIC']],
     'first_layer_acceleration': [binary],
     'first_layer_bed_temperature': [ignore],
     'first_layer_extrusion_width': [percentage, 0, 1666],

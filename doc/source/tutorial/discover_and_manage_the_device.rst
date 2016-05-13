@@ -116,7 +116,8 @@ Manage device name, network and security
 .. automethod:: fluxclient.upnp.task.UpnpTask.remove_trust
 .. automethod:: fluxclient.upnp.task.UpnpTask.rename
 
-Network config settings:
+Network config settings
+++++++++++++++++++++++++++++++++++++++++++
 
 +---------------+---------------------------+------------------------------------+
 | key           | value example             | Describe                           |
@@ -153,5 +154,12 @@ Network config settings:
 +---------------+---------------------------+------------------------------------+
 | psk           | "PASSWORD"                | WPA-PSK security password          |
 +---------------+---------------------------+------------------------------------+
+
+Error Handling
+++++++++++++++++++++++++++++++++++++++++++
+
+.. autoclass:: fluxclient.upnp.task.UpnpError
+.. autoclass:: fluxclient.upnp.task.UpnpException
+
 
 .. sectionauthor:: Cerberus Yagami <cerberus@flux3dp.com>
