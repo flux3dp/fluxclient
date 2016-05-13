@@ -14,7 +14,7 @@ from .abstract_backend import (UpnpAbstractBackend, AuthError,
 __all__ = ["UpnpSSL1Backend"]
 
 SHORT_PACKER = Struct("<H")
-SUPPORT_VERSION = (StrictVersion("1.1a1"), StrictVersion("1.2a1"))
+SUPPORT_VERSION = (StrictVersion("1.1a1"), StrictVersion("2.0a1"))
 
 
 def raise_error(ret, **ref):
