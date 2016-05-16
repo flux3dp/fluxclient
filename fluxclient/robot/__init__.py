@@ -76,7 +76,7 @@ connect. For example: ("192.168.1.1", 23811)
 
     version = msg_waitall(s, 8)
     wrap_sock = _select_wrapper(s, client_key, version, metadata)
-    return FluxRobot(wrap_sock)
+    return FluxRobot(wrap_sock, metadata=metadata)
 
 
 def _connect(endpoint, conn_callback):
