@@ -806,12 +806,14 @@ class StlSlicerCura(StlSlicer):
         new_content['raftLineSpacing'] = 3000
         new_content['raftBaseThickness'] = 300
         new_content['raftBaseLinewidth'] = 1000
-        new_content['raftInterfaceThickness'] = 300
-        new_content['raftInterfaceLinewidth'] = 1000
-        new_content['raftInterfaceLineSpacing'] = 3000
-        new_content['raftAirGap'] = 220
-        new_content['raftAirGapLayer0'] = 0
-        new_content['raftBaseSpeed'] = 0
+
+        new_content['raftInterfaceThickness'] = 270
+        new_content['raftInterfaceLinewidth'] = 400
+        new_content['raftInterfaceLineSpacing'] = new_content['raftInterfaceLinewidth'] * 2
+        new_content['raftAirGap'] = 0
+        new_content['raftAirGapLayer0'] = 300
+        new_content['raftBaseSpeed'] = content['first_layer_speed']
+
         new_content['raftFanSpeed'] = 0
         new_content['raftSurfaceThickness'] = 270
         new_content['raftSurfaceLinewidth'] = 400
@@ -868,7 +870,17 @@ class StlSlicerCura(StlSlicer):
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
-        new_content['startCode'] = content['start_gcode']
+        new_content['nozzleSize'] = 400
+        new_content['filamentDiameter'] = 1750
+
+        new_content['retractionSpeed'] = 50
+        new_content['retractionAmount'] = 4500
+        new_content['minimalExtrusionBeforeRetraction'] = 200
+
+        new_content['filamentFlow'] = 92
+        new_content['minimalLayerTime'] = 15
+
+        new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
 
         cls.my_ini_writer(file_path, new_content, delete)
