@@ -34,7 +34,9 @@ fluxclient contains all toolsets to control FLUX 3D Printer
 
 
 ## Document
-* sphinx
-`pip install sphinx`
 
-run `make html` under `fluxclient/doc` directory
+* sphinx  
+
+`sudo python setup.py build_sphinx`  
+`open ./build/sphinx/html/index.html`
+
