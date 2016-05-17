@@ -131,8 +131,8 @@ class GcodeToFcode(FcodeBase):
                     tmp_path += (input_list[i] ** 2)
                     self.current_pos[i - 1] += input_list[i]
                 if abs(self.current_pos[i - 1]) > self.max_range[i - 1]:
-                    self.max_range[i - 1] = self.current_pos[i - 1]
-        if self.current_pos[0] ** 2 + self.current_pos[1] ** 2 > self.max_range[3]:  # computer MAX_R
+                    self.max_range[i - 1] = abs(self.current_pos[i - 1])
+        if self.current_pos[0] ** 2 + self.current_pos[1] ** 2 > self.max_range[3]:  # compute MAX_R
             self.max_range[3] = self.current_pos[0] ** 2 + self.current_pos[1] ** 2
         tmp_path = sqrt(tmp_path)
 

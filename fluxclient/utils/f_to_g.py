@@ -5,6 +5,7 @@ import struct
 import sys
 
 from fluxclient.fcode.fcode_base import FcodeBase
+from fluxclient.hw_profile import HW_PROFILE
 
 FILE_BROKEN = "FILE_BROKEN"
 FCODE_FAIL = "FCODE_FAIL"
@@ -55,10 +56,20 @@ class FcodeToGcode(FcodeBase):
             tmp_data = self.data
             self.data = buf
             if self.full_check():
-                return True
+                md = self.get_metadata()
+                if float(md.get('MAX_X', 0)) > HW_PROFILE['model-1']['radius']:
+                    return 'out_of_bound'
+                elif float(md.get('MAX_Y', 0)) > HW_PROFILE['model-1']['radius']:
+                    return 'out_of_bound'
+                elif float(md.get('MAX_R', 0)) > HW_PROFILE['model-1']['radius']:
+                    return 'out_of_bound'
+                elif float(md.get('MAX_Z', 0)) > HW_PROFILE['model-1']['height'] or float(md.get('MAX_Z', 0)) < 0:
+                    return 'out_of_bound'
+                else:
+                    return 'ok'
             else:
                 self.data = tmp_data
-                return False
+                return 'broken'
         elif type(buf) == str:
             with open(sys.argv[1], 'rb') as f:
                 return self.upload_content(f.read())
