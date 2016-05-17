@@ -814,7 +814,7 @@ class StlSlicerCura(StlSlicer):
         new_content['raftInterfaceLineSpacing'] = new_content['raftInterfaceLinewidth'] * 2
         new_content['raftAirGap'] = 0
 
-        new_content['raftAirGapLayer0'] = 300
+        new_content['raftAirGapLayer0'] = thousand(content['support_material_contact_distance'])
         new_content['raftBaseSpeed'] = content['first_layer_speed']
 
         new_content['raftFanSpeed'] = 0
