@@ -9,15 +9,21 @@
 
 """
 from io import BytesIO
+import struct
 import logging
+import sys
+from uuid import UUID
 
+import msgpack
 from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
-
 from fluxclient.commands.misc import get_device_endpoint
 from fluxclient.robot import connect_robot
+from fluxclient.encryptor import KeyObject
+from fluxclient.upnp.task import UpnpTask
 from fluxclient.commands.misc import get_or_create_default_key
+from fluxclient.sdk import *
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +46,13 @@ def prepare_robot(endpoint, server_key, client_key):
     return robot
 
 
+def type_check(instance, type_candidates, err_msg=''):
+    if isinstance(instance, type_candidates):
+        return
+    else:
+        raise TypeError('{} type: {} is not supported'.format(err_msg, type(instance)))
+
+
 class Delta(object):
     """We use this as a public class example class.
 
@@ -50,12 +63,13 @@ class Delta(object):
       hi
 
     """
-    def __init__(self, target):
+    def __init__(self, target=None, ip=None, client_key=None, password=None):
         super(Delta, self).__init__()
 
-        client_key = get_or_create_default_key(None)
-        ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
-        self.robot = connect_robot(ipaddr, metadata=metadata, client_key=client_key)
+        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password)
+
+        # ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
+        # self.robot = connect_robot(ipaddr, metadata=metadata, client_key=client_key)
 
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
         self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
@@ -68,6 +82,50 @@ class Delta(object):
         # self.turn_laser("L", False)
         # self.turn_laser("R", False)
         pass
+
+    def connect_delta(self, target, ip, client_key, password):
+        if client_key:
+            if type(client_key) == str:
+                client_key = get_or_create_default_key(client_key)
+            elif type(client_key) == KeyObject:
+                pass
+            else:
+                type_check(client_key, (str, KeyObject), 'client_key')
+        else:
+            client_key = get_or_create_default_key()
+        if target:
+            type_check(target, str, 'target')
+            target = UUID(target)
+        if ip:
+            type_check(ip, str, 'ip')
+        if password:
+            type_check(password, str, 'password')
+
+        options = {'uuid': UUID(int=0)}
+        for i, name in [(target, 'uuid'), (ip, 'ipaddr'), (client_key, 'client_key')]:
+            if i:
+                options[name] = i
+        if password:
+            options['backend_options'] = {'password': password}
+
+        upnp_task = UpnpTask(**options)
+
+        print('authorized', upnp_task.authorized)
+        if not upnp_task.authorized:
+            # password = 'a'
+            if password:
+                upnp_task.authorize_with_password(password)
+                if upnp_task.authorized:
+                    upnp_task.add_trust('sdk key', client_key.public_key_pem.decode())
+                    print('[Warning]: adding new key into flux delta', file=sys.stderr)
+        print('authorized', upnp_task.authorized)
+        if upnp_task.authorized:
+            self.robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
+            ret = self.robot._make_cmd(b"task icontrol")
+            print('ret', ret)
+            assert ret == b"ok", ret
+        else:
+            raise RuntimeError("cannot connect to flux delta")
 
     def get_position(self):
         """
@@ -94,7 +152,8 @@ class Delta(object):
         (0, 0, 280)
         """
         self.loose_flag = False
-        self.robot._make_cmd(b"G28")
+        buf = msgpack.packb(CMD_G028)
+        self.send_asdf(buf)
 
     def move(self, x=None, y=None, z=None, speed=None, relative=False, **kargs):
         """
@@ -436,6 +495,12 @@ class Delta(object):
         else:
             raise RuntimeError("Head error: {}".format(self.head_type))
 
+    def send_asdf(self, buf):
+        ret = self.robot.send_binary(buf)
+        if ret == 'OK':
+            pass
+        else:
+            raise RuntimeError(ret)
 
     # def function(self):
     #     """This function prints hello with a name
@@ -458,9 +523,11 @@ class Delta(object):
     #     pass
 
 if __name__ == '__main__':
-    f = Delta('4231314200084974f3d5981d70f44e1a')
+    # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
+    f = Delta(ip='192.168.18.114', password='flux')
+    # f = Delta(ip='192.168.18.114')
 
-    print(f.get_position())
-    print(f.home())
-    input('a')
+    # print(f.get_position())
+    # print(f.home())
+    # input('a')
     # from fluxclient.sdk.delta import Delta
