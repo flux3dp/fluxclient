@@ -14,10 +14,14 @@ __all__ = ["UpnpDiscover", "UpnpTask", "UpnpError", "NotSupportError",
            "AuthError", "TimeoutError", "discover_device"]
 
 
-def discover_device(uuid):
+def discover_device(uuid, lookup_callback=None, return_device=False):
     """Discover and return device metadata
 
     :param uuid: Device UUID
+    :param lookup_callback: A callable object will be invoke during discover.
+Callback definition::
+    def callback(discover_instance):
+        pass
     :rtype: Device metadata"""
 
     result = []
@@ -27,6 +31,9 @@ def discover_device(uuid):
         discover.stop()
 
     discover = UpnpDiscover(uuid)
-    discover.discover(found_callback)
+    discover.discover(found_callback, lookup_callback)
 
-    return result[0]
+    if return_device:
+        return result[0]["device"]
+    else:
+        return result[0]
