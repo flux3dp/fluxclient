@@ -1,18 +1,25 @@
 
 """
+To find flux devices in the network, `fluxclient.upnp.Discover` class provide \
+interface to discover and collect informations continuously.
+
 Basic usage example::
 
     from fluxclient.upnp import UpnpDiscover
 
-    def my_callback(discover, uuid, serial, model_id, name, version, ipaddr, \
-**kw):
-        print("Device '%s' found at %s" % (name, ipaddr))
+    def my_callback(discover, device, **kw):
+        print("Device '%s' found at %s" % (device.name, device.ipaddr))
 
         # We find only one printer in this example
         discover.stop()
 
     d = UpnpDiscover()
     d.discover(my_callback)
+
+In the example, `my_callback` will be called one a device is found or recive \
+a device status update. A callback contains two positional arguments, first \
+is `UpnpDiscover` instance and second is `Device` instance which it found or \
+been updated.
 """
 
 from weakref import proxy
@@ -25,8 +32,10 @@ import select
 import socket
 import struct
 
-from .misc import validate_identify
+from fluxclient.utils.version import StrictVersion
 from fluxclient.encryptor import KeyObject
+from .device import Device
+from .misc import validate_identify
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +45,6 @@ CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 MULTICAST_IPADDR = "239.255.255.250"
 MULTICAST_PORT = 1901
 MULTICAST_VERSION = 1
-
-INIT_PING_FREQ = 0.5
-PING_RREQ_RATIO = 1.3
-MAX_PING_FREQ = 3.0
 
 
 class UpnpDiscover(object):
@@ -52,12 +57,10 @@ class UpnpDiscover(object):
     """
 
     _break = True
-    _last_sent = 0
-    _send_freq = INIT_PING_FREQ
 
     def __init__(self, uuid=None, device_ipaddr=None,
                  mcst_ipaddr=MULTICAST_IPADDR, mcst_port=MULTICAST_PORT):
-        self.history = {}
+        self.devices = {}
 
         self.uuid = uuid
         self.device_ipaddr = device_ipaddr
@@ -103,11 +106,11 @@ class UpnpDiscover(object):
         Call this method to execute discover task. The callback function has \
 minimum define::
 
-            def callback(upnp_discover_instance, **metadata):
+            def callback(upnp_discover_instance, device, **kw):
                 pass
 
         * `upnp_discover_instance` is the instance who calls this method.
-        * `metadata` is a key-value set of device informations
+        * `device` a `fluxclient.upnp.Device` instance
 
         :param callable callback: This method will be invoked when a device \
 has been found or recive new status from device.
@@ -143,8 +146,10 @@ already call this method because data already in local socket buffer."""
             for sock in select.select(socks, (), (), timeout)[0]:
                 uuid = self.on_recive(sock)
                 if uuid:
-                    data = self.history[uuid]
-                    callback(self, uuid=uuid, **data)
+                    device = self.devices[uuid]
+                    dataset = device.to_old_dict()
+                    dataset["device"] = device
+                    callback(self, uuid=uuid, **dataset)
 
             timeout = timeout_at - time()
 
@@ -168,28 +173,20 @@ already call this method because data already in local socket buffer."""
         except struct.error:
             logger.warning("Payload error: %s", repr(buf))
 
-    def in_history(self, uuid, master_ts):
-        if uuid in self.history:
-            return master_ts <= self.history[uuid].get("master_ts", 0)
+    def add_master_key(self, uuid, serial, master_key, disc_ver):
+        if uuid in self.devices:
+            device = self.devices[uuid]
+            if device.master_key != master_key:
+                raise Exception("Device %s got vart master keys",
+                                device.master_key, master_key)
+            if device.serial != serial:
+                raise Exception("Device %s got vart master keys",
+                                device.serial, serial)
         else:
-            return False
-
-    def update_history(self, uuid, dataset):
-        if "master_key" in dataset:
-            raise RuntimeError("Can not update master key")
-        self.history[uuid].update(dataset)
-
-    def add_master_key(self, uuid, sn, master_key):
-        if uuid in self.history:
-            logger.warning("Master already in list: %s", uuid)
-        else:
-            self.history[uuid] = {"master_key": master_key, "serial": sn}
+            self.devices[uuid] = Device(uuid, serial, master_key, disc_ver)
 
     def get_master_key(self, uuid):
-        return self.history[uuid]["master_key"]
-
-    def get_serial(self, uuid):
-        return self.history[uuid]["serial"]
+        return self.devices[uuid].master_key
 
 
 class Version1Helper(object):
@@ -201,6 +198,13 @@ class Version1Helper(object):
 
     def fileno(self):
         return self.sock.fileno()
+
+    def need_touch(self, uuid, slave_timestemp):
+        device = self.server.devices.get(uuid)
+        if device and device.slave_timestemp is not None:
+            return slave_timestemp > device.slave_timestemp
+        else:
+            return True
 
     def poke(self, ipaddr):
         payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
@@ -217,8 +221,9 @@ class Version1Helper(object):
 
     def handle_discover(self, endpoint, payload):
         args = struct.unpack("<16s10sfHH", payload[:34])
-        uuid_bytes, sn, master_ts = args[:3]
+        uuid_bytes, bsn, master_ts = args[:3]
         l_master_pkey, l_signuture = args[3:]
+        sn = bsn.decode("ascii")
 
         uuid = UUID(bytes=uuid_bytes)
         if not self.server.source_filter(uuid, endpoint):
@@ -227,7 +232,7 @@ class Version1Helper(object):
         f = BytesIO(payload[34:])
         masterkey_doc = f.read(l_master_pkey)
         signuture = f.read(l_signuture)
-        if not validate_identify(uuid, signuture, serial=sn.decode("ascii"),
+        if not validate_identify(uuid, signuture, serial=sn,
                                  masterkey_doc=masterkey_doc):
             logger.error("Validate identify failed (uuid=%s)", uuid)
             return
@@ -235,7 +240,12 @@ class Version1Helper(object):
         master_pkey = KeyObject.load_keyobj(masterkey_doc)
         uuid = UUID(bytes=uuid_bytes)
 
-        if self.server.in_history(uuid, master_ts):
+        if self.need_touch(uuid, master_ts):
+            self.server.add_master_key(uuid, sn, master_pkey, 1)
+            payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
+                                  2, uuid.bytes)
+            self.sock.sendto(payload, endpoint)
+        else:
             try:
                 stbuf = f.read(64)
                 st_ts, st_id, st_prog, st_head, st_err = \
@@ -245,21 +255,16 @@ class Version1Helper(object):
                                              "ignore").strip("\x00")
                 error_label = st_err.decode("ascii",
                                             "ignore").strip("\x00")
-                dataset = self.server.history[uuid]
-                dataset.update({
-                    "st_id": st_id, "st_ts": st_ts, "st_prog": st_prog,
-                    "head_module": head_module, "error_label": error_label})
+                device = self.server.devices[uuid]
+                device.update_status(st_id=st_id, st_ts=st_ts, st_prog=st_prog,
+                                     head_module=head_module,
+                                     error_label=error_label)
+
                 return uuid
             except Exception:
-                basic_info = self.server.history[uuid]
-                if basic_info["version"] > "0.13a":
+                basic_info = self.server.devices[uuid]
+                if basic_info.version > StrictVersion("0.13a"):
                     logger.exception("Unpack status failed")
-        else:
-            self.server.add_master_key(uuid, sn.decode("ascii"),
-                                       master_pkey)
-            payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-                                  2, uuid.bytes)
-            self.sock.sendto(payload, endpoint)
 
     def handle_touch(self, endpoint, payload):
         f = BytesIO(payload)
@@ -270,6 +275,8 @@ class Version1Helper(object):
         if not self.server.source_filter(uuid, endpoint):
             # Ingore this uuid
             return
+
+        device = self.server.devices[uuid]
 
         slavekey_str = f.read(l1)
         slavekey_signuture = f.read(l2)
@@ -289,22 +296,18 @@ class Version1Helper(object):
         if master_key.verify(payload[16:20] + slavekey_str,
                              slavekey_signuture):
             if temp_pkey.verify(bmeta, doc_signuture):
-                data = {}
-                data["slave_key"] = temp_pkey
-                data["master_ts"] = master_ts
+                device.slave_timestemp = master_ts
+                device.slave_key = temp_pkey
+                device.has_password = rawdata.get("pwd") == "T"
+                device.timestemp = float(rawdata.get("time", 0))
+                device.timedelta = device.timestemp - time()
 
-                data["model_id"] = rawdata.get("model", "UNKNOW")
-                data["version"] = rawdata.get("ver")
-                raw_has_password = rawdata.get("pwd", "F")
+                device.model_id = rawdata.get("model", "UNKNOW_MODEL")
+                device.version = StrictVersion(rawdata["ver"])
+                device.name = rawdata.get("name", "NONAME")
 
-                data["timestemp"] = float(rawdata.get("time", 0))
-                data["timedelta"] = data["timestemp"] - time()
-
-                data["name"] = rawdata.get("name", "NONAME")
-                data["has_password"] = raw_has_password == "T"
-                data["ipaddr"] = endpoint[0]
-                data["endpoint"] = endpoint
-                self.server.update_history(uuid, data)
+                device.discover_endpoint = endpoint
+                device.ipaddr = endpoint[0]
 
                 return uuid
             else:

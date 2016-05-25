@@ -1,24 +1,22 @@
 
-"""
-The `fluxclient.upnp` module provide method to discover, authorized, manage \
-security and network for device.
-"""
-
 
 from .abstract_backend import (UpnpError, NotSupportError, AuthError,
                                TimeoutError)
 from .discover import UpnpDiscover
+from .device import Device
 from .task import UpnpTask
 
 __all__ = ["UpnpDiscover", "UpnpTask", "UpnpError", "NotSupportError",
-           "AuthError", "TimeoutError", "discover_device"]
+           "AuthError", "TimeoutError", "discover_device", "Device"]
 
 
-def discover_device(uuid):
-    """Discover and return device metadata
+def discover_device(uuid, lookup_callback=None, return_device=False):
+    """Discover and return device
 
-    :param uuid: Device UUID
-    :rtype: Device metadata"""
+    :param uuid uuid: Device UUID
+    :param callable lookup_callback: A callable object will be invoke during \
+discover.
+    :rtype: :class:`fluxclient.upnp.device.Device`"""
 
     result = []
 
@@ -27,6 +25,9 @@ def discover_device(uuid):
         discover.stop()
 
     discover = UpnpDiscover(uuid)
-    discover.discover(found_callback)
+    discover.discover(found_callback, lookup_callback)
 
-    return result[0]
+    if return_device:
+        return result[0]["device"]
+    else:
+        return result[0]

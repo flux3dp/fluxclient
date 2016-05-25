@@ -5,7 +5,7 @@ import struct
 from .errors import RobotError
 
 
-class FluxCamera(object):
+class Camera(object):
     __running__ = False
     __buffer__ = b""
     __image_length__ = 0
@@ -54,3 +54,6 @@ class FluxCamera(object):
 
     def close(self):
         self.sock.close()
+
+
+FluxCamera = Camera

@@ -36,15 +36,15 @@ from .misc import msg_waitall
 logger = logging.getLogger(__name__)
 
 
-def connect_camera(endpoint, client_key, metadata=None, conn_callback=None,
-                   server_key=None):
+def connect_camera(endpoint, client_key, metadata=None, conn_callback=None):
     """Make a connection to device camera service, backends will be selecte
     automatically.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
 connect. For example: ("192.168.1.1", 23812)
-    :param dict metadata: Device information from discover API
     :param encrypt.KeyObject client_key: Client identify key
+    :param dict metadata: metadata is an internal param, it is not recommend \
+to assign value because it may has different definition in different version.
     :param callable conn_callback: A callback will be invoked while trying \
     connect to device
     """
@@ -57,15 +57,15 @@ connect. For example: ("192.168.1.1", 23812)
     return FluxCamera(wrap_sock)
 
 
-def connect_robot(endpoint, client_key, metadata=None, conn_callback=None,
-                  server_key=None):
+def connect_robot(endpoint, client_key, metadata=None, conn_callback=None):
     """Make a connection to device robot service, backends will be selecte
     automatically.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
 connect. For example: ("192.168.1.1", 23811)
     :param encrypt.KeyObject client_key: Client identify key
-    :param dict metadata: Device information from discover API
+    :param dict metadata: metadata is an internal param, it is not recommend \
+to assign value because it may has different definition in different version.
     :param callable conn_callback: A callback will be invoked while trying \
     connect to device
 
