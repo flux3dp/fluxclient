@@ -1,5 +1,8 @@
 
 """
+To find flux devices in the network, `fluxclient.upnp.Discover` class provide \
+interface to discover and collect informations continuously.
+
 Basic usage example::
 
     from fluxclient.upnp import UpnpDiscover
@@ -12,6 +15,11 @@ Basic usage example::
 
     d = UpnpDiscover()
     d.discover(my_callback)
+
+In the example, `my_callback` will be called one a device is found or recive \
+a device status update. A callback contains two positional arguments, first \
+is `UpnpDiscover` instance and second is `Device` instance which it found or \
+been updated.
 """
 
 from weakref import proxy
@@ -98,11 +106,11 @@ class UpnpDiscover(object):
         Call this method to execute discover task. The callback function has \
 minimum define::
 
-            def callback(upnp_discover_instance, **metadata):
+            def callback(upnp_discover_instance, device, **kw):
                 pass
 
         * `upnp_discover_instance` is the instance who calls this method.
-        * `metadata` is a key-value set of device informations
+        * `device` a `fluxclient.upnp.Device` instance
 
         :param callable callback: This method will be invoked when a device \
 has been found or recive new status from device.
