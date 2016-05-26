@@ -61,7 +61,7 @@ class Device(object):
         self._status = {}
 
     def __str__(self):
-        return "Device: %s" % self.__m.uuid
+        return "Device: %s" % self.uuid
 
     @property
     def uuid(self):
