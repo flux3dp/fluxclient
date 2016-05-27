@@ -175,7 +175,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
             der
         ])
         resp = self.make_request(req_code, resp_code, buf, encrypt=True)
-        if resp.get("status") == "ok":
+        if resp and resp.get("status") == "ok":
             self._authorized = True
         else:
             raise AuthError("Bad password")
