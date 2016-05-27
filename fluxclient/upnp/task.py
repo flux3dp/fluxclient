@@ -57,9 +57,9 @@ timeout value.
         self.backend_options = backend_options
 
         if device_metadata:
-            self.update_remote_profile(**device_metadata)
+            self.update_remote_profile(uuid, **device_metadata)
         elif remote_profile:
-            self.update_remote_profile(**remote_profile)
+            self.update_remote_profile(uuid, **remote_profile)
         else:
             self.reload_remote_profile(lookup_callback, lookup_timeout)
 
@@ -67,8 +67,8 @@ timeout value.
 
     def reload_remote_profile(self, lookup_callback=None,
                               lookup_timeout=float("INF")):
-        def on_discovered(instance, **kw):
-            self.update_remote_profile(**kw)
+        def on_discovered(instance, device, **kw):
+            self.update_remote_profile(**(device.to_old_dict()))
             instance.stop()
 
         if self.uuid.int:
