@@ -15,11 +15,12 @@ A simple example to connect and control a device::
     with open("mykey.pem", "r") as f:
         client_key = KeyObject.load_keyobj(f.read())
 
-    # Get device metadata
-    metadata = discover_device(uuid)
+    # Case 1: Get device from uuid
+    device = discover_device(uuid)
+    robot = device.connect_robot(client_key)
 
-    # Connect device
-    robot = connect_robot((metadata["ipaddr"], 23811), client_key, metadata)
+    # Case 2: Connect to robot direct
+    robot = connect_robot((metadata["ipaddr"], 23811), client_key)
 """
 
 from time import time, sleep

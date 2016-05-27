@@ -79,7 +79,7 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
         logstream.write("Discover...")
         logstream.flush()
 
-        device = discover_device(uuid, working_callback, return_device=True)
+        device = discover_device(uuid, working_callback)
         logstream.write("\nConnecting...")
         session = device.connect_robot(client_key,
                                        conn_callback=working_callback)
@@ -109,7 +109,7 @@ def connect_camera_helper(target, client_key, logstream=sys.stdout):
         logstream.write("Discover...")
         logstream.flush()
 
-        device = discover_device(uuid, working_callback, return_device=True)
+        device = discover_device(uuid, working_callback)
         logstream.write("\nConnecting...")
         session = device.connect_camera(client_key,
                                         conn_callback=working_callback)
