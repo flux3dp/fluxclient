@@ -13,6 +13,9 @@ class Camera(object):
     def __init__(self, sock):
         self.sock = sock
 
+    def fileno(self):
+        return self.sock.fileno()
+
     def feed(self, image_callback):
         b = self.sock.recv(4096)
         if b:
