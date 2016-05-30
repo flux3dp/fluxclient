@@ -5,6 +5,7 @@ from re import findall
 from json import dumps
 
 from fluxclient.hw_profile import HW_PROFILE
+from fluxclient.utils._utils import Tools
 
 POINT_TYPE = {'infill': 0,
               'perimeter': 1,
@@ -34,7 +35,8 @@ class FcodeBase(object):
         self.path_js = None
 
     def sub_convert_path(self):
-        self.path_js = FcodeBase.path_to_js(self.path)
+        # self.path_js = FcodeBase.path_to_js(self.path)
+        self.path_js = Tools().path_to_js(self.path).decode()
 
     def get_path(self, path_type='js'):
         if path_type == 'js':
@@ -122,9 +124,6 @@ class FcodeBase(object):
         """
         transform path:[[[],[]]] to js object
         """
-        import time
-        a = time.time()
-        print(path[0])
         if path is None:
                 return ''
         else:
@@ -135,10 +134,7 @@ class FcodeBase(object):
                     # tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
                     tmp.append([round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]])
                 result.append(tmp)
-            b = time.time()
             d = dumps(result)
-            c = time.time()
-            print(c-b, b-a)
             return d
 
     @classmethod

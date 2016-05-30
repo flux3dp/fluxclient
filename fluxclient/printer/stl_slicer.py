@@ -12,6 +12,7 @@ from multiprocessing import Pipe
 from threading import Thread
 import logging
 import copy
+from fluxclient.utils._utils import Tools
 
 from PIL import Image
 from msgpack import packb, unpackb
@@ -197,7 +198,7 @@ class StlSlicer(object):
         return bad_lines
 
     def sub_convert_path(self):
-        self.path_js = GcodeToFcode.path_to_js(self.path)
+        self.path_js = Tools().path_to_js(self.path).decode()
 
     def get_path(self):
         """
