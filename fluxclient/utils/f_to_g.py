@@ -3,6 +3,7 @@
 from zipfile import crc32
 import struct
 import sys
+from threading import Thread
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
@@ -126,13 +127,8 @@ class FcodeToGcode(FcodeBase):
                 self.metadata = metadata
         return self.metadata
 
-    def get_path(self):
-        if self.data:
-            return self.path
-        else:
-            return None
-
     def f_to_g(self, outstream, include_meta=False):
+        self.path_js = None
         if include_meta:
             meta = self.get_metadata()
             for key, value in meta.items():
@@ -245,6 +241,8 @@ class FcodeToGcode(FcodeBase):
                 self.process_path('', move_flag, self.laserflag or self.extrudeflag)
             else:
                 raise RuntimeError(FCODE_FAIL)
+        self.T = Thread(target=self.sub_convert_path)
+        self.T.start()
 
 
 if __name__ == '__main__':
