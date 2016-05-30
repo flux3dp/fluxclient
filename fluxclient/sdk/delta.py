@@ -13,8 +13,12 @@ import struct
 import logging
 import sys
 from uuid import UUID
+import socket
+from time import sleep
+import queue
+import threading
 
-import msgpack
+from msgpack import packb, unpackb
 from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
@@ -63,11 +67,9 @@ class Delta(object):
       hi
 
     """
-    def __init__(self, target=None, ip=None, client_key=None, password=None):
+    def __init__(self, target=None, ip=None, client_key=None, password=None, force=False):
         super(Delta, self).__init__()
-
-        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password)
-
+        self._command_index = 0
         # ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
         # self.robot = connect_robot(ipaddr, metadata=metadata, client_key=client_key)
 
@@ -76,14 +78,21 @@ class Delta(object):
         self.laser_status = {"L": False, "R": False}
         self.motor_status = {"e0": True, "e1": True, "e2": False}  # [("e0", "E"), ("e1", "S"), ("e2", "U")]
         self.loose_flag = False
+        self.blocking = True
+
+        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, force=force)
 
     def __del__(self):
         # turn off laser
         # self.turn_laser("L", False)
         # self.turn_laser("R", False)
-        pass
+        sleep(3)
+        self._command_index += 1
+        self.robot.sock.send(packb((self._command_index, CMD_QUIT)))
+        sleep(3)
+        print(unpackb(self.robot.sock.recv(4096)))
 
-    def connect_delta(self, target, ip, client_key, password):
+    def connect_delta(self, target, ip, client_key, password, force):
         if client_key:
             if type(client_key) == str:
                 client_key = get_or_create_default_key(client_key)
@@ -121,11 +130,53 @@ class Delta(object):
         print('authorized', upnp_task.authorized)
         if upnp_task.authorized:
             self.robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
+
+            st_id = self.robot.report_play()["st_id"]
+            if st_id > 0:
+                if st_id not in [64, 66, 128, 130]:
+                    self.robot.abort_play()
+
+                while self.robot.report_play()["st_id"] in [66, 130]:
+                    sleep(0.5)
+
+                self.robot.quit_play()
+            elif st_id < 0:
+                self.robot.kick()
+
+            while self.robot.report_play()["st_id"] != 0:
+                sleep(0.5)
             ret = self.robot._make_cmd(b"task icontrol")
-            print('ret', ret)
+
             assert ret == b"ok", ret
         else:
             raise RuntimeError("cannot connect to flux delta")
+
+        local_ipaddr = socket.gethostbyname(socket.gethostname())
+        self.robot.sock.send(packb((0, 0xf0, local_ipaddr, 55688, b"")))
+        # init udp socket: for state
+        self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_sock.bind((socket.gethostbyname(socket.gethostname()), 55688))
+        buf = self.udp_sock.recv(4096)
+        self.killthread = False
+        self.T = threading.Thread(target=self.delta_status)
+
+    def delta_status(self):
+        while True:
+            if
+
+    def send_command(self, command, recv=True):
+        self._command_index += 1
+        self.robot.sock.send(packb(tuple([self._command_index] + command)))
+        if recv:
+            ret = unpackb(self.robot.sock.recv(4096))
+            return ret
+        else:
+            if self.blocking:
+                while True:
+                    buf = self.udp_sock.recv(4096)
+                    payload = unpackb(buf)
+                    if payload[3] == 0:
+                        break
 
     def get_position(self):
         """
@@ -152,8 +203,12 @@ class Delta(object):
         (0, 0, 280)
         """
         self.loose_flag = False
-        buf = msgpack.packb(CMD_G028)
-        self.send_asdf(buf)
+        ret = self.send_command([CMD_G028])
+        if ret[0] != CMD_G028 or ret[1] != 0:
+            print('ret:', ret)
+            raise RuntimeError('command retrun error')
+        else:
+            return tuple(ret[2])
 
     def move(self, x=None, y=None, z=None, speed=None, relative=False, **kargs):
         """
@@ -196,6 +251,7 @@ class Delta(object):
         tmp_pos = self.tool_head_pos[:]
         for name, v, index in [("x", x, 0), ("y", y, 1), ("z", z, 2)]:
             if isinstance(v, (int, float)):
+                v = float(v)
                 if relative:
                     tmp_pos[index] += v
                 else:
@@ -205,22 +261,34 @@ class Delta(object):
             else:
                 raise TypeError("unsupported type({1}) for {0} coordinate".format(name, type(v)))
                 break
-        if tmp_pos[0] ** 2 + tmp_pos[1] ** 2 > HW_PROFILE["model-1"]["radius"] or tmp_pos[2] > HW_PROFILE["model-1"]["height"] or tmp_pos[2] < 0:
+
+        if isinstance(speed, (int, float)):
+            speed = int(speed)
+
+        if tmp_pos[0] ** 2 + tmp_pos[1] ** 2 > HW_PROFILE["model-1"]["radius"] ** 2 or tmp_pos[2] > HW_PROFILE["model-1"]["height"] or tmp_pos[2] < 0:
             raise ValueError("Invalid coordinate")
         else:
             self.tool_head_pos = tmp_pos
 
-        command = ["X5", "X{}".format(self.tool_head_pos[0]), "Y{}".format(self.tool_head_pos[1]), "Z{}".format(self.tool_head_pos[2])]
-        for e, c in [("e0", "E"), ("e1", "S"), ("e2", "U")]:
-            if e in kargs:
-                if isinstance(kargs[e], (int, float)):
-                    command.append("{}{}".format(c, kargs[e]))
-                else:
-                    raise TypeError("unsupported type({1}) for {0} motor".format(e, type(c)))
-                    break
-        command = " ".join(command)
-        logger.debug(command)
-        # robot.makecomamnd.(command)
+        # command = ["X5", "X{}".format(self.tool_head_pos[0]), "Y{}".format(self.tool_head_pos[1]), "Z{}".format(self.tool_head_pos[2])]
+        # for e, c in [("e0", "E"), ("e1", "S"), ("e2", "U")]:
+        #     if e in kargs:
+        #         if isinstance(kargs[e], (int, float)):
+        #             command.append("{}{}".format(c, kargs[e]))
+        #         else:
+        #             raise TypeError("unsupported type({1}) for {0} motor".format(e, type(c)))
+        #             break
+        # command = " ".join(command)
+        # logger.debug(command)
+        if self.loose_flag:
+            raise RuntimeError('motor need to home() before moving')
+        else:
+            tmp_d = {'X': self.tool_head_pos[0], 'Y': self.tool_head_pos[1], 'Z': self.tool_head_pos[2]}
+            if speed:
+                tmp_d['f'] = int(speed)
+            self.send_command([CMD_G001, tmp_d], recv=False)
+
+        # ({i:F, f:X, f:Y, f:Z, f:E1, f:E2 , f:E3})
 
         return tuple(self.tool_head_pos)
 
@@ -256,32 +324,29 @@ class Delta(object):
         """
         self.move(e0=e0, e1=e1, e2=e2)
 
-    def lock_motor(self, motor):
+    def lock_motor(self):
         """
-        Lock the specified motor.
-
-        :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2", "XYZ"``
+        Lock all motor.
 
         >>> f.lock_motor('XYZ')
 
         """
-        pass
+        self.send_command([CMD_M017], recv=False)
 
     def release_motor(self):
         """
-        Release the specified motor.
-
-        :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2", "XYZ"``
+        Release all motor.
 
         .. note::
 
-            If you ever released motor "XYZ", You have to :meth:`home` before calling :meth:`move` them.
+            If you ever released motor , You have to :meth:`home` before calling :meth:`move` them.
 
-        >>> f.release_motor('XYZ')
+        >>> f.release_motor()
 
         """
-        if motor == 'XYZ':
-            self.loose_flag = True
+        # if motor == 'XYZ':
+        self.loose_flag = True
+        self.send_command([CMD_M084], recv=False)
 
     def get_position_laser(self, laser):
         """
@@ -320,7 +385,14 @@ class Delta(object):
 
         if laser == "L" or laser == "R":
             self.laser_status[laser] = bool(on)
-            self.robot.scan_laser(self.laser_status["L"], self.laser_status["R"])
+
+            flag = 0
+            if self.laser_status['L']:
+                flag |= 1 << 0
+            if self.laser_status['R']:
+                flag |= 1 << 1
+
+            self.send_command([CMD_SLSR, flag], recv=False)
         else:
             if isinstance(laser, str):
                 raise ValueError("Invalid laser name")
@@ -344,11 +416,13 @@ class Delta(object):
 
     def serial_write(self, buf):
         """
+        [TODO]: support this in the future
         """
         pass
 
     def serial_read(self, buf_size):
         """
+        [TODO]: support this in the future
         """
         pass
 
@@ -408,6 +482,14 @@ class Delta(object):
             For current toolhead status use :meth:`get_headstatus`
 
         """
+        sleep(5)
+        ret = self.send_command([CMD_THST])
+        print(ret)
+        ret = ret[1]
+        ret = self.send_command([CMD_THPF])
+        print(ret)
+
+        # CMD_THST
         # t = self.robot.maintain_headinfo()
         # copy dict
         pass
@@ -464,7 +546,9 @@ class Delta(object):
         """
         if self.head_type == "EXTRUDER":  # TODO
             if isinstance(speed, (int, float)):
+                speed = float(speed)
                 if speed <= 1.0 and speed >= 0.0:
+                    self.send_command([CMD_M106, speed], recv=False)
                     pass  # TODO
                 else:
                     raise ValueError("Invalid fan speed")
@@ -495,13 +579,6 @@ class Delta(object):
         else:
             raise RuntimeError("Head error: {}".format(self.head_type))
 
-    def send_asdf(self, buf):
-        ret = self.robot.send_binary(buf)
-        if ret == 'OK':
-            pass
-        else:
-            raise RuntimeError(ret)
-
     # def function(self):
     #     """This function prints hello with a name
     #     function:: format_exception(etype, value, tb[, limit=None])
@@ -524,10 +601,17 @@ class Delta(object):
 
 if __name__ == '__main__':
     # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
-    f = Delta(ip='192.168.18.114', password='flux')
-    # f = Delta(ip='192.168.18.114')
-
-    # print(f.get_position())
+    f = Delta(ip='192.168.18.114', password='flux', force=True)
+    f.get_head_info()
     # print(f.home())
-    # input('a')
-    # from fluxclient.sdk.delta import Delta
+
+    # f.get_head_info()
+    # print(f.move(0, 0, 100))
+    # sleep(1)
+    # print(f.turn_laser('L', True))
+    # sleep(1)
+    # print(f.move(0, 0, 80))
+    # sleep(1)
+    # print(f.turn_laser('L', False))
+    # f.release_motor()
+    # print(f.set_fan(-1))
