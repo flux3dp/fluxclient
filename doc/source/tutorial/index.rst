@@ -2,7 +2,7 @@ Tutorial
 =====================
 
 .. toctree:: 
-    :maxdepth: 2
+    :maxdepth: 3
 
     discover_and_manage_the_device.rst
     control_device.rst

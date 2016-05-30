@@ -17,20 +17,27 @@ logger = logging.getLogger(__name__)
 
 
 class UpnpTask(object):
-    """UpnpTask provide basic configuration method to device
+    """UpnpTask provide basic configuration method to device. When creating \
+UpnpTask instance, the argument **uuid** is required. If param \
+**device_metadata** not given, UpnpTask will use lookup_callback and \
+lookup_timeout to create a Discover instance and try to get metadata from \
+network.
 
     :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying connect \
 via ip address.
     :param encrypt.KeyObject client_key: Client key to connect to device.
     :param str ipaddr: IP Address to connect to.
-    :param dict device_metadata: Device metadata
-    :param dict backend_options: More configuration for UpnpTask
-    :param callable lookup_callback: Invoke repeated while finding device
+    :param dict device_metadata: This is an internal param, it is not \
+recommend to assign value because it may has different definition in \
+different version.
+    :param dict backend_options: More configuration for UpnpTask.
+    :param callable lookup_callback: Invoke repeated while finding device.
     :param float lookup_timeout: Raise error if device can not be found after \
-timeout value
-    :raises UpnpError: For protocol or operation error
-    :raises socket.error: For socket error
-"""
+timeout value.
+    :raises UpnpError: For protocol or operation error.
+    :raises socket.error: For socket error.
+    """
+
     name = None
     uuid = None
     serial = None
@@ -50,9 +57,9 @@ timeout value
         self.backend_options = backend_options
 
         if device_metadata:
-            self.update_remote_profile(**device_metadata)
+            self.update_remote_profile(uuid, **device_metadata)
         elif remote_profile:
-            self.update_remote_profile(**remote_profile)
+            self.update_remote_profile(uuid, **remote_profile)
         else:
             self.reload_remote_profile(lookup_callback, lookup_timeout)
 
@@ -60,8 +67,8 @@ timeout value
 
     def reload_remote_profile(self, lookup_callback=None,
                               lookup_timeout=float("INF")):
-        def on_discovered(instance, **kw):
-            self.update_remote_profile(**kw)
+        def on_discovered(instance, device, **kw):
+            self.update_remote_profile(**(device.to_old_dict()))
             instance.stop()
 
         if self.uuid.int:
