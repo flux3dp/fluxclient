@@ -122,3 +122,17 @@ def connect_camera_helper(target, client_key, logstream=sys.stdout):
 
     logstream.write(" OK\n")
     return session, device
+
+
+class CharacterRenderHelper(object):
+    text = None
+    index = 0
+
+    def __init__(self, text="-\\|/"):
+        self.text = text
+
+    def render(self, fileobj):
+        c = self.text[self.index]
+        self.index = (self.index + 1) % len(self.text)
+        fileobj.write("\r%s" % c)
+        fileobj.flush()
