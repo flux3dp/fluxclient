@@ -1,6 +1,12 @@
 
-import warnings
+from uuid import UUID
 from time import time
+import warnings
+
+from fluxclient.encryptor import KeyObject
+from fluxclient.utils.version import StrictVersion
+
+__all__ = ["Device"]
 
 DEVICE_STATUS_CODE = {
     -3: "ST_OCCUPIED_SDK",
@@ -32,6 +38,7 @@ class Device(object):
     _uuid = None
     _serial = None
     _master_key = None
+    _disc_ver = None
 
     model_id = None
     version = None
@@ -52,6 +59,33 @@ class Device(object):
 
     # Device Status
     _status = None
+
+    @classmethod
+    def from_dict(cls, dictobj):
+        dv = dictobj["discover_version"]
+
+        uuid = dictobj["uuid"] if isinstance(dictobj["uuid"], UUID) \
+            else UUID(hex=dictobj["uuid"])
+        version = dictobj["version"] \
+            if isinstance(dictobj["version"], StrictVersion) \
+            else _to_version_or_none(dictobj["version"])
+
+        device = cls(uuid, dictobj["serial"],
+                     _to_keyobj_or_none(dictobj["master_key"]), dv)
+        device.name = dictobj["name"]
+        device.model_id = dictobj["model_id"]
+        device.version = version
+        device.ipaddr = dictobj["ipaddr"]
+        device.discover_endpoint = tuple(dictobj["discover_endpoint"])
+        device.last_update = dictobj["last_update"]
+        if dv == 1:
+            extend = dictobj["extend_v1"]
+            device.has_password = extend["has_password"]
+            device.slave_timestemp = extend["slave_timestemp"]
+            device.slave_key = _to_keyobj_or_none(extend["slave_key"])
+            device.timestemp = extend["timestemp"]
+            device.timedelta = extend["timedelta"]
+        return device
 
     def __init__(self, uuid, serial, master_key, disc_ver):
         self._uuid = uuid
@@ -141,17 +175,37 @@ to 1.0. Only vaild while running task (st_id > 0).
         return connect_camera((self.ipaddr, port), client_key,
                               metadata=self.to_old_dict(), **kw)
 
-    def to_dict(self):
-        """Create a new dictionay store divice information"""
+    def to_dict(self, serilize=False):
+        """Create a new dictionay store divice information
+
+        :param bool serilize: Return a json serializeable dict if serilize is \
+True. It is useful if you want to pass flux device information over file, \
+socket or other serial devices"""
+
         return {
+            "uuid": str(self._uuid) if serilize else self._uuid,
+            "discover_version": self._disc_ver,
             "name": self.name,
             "model_id": self.model_id,
-            "version": str(self.version),
+            "version": str(self.version) if serilize else self.version,
             "serial": self.serial,
-            "master_key": self.master_key,
+            "master_key": (self.master_key.public_key_pem.decode()
+                           if self.master_key and serilize
+                           else self.master_key),
 
             "ipaddr": self.ipaddr,
             "discover_endpoint": self.discover_endpoint,
+
+            "extend_v1": {
+                "has_password": self.has_password,
+                "slave_timestemp": self.slave_timestemp,
+                "slave_key": (self.slave_key.public_key_pem.decode()
+                              if self.slave_key and serilize
+                              else self.slave_key),
+                "timestemp": self.timestemp,
+                "timedelta": self.timedelta
+            },
+            "last_update": self.last_update
         }
 
     def to_old_dict(self):
@@ -168,3 +222,19 @@ to 1.0. Only vaild while running task (st_id > 0).
         }
         dataset.update(self.to_dict())
         return dataset
+
+
+def _to_version_or_none(raw_data):
+    try:
+        if raw_data:
+            return StrictVersion(raw_data)
+    except (ValueError, TypeError):
+        pass
+
+
+def _to_keyobj_or_none(raw_pem):
+    try:
+        if raw_pem:
+            return KeyObject.load_keyobj(raw_pem)
+    except (ValueError, TypeError):
+        pass
