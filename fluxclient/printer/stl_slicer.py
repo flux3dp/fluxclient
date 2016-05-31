@@ -15,7 +15,7 @@ import copy
 from fluxclient.utils._utils import Tools
 
 from PIL import Image
-from msgpack import packb, unpackb
+# from msgpack import packb, unpackb
 # import pkg_resources
 
 from fluxclient.hw_profile import HW_PROFILE

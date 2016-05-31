@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include "utils_module.h"
+
 std::string path_to_js(std::vector< std::vector< std::vector<float> > > path){
   char buf[50];
   std::string c_string("[");
@@ -9,10 +11,10 @@ std::string path_to_js(std::vector< std::vector< std::vector<float> > > path){
         c_string += buf;
         c_string += ",";
       }
-      c_string.pop_back();
+      c_string.erase(c_string.end() - 1);
     c_string += "],";
   }
-  c_string.pop_back();
+  c_string.erase(c_string.end() - 1);
   c_string += "]";
   return c_string;
 }
