@@ -57,6 +57,8 @@ timeout value.
         self.backend_options = backend_options
 
         if device_metadata:
+            if 'uuid' in device_metadata:
+                device_metadata.pop('uuid')
             self.update_remote_profile(uuid, **device_metadata)
         elif remote_profile:
             self.update_remote_profile(uuid, **remote_profile)
@@ -85,7 +87,7 @@ timeout value.
         self.name = name
         self.serial = serial
         self.model_id = model_id
-        self.version = StrictVersion(version)
+        self.version = StrictVersion(str(version))
         self.ipaddr = ipaddr
         self.device_meta = meta
 

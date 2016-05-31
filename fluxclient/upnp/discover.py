@@ -149,7 +149,7 @@ already call this method because data already in local socket buffer."""
                     device = self.devices[uuid]
                     dataset = device.to_old_dict()
                     dataset["device"] = device
-                    callback(self, uuid=uuid, **dataset)
+                    callback(self, **dataset)
 
             timeout = timeout_at - time()
 
