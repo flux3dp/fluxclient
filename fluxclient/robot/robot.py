@@ -532,7 +532,7 @@ class FluxRobot(object):
                 raise_error(ret)
 
     def raw_mode(self):
-        ret = self._make_cmd(b"raw")
+        ret = self._make_cmd(b"task raw")
         if ret == b"continue":
             return self.sock
         else:
