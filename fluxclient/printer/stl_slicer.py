@@ -256,6 +256,8 @@ class StlSlicer(object):
 
         # parent_pipe, child_pipe = Pipe()
         pipe = []
+
+        from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
         p.start()
