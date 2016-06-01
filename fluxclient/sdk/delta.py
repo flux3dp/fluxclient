@@ -67,7 +67,7 @@ class Delta(object):
       hi
 
     """
-    def __init__(self, target=None, ip=None, client_key=None, password=None, force=False):
+    def __init__(self, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         super(Delta, self).__init__()
         self._command_index = 0
         # ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
@@ -78,21 +78,25 @@ class Delta(object):
         self.laser_status = {"L": False, "R": False}
         self.motor_status = {"e0": True, "e1": True, "e2": False}  # [("e0", "E"), ("e1", "S"), ("e2", "U")]
         self.loose_flag = False
-        self.blocking = True
+        self.blocking_flag = blocking
+        self.lock = threading.Lock()
+        self.command_output = [None]
+        self.connected = False
 
-        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, force=force)
+        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, kick=kick)
 
     def __del__(self):
-        # turn off laser
-        # self.turn_laser("L", False)
-        # self.turn_laser("R", False)
-        sleep(3)
-        self._command_index += 1
-        self.robot.sock.send(packb((self._command_index, CMD_QUIT)))
-        sleep(3)
-        print(unpackb(self.robot.sock.recv(4096)))
+        if self.connected:
+            self.killthread = True
+            print('wait for udp close')
+            self.T.join()
+            sleep(1)
+            self._command_index += 1
+            self.robot.sock.send(packb((self._command_index, CMD_QUIT)))
+            sleep(1)
+            self.connected = False
 
-    def connect_delta(self, target, ip, client_key, password, force):
+    def connect_delta(self, target, ip, client_key, password, kick):
         if client_key:
             if type(client_key) == str:
                 client_key = get_or_create_default_key(client_key)
@@ -159,24 +163,88 @@ class Delta(object):
         buf = self.udp_sock.recv(4096)
         self.killthread = False
         self.T = threading.Thread(target=self.delta_status)
+        self.T.start()
+
+        self.connected = True
+
+    def atomic_status(self, new_staus=None):
+        """
+        return index, queue_left
+        """
+        self.lock.acquire()
+        if new_staus:
+            self.status = new_staus
+        else:
+            new_staus = self.status
+        self.lock.release()
+        return new_staus
+
+    def get_result(self, index, wait=True):
+        """
+        acquire result of certain index from delta
+        """
+        print('get_result index', index)
+        self.lock.acquire()
+        if len(self.command_output) < index:
+            raise RuntimeError('Fatal Error: command index error(index:{}, total:{})'.format(index, len(self.command_output)))
+        else:
+            if callable(self.command_output[index]):
+                if wait:
+                    self.lock.release()
+                    while callable(self.command_output[index]):
+                        # busy waiting for return value
+                        pass
+                    self.lock.acquire()
+                    ret = self.command_output[index]
+                    print('get_result ret', ret)
+                else:
+                    raise RuntimeError('Not ready(index:{})'.format(index))
+            elif self.command_output[index] is None:
+                ret = None
+            else:
+                ret = self.command_output[index]
+        self.lock.release()
+        return ret
 
     def delta_status(self):
+        """
+        thread function that collect and update delta's status and command's output
+        """
+        recv_until = -1
+        # udp_index = 0
         while True:
-            if
+            if self.killthread:
+                self.udp_sock.close()
+                return
+            else:
+                buf = self.udp_sock.recv(4096)
+                payload = unpackb(buf)
+                print('payload', payload, 'recv_until', recv_until, self.command_output)
+                if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
+                    for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
+                        if self.command_output[i]:
+                            ret = self.robot.sock.recv(4096)
+                            ret = unpackb(ret)
+                            self.lock.acquire()
+                            self.command_output[i] = self.command_output[i](ret)
+                            print('recv', i, self.command_output[i])
+                            self.lock.release()
+                    recv_until = payload[2] - 1 - payload[3]
+                    print('recv_until', recv_until)
 
-    def send_command(self, command, recv=True):
+        #         self.atomic_status((payload[2], payload[3]))
+
+    def send_command(self, command, recv_callback=None):
         self._command_index += 1
         self.robot.sock.send(packb(tuple([self._command_index] + command)))
-        if recv:
-            ret = unpackb(self.robot.sock.recv(4096))
-            return ret
+
+        if recv_callback:
+            self.command_output.append(recv_callback)
         else:
-            if self.blocking:
-                while True:
-                    buf = self.udp_sock.recv(4096)
-                    payload = unpackb(buf)
-                    if payload[3] == 0:
-                        break
+            self.command_output.append(None)
+        # print('send', self.command_output)
+        # print('index', self._command_index)
+        return self._command_index
 
     def get_position(self):
         """
@@ -194,7 +262,7 @@ class Delta(object):
         """
         Set each axis back to home.
 
-        :return: the distance each axis goes
+        :return: the coordinate where the toolhead originally is
         :rtype: (float, float, float)
 
         >>> f.home()
@@ -202,13 +270,18 @@ class Delta(object):
         >>> f.get_position()
         (0, 0, 280)
         """
+        def post_process(ret):
+            if ret[0] != CMD_G028 or ret[1] != 0:
+                print('ret:', ret)
+                raise RuntimeError('command retrun error')
+            else:
+                return tuple(ret[2])
         self.loose_flag = False
-        ret = self.send_command([CMD_G028])
-        if ret[0] != CMD_G028 or ret[1] != 0:
-            print('ret:', ret)
-            raise RuntimeError('command retrun error')
+        command_index = self.send_command([CMD_G028], recv_callback=post_process)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
         else:
-            return tuple(ret[2])
+            return command_index, None
 
     def move(self, x=None, y=None, z=None, speed=None, relative=False, **kargs):
         """
@@ -579,6 +652,9 @@ class Delta(object):
         else:
             raise RuntimeError("Head error: {}".format(self.head_type))
 
+    def close(self):
+        self.__del__()
+
     # def function(self):
     #     """This function prints hello with a name
     #     function:: format_exception(etype, value, tb[, limit=None])
@@ -601,9 +677,13 @@ class Delta(object):
 
 if __name__ == '__main__':
     # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
-    f = Delta(ip='192.168.18.114', password='flux', force=True)
-    f.get_head_info()
-    # print(f.home())
+    f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
+
+    # f.get_head_info()
+    print(f.home())
+    print(f.home())
+    print(f.home())
+    f.close()
 
     # f.get_head_info()
     # print(f.move(0, 0, 100))
