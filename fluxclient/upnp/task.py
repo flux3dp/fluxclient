@@ -68,7 +68,8 @@ timeout value.
     def reload_remote_profile(self, lookup_callback=None,
                               lookup_timeout=float("INF")):
         def on_discovered(instance, device, **kw):
-            self.update_remote_profile(**(device.to_old_dict()))
+            self.update_remote_profile(uuid=device.uuid,
+                                       **(device.to_old_dict()))
             instance.stop()
 
         if self.uuid.int:
