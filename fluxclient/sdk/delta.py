@@ -307,10 +307,8 @@ class Delta(object):
         command_index = self.send_command([CMD_G028], recv_callback=post_process)
         ret = self.get_result(command_index, wait=True)
         if self.blocking_flag:
-            print('                 nooooooo')
             return command_index, ret
         else:
-            print('                 goooooood')
             return command_index, None
 
     def move(self, x=None, y=None, z=None, speed=None, relative=False, **kargs):
@@ -373,16 +371,6 @@ class Delta(object):
         else:
             self.tool_head_pos = tmp_pos
 
-        # command = ["X5", "X{}".format(self.tool_head_pos[0]), "Y{}".format(self.tool_head_pos[1]), "Z{}".format(self.tool_head_pos[2])]
-        # for e, c in [("e0", "E"), ("e1", "S"), ("e2", "U")]:
-        #     if e in kargs:
-        #         if isinstance(kargs[e], (int, float)):
-        #             command.append("{}{}".format(c, kargs[e]))
-        #         else:
-        #             raise TypeError("unsupported type({1}) for {0} motor".format(e, type(c)))
-        #             break
-        # command = " ".join(command)
-        # logger.debug(command)
         if self.loose_flag:
             raise RuntimeError('motor need to home() before moving')
         else:
@@ -439,7 +427,11 @@ class Delta(object):
         >>> f.lock_motor('XYZ')
 
         """
-        self.send_command([CMD_M017], recv=False)
+        command_index = self.send_command([CMD_M017], recv_callback=False)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
+        else:
+            return command_index, None
 
     def release_motor(self):
         """
@@ -454,7 +446,11 @@ class Delta(object):
         """
         # if motor == 'XYZ':
         self.loose_flag = True
-        self.send_command([CMD_M084], recv=False)
+        command_index = self.send_command([CMD_M084], recv_callback=False)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
+        else:
+            return command_index, None
 
     def get_position_laser(self, laser):
         """
@@ -500,7 +496,12 @@ class Delta(object):
             if self.laser_status['R']:
                 flag |= 1 << 1
 
-            self.send_command([CMD_SLSR, flag], recv=False)
+            command_index = self.send_command([CMD_SLSR, flag], recv_callback=False)
+            if self.blocking_flag:
+                return command_index, self.get_result(command_index, wait=True)
+            else:
+                return command_index, None
+
         else:
             if isinstance(laser, str):
                 raise ValueError("Invalid laser name")
