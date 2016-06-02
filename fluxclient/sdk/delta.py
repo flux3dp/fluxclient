@@ -58,13 +58,17 @@ def type_check(instance, type_candidates, err_msg=''):
 
 
 class Delta(object):
-    """We use this as a public class example class.
+    """
+      target=None, ip=None, client_key=None, password=None, kick=False, blocking=True
+      Conenct and control delta
 
-      I don't **know** what's going *on*::
-
-       print(ola)
-
-      hi
+        :param str target: Target delta's uuid
+        :param str ip:
+        :param str client_key: rsa key used for connecting
+        :param KeyObject client_key: rsa key object
+        :param str password: password used for connecting
+        :param bool kick: kick other user's task if this flag is set to be true
+        :param bool blocking: set which mode it's in
 
     """
     def __init__(self, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
@@ -100,6 +104,9 @@ class Delta(object):
             self.connected = False
 
     def connect_delta(self, target, ip, client_key, password, kick):
+        """
+        connect to delta
+        """
         if client_key:
             if type(client_key) == str:
                 client_key = get_or_create_default_key(client_key)
@@ -126,7 +133,6 @@ class Delta(object):
 
         upnp_task = UpnpTask(**options)
 
-        print('authorized', upnp_task.authorized)
         if not upnp_task.authorized:
             # password = 'a'
             if password:
@@ -187,7 +193,7 @@ class Delta(object):
         """
         acquire result of certain index from delta
         """
-        print('get_result index', index)
+        # print('get_result index', index)
         self.lock.acquire()
         if len(self.command_output) < index:
             raise RuntimeError('Fatal Error: command index error(index:{}, total:{})'.format(index, len(self.command_output)))
@@ -200,7 +206,7 @@ class Delta(object):
                         pass
                     self.lock.acquire()
                     ret = self.command_output[index]
-                    print('get_result ret', ret)
+                    # print('get_result ret', ret)
                 else:
                     raise RuntimeError('Not ready(index:{})'.format(index))
             elif self.command_output[index] is False:
@@ -213,7 +219,7 @@ class Delta(object):
                         pass
                     self.lock.acquire()
                     ret = self.command_output[index]
-                    print('get_result ret', ret)
+                    # print('get_result ret', ret)
                 else:
                     raise RuntimeError('Not ready(index:{})'.format(index))
             else:
@@ -235,9 +241,9 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-                print('payload', payload, 'recv_until', recv_until, self.command_output)
+                # print('payload', payload, 'recv_until', recv_until, self.command_output)
                 if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
-                    print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
+                    # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
                     for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
                         if self.command_output[i]:
                             ret = self.robot.sock.recv(4096)
@@ -245,7 +251,6 @@ class Delta(object):
                             ret = unpacker.__next__()
                             self.lock.acquire()
                             self.command_output[i] = self.command_output[i](ret)
-                            print('recv', i, self.command_output[i])
                             self.lock.release()
                         elif self.command_output[i] is False:
                             self.lock.acquire()
@@ -255,7 +260,6 @@ class Delta(object):
                             print('         --->>>no way!!', self.command_output[i], self.command_output)
 
                     recv_until = payload[2] - 1 - payload[3]
-                    print('recv_until', recv_until)
 
                 self.atomic_status((payload[2], payload[3]))
 
@@ -726,7 +730,7 @@ if __name__ == '__main__':
     # f.get_head_info()
     print('----------------------------------------------------------------------->', f.move(0, 0, 100))
     # sleep(1)
-    # print(f.turn_laser('L', True))
+    print(f.turn_laser('L', True))
     # sleep(1)
     print('----------------------------------------------------------------------->', f.move(0, 0, 80))
 
