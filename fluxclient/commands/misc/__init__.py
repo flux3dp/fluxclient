@@ -64,41 +64,75 @@ def parse_ipaddr(target, default_port):
         return (target, default_port)
 
 
-def discover_device(uuid, client_key, logstream=sys.stdout):
-    result = []
+def connect_robot_helper(target, client_key, logstream=sys.stdout):
+    from fluxclient.robot.misc import is_uuid
+    from fluxclient.upnp import discover_device
+    from fluxclient.robot import connect_robot
 
-    def lookup_callback(discover):
+    def working_callback(discover):
         logstream.write(".")
         logstream.flush()
 
-    def found_callback(discover, **kw):
-        result.append(kw)
-        discover.stop()
+    if is_uuid(target):
+        uuid = UUID(hex=target)
 
-    logstream.write("Discover...")
-    logstream.flush()
+        logstream.write("Discover...")
+        logstream.flush()
 
-    from fluxclient.upnp import UpnpDiscover
-
-    discover = UpnpDiscover(uuid)
-    discover.discover(found_callback, lookup_callback)
+        device = discover_device(uuid, working_callback)
+        logstream.write("\nConnecting...")
+        session = device.connect_robot(client_key,
+                                       conn_callback=working_callback)
+    else:
+        device = None
+        logstream.write("Connecting...")
+        endpoint = parse_ipaddr(target, 23811)
+        session = connect_robot(endpoint, client_key,
+                                conn_callback=working_callback)
 
     logstream.write(" OK\n")
-    logstream.flush()
-
-    return result[0]
+    return session, device
 
 
-def get_device_endpoint(target, client_key, default_port,
-                        logstream=sys.stdout):
+def connect_camera_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
+    from fluxclient.upnp import discover_device
+    from fluxclient.robot import connect_camera
+
+    def working_callback(discover):
+        logstream.write(".")
+        logstream.flush()
 
     if is_uuid(target):
-        metadata = discover_device(UUID(hex=target), client_key, logstream)
-        ipaddr = metadata.get("ipaddr")
-        if not ipaddr:
-            raise RuntimeError("Can not get ipaddress from target %s" % target)
+        uuid = UUID(hex=target)
 
-        return (ipaddr, default_port), metadata
+        logstream.write("Discover...")
+        logstream.flush()
+
+        device = discover_device(uuid, working_callback)
+        logstream.write("\nConnecting...")
+        session = device.connect_camera(client_key,
+                                        conn_callback=working_callback)
     else:
-        return parse_ipaddr(target, default_port), {}
+        device = None
+        logstream.write("Connecting...")
+        endpoint = parse_ipaddr(target, 23811)
+        session = connect_camera(endpoint, client_key,
+                                 conn_callback=working_callback)
+
+    logstream.write(" OK\n")
+    return session, device
+
+
+class CharacterRenderHelper(object):
+    text = None
+    index = 0
+
+    def __init__(self, text="-\\|/"):
+        self.text = text
+
+    def render(self, fileobj):
+        c = self.text[self.index]
+        self.index = (self.index + 1) % len(self.text)
+        fileobj.write("\r%s" % c)
+        fileobj.flush()

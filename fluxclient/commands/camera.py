@@ -4,24 +4,7 @@ import argparse
 import sys
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      get_device_endpoint)
-from fluxclient.robot import connect_camera
-
-
-def connect(options):
-    endpoint, metadata = get_device_endpoint(options.target, options.clientkey,
-                                             23812)
-
-    def conn_callback(*args):
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        return True
-
-    camera = connect_camera(endpoint=endpoint, metadata=metadata,
-                            client_key=options.clientkey,
-                            conn_callback=conn_callback)
-
-    return camera, metadata
+                                      connect_camera_helper)
 
 
 def serve_forever(options, camera, metadata={}):
@@ -62,9 +45,13 @@ def main():
     options = parser.parse_args()
     options.clientkey = get_or_create_default_key(options.clientkey)
 
-    camera, metadata = connect(options)
+    camera, device = connect_camera_helper(options.target, options.clientkey)
 
     try:
+        if device:
+            metadata = device.to_dict()
+        else:
+            metadata = {"ipaddr": options.target}
         serve_forever(options, camera, metadata)
     finally:
         camera.close()

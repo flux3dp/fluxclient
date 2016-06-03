@@ -5,13 +5,16 @@ import struct
 from .errors import RobotError
 
 
-class FluxCamera(object):
+class Camera(object):
     __running__ = False
     __buffer__ = b""
     __image_length__ = 0
 
     def __init__(self, sock):
         self.sock = sock
+
+    def fileno(self):
+        return self.sock.fileno()
 
     def feed(self, image_callback):
         b = self.sock.recv(4096)
@@ -54,3 +57,6 @@ class FluxCamera(object):
 
     def close(self):
         self.sock.close()
+
+
+FluxCamera = Camera

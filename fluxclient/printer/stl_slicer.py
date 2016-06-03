@@ -12,8 +12,10 @@ from multiprocessing import Pipe
 from threading import Thread
 import logging
 import copy
+from fluxclient.utils._utils import Tools
 
 from PIL import Image
+# from msgpack import packb, unpackb
 # import pkg_resources
 
 from fluxclient.hw_profile import HW_PROFILE
@@ -195,11 +197,14 @@ class StlSlicer(object):
             counter += 1
         return bad_lines
 
+    def sub_convert_path(self):
+        self.path_js = Tools().path_to_js(self.path).decode()
+
     def get_path(self):
         """
         """
-        if self.path:
-            return GcodeToFcode.path_to_js(self.path)
+        self.T.join()
+        return self.path_js
 
     def begin_slicing(self, names, ws, output_type):
         """
@@ -256,6 +261,8 @@ class StlSlicer(object):
 
         # parent_pipe, child_pipe = Pipe()
         pipe = []
+
+        from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
         p.start()
@@ -395,6 +402,9 @@ class StlSlicer(object):
                         self.output = message[0]
                         self.metadata = message[1]
                         self.path = message[2]
+                        self.path_js = None
+                        self.T = Thread(target=self.sub_convert_path)
+                        self.T.start()
                         m = '{"status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
 
                     else:

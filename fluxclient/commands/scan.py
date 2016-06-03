@@ -7,8 +7,7 @@ import sys
 import os
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      get_device_endpoint)
-from fluxclient.robot import connect_robot
+                                      connect_robot_helper)
 from fluxclient.hw_profile import HW_PROFILE
 
 
@@ -17,16 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_robot(options):
-    def conn_callback(*args):
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        return True
-
-    ipaddr, metadata = get_device_endpoint(options.target, options.clientkey,
-                                           23811)
-    client = connect_robot(ipaddr, metadata=metadata,
-                           client_key=options.clientkey,
-                           conn_callback=conn_callback)
+    client, _ = connect_robot_helper(options.target, options.clientkey)
 
     pos = client.position()
     if pos == "CommandTask":
