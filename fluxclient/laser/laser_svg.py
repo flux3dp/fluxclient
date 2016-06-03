@@ -53,19 +53,19 @@ class LaserSvg(LaserBase, SVGParser):
 
             progress += offset
             if ws:
-                ws.send_progress('converting svg %d' % name_index, progress)
+                ws.send_progress('converting svg', progress)
 
             path_data = self.elements_to_list(root)
 
             progress += offset
             if ws:
-                ws.send_progress('process svg %d' % name_index, progress)
+                ws.send_progress('processing svg', progress)
 
             path_data = self.process(path_data, ready_svg[1:-3], viewBox, self.radius)
 
             progress += offset
             if ws:
-                ws.send_progress('generating fcode on svg %d' % name_index, progress)
+                ws.send_progress('generating fcode on svg', progress)
             for each_path in path_data:
                 moveTo = True  # flag that means extruder should move to rather than drawto
                 for x, y in each_path:
@@ -80,7 +80,7 @@ class LaserSvg(LaserBase, SVGParser):
                         continue
             progress += offset
             if ws:
-                ws.send_progress('preparing image %d' % name_index, progress)
+                ws.send_progress('preparing image', progress)
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
         gcode += self.turnOff()
