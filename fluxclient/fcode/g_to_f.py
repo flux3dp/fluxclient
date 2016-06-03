@@ -9,6 +9,7 @@ from math import sqrt
 import time
 from re import findall
 from getpass import getuser
+from threading import Thread
 
 from fluxclient.fcode.fcode_base import FcodeBase, POINT_TYPE
 from fluxclient.hw_profile import HW_PROFILE
@@ -177,6 +178,7 @@ class GcodeToFcode(FcodeBase):
         self.crc = crc32(buf, self.crc)
 
     def process(self, input_stream, output_stream):
+        self.path_js = None
         try:
             # fcode = tempfile.NamedTemporaryFile(suffix='.fcode', delete=False)
             output_stream.write(self.header())
@@ -335,6 +337,10 @@ class GcodeToFcode(FcodeBase):
                             self.now_type = POINT_TYPE['inner-wall']
                         elif 'RAFT' in comment:
                             self.now_type = POINT_TYPE['raft']
+
+            self.T = Thread(target=self.sub_convert_path)
+            self.T.start()
+
             output_stream.write(struct.pack('<I', self.crc))
             output_stream.seek(len(self.header()), 0)
             output_stream.write(struct.pack('<I', self.script_length))

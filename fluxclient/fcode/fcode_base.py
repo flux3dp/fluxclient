@@ -5,6 +5,7 @@ from re import findall
 from json import dumps
 
 from fluxclient.hw_profile import HW_PROFILE
+from fluxclient.utils._utils import Tools
 
 POINT_TYPE = {'infill': 0,
               'perimeter': 1,
@@ -31,9 +32,21 @@ class FcodeBase(object):
         self.record_z = 0.0
         self.engine = 'slic3r'
         self.now_type = 3
+        self.path_js = None
 
-    def get_path(self):
-        return self.path
+    def sub_convert_path(self):
+        # self.path_js = FcodeBase.path_to_js(self.path)
+        self.path_js = Tools().path_to_js(self.path).decode()
+
+    def get_path(self, path_type='js'):
+        if path_type == 'js':
+            self.T.join()
+            return self.path_js
+        else:
+            if self.path:
+                return self.path
+            else:
+                return None
 
     def process_path(self, comment, move_flag, extrude_flag):
         """
@@ -118,9 +131,11 @@ class FcodeBase(object):
             for layer in path:
                 tmp = []
                 for p in layer:
-                    tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
+                    # tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
+                    tmp.append([round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]])
                 result.append(tmp)
-            return dumps(result)
+            d = dumps(result)
+            return d
 
     @classmethod
     def trim_ends(cls, path):

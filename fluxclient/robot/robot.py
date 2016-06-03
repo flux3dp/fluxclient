@@ -35,8 +35,17 @@ def ok_or_error(fn, resp="ok"):
 
 
 class FluxRobot(object):
-    def __init__(self, sock):
+    def __init__(self, sock, metadata=None):
         self.sock = sock
+        self.metadata = metadata
+
+    def __repr__(self):
+        try:
+            peer = self.sock.getpeername()[0]
+        except Exception:
+            peer = None
+
+        return "<FluxRobot: %s @ %s>" % (self.metadata.get("uuid"), peer)
 
     def fileno(self):
         return self.sock.fileno()
