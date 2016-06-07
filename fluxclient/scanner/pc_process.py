@@ -5,6 +5,7 @@ import logging
 from io import BytesIO, StringIO
 from bisect import bisect
 import copy
+from os import environ
 from math import sqrt, asin, pi, radians, cos, sin
 
 from scipy.interpolate import Rbf
@@ -214,14 +215,19 @@ class PcProcess():
             mesh_l = pc_mesh.STL_to_List()
             if mode == 'ascii':
                 strbuf = StringIO()
-                write_stl(mesh_l, './output.stl', mode)
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
                 write_stl(mesh_l, strbuf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
                 buf = BytesIO()
-                write_stl(mesh_l, './output.stl', mode)
-
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
                 write_stl(mesh_l, buf, mode)
                 return buf.getvalue()
 
