@@ -1,589 +1,415 @@
 
-from select import select
-from errno import EPIPE
-from io import BytesIO
-from time import time
-import warnings
-import logging
-import socket
-import struct
-import json
-import os
+from functools import wraps
 
-from fluxclient.utils import mimetypes
-from .errors import RobotError
-from .misc import msg_waitall
-
-logger = logging.getLogger(__name__)
+from .backends import InitBackend
+from .errors import RobotError, RobotSessionError
+from .robot_backend_2 import RobotBackend2
 
 
-def raise_error(ret):
-    if ret.startswith("error ") or ret.startswith("er "):
-        raise RobotError(*(ret.split(" ")[1:]))
-    else:
-        raise RobotError("UNKNOW_ERROR", ret)
-
-
-def ok_or_error(fn, resp="ok"):
-    def wrap(self, *args, **kw):
-        ret = fn(self, *args, **kw).decode("utf8", "ignore")
-        if ret == resp:
-            return ret
+def blocked_validator(fn):
+    @wraps(fn)
+    def wrapper(self, *args, **kw):
+        if not self._backend:
+            raise RobotSessionError("Device is already closed",
+                                    error_symbol=("OPERATION_ERROR", ))
+        if self._locked_obj:
+            raise RobotError("Device is busy for %s" % self._locked_obj,
+                             error_symbol=("OPERATION_ERROR", ))
         else:
-            raise_error(ret)
-    return wrap
+            try:
+                return fn(self, *args, **kw)
+            except RobotSessionError:
+                self.close()
+                raise
+    return wrapper
+
+
+def invalied_validator(fn):
+    @wraps(fn)
+    def wrapper(self, *args, **kw):
+        if self._actived:
+            return fn(self, *args, **kw)
+        else:
+            raise RobotError("This operation is invalied.",
+                             error_symbol=("OPERATION_ERROR", ))
+    return wrapper
 
 
 class FluxRobot(object):
-    def __init__(self, sock, metadata=None):
-        self.sock = sock
-        self.metadata = metadata
+    _device = None
+    _backend = None
+    _config_obj = None
+    _locked_obj = None
 
-    def __repr__(self):
-        try:
-            peer = self.sock.getpeername()[0]
-        except Exception:
-            peer = None
+    def __init__(self, endpoint, client_key, device=None,
+                 ignore_key_validation=False):
+        self._device = device
 
-        return "<FluxRobot: %s @ %s>" % (self.metadata.get("uuid"), peer)
+        init_backend = InitBackend(endpoint)
+        proto_ver = init_backend.do_handshake()
 
-    def fileno(self):
-        return self.sock.fileno()
-
-    def close(self):
-        self.sock.close()
-
-    def _send_cmd(self, buf):
-        l = len(buf) + 2
-        self.sock.send(struct.pack("<H", l) + buf)
-
-    def get_resp(self, timeout=180.0):
-        rl = select((self.sock, ), (), (), timeout)[0]
-        if not rl:
-            raise RobotError("get resp timeout")
-        # bml = self.sock.recv(2, socket.MSG_WAITALL)
-        bml = msg_waitall(self.sock, 2)
-        if not bml:
-            logger.error("Message payload recv error")
-            raise socket.error(EPIPE, "Broken pipe")
-
-        message_length = struct.unpack("<H", bml)[0]
-
-        message = b""
-
-        while len(message) != message_length:
-            buf = self.sock.recv(message_length - len(message))
-
-            if not buf:
-                logger.error("Recv empty message")
-                raise socket.error(EPIPE, "Broken pipe")
-            message += buf
-
-        return message
-
-    def _make_cmd(self, buf, timeout=30.0):
-        self._send_cmd(buf)
-        return self.get_resp(timeout)
-
-    def recv_binary_into(self, binary_header, stream, callback=None):
-        mn, mimetype, ssize = binary_header.split(" ")
-        assert mn == "binary"
-        size = int(ssize)
-        logger.debug("Recv %s %i" % (mimetype, size))
-        if size == 0:
-            return mimetype
-        left = size
-        while left > 0:
-            left -= stream.write(self.sock.recv(min(4096, left)))
-            if callback:
-                callback(left, size)
-        return mimetype
-
-    def recv_binary(self, binary_header, callback=None):
-        buf = BytesIO()
-        mimetype = self.recv_binary_into(binary_header, buf, callback)
-        return (mimetype, buf.getvalue())
-
-    # Command Tasks
-    def position(self):
-        ret = self._make_cmd(b"position").decode("ascii", "ignore")
-        if ret.startswith("error "):
-            raise RobotError(*(ret.split(" ")[1:]))
+        if proto_ver == 2:
+            self._backend = RobotBackend2(
+                init_backend.sock, client_key, device, ignore_key_validation)
         else:
-            return ret
+            raise RobotSessionError("Protocol not support")
 
-    # file commands
-    def list_files(self, entry, path=""):
-        self._send_cmd(b"file ls " + entry.encode() + b" " + path.encode())
-        resp = self.get_resp().decode("ascii", "ignore")
-        if resp == "continue":
-            files = self.get_resp().decode("utf8", "ignore")
-            last_resp = self.get_resp().decode("ascii", "ignore")
-            if last_resp != "ok":
-                raise_error("error PROTOCOL_ERROR NOT_OK")
+    @property
+    def device(self):
+        return self._device
 
-            for node in files.split("\x00"):
-                if node.startswith("D"):
-                    # if name starts with "D", it is folder
-                    # note: yield is_folder, filename
-                    yield True, node[1:]
-                elif node.startswith("F"):
-                    # if name starts with "F", it is file
-                    yield False, node[1:]
-        else:
-            raise_error(resp)
+    @blocked_validator
+    def list_files(self, path):
+        """List file on device.
 
-    def fileinfo(self, entry, path):
-        info = [None, None]
-        self._send_cmd(b"file info " + entry.encode() + b" " + path.encode())
+    :param str path: Path on device, must start with /SD/ or /USB/
+    :return: An array of files and directories. Each array element is a \
+tuple, first is a boolean present this name is a folder or not and second is \
+name of the file or folder.
+    :rtype: list"""
+        return self._backend.list_files(path)
 
-        resp = self.get_resp().decode("utf8", "ignore")
-        images = []
-        while resp.startswith("binary "):
-            images.append(self.recv_binary(resp))
-            resp = self.get_resp().decode("utf8", "ignore")
-        info[1] = images
+    @blocked_validator
+    def file_info(self, path):
+        """Get f-code file information.
 
-        def fixmeta(key, value=None):
-            return key, value
-        if resp.startswith("ok "):
-            info[0] = dict(fixmeta(*pair.split("=", 1)) for pair in
-                           resp[3:].split("\x00"))
-            return info
-        else:
-            raise_error(resp)
+    :param str path: File path on device
+    :return: [ \
+        {"f-code-metadata-key": "f-code-metada-value", ...}, \
+        [("image", b'image buffer object'), ...] \
+    ] \
+    The first return element in array is a key-value information of f-code \
+    the second is a list of preview images. Image list length may be 0.
+    :rtype: list"""
+        return self._backend.file_info(path)
 
-    @ok_or_error
-    def mkdir(self, entry, path):
-        return self._make_cmd(
-            b"file mkdir " + entry.encode() + b" " + path.encode())
+    @blocked_validator
+    def file_md5(self, path):
+        """Get file md5 on device.
 
-    @ok_or_error
-    def rmdir(self, entry, path):
-        return self._make_cmd(
-            b"file rmdir " + entry.encode() + b" " + path.encode())
+    :param str path: File path on device
+    :return: MD5 hex
+    :rtype: str"""
+        return self._backend.file_md5(path)
 
-    @ok_or_error
-    def cpfile(self, source_entry, source, target_entry, target):
-        return self._make_cmd(
-            b"file cp " + source_entry.encode() + b" " + source.encode() +
-            b" " + target_entry.encode() + b" " + target.encode())
+    @blocked_validator
+    def mkdir(self, path):
+        """Create folder on device storage.
 
-    @ok_or_error
-    def rmfile(self, entry, path):
-        return self._make_cmd(b"file rm " + entry.encode() + b" " +
-                              path.encode())
+    :param str path: Path to create"""
+        return self._backend.mkdir(path)
 
-    def md5(self, entry, path):
-        bresp = self._make_cmd(b"file md5 " + entry.encode() + b" " +
-                               path.encode())
-        resp = bresp.decode("ascii", "ignore")
-        if resp.startswith("md5 "):
-            return resp[4:]
-        else:
-            raise_error(resp)
+    @blocked_validator
+    def rmdir(self, path):
+        """Remove folder on device storage.
 
-    def download_file(self, entry, path, stream, callback=None):
-        self._send_cmd(("file download %s %s" % (entry, path)).encode())
-        resp = self.get_resp().decode("utf8", "ignore")
-        if resp.startswith("binary "):
-            mimetype = self.recv_binary_into(resp, stream, callback)
-            ret = self.get_resp().decode("utf8", "ignore")
-            if ret == "ok":
-                return mimetype
-            else:
-                raise_error(resp)
-        else:
-            raise_error(resp)
+    :param str path: Path to remove"""
+        return self._backend.rmdir(path)
 
-    def upload_file(self, filename, upload_to="#", cmd="file upload",
-                    progress_callback=None):
-        mimetype, _ = mimetypes.guess_type(filename)
-        if not mimetype:
-            mimetype = "binary"
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            return self.upload_stream(f, size, mimetype, upload_to, cmd,
-                                      progress_callback)
+    @blocked_validator
+    def cpfile(self, source_path, dist_path):
+        """Copy file on device.
 
-    # player commands
-    @ok_or_error
-    def select_file(self, entry, path):
-        self._send_cmd(b"player select " + entry.encode() + b" " +
-                       path.encode())
-        return self.get_resp()
+    :param str source_path: File can be on device or usb disk
+    :param str dist_path: File can copy into device only"""
+        return self._backend.cpfile(source_path, dist_path)
 
-    @ok_or_error
+    @blocked_validator
+    def rmfile(self, path):
+        """Remove file on device.
+
+    :param str path: File to be delete"""
+        return self._backend.rmfile(path)
+
+    @blocked_validator
+    def download_file(self, path, stream, callback=None):
+        """Download file from device.
+
+    :param str path: File on device for download
+    :param filelike_obj stream: A local file-like object to write
+    :param function callback: A callable object which will be invoke during \
+download progress"""
+        return self._backend.download_file(path, stream, callback)
+
+    @blocked_validator
+    def upload_file(self, filename, upload_to="#", callback=None):
+        """Upload file to device.
+
+    :param str filename: File to upload to device
+    :param str upload_to: Path on device to upload to
+    :param function callback: A callable object which will be invoke during \
+upload progress"""
+        return self._backend.upload_file(filename, upload_to, callback)
+
+    @blocked_validator
+    def select_file(self, path):
+        """Select a file to play.
+
+    :param str path: Path on device"""
+        return self._backend.select_file(path)
+
+    @blocked_validator
     def start_play(self):
-        return self._make_cmd(b"player start")
+        """Start play."""
+        return self._backend.start_play()
 
-    @ok_or_error
+    @blocked_validator
     def pause_play(self):
-        return self._make_cmd(b"player pause")
+        """Pause play."""
+        return self._backend.pause_play()
 
-    @ok_or_error
+    @blocked_validator
     def abort_play(self):
-        return self._make_cmd(b"player abort")
+        """Abort play."""
+        return self._backend.abort_play()
 
-    @ok_or_error
+    @blocked_validator
     def resume_play(self):
-        return self._make_cmd(b"player resume")
+        """Resume play."""
+        return self._backend.resume_play()
 
+    @blocked_validator
     def report_play(self):
-        # TODO
-        msg = self._make_cmd(b"player report").decode("utf8", "ignore")
-        if msg.startswith("{"):
-            return json.loads(msg, "ignore")
-        else:
-            raise_error(msg)
+        """Report play."""
+        return self._backend.report_play()
 
+    @blocked_validator
     def play_info(self):
-        self._send_cmd(b"player info")
-        metadata = None
+        """Play info."""
+        return self._backend.play_info()
 
-        resp = self.get_resp().decode("ascii", "ignore")
-        if resp.startswith("binary text/json"):
-            _, bm = self.recv_binary(resp)
-            metadata = json.loads(bm.decode("utf8", "ignore"))
-        else:
-            raise_error(resp)
-
-        images = []
-        while True:
-            resp = self.get_resp().decode("ascii", "ignore")
-            if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
-            elif resp == "ok":
-                return metadata, images
-            else:
-                raise RobotError(resp)
-
-    @ok_or_error
+    @blocked_validator
     def quit_play(self):
-        return self._make_cmd(b"player quit")
+        """Quit play."""
+        return self._backend.quit_play()
 
-    def upload_stream(self, stream, length, mimetype, upload_to=None,
-                      cmd="file upload", progress_callback=None):
-        if upload_to == "#":
-            # cmd = [cmd] [mimetype] [length] #
-            cmd = "%s %s %i #" % (cmd, mimetype, length)
-        elif upload_to:
-            entry, path = upload_to.split("/", 1)
-            # cmd = [cmd] [mimetype] [length] [entry] [path]
-            cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
-        else:
-            cmd = "%s %s %i" % (cmd, mimetype, length)
+    @property
+    def config(self):
+        """Get a subscriptable device config object."""
+        if not self._config_obj:
+            self._config_obj = ""
+        return self._config_obj
 
-        upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
-        if upload_ret == "continue":
-            logger.info(upload_ret)
-        if upload_ret != "continue":
-            raise RobotError(upload_ret)
+    @blocked_validator
+    def config_set(self, key, value):
+        return self._backend.config_set(key, value)
 
-        logger.debug("Upload stream length: %i" % length)
+    @blocked_validator
+    def config_get(self, key):
+        return self._backend.config_get(key)
 
-        sent = 0
-        ts = 0
-        while sent < length:
-            buf = stream.read(4096)
-            lbuf = len(buf)
-            if lbuf == 0:
-                raise RobotError("Upload file error")
-            sent += lbuf
-            self.sock.send(buf)
+    @blocked_validator
+    def config_del(self, key):
+        return self._backend.config_del(key)
 
-            if progress_callback and time() - ts > 1.0:
-                ts = time()
-                progress_callback(self, sent, length)
-
-        progress_callback(self, sent, length)
-        final_ret = self.get_resp()
-        logger.debug("File uploaded")
-
-        if final_ret != b"ok":
-            raise_error(final_ret.decode("ascii", "ignore"))
-
-    # Others
-    def begin_upload(self, mimetype, length, cmd="upload", upload_to="#"):
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
-        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
-        if upload_ret == "continue":
-            return self.sock
-        else:
-            raise RobotError(upload_ret)
-
-    @ok_or_error
-    def begin_scan(self):
-        return self._make_cmd(b"scan")
-
-    @ok_or_error
-    def quit_task(self):
-        return self._make_cmd(b"quit")
-
-    @ok_or_error
+    @blocked_validator
     def kick(self):
-        return self._make_cmd(b"kick")
+        """Kick a work session which is occupy the device."""
+        return self._backend.kick()
 
-    @ok_or_error
-    def scan_laser(self, left, right):
-        bcmd = b"scanlaser "
-        if left:
-            bcmd += b"l"
-        if right:
-            bcmd += b"r"
+    @blocked_validator
+    def scan(self):
+        """Begin a scan task and return a scan object"""
+        return ScanTasks(self)
 
-        return self._make_cmd(bcmd)
+    @blocked_validator
+    def maintain(self):
+        """Begin a maintain task and return a scan object"""
+        return MaintainTasks(self)
 
-    @ok_or_error
-    def set_scanlen(self, l):
-        cmd = "set steplen %.5f" % l
-        return self._make_cmd(cmd.encode())
-
-    def scan_check(self):
-        self._send_cmd(b"scan_check")
-        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
-        return resp
-
-    def calibrate(self):
-        self._send_cmd(b"calibrate")
-        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
-        return resp
-
-    def get_calibrate(self):
-        self._send_cmd(b"get_cab")
-        resp = self.get_resp().decode("ascii", "ignore")
-        return resp
-
-    def oneshot(self):
-        self._send_cmd(b"oneshot")
-        images = []
-        while True:
-            resp = self.get_resp().decode("ascii", "ignore")
-
-            if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
-
-            elif resp == "ok":
-                return images
-
-            else:
-                raise RobotError(resp)
-
-    def scanimages(self):
-        self._send_cmd(b"scanimages")
-        images = []
-        while True:
-            resp = self.get_resp().decode("ascii", "ignore")
-
-            if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
-
-            elif resp == "ok":
-                return images
-
-            else:
-                raise RobotError(resp)
-
-    # Scan Tasks
-    def taks_scanshot(self):
+    @blocked_validator
+    def raw(self):
         pass
 
-    @ok_or_error
-    def scan_forward(self):
-        return self._make_cmd(b"scan_next")
+    def close(self):
+        """Close device connection"""
+        if self._backend:
+            self._backend.close()
+            self._backend = None
 
-    @ok_or_error
-    def scan_backward(self):
-        return self._make_cmd(b"scan_backward")
 
-    def scan_next(self):
-        warnings.warn("deprecated", DeprecationWarning)
-        self.scan_forward()
+class RobotConfigure(object):
+    __robot = None
 
-    @ok_or_error
-    def begin_maintain(self):
-        return self._make_cmd(b"maintain")
+    def __init__(self, robot):
+        self.__robot = robot
 
-    def maintain_home(self):
-        self._send_cmd(b"home")
-        while True:
-            ret = self.get_resp(6.0).decode("ascii", "ignore")
-            if ret.startswith("DEBUG:"):
-                logger.info(ret)
-            elif ret == "ok":
-                return
+    def __getitem__(self, key):
+        return self.__robot.config_get(key)
+
+    def __setitem__(self, key, value):
+        self.__robot.config_set(key, value)
+
+    def __delitem__(self, key):
+        self.__robot.config_del(key)
+
+
+class SubTasks(object):
+    _robot = None
+    _backend = None
+    _actived = None
+
+    def __init__(self, robot):
+        self._robot = robot
+        self._backend = robot._backend
+
+        self._enter_task()
+
+        self._actived = True
+        self._robot._locked_obj = self
+
+    def _enter_task(self):
+        raise RuntimeError("Not implement")
+
+    def cleanup(self):
+        self._actived = False
+
+        if self._robot._locked_obj == self:
+            self._robot._locked_obj = None
+        else:
+            raise SystemError("Lock obj contradiction")
+
+    def quit(self):
+        """Quit task"""
+        self._backend.quit_task()
+        self.cleanup()
+
+    def __enter__(self):
+        if self._actived is not True:
+            raise RobotError("Task invailed",
+                             error_symbol=("OPERATION_ERROR", ))
+
+    def __exit__(self, type, value, traceback):
+        if self._actived is True:
+            self.quit()
+            self._actived = False
+
+            if self.__robot._locked_obj == self:
+                self.__robot._locked_obj = None
             else:
-                raise_error(ret)
+                raise SystemError("Lock obj contradiction")
 
-    @ok_or_error
-    def maintain_reset_mb(self):
-        return self._make_cmd(b"reset_mb")
 
-    def maintain_calibration(self, navigate_callback, clean=False):
-        if clean:
-            ret = self._make_cmd(b"calibration clean")
-        else:
-            ret = self._make_cmd(b"calibration")
+class MaintainTasks(SubTasks):
+    def _enter_task(self):
+        self._backend.begin_maintain()
 
-        if ret == b"continue":
-            nav = "continue"
-            while True:
-                if nav.startswith("ok "):
-                    return [float(item) for item in nav.split(" ")[1:]]
-                elif nav.startswith("error "):
-                    raise_error(nav)
-                else:
-                    navigate_callback(nav)
-                nav = self.get_resp().decode("ascii", "ignore")
-        else:
-            raise_error(ret.decode("ascii", "ignore"))
+    @invalied_validator
+    def home(self):
+        """Move to home position."""
+        return self._backend.maintain_home()
 
-    maintain_eadj = maintain_calibration
+    @invalied_validator
+    def reset_mb(self):
+        return self._backend.maintain_reset_mb()
 
-    def maintain_zprobe(self, navigate_callback, manual_h=None):
-        if manual_h:
-            ret = self._make_cmd(("zprobe %.4f" % manual_h).encode())
-        else:
-            ret = self._make_cmd(b"zprobe")
+    @invalied_validator
+    def calibration(self, threshold=None, navigate_callback=None, clean=False):
+        """Do a calibration"""
+        return self._backend.maintain_calibration(threshold, navigate_callback,
+                                                  clean)
 
-        if ret == b"continue":
-            nav = "continue"
-            while True:
-                if nav.startswith("ok "):
-                    return float(nav[3:])
-                elif nav.startswith("error "):
-                    raise_error(nav)
-                else:
-                    navigate_callback(nav)
-                nav = self.get_resp().decode("ascii", "ignore")
-        else:
-            raise_error(ret.decode("ascii", "ignore"))
+    @invalied_validator
+    def zprobe(self, navigate_callback=None):
+        """Do a zprobe"""
+        return self._backend.maintain_zprobe(navigate_callback)
 
-    maintain_hadj = maintain_zprobe
+    @invalied_validator
+    def manual_level(self, h):
+        """Set heigh level"""
+        return self._backend.maintain_manual_level(h)
 
-    def maintain_headinfo(self):
-        ret = self._make_cmd(b"headinfo").decode("ascii", "ignore")
-        if ret.startswith("ok "):
-            return json.loads(ret[3:])
-        else:
-            raise_error(ret)
+    @invalied_validator
+    def head_info(self):
+        """Get toolhead info"""
+        return self._backend.maintain_head_info()
 
-    def maintain_load_filament(self, index, temp, navigate_callback):
-        ret = self._make_cmd(
-            ("load_filament %i %.1f" % (index, temp)).encode())
+    @invalied_validator
+    def head_status(self):
+        """Get toolhead status"""
+        return self._backend.maintain_head_status()
 
-        if ret == b"continue":
-            while True:
-                try:
-                    ret = self.get_resp().decode("ascii", "ignore")
-                    if ret.startswith("CTRL "):
-                        navigate_callback(ret[5:])
-                    elif ret == "ok":
-                        return
-                    else:
-                        raise_error(ret)
-                except KeyboardInterrupt:
-                    self._send_cmd(b"stop_load_filament")
-                    logger.info("Interrupt load filament")
-        else:
-            raise_error(ret.decode("ascii", "utf8"))
+    @invalied_validator
+    def load_filament(self, index=0, temperature=210.0,
+                      navigate_callback=None):
+        """Load filament"""
+        return self._backend.maintain_load_filament(index, temperature,
+                                                    navigate_callback)
 
-    def maintain_stop_load_filament(self):
-        self._send_cmd("stop_load_filament")
+    @invalied_validator
+    def unload_filament(self, index=0, temperature=210.0,
+                        navigate_callback=None):
+        """Unload filament"""
+        return self._backend.maintain_unload_filament(index, temperature,
+                                                      navigate_callback)
 
-    def maintain_unload_filament(self, index, temp, navigate_callback):
-        ret = self._make_cmd(
-            ("unload_filament %i %.1f" % (index, temp)).encode())
+    @invalied_validator
+    def interrupt_load_filament(self):
+        """Interrupt load/unload filament"""
+        return self._backend.maintain_interrupt_load_filament()
 
-        if ret == b"continue":
-            while True:
-                ret = self.get_resp().decode("ascii", "ignore")
-                if ret.startswith("CTRL "):
-                    navigate_callback(ret[5:])
-                elif ret == "ok":
-                    return
-                else:
-                    raise_error(ret)
-        else:
-            raise_error(ret.decode("ascii", "utf8"))
+    @invalied_validator
+    def set_extruder_temperature(self, index, temperature):
+        """Set extruder temperature"""
+        return self._backend.maintain_extruder_temperature(index, temperature)
 
-    @ok_or_error
-    def maintain_extruder_temp(self, index, temp):
-        ret = self._make_cmd(
-            ("extruder_temp %i %.1f" % (index, temp)).encode())
-        return ret
+    @invalied_validator
+    def update_hbfw(self, mimetype, stream, size, progress_callback=None):
+        """Upload and update toolhead firmware"""
+        return self._backend.maintain_update_hbfw(mimetype, stream, size,
+                                                  progress_callback)
 
-    def maintain_update_hbfw(self, mimetype, stream, size,
-                             progress_callback=None):
-        def uplaod_process_callback(self, processed, total):
-            progress_callback("CTRL UPLOADING %i" % processed)
 
-        logger.debug("File opened")
-        self.upload_stream(stream, size, mimetype, None, "update_head",
-                           uplaod_process_callback)
-        while True:
-            ret = self.get_resp().decode("utf8", "ignore")
-            if ret == "ok":
-                return
-            elif ret.startswith("CTRL "):
-                progress_callback(ret)
-            else:
-                raise_error(ret)
+class ScanTasks(SubTasks):
+    def _enter_task(self):
+        self._backend.begin_scan()
 
-    def raw_mode(self):
-        ret = self._make_cmd(b"task raw")
-        if ret == b"continue":
-            return self.sock
-        else:
-            raise_error(ret.decode("ascii", "ignore"))
+    @invalied_validator
+    def step_length(self, length):
+        """Set scan step length"""
+        return self._backend.scan_step_length(length)
 
-    @ok_or_error
-    def quit_raw_mode(self):
-        self.sock.send(b"quit")
-        sync = 0
-        while True:
-            ret = ord(self.sock.recv(1))
-            if sync > 8:
-                if ret > 0:
-                    break
-            else:
-                if ret == 0:
-                    sync += 1
-        return self.get_resp()
+    @invalied_validator
+    def forward(self):
+        """Let plate go forward 1 step"""
+        return self._backend.scan_forward()
 
-    @ok_or_error
-    def config_set(self, key, value):
-        return self._make_cmd(b"config set " + key.encode() + b" " +
-                              value.encode())
+    @invalied_validator
+    def backward(self):
+        """Let plate go backward 1 step"""
+        return self._backend.scan_backward()
 
-    def config_get(self, key):
-        ret = self._make_cmd(b"config get " + key.encode()).decode("utf8",
-                                                                   "ignore")
-        if ret.startswith("ok VAL "):
-            return ret[7:]
-        elif ret.startswith("ok EMPTY"):
-            return None
-        else:
-            raise_error(ret)
+    @invalied_validator
+    def check_camera(self):
+        """Check camera status"""
+        return self._backend.scan_check_camera()
 
-    @ok_or_error
-    def config_del(self, key):
-        return self._make_cmd(b"config del " + key.encode())
+    @invalied_validator
+    def laser(self, left, right):
+        """Change scan laser"""
+        return self._backend.scan_laser(left, right)
 
-    @ok_or_error
-    def set_setting(self, key, value):
-        cmd = "set %s %s" % (key, value)
-        return self._make_cmd(cmd.encode())
+    @invalied_validator
+    def calibrate(self):
+        """Do a scan calibrate"""
+        return self._backend.scan_calibrate()
 
-    def deviceinfo(self):
-        ret = self._make_cmd(b"deviceinfo").decode("utf8", "ignore")
-        if ret.startswith("ok\n"):
-            info = {}
-            for raw in ret[3:].split("\n"):
-                if ":" in raw:
-                    key, val = raw.split(":", 1)
-                    info[key] = val
-            return info
-        else:
-            raise_error(ret)
+    @invalied_validator
+    def get_calibrate(self):
+        """Get scan calibrate values"""
+        return self._backend.scan_get_calibrate()
+
+    @invalied_validator
+    def oneshot(self):
+        """Get a photo from camera"""
+        return self._backend.scan_oneshot()
+
+    @invalied_validator
+    def scanimages(self):
+        """Get a scan image set"""
+        return self._backend.scan_images()
+
+
+class RawTasks(SubTasks):
+    def _enter_tack(self):
+        self._backend.begin_raw()

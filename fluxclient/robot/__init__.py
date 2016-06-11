@@ -37,15 +37,14 @@ from .misc import msg_waitall
 logger = logging.getLogger(__name__)
 
 
-def connect_camera(endpoint, client_key, metadata=None, conn_callback=None):
+def connect_camera(endpoint, client_key, device=None, conn_callback=None):
     """Make a connection to device camera service, backends will be selecte
     automatically.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
 connect. For example: ("192.168.1.1", 23812)
     :param encrypt.KeyObject client_key: Client identify key
-    :param dict metadata: metadata is an internal param, it is not recommend \
-to assign value because it may has different definition in different version.
+    :param dict device: Device instance
     :param callable conn_callback: A callback will be invoked while trying \
     connect to device
     """
@@ -53,31 +52,37 @@ to assign value because it may has different definition in different version.
     s = _connect(endpoint, conn_callback)
     s.settimeout(8)
 
-    version = msg_waitall(s, 8)
-    wrap_sock = _select_wrapper(s, client_key, version, metadata)
+    identify_str = msg_waitall(s, 8, timeout=30.0)
+    ver, wrap_sock = _select_wrapper(s, client_key, identify_str, device)
     return FluxCamera(wrap_sock)
 
 
-def connect_robot(endpoint, client_key, metadata=None, conn_callback=None):
+def connect_robot(endpoint, client_key, device=None, conn_callback=None):
     """Make a connection to device robot service, backends will be selecte
     automatically.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
 connect. For example: ("192.168.1.1", 23811)
     :param encrypt.KeyObject client_key: Client identify key
-    :param dict metadata: metadata is an internal param, it is not recommend \
+    :param dict device: Device instance
 to assign value because it may has different definition in different version.
     :param callable conn_callback: A callback will be invoked while trying \
     connect to device
 
     :rtype: fluxclient.robot.robot.FluxRobots
     """
-    s = _connect(endpoint, conn_callback)
-    s.settimeout(8)
+    return FluxRobot(endpoint, client_key, device)
+    # s = _connect(endpoint, conn_callback)
+    # s.settimeout(8)
 
-    version = msg_waitall(s, 8)
-    wrap_sock = _select_wrapper(s, client_key, version, metadata)
-    return FluxRobot(wrap_sock, metadata=metadata)
+    # identify_str = msg_waitall(s, 8)
+    # ver, wrap_sock = _select_wrapper(s, client_key, identify_str, device)
+    # if ver == 2:
+    #     pass
+    # else:
+    #     raise RobotError
+
+    # return FluxRobot(wrap_sock)
 
 
 def _connect(endpoint, conn_callback):
@@ -98,30 +103,23 @@ def _connect(endpoint, conn_callback):
             raise
 
 
-def _select_wrapper(sock, client_key, version, metadata):
-    if version[:4] != b"FLUX":
-        raise RobotError("PROTOCOL_ERROR", "MAGICNUMBER_ERROR")
-    elif version[4:] == b"0002":
-        if metadata and "slave_key" in metadata:
-            server_key = metadata["slave_key"]
-        else:
-            server_key = None
+def _select_wrapper(sock, client_key, identify_str, device):
+    magic_str = identify_str[:4]
+    proto_ver = identify_str[4:]
 
-        aessock = AESSocket(sock, client_key=client_key, server_key=server_key)
+    if magic_str != b"FLUX":
+        raise RobotError("PROTOCOL_ERROR", "MAGICNUMBER_ERROR")
+    elif proto_ver == b"0002":
+        aessock = AESSocket(sock, client_key=client_key, device=device)
         while not aessock.do_handshake():
             pass
 
-        return aessock
+        return 2, aessock
 
-    elif version[4:] == b"0003":
-        if metadata and "master_key" in metadata:
-            server_key = metadata["master_key"]
-        else:
-            server_key = None
-
-        sslsock = SSLSocket(sock, client_key=client_key, server_key=server_key)
+    elif proto_ver == b"0003":
+        sslsock = SSLSocket(sock, client_key=client_key, device=device)
         while sslsock.do_handshake() != 0:
             pass
-        return sslsock
+        return 3, sslsock
     else:
         raise RobotError("Robot version not support")
