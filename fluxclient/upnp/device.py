@@ -164,7 +164,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         """
         from fluxclient.robot import connect_robot
         return connect_robot((self.ipaddr, port), client_key,
-                             metadata=self.to_old_dict(), **kw)
+                             device=self, **kw)
 
     def connect_camera(self, client_key, port=23812, **kw):
         """Create a camera instance
