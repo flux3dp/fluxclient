@@ -279,11 +279,12 @@ class StlSlicer(object):
         slic3r_error = False
         slic3r_out = ''
         while subp.poll() is None:
-            line = subp.stdout.readline()
+            line = subp.stdout.readline().strip()
             # subp.stdout.read()
             # for line in chunck.split('\n'):
             #     logger.debug(line.rstrip())
             if line:
+                logger.info(line)
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.11
                     child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
@@ -693,8 +694,8 @@ class StlSlicerCura(StlSlicer):
                 chunck = subp.stdout.readline()
                 for line in chunck.split('\n'):
                     line = line.rstrip()
-                    logger.debug(line)
                     if line:
+                        logger.info(line)
                         if line.endswith('s'):
                             progress += 0.12
                             child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
@@ -852,8 +853,6 @@ class StlSlicerCura(StlSlicer):
         if int(new_content['raftSurfaceLayers']) == 0:
             new_content['raftBaseThickness'] = 0
             new_content['raftInterfaceThickness'] = 0
-        else:
-            print(new_content['raftSurfaceLayers'])
 
         # brim
         # temperature
