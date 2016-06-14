@@ -1,6 +1,8 @@
 
 from functools import wraps
+import os
 
+from fluxclient.utils import mimetypes
 from .backends import InitBackend
 from .errors import RobotError, RobotSessionError
 from .robot_backend_2 import RobotBackend2
@@ -50,7 +52,8 @@ class FluxRobot(object):
 
         if proto_ver == 2:
             self._backend = RobotBackend2(
-                init_backend.sock, client_key, device, ignore_key_validation)
+                self, init_backend.sock, client_key, device,
+                ignore_key_validation)
         else:
             raise RobotSessionError("Protocol not support")
 
@@ -122,24 +125,57 @@ name of the file or folder.
         return self._backend.rmfile(path)
 
     @blocked_validator
-    def download_file(self, path, stream, callback=None):
+    def download_file(self, path, stream, process_callback=None):
         """Download file from device.
 
     :param str path: File on device for download
     :param filelike_obj stream: A local file-like object to write
-    :param function callback: A callable object which will be invoke during \
-download progress"""
-        return self._backend.download_file(path, stream, callback)
+    :param function process_callback: A callable object which will be invoke \
+during download progress"""
+        return self._backend.download_file(path, stream, process_callback)
 
     @blocked_validator
-    def upload_file(self, filename, upload_to="#", callback=None):
+    def upload_file(self, filename, upload_to="#", process_callback=None):
         """Upload file to device.
 
     :param str filename: File to upload to device
     :param str upload_to: Path on device to upload to
+    :param function process_callback: A callable object which will be invoke \
+during upload progress"""
+        mimetype, _ = mimetypes.guess_type(filename)
+        if not mimetype:
+            mimetype = "binary"
+        with open(filename, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            return self.upload_stream(f, mimetype, size, upload_to,
+                                      process_callback)
+
+    @blocked_validator
+    def upload_stream(self, stream, mimetype, size, upload_to="#",
+                      process_callback=None):
+        """Upload file to device.
+
+    :param file stream: Filelike object
+    :param str mimetype: Contents mimetype
+    :param int size: Contents size
+    :param str upload_to: Path on device to upload to
     :param function callback: A callable object which will be invoke during \
 upload progress"""
-        return self._backend.upload_file(filename, upload_to, callback)
+        return self._backend.upload_stream(
+            stream, mimetype, size, upload_to,
+            process_callback=process_callback)
+
+    @blocked_validator
+    def yihniwimda_upload_stream(self, mimetype, size, upload_to="#"):
+        """Yes, I have no idea what I'm doing about upload stream. You can \
+use it if and only if you have any idea about this::
+
+    for feeder in robot.yihniwimda_upload_stream(...):
+        recived_size = feeder(buffer)
+        print("%i bytes sent" % recived_size)
+    print("Done")"""
+        return self._backend.yihniwimda_upload_stream(
+            mimetype, size, upload_to)
 
     @blocked_validator
     def select_file(self, path):
@@ -184,10 +220,15 @@ upload progress"""
         return self._backend.quit_play()
 
     @property
+    def deviceinfo(self):
+        """Get device informations"""
+        return self._backend.deviceinfo()
+
+    @property
     def config(self):
         """Get a subscriptable device config object."""
         if not self._config_obj:
-            self._config_obj = ""
+            self._config_obj = RobotConfigure(self)
         return self._config_obj
 
     @blocked_validator
@@ -208,6 +249,11 @@ upload progress"""
         return self._backend.kick()
 
     @blocked_validator
+    def update_firmware(self, stream, size, process_callback=None):
+        """Upload and update flux device firmware"""
+        return self._backend.update_firmware(stream, size, process_callback)
+
+    @blocked_validator
     def scan(self):
         """Begin a scan task and return a scan object"""
         return ScanTasks(self)
@@ -219,7 +265,7 @@ upload progress"""
 
     @blocked_validator
     def raw(self):
-        pass
+        return RawTasks(self)
 
     def close(self):
         """Close device connection"""
@@ -261,6 +307,10 @@ class SubTasks(object):
     def _enter_task(self):
         raise RuntimeError("Not implement")
 
+    @property
+    def activated(self):
+        return self._actived
+
     def cleanup(self):
         self._actived = False
 
@@ -300,19 +350,20 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_home()
 
     @invalied_validator
-    def reset_mb(self):
-        return self._backend.maintain_reset_mb()
+    def reset_hardware(self):
+        self._backend.maintain_reset_atmel()
+        self.cleanup()
 
     @invalied_validator
-    def calibration(self, threshold=None, navigate_callback=None, clean=False):
+    def calibration(self, threshold=None, clean=False, process_callback=None):
         """Do a calibration"""
-        return self._backend.maintain_calibration(threshold, navigate_callback,
-                                                  clean)
+        return self._backend.maintain_calibration(threshold, clean,
+                                                  process_callback)
 
     @invalied_validator
-    def zprobe(self, navigate_callback=None):
+    def zprobe(self, process_callback=None):
         """Do a zprobe"""
-        return self._backend.maintain_zprobe(navigate_callback)
+        return self._backend.maintain_zprobe(process_callback)
 
     @invalied_validator
     def manual_level(self, h):
@@ -331,17 +382,17 @@ class MaintainTasks(SubTasks):
 
     @invalied_validator
     def load_filament(self, index=0, temperature=210.0,
-                      navigate_callback=None):
+                      process_callback=None):
         """Load filament"""
         return self._backend.maintain_load_filament(index, temperature,
-                                                    navigate_callback)
+                                                    process_callback)
 
     @invalied_validator
     def unload_filament(self, index=0, temperature=210.0,
-                        navigate_callback=None):
+                        process_callback=None):
         """Unload filament"""
         return self._backend.maintain_unload_filament(index, temperature,
-                                                      navigate_callback)
+                                                      process_callback)
 
     @invalied_validator
     def interrupt_load_filament(self):
@@ -354,10 +405,10 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_extruder_temperature(index, temperature)
 
     @invalied_validator
-    def update_hbfw(self, mimetype, stream, size, progress_callback=None):
+    def update_hbfw(self, stream, size, process_callback=None):
         """Upload and update toolhead firmware"""
-        return self._backend.maintain_update_hbfw(mimetype, stream, size,
-                                                  progress_callback)
+        return self._backend.maintain_update_hbfw(stream, size,
+                                                  process_callback)
 
 
 class ScanTasks(SubTasks):
@@ -411,5 +462,10 @@ class ScanTasks(SubTasks):
 
 
 class RawTasks(SubTasks):
-    def _enter_tack(self):
-        self._backend.begin_raw()
+    def _enter_task(self):
+        self.sock = self._backend.begin_raw()
+
+    def quit(self):
+        """Quit task"""
+        self._backend.quit_raw_mode()
+        self.cleanup()

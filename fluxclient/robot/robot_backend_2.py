@@ -7,11 +7,9 @@ import logging
 import socket
 import struct
 import json
-import os
 
-from fluxclient.utils import mimetypes
 from .aes_socket import AESSocket
-from .errors import RobotError
+from .errors import RobotError, RobotSessionError
 from .misc import msg_waitall
 
 logger = logging.getLogger(__name__)
@@ -59,18 +57,18 @@ class MaintainTaskMixIn(object):
                 raise_error(ret)
 
     @ok_or_error
-    def maintain_reset_mb(self):
+    def maintain_reset_atmel(self):
         return self._make_cmd(b"reset_mb")
 
-    def maintain_calibration(self, threshold=None, navigate_callback=None,
-                             clean=False):
+    def maintain_calibration(self, threshold=None, clean=False,
+                             process_callback=None):
         cmd = ['calibration']
         if threshold:
             cmd.append(str(threshold))
         if clean:
             cmd.append("clean")
 
-        ret = self._make_cmd(cmd.encode())
+        ret = self._make_cmd(" ".join(cmd).encode())
 
         if ret == b"continue":
             nav = "continue"
@@ -79,17 +77,14 @@ class MaintainTaskMixIn(object):
                     return [float(item) for item in nav.split(" ")[1:]]
                 elif nav.startswith("error "):
                     raise_error(nav)
-                else:
-                    navigate_callback(nav)
+                elif process_callback:
+                    process_callback(self.instance, *nav.split(" "))
                 nav = self.get_resp().decode("ascii", "ignore")
         else:
             raise_error(ret.decode("ascii", "ignore"))
 
-    def maintain_zprobe(self, navigate_callback, manual_h=None):
-        if manual_h:
-            ret = self._make_cmd(("zprobe %.4f" % manual_h).encode())
-        else:
-            ret = self._make_cmd(b"zprobe")
+    def maintain_zprobe(self, process_callback=None):
+        ret = self._make_cmd(b"zprobe")
 
         if ret == b"continue":
             nav = "continue"
@@ -98,20 +93,24 @@ class MaintainTaskMixIn(object):
                     return float(nav[3:])
                 elif nav.startswith("error "):
                     raise_error(nav)
-                else:
-                    navigate_callback(nav)
+                elif process_callback:
+                    process_callback(self.instance, *nav.split(" "))
                 nav = self.get_resp().decode("ascii", "ignore")
         else:
             raise_error(ret.decode("ascii", "ignore"))
 
     def maintain_manual_level(self, h):
-        ret = self._make_cmd(("zprobe %.4f" % h).encode())
-        if ret == b"continue":
+        ret = self._make_cmd(("zprobe %.4f" % h).encode()).decode("ascii")
+        if ret == "continue":
             nav = "continue"
             while True:
                 if nav.startswith("ok "):
                     return float(nav[3:])
+                elif nav.startswith("error "):
+                    raise_error(nav)
                 nav = self.get_resp().decode("ascii", "ignore")
+        else:
+            raise_error(ret)
 
     def maintain_head_info(self):
         ret = self._make_cmd(b"headinfo").decode("ascii", "ignore")
@@ -127,7 +126,7 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
-    def maintain_load_filament(self, index, temp, navigate_callback):
+    def maintain_load_filament(self, index, temp, process_callback):
         ret = self._make_cmd(
             ("load_filament %i %.1f" % (index, temp)).encode())
 
@@ -135,8 +134,8 @@ class MaintainTaskMixIn(object):
             while True:
                 try:
                     ret = self.get_resp().decode("ascii", "ignore")
-                    if ret.startswith("CTRL "):
-                        navigate_callback(ret[5:])
+                    if ret.startswith("CTRL ") and process_callback:
+                        process_callback(self.instance, *(ret.split(" ")[1:]))
                     elif ret == "ok":
                         return
                     else:
@@ -147,19 +146,23 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret.decode("ascii", "utf8"))
 
-    def maintain_unload_filament(self, index, temp, navigate_callback):
+    def maintain_unload_filament(self, index, temp, process_callback):
         ret = self._make_cmd(
             ("unload_filament %i %.1f" % (index, temp)).encode())
 
         if ret == b"continue":
             while True:
-                ret = self.get_resp().decode("ascii", "ignore")
-                if ret.startswith("CTRL "):
-                    navigate_callback(ret[5:])
-                elif ret == "ok":
-                    return
-                else:
-                    raise_error(ret)
+                try:
+                    ret = self.get_resp().decode("ascii", "ignore")
+                    if ret.startswith("CTRL ") and process_callback:
+                        process_callback(self.instance, *(ret.split(" ")[1:]))
+                    elif ret == "ok":
+                        return
+                    else:
+                        raise_error(ret)
+                except KeyboardInterrupt:
+                    self._send_cmd(b"stop_load_filament")
+                    logger.info("Interrupt load filament")
         else:
             raise_error(ret.decode("ascii", "utf8"))
 
@@ -172,20 +175,25 @@ class MaintainTaskMixIn(object):
             ("extruder_temp %i %.1f" % (index, temp)).encode())
         return ret
 
-    def maintain_update_hbfw(self, mimetype, stream, size,
-                             progress_callback=None):
-        def uplaod_process_callback(self, processed, total):
-            progress_callback("CTRL UPLOADING %i" % processed)
+    def maintain_update_hbfw(self, stream, size, process_callback=None):
+        def upload_process_cb(instance, sent, total):
+            if process_callback:
+                process_callback(instance, "UPLOADING", sent, total)
 
         logger.debug("File opened")
-        self.upload_stream(stream, size, mimetype, None, "update_head",
-                           uplaod_process_callback)
+        cmd = "update_head binary %i" % (size)
+        self._upload_stream(cmd, stream, size, upload_process_cb)
+
+        ret = self.get_resp().decode("utf8", "ignore")
+        if ret != "ok":
+            raise_error(ret)
+
         while True:
             ret = self.get_resp().decode("utf8", "ignore")
             if ret == "ok":
                 return
-            elif ret.startswith("CTRL "):
-                progress_callback(ret)
+            elif ret.startswith("CTRL ") and process_callback:
+                process_callback(self.instance, *(ret[5:].split(" ")))
             else:
                 raise_error(ret)
 
@@ -265,8 +273,9 @@ class ScanTaskMixIn(object):
 
 
 class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
-    def __init__(self, sock, client_key, device=None,
+    def __init__(self, instance, sock, client_key, device=None,
                  ignore_key_validation=False):
+        self.instance = instance
         self.sock = aessock = AESSocket(
             sock, client_key=client_key, device=device,
             ignore_key_validation=False)
@@ -427,17 +436,6 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         else:
             raise_error(resp)
 
-    def upload_file(self, filename, upload_to="#", cmd="file upload",
-                    progress_callback=None):
-        mimetype, _ = mimetypes.guess_type(filename)
-        if not mimetype:
-            mimetype = "binary"
-        with open(filename, "rb") as f:
-            logger.debug("File opened")
-            size = os.fstat(f.fileno()).st_size
-            return self.upload_stream(f, size, mimetype, upload_to, cmd,
-                                      progress_callback)
-
     # player commands
     @ok_or_error
     def select_file(self, path):
@@ -495,29 +493,23 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def quit_play(self):
         return self._make_cmd(b"player quit")
 
-    def upload_stream(self, stream, length, mimetype, upload_to=None,
-                      cmd="file upload", progress_callback=None):
-        if upload_to == "#":
-            # cmd = [cmd] [mimetype] [length] #
-            cmd = "%s %s %i #" % (cmd, mimetype, length)
-        elif upload_to:
-            entry, path = upload_to.split("/", 1)
-            # cmd = [cmd] [mimetype] [length] [entry] [path]
-            cmd = "%s %s %i %s %s" % (cmd, mimetype, length, entry, path)
-        else:
-            cmd = "%s %s %i" % (cmd, mimetype, length)
+    def _upload_stream(self, cmd, stream, size, process_callback=None):
+        if cmd:
+            upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
 
-        upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
-        if upload_ret == "continue":
-            logger.info(upload_ret)
-        if upload_ret != "continue":
-            raise RobotError(upload_ret)
+            if upload_ret == "continue":
+                logger.info(upload_ret)
+            else:
+                raise_error(upload_ret)
 
-        logger.debug("Upload stream length: %i" % length)
-
+        logger.debug("Upload stream length: %i" % size)
         sent = 0
         ts = 0
-        while sent < length:
+
+        if process_callback:
+            process_callback(self.instance, sent, size)
+
+        while sent < size:
             buf = stream.read(4096)
             lbuf = len(buf)
             if lbuf == 0:
@@ -525,25 +517,80 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             sent += lbuf
             self.sock.send(buf)
 
-            if progress_callback and time() - ts > 1.0:
+            if process_callback and time() - ts > 1.0:
                 ts = time()
-                progress_callback(self, sent, length)
+                process_callback(self.instance, sent, size)
 
-        progress_callback(self, sent, length)
+        process_callback(self.instance, sent, size)
+
+    def upload_stream(self, stream, mimetype, size, upload_to=None,
+                      process_callback=None):
+        if upload_to == "#":
+            # cmd = [cmd] [mimetype] [length] #
+            cmd = "file upload %s %i #" % (mimetype, size)
+        elif upload_to:
+            if upload_to.startswith("/"):
+                entry, path = upload_to[1:].split("/", 1)
+            else:
+                entry, path = upload_to.split("/", 1)
+            # cmd = [cmd] [mimetype] [length] [entry] [path]
+            cmd = "file upload %s %i %s %s" % (mimetype, size, entry, path)
+        else:
+            cmd = "file upload %s %i" % (mimetype, size)
+
+        self._upload_stream(cmd, stream, size, process_callback)
         final_ret = self.get_resp()
-        logger.debug("File uploaded")
-
         if final_ret != b"ok":
             raise_error(final_ret.decode("ascii", "ignore"))
 
-    # Others
-    def begin_upload(self, mimetype, length, cmd="upload", upload_to="#"):
-        cmd = ("%s %s %i %s" % (cmd, mimetype, length, upload_to)).encode()
-        upload_ret = self._make_cmd(cmd).decode("ascii", "ignore")
-        if upload_ret == "continue":
-            return self.sock
+    def yihniwimda_upload_stream(self, mimetype, length, upload_to=None):
+        if upload_to == "#":
+            # cmd = [cmd] [mimetype] [length] #
+            cmd = "file upload %s %i #" % (mimetype, length)
+        elif upload_to:
+            entry, path = upload_to.split("/", 1)
+            # cmd = [cmd] [mimetype] [length] [entry] [path]
+            cmd = "file upload %s %i %s %s" % (mimetype, length, entry, path)
         else:
+            cmd = "file upload %s %i" % (mimetype, length)
+
+        upload_ret = self._make_cmd(cmd.encode()).decode("ascii", "ignore")
+        if upload_ret == "continue":
+            logger.info(upload_ret)
+        if upload_ret != "continue":
             raise RobotError(upload_ret)
+
+        self._sent = 0
+
+        def feeder(buf):
+            lbuf = len(buf)
+            if lbuf == 0:
+                raise RobotSessionError("Upload file error")
+            self._sent += lbuf
+            self.sock.send(buf)
+            return self._sent
+
+        while self._sent < length:
+            yield feeder
+
+        final_ret = self.get_resp()
+        logger.debug("File uploaded")
+        if final_ret != b"ok":
+            raise_error(final_ret.decode("ascii", "ignore"))
+
+    def update_firmware(self, stream, size, process_callback=None):
+        cmd = "update_fw binary/flux-firmware %i #" % (size)
+        self._upload_stream(cmd, stream, size, process_callback)
+        final_ret = self.get_resp()
+        if final_ret != b"ok":
+            raise_error(final_ret.decode("ascii", "ignore"))
+
+    def update_atmel(self, stream, size, process_callback=None):
+        cmd = "update_mbfw binary/flux-firmware %i #" % (size)
+        self._upload_stream(cmd, stream, size, process_callback)
+        final_ret = self.get_resp()
+        if final_ret != b"ok":
+            raise_error(final_ret.decode("ascii", "ignore"))
 
     @ok_or_error
     def quit_task(self):
@@ -553,7 +600,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def kick(self):
         return self._make_cmd(b"kick")
 
-    def raw_mode(self):
+    def begin_raw(self):
         ret = self._make_cmd(b"task raw")
         if ret == b"continue":
             return self.sock
@@ -592,11 +639,6 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     @ok_or_error
     def config_del(self, key):
         return self._make_cmd(b"config del " + key.encode())
-
-    @ok_or_error
-    def set_setting(self, key, value):
-        cmd = "set %s %s" % (key, value)
-        return self._make_cmd(cmd.encode())
 
     def deviceinfo(self):
         ret = self._make_cmd(b"deviceinfo").decode("utf8", "ignore")
