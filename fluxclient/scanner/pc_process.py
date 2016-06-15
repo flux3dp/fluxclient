@@ -305,8 +305,12 @@ class PcProcess():
 
         flag = self.lock.acquire(blocking=False)
         if flag:
+            if not collect_name in self.export_data:
+                return 'key error'
             if isinstance(self.export_data[collect_name], bytes):
                 buf = self.export_data[collect_name]
+            else:
+                buf = False
             self.lock.release()
             return buf
         else:
