@@ -66,6 +66,7 @@ class StlSlicer(object):
         self.output = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
+        self.T = None
 
     def from_other(self, other):
         self.working_p = other.working_p
@@ -203,13 +204,13 @@ class StlSlicer(object):
     def get_path(self):
         """
         """
-        self.T.join()
+        if self.T:
+            self.T.join()
         return self.path_js
 
     def begin_slicing(self, names, ws, output_type):
         """
         :param list names: names of stl that need to be sliced
-
         :return:
             if success:
                 gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
@@ -278,14 +279,15 @@ class StlSlicer(object):
         slic3r_error = False
         slic3r_out = ''
         while subp.poll() is None:
-            line = subp.stdout.readline()
+            line = subp.stdout.readline().strip()
             # subp.stdout.read()
             # for line in chunck.split('\n'):
             #     logger.debug(line.rstrip())
             if line:
+                logger.info(line)
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.11
-                    child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
+                    child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
                 slic3r_out = line
@@ -302,7 +304,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
+            child_pipe.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -327,7 +329,7 @@ class StlSlicer(object):
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                    child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+                    child_pipe.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
@@ -405,13 +407,13 @@ class StlSlicer(object):
                         self.path_js = None
                         self.T = Thread(target=self.sub_convert_path)
                         self.T.start()
-                        m = '{"status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
+                        m = '{"slice_status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
 
                     else:
                         self.output = None
                         self.metadata = None
                         self.path = None
-                        m = '{"status": "error", "error": "%s"}' % message[1]
+                        m = '{"slice_status": "error", "error": "%s"}' % message[1]
                     ret.append(m)
         return ret
 
@@ -692,11 +694,11 @@ class StlSlicerCura(StlSlicer):
                 chunck = subp.stdout.readline()
                 for line in chunck.split('\n'):
                     line = line.rstrip()
-                    logger.debug(line)
                     if line:
+                        logger.info(line)
                         if line.endswith('s'):
                             progress += 0.12
-                            child_pipe.append('{"status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
+                            child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
                         elif "Unable to close this loop" in line:
                             slic3r_error = True
                         slic3r_out = line
@@ -717,7 +719,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            child_pipe.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -748,7 +750,7 @@ class StlSlicerCura(StlSlicer):
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                    child_pipe.append('{"status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+                    child_pipe.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
@@ -848,6 +850,10 @@ class StlSlicerCura(StlSlicer):
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 
+        if int(new_content['raftSurfaceLayers']) == 0:
+            new_content['raftBaseThickness'] = 0
+            new_content['raftInterfaceThickness'] = 0
+
         # brim
         # temperature
         # 'skirt_distance': [float_range, 0],
@@ -856,6 +862,8 @@ class StlSlicerCura(StlSlicer):
 
         new_content['skirtLineCount'] = content['skirts']
         new_content['skirtDistance'] = thousand(content['skirt_distance'])
+        new_content['skirtLineCount'] = 0
+        new_content['skirtDistance'] = 0
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']

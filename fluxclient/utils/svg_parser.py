@@ -16,7 +16,7 @@ class SVGParser(object):
         """
         transform the points in coordinate by a transform_string define in svg
         coordinate: [(1, 2), (3, 4), ('\n', '\n'), (5, 6)]
-        transform_string: "translate(60,10) matrix(0.866,0.5,-0.5,0.866,0,0)"
+        transform_string: "translate(60 10) matrix(0.866,0.5,-0.5,0.866,0,0)"
         return coordinate after being transform
         """
         if transform_string == '':
@@ -27,7 +27,7 @@ class SVGParser(object):
 
         for t in transform_s:
             t_type, x = t.split('(')
-            x = list(map(float, (x[:-1]).split(',')))
+            x = list(map(float, (x[:-1]).replace(',', ' ').split()))
 
             tmp = Matrix().set_I()
             if t_type == 'translate':
@@ -550,7 +550,8 @@ class SVGParser(object):
             warning.add('TEXT_TAG')
             node.tag = 'delete'
         elif node.tag == header + 'defs':
-            warning.add('DEFS_TAG')
+            if len(node):
+                warning.add('DEFS_TAG')
             node.tag = 'delete'
         elif node.tag == header + 'clipPath':
             warning.add('CLIP_TAG')

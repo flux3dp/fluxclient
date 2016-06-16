@@ -20,5 +20,5 @@ def check_platform():
         p = p
     return (p, platform.architecture()[0])
 
-__version__ = "0.8b26"
+__version__ = "0.8b27"
 SUPPORT_PCL = check_pcl()
