@@ -26,6 +26,8 @@ class PcProcess():
         self.clouds = {}  # clouds that hold all the point cloud data, key:name, value:point cloud
         self.meshs = {}
         self.settings = scan_settings
+
+        self.export_data = {}
         self.lock = threading.Lock()
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
