@@ -82,7 +82,7 @@ class AESSocket(object):
                                                   sign.tobytes()):
                         raise RobotSessionError(
                             "Remote identify error",
-                            error_symbol="REMOTE_IDENTIFY_ERROR")
+                            error_symbol=("REMOTE_IDENTIFY_ERROR", ))
                 else:
                     logger.warn("Warning: skip validate remote")
             else:
