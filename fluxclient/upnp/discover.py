@@ -244,7 +244,10 @@ class Version1Helper(object):
             self.server.add_master_key(uuid, sn, master_pkey, 1)
             payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
                                   2, uuid.bytes)
-            self.sock.sendto(payload, endpoint)
+            try:
+                self.sock.sendto(payload, endpoint)
+            except Exception:
+                logger.exception("Error while poke %s", endpoint)
         else:
             try:
                 stbuf = f.read(64)
