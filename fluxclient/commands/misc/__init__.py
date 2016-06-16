@@ -116,7 +116,7 @@ def connect_camera_helper(target, client_key, logstream=sys.stdout):
     else:
         device = None
         logstream.write("Connecting...")
-        endpoint = parse_ipaddr(target, 23811)
+        endpoint = parse_ipaddr(target, 23812)
         session = connect_camera(endpoint, client_key,
                                  conn_callback=working_callback)
 
