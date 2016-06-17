@@ -172,8 +172,8 @@ to 1.0. Only vaild while running task (st_id > 0).
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
         from fluxclient.robot import connect_camera
-        return connect_camera((self.ipaddr, port), client_key,
-                              metadata=self.to_old_dict(), **kw)
+        return connect_camera((self.ipaddr, port), client_key, device=self,
+                              **kw)
 
     def to_dict(self, serilize=False):
         """Create a new dictionay store divice information
