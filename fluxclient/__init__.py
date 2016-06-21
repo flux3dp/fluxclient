@@ -1,7 +1,7 @@
 
 def check_pcl():
     try:
-        from fluxclient.scanner.scanner import _scanner
+        from fluxclient.scanner import _scanner
         return True
     except (ImportError, AttributeError):
         return False
