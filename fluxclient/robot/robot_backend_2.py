@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 def raise_error(ret):
     if ret.startswith("error ") or ret.startswith("er "):
-        raise RobotError(*(ret.split(" ")[1:]))
+        errors = ret.split(" ")[1:]
+        raise RobotError(*errors, error_symbol=errors)
     else:
         raise RobotError("UNKNOW_ERROR", ret)
 
