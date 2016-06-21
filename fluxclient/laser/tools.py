@@ -2,7 +2,7 @@
 from math import sqrt, pi, cos, sin
 import sys
 
-from .laser_base import LaserBase
+from fluxclient.laser.laser_base import LaserBase
 
 
 class Matrix(object):

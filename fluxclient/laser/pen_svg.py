@@ -2,8 +2,8 @@ import logging
 import datetime
 import time
 
-from .laser_svg import LaserSvg
-from .laser_base import LaserBase
+from fluxclient.laser.laser_svg import LaserSvg
+from fluxclient.laser.laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
 from fluxclient.hw_profile import HW_PROFILE
 

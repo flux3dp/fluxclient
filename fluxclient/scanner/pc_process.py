@@ -13,8 +13,8 @@ import threading
 from scipy.interpolate import Rbf
 import numpy as np
 
-from .tools import write_stl, write_pcd, read_pcd, cross
-from . import _scanner
+from fluxclient.scanner.tools import write_stl, write_pcd, read_pcd, cross
+from fluxclient.scanner import _scanner
 
 
 logger = logging.getLogger(__name__)

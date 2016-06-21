@@ -7,8 +7,8 @@ import numpy as np
 from PIL import Image
 
 try:
-    from . import freeless
-    from .tools import write_pcd
+    from fluxclient.scanner import freeless
+    from fluxclient.scanner.tools import write_pcd
 except:
     import freeless
     from tools import write_pcd
@@ -16,7 +16,7 @@ except:
 
 from fluxclient.hw_profile import HW_PROFILE
 try:
-    from . import _scanner
+    from fluxclient.scanner import _scanner
 except:
     pass
 
