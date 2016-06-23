@@ -33,7 +33,7 @@ def main():
     parser.add_argument(dest='target', type=str,
                         help="Printer connect with. It can be printer uuid "
                              "or IP address like 192.168.1.1 or "
-                             "192.168.1.1:23811")
+                             "192.168.1.1:23812")
     parser.add_argument('--filename', dest='filename', type=str,
                         default="%(target)s-%(time)s.jpg",
                         help='Save photo as filename')

@@ -5,13 +5,16 @@ import logging
 from io import BytesIO, StringIO
 from bisect import bisect
 import copy
+from os import environ
 from math import sqrt, asin, pi, radians, cos, sin
+import uuid
+import threading
 
 from scipy.interpolate import Rbf
 import numpy as np
 
-from .tools import write_stl, write_pcd, read_pcd, cross
-from . import _scanner
+from fluxclient.scanner.tools import write_stl, write_pcd, read_pcd, cross
+from fluxclient.scanner import _scanner
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +26,9 @@ class PcProcess():
         self.clouds = {}  # clouds that hold all the point cloud data, key:name, value:point cloud
         self.meshs = {}
         self.settings = scan_settings
+
+        self.export_data = {}
+        self.lock = threading.Lock()
 
     def upload(self, name, buffer_pc_L, buffer_pc_R, L_len, R_len):
         """
@@ -208,22 +214,109 @@ class PcProcess():
                 pc_size.append(len(pc))
                 for p_i in range(pc_size[-1]):
                     pc_add.append(pc.get_item(p_i))
+            raise NotImplementedError
 
         elif file_format == 'stl':
             pc_mesh = self.to_mesh(name)
             mesh_l = pc_mesh.STL_to_List()
             if mode == 'ascii':
                 strbuf = StringIO()
-                write_stl(mesh_l, './output.stl', mode)
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
                 write_stl(mesh_l, strbuf, mode)
                 return strbuf.getvalue().encode()
 
             elif mode == 'binary':
                 buf = BytesIO()
-                write_stl(mesh_l, './output.stl', mode)
-
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
                 write_stl(mesh_l, buf, mode)
                 return buf.getvalue()
+
+    def export_threading(self, name, file_format, mode='binary'):
+        """
+        export as a file
+        [in] name: the name of desired pc
+        [in] file_format: output as .pcd, .ply, .stl file
+        [in] mode: if using stl mode, you can specified ascii or binary stl file
+        """
+        collect_name = str(uuid.uuid4())
+        T = threading.Thread(target=self.sub_export, args=(collect_name, name, file_format, mode))
+        T.start()
+
+        self.lock.acquire()
+        self.export_data[collect_name] = T
+        self.lock.release()
+        return collect_name
+
+    def sub_export(self, collect_name, name, file_format, mode='binary'):
+        if file_format == 'pcd':
+            pc_both = self.clouds[name]
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
+            tmp = StringIO()
+            write_pcd(pc_add, tmp)
+            ret_buf = tmp.getvalue().encode()
+
+        elif file_format == 'ply':
+            pc_both = self.clouds[name]
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
+            raise NotImplementedError
+
+        elif file_format == 'stl':
+            pc_mesh = self.to_mesh(name)
+            mesh_l = pc_mesh.STL_to_List()
+            if mode == 'ascii':
+                strbuf = StringIO()
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
+                write_stl(mesh_l, strbuf, mode)
+                ret_buf = strbuf.getvalue().encode()
+
+            elif mode == 'binary':
+                buf = BytesIO()
+                ##################### fake code ###########################
+                if environ.get("flux_debug") == '1':
+                    write_stl(mesh_l, './output.stl', mode)
+                ###########################################################
+                write_stl(mesh_l, buf, mode)
+                ret_buf = buf.getvalue()
+        self.lock.acquire()
+        self.export_data[collect_name] = ret_buf
+        self.lock.release()
+        return
+
+    def export_collect(self, collect_name):
+
+        flag = self.lock.acquire(blocking=False)
+        if flag:
+            if not collect_name in self.export_data:
+                return 'key error'
+            if isinstance(self.export_data[collect_name], bytes):
+                buf = self.export_data[collect_name]
+            else:
+                buf = False
+            self.lock.release()
+            return buf
+        else:
+            return False
 
     def apply_transform(self, name_in, x, y, z, rx, ry, rz, name_out):
         """

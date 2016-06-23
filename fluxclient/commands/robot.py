@@ -6,15 +6,9 @@ import atexit
 import sys
 import os
 
-from fluxclient.commands.misc import (get_or_create_default_key,
+from fluxclient.commands.misc import (setup_logger,
+                                      get_or_create_default_key,
                                       connect_robot_helper)
-
-
-def setup_logger(stdout=sys.stderr, level=logging.DEBUG):
-    logging.basicConfig(format="%(message)s", stream=stdout)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(level)
-    return logger
 
 
 def setup_readline():
@@ -38,7 +32,7 @@ def robot_shell(options):
             return True
 
         try:
-            logger = setup_logger(console)
+            logger = setup_logger("Robot", console, options.debug)
             client, _ = connect_robot_helper(options.target, options.clientkey,
                                              console)
 
@@ -61,7 +55,7 @@ def robot_shell(options):
 
 
 def ipython_shell(options):
-    logger = setup_logger()
+    logger = setup_logger("Robot", debug=options.debug)
     import IPython
 
     def conn_callback(*args):
@@ -77,7 +71,7 @@ def ipython_shell(options):
 
 
 def simple_shell(options):
-    logger = setup_logger()
+    logger = setup_logger("Robot", debug=options.debug)
     setup_readline()
 
     def conn_callback(*args):
@@ -108,6 +102,8 @@ def main():
                         help="Printer connect with. It can be printer uuid "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
+    parser.add_argument('--debug', dest='debug', action='store_const',
+                        const=True, default=False, help='Print debug message')
     parser.add_argument('--ipython', dest='ipython', action='store_const',
                         const=True, default=False, help='Use python shell')
     parser.add_argument('--simple', dest='simple', action='store_const',

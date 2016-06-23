@@ -3,7 +3,7 @@ import logging
 import socket
 from Crypto.Cipher import AES
 
-from .errors import RobotError, RobotNotReadyError, RobotDisconnected
+from .errors import RobotError, RobotSessionError, RobotNotReadyError
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,10 @@ class AESSocket(object):
     _encoder = None
     _decoder = None
     __handshake_flag = None
+    server_key = None
+    client_key = None
 
-    def __init__(self, sock, client_key=None, server_key=None,
+    def __init__(self, sock, client_key=None, device=None,
                  ignore_key_validation=False):
         self._buffer = bytearray(4096)
         self._bufferv = memoryview(self._buffer)
@@ -33,25 +35,23 @@ class AESSocket(object):
         self._sock = sock
         self._validation = not ignore_key_validation
 
-        self.server_key = server_key
-        self.client_key = client_key
+        if hasattr(device, "slave_key"):
+            self.server_key = device.slave_key
 
+        self.client_key = client_key
         self.__handshake_flag = __WAIT_IDENTIFY__
 
     def __read_buffer(self, length):
         if length <= self._buffered:
             return
 
-        try:
-            l = self._sock.recv_into(self._bufferv[self._buffered:length])
-        except SOCKET_ERRORS:
-            raise RobotDisconnected()
+        l = self._sock.recv_into(self._bufferv[self._buffered:length])
 
         if l:
             self._buffered += l
             return l
         else:
-            raise RobotDisconnected()
+            raise RobotSessionError("EOF Error")
 
     def do_handshake(self):
         if self.__handshake_flag == __READY__:
@@ -80,7 +80,9 @@ class AESSocket(object):
                 if self._validation:
                     if not self.server_key.verify(randbytes.tobytes(),
                                                   sign.tobytes()):
-                        raise RobotError("REMOTE_IDENTIFY_ERROR")
+                        raise RobotSessionError(
+                            "Remote identify error",
+                            error_symbol=("REMOTE_IDENTIFY_ERROR", ))
                 else:
                     logger.warn("Warning: skip validate remote")
             else:
@@ -107,7 +109,8 @@ class AESSocket(object):
                 self._buffered = 0
                 self.__handshake_flag = __WAIT_AESKEY__
             else:
-                raise RobotError(st)
+                raise RobotSessionError("Handshake return failed: %s" % st,
+                                        error_symbol=st.split(" "))
 
     def _do_handshake_wait_aeskey(self):
         self.__read_buffer(self.client_key.size)
@@ -121,32 +124,29 @@ class AESSocket(object):
             return True
 
     def recv(self, size, flag=0):
-        try:
-            if flag & socket.MSG_PEEK > 0:
-                raise RobotError("BAD_PARAMS", "MSG_PEEK_NOT_ALLOWED")
+        if flag & socket.MSG_PEEK > 0:
+            raise RobotError("recv flag not support",
+                             error_symbol=("BAD_PARAMS",
+                                           "MSG_PEEK_NOT_ALLOWED"))
 
-            if self._decoder:
-                buf = self._sock.recv(size, flag)
-                return self._decoder.decrypt(buf)
-            else:
-                raise RobotNotReadyError()
-        except SOCKET_ERRORS:
-            raise RobotDisconnected()
+        if self._decoder:
+            buf = self._sock.recv(size, flag)
+            return self._decoder.decrypt(buf)
+        else:
+            raise RobotNotReadyError("Handshake not complete")
 
     def send(self, buf):
         if not self._encoder:
-            raise RobotNotReadyError()
+            raise RobotNotReadyError("Handshake not complete")
 
         l = len(buf)
         length = l
         chiptext = memoryview(self._encoder.encrypt(buf))
 
-        try:
-            sent = self._sock.send(chiptext)
-            while sent < length:
-                sent += self._sock.send(chiptext[sent:])
-        except SOCKET_ERRORS:
-            raise RobotDisconnected()
+        sent = self._sock.send(chiptext)
+        while sent < length:
+            sent += self._sock.send(chiptext[sent:])
+
         return sent
 
     def fileno(self):

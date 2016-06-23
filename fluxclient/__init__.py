@@ -1,7 +1,7 @@
 
 def check_pcl():
     try:
-        from .scanner import _scanner
+        from fluxclient.scanner import _scanner
         return True
     except (ImportError, AttributeError):
         return False
@@ -20,5 +20,5 @@ def check_platform():
         p = p
     return (p, platform.architecture()[0])
 
-__version__ = "0.8b26"
+__version__ = "0.9b1"
 SUPPORT_PCL = check_pcl()

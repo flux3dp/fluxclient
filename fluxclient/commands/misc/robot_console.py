@@ -12,6 +12,7 @@ logger.setLevel(logging.DEBUG)
 
 class RobotConsole(object):
     _mode = "standard"
+    task = None
     _thread = None
     _raw_sock = None
 
@@ -24,22 +25,11 @@ class RobotConsole(object):
             "resume": robot_obj.resume_play,
             "abort": robot_obj.abort_play,
             "report": robot_obj.report_play,
-            "position": robot_obj.position,
-            "quit": robot_obj.quit_task,
             "kick": robot_obj.kick,
 
-            "scan": robot_obj.begin_scan,
-            "scan_backward": robot_obj.scan_backward,
-            "scan_next": robot_obj.scan_next,
-
-            "maintain": robot_obj.begin_maintain,
-
-            "home": robot_obj.maintain_home,
-            "reset_mb": robot_obj.maintain_reset_mb,
-            "headinfo": robot_obj.maintain_headinfo,
             "play": {
                 "quit": robot_obj.quit_play
-            }
+            },
         }
 
         self.cmd_mapping = {
@@ -55,26 +45,49 @@ class RobotConsole(object):
 
             "select": self.select_file,
             "update_fw": self.update_fw,
-            "update_mbfw": self.update_mbfw,
-            "oneshot": self.oneshot,
-            "scanimages": self.scanimages,
-            "raw": self.raw_mode,
+            "update_atmel": self.update_atmel,
             "config": {
                 "set": self.config_set,
                 "get": self.config_get,
                 "del": self.config_del
             },
 
-            "eadj": self.maintain_eadj,
-            "cor_h": self.maintain_hadj,
-            "load_filament": self.maintain_load_filament,
-            "stop_load_filament": self.maintain_stop_load_filament,
-            "unload_filament": self.maintain_unload_filament,
+            "calib": self.maintain_calibration,
+            "zprobe": self.maintain_zprobe,
+            "filament": {
+                "load": self.maintain_load_filament,
+                "unload": self.maintain_unload_filament
+            },
             "extruder_temp": self.maintain_extruder_temp,
             "update_hbfw": self.maintain_update_hbfw,
             "play": {
                 "info": self.play_info
             },
+
+            # Maintain Tasks
+            "home": self.maintain_home,
+            "reset": {
+                "hardware": self.maintain_reset_hardware
+            },
+            "headinfo": self.maintain_headinfo,
+            "headstatus": self.maintain_headstatus,
+
+            "scan": {
+                "begin": self.begin_scan,
+                "oneshot": self.scan_oneshot,
+                "images": self.scanimages,
+                "backward": self.scan_backward,
+                "forward": self.scan_forward,
+                "laser": self.scan_laser,
+                "step": self.scan_step,
+                "check": self.scan_check_camera,
+            },
+
+            "maintain": self.begin_maintain,
+            "raw": self.raw_mode,
+            "quit": self.quit_task,
+
+            "help": self.print_help,
         }
 
     def call_command(self, ref, args, wrapper=None):
@@ -121,11 +134,8 @@ class RobotConsole(object):
         else:
             logger.info("ok")
 
-    def list_file(self, args):
-        path = shlex.split(args)[0]
-        params = path.split("/", 1)
-
-        for is_dir, node in self.robot_obj.list_files(*params):
+    def list_file(self, path):
+        for is_dir, node in self.robot_obj.list_files(path):
             if is_dir:
                 logger.info("DIR %s" % os.path.join(path, node))
             else:
@@ -135,12 +145,16 @@ class RobotConsole(object):
     def select_file(self, path):
         path = shlex.split(path)[0]
         entry, filename = path.split("/", 1)
-        self.simple_cmd(self.robot_obj.select_file, entry, filename)
+        self.robot_obj.select_file(path)
+        logger.info("ok")
 
     def fileinfo(self, path):
-        path = shlex.split(path)[0]
-        entry, filename = path.split("/", 1)
-        info, images = self.robot_obj.fileinfo(entry, filename)
+        info, images = self.robot_obj.file_info(path)
+        for key, value in info.items():
+            if len(value) > 30:
+                logger.info("    :%s => %s", key, value[:30])
+            else:
+                logger.info("    :%s => %s", key, value)
         logger.info("%s" % info)
 
         previews = []
@@ -154,67 +168,39 @@ class RobotConsole(object):
             os.system("open " + " ".join(previews))
 
     def mkdir(self, path):
-        path = shlex.split(path)[0]
-        if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.mkdir, "SD", path[3:])
-        else:
-            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+        self.simple_cmd(self.robot_obj.mkdir, path)
 
     def rmdir(self, path):
-        path = shlex.split(path)[0]
-        if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.rmdir, "SD", path[3:])
-        else:
-            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+        self.simple_cmd(self.robot_obj.rmdir, path)
 
     def rmfile(self, path):
-        path = shlex.split(path)[0]
-        if path.startswith("SD/"):
-            self.simple_cmd(self.robot_obj.rmfile, "SD", path[3:])
-        else:
-            raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
+        self.simple_cmd(self.robot_obj.rmfile, path)
 
     def cpfile(self, source, target):
-        try:
-            if source.startswith("SD/"):
-                source_entry = "SD"
-                source = source[3:]
-            elif source.startswith("USB/"):
-                source_entry = "USB"
-                source = source[4:]
-            else:
-                raise RuntimeError("NOT_SUPPORT", "BAD_ENTRY")
-
-            if target.startswith("SD/"):
-                target = target[3:]
-                self.simple_cmd(self.robot_obj.cpfile, source_entry, source,
-                                "SD", target)
-            else:
-                raise RuntimeError("NOT_SUPPORT", "SD_ONLY")
-        except ValueError:
-            raise RuntimeError("BAD_PARAMS")
+        self.simple_cmd(self.robot_obj.cpfile, source, target)
 
     def download_file(self, source, target):
         def callback(left, size):
             logger.info("Download %i / %i" % (size - left, size))
 
-        entry, path = source.split("/", 1)
         with open(target, "wb") as f:
-            self.robot_obj.download_file(entry, path, f, callback)
+            self.robot_obj.download_file(source, f, callback)
 
     def upload_file(self, source, upload_to="#"):
         self.robot_obj.upload_file(
-            source, upload_to, progress_callback=self.log_progress_callback)
+            source, upload_to, process_callback=self.log_process_callback)
 
     def update_fw(self, filename):
-        self.robot_obj.upload_file(
-            filename.rstrip(), cmd="update_fw",
-            progress_callback=self.log_progress_callback)
+        with open(filename, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            self.robot_obj.update_firmware(
+                f, size, process_callback=self.log_process_callback)
 
-    def update_mbfw(self, filename):
-        self.robot_obj.upload_file(
-            filename.rstrip(), cmd="update_mbfw",
-            progress_callback=self.log_progress_callback)
+    def update_atmel(self, filename):
+        with open(filename, "rb") as f:
+            size = os.fstat(f.fileno()).st_size
+            self.robot_obj._backend.update_atmel(
+                f, size, process_callback=self.log_process_callback)
 
     def md5(self, filename):
         entry, path = filename.split("/", 1)
@@ -236,8 +222,8 @@ class RobotConsole(object):
                     tempfiles.append(ntf)
             os.system("open " + " ".join([n.name for n in tempfiles]))
 
-    def oneshot(self, filename=None):
-        images = self.robot_obj.oneshot()
+    def scan_oneshot(self, filename=None):
+        images = self.task.oneshot()
         tempfiles = []
         for mime, buf in images:
             ext = mimetypes.guess_extension(mime)
@@ -249,7 +235,7 @@ class RobotConsole(object):
         os.system("open " + " ".join([n.name for n in tempfiles]))
 
     def scanimages(self, filename=None):
-        images = self.robot_obj.scanimages()
+        images = self.task.scanimages()
         tempfiles = []
         for mime, buf in images:
             ext = mimetypes.guess_extension(mime)
@@ -259,6 +245,26 @@ class RobotConsole(object):
                 tempfiles.append(ntf)
 
         os.system("open " + " ".join([n.name for n in tempfiles]))
+
+    def scan_forward(self):
+        self.task.forward()
+        logger.info("ok")
+
+    def scan_backward(self):
+        self.task.backward()
+        logger.info("ok")
+
+    def scan_laser(self, flags=""):
+        flags = flags.lower()
+        self.task.laser("l" in flags, "r" in flags)
+        logger.info("ok")
+
+    def scan_step(self, length):
+        self.task.step_length(float(length))
+        logger.info("ok")
+
+    def scan_check_camera(self):
+        logger.info("%s", self.task.check_camera())
 
     def config_set(self, key, value):
         self.robot_obj.config_set(key, value)
@@ -275,76 +281,109 @@ class RobotConsole(object):
         self.robot_obj.config_del(key)
         logger.info("ok")
 
-    def maintain_eadj(self, ext=None):
-        def callback(nav):
-            logger.info("Mainboard info: %s", nav)
+    def maintain_home(self):
+        self.task.home()
+        logger.info("ok")
 
-        if ext == "clean":
-            ret = self.robot_obj.maintain_eadj(navigate_callback=callback,
-                                               clean=True)
-        else:
-            ret = self.robot_obj.maintain_eadj(navigate_callback=callback)
+    def maintain_reset_hardware(self):
+        self.task.reset_hardware()
+        logger.info("ok")
+
+    def maintain_calibration(self, *args):
+        def callback(instance, *nav):
+            logger.info("%s", " ".join(nav))
+
+        clean = "clean" in args
+        try:
+            threshold = float(args[0])
+        except (IndexError, ValueError):
+            threshold = None
+
+        ret = self.task.calibration(threshold=threshold, clean=clean,
+                                    process_callback=callback)
 
         data_str = ", ".join(("%.4f" % i for i in ret))
         logger.info("Data: %s, Error: %.4f", data_str, (max(*ret) - min(*ret)))
         logger.info("ok")
 
-    def maintain_hadj(self, h=None):
-        def callback(nav):
-            logger.info("Mainboard info: %s", nav)
+    def maintain_zprobe(self, manual_h=None):
+        def callback(instance, *nav):
+            logger.info("%s", " ".join(nav))
 
-        if h is None:
-            ret = self.robot_obj.maintain_hadj(navigate_callback=callback)
+        if manual_h:
+            ret = self.task.manual_level(float(manual_h))
         else:
-            ret = self.robot_obj.maintain_hadj(navigate_callback=callback,
-                                               manual_h=float(h))
+            ret = self.task.zprobe(navigate_callback=callback)
+            logger.info("Data: %s", ret)
 
-        logger.info("Data: %s", ret)
         logger.info("ok")
 
     def maintain_load_filament(self, index, temp):
-        def callback(nav):
-            logger.info("NAV: %s", nav)
+        def callback(instance, *nav):
+            logger.info("OPERATION: %s", nav)
 
-        self.robot_obj.maintain_load_filament(int(index), float(temp),
-                                              callback)
+        self.task.load_filament(int(index), float(temp), callback)
         logger.info("ok")
 
-    def maintain_stop_load_filament(self):
-        self.robot_obj.maintain_stop_load_filament()
-
     def maintain_unload_filament(self, index, temp):
-        def callback(nav):
-            logger.info("NAV: %s", nav)
+        def callback(instance, *nav):
+            logger.info("OPERATION: %s", nav)
 
-        self.robot_obj.maintain_unload_filament(int(index), float(temp),
-                                                callback)
+        self.task.unload_filament(int(index), float(temp), callback)
         logger.info("ok")
 
     def maintain_extruder_temp(self, sindex, stemp):
-        self.robot_obj.maintain_extruder_temp(int(sindex), float(stemp))
+        self.task.set_extruder_temperature(int(sindex), float(stemp))
         logger.info("ok")
 
     def maintain_update_hbfw(self, filename):
-        def callback(nav):
-            logger.info("--> %s", nav)
+        def callback(instance, status, *args):
+            if status == "UPLOADING":
+                logger.info("  UPLOADING %i / %i (%.2f%%)",
+                            args[0], args[1], args[0] / args[1] * 100)
+            else:
+                logger.info("  %s %s", status, args)
+
         mimetype, _ = mimetypes.guess_type(filename)
         if not mimetype:
             mimetype = "binary"
         with open(filename, "rb") as f:
             size = os.fstat(f.fileno()).st_size
-            self.robot_obj.maintain_update_hbfw(mimetype, f, size, callback)
+            self.task.update_hbfw(f, size, callback)
+        logger.info("ok")
+
+    def maintain_headinfo(self):
+        for key, value in self.task.head_info().items():
+            logger.info(" :%s => %s", key, value)
+        logger.info("ok")
+
+    def maintain_headstatus(self):
+        for key, value in self.task.head_status().items():
+            logger.info("    :%s => %s", key, value)
+        logger.info("ok")
+
+    def begin_scan(self):
+        self.task = self.robot_obj.scan()
+        logger.info("ok")
+
+    def begin_maintain(self):
+        self.task = self.robot_obj.maintain()
+        logger.info("ok")
+
+    def quit_task(self):
+        self.task.quit()
         logger.info("ok")
 
     def raw_mode(self):
         import threading
-        self._raw_sock = self.robot_obj.raw_mode()
+        self.task = self.robot_obj.raw()
+        self._raw_sock = self.task.sock
         self._mode = "raw"
 
         self._thread = threading.Thread(target=self.__raw_mode_thread)
         self._thread.setDaemon(True)
         self._thread.start()
-        logger.info("raw mode ->")
+        logger.info("RAW %s>", "=" * 16)
 
     def quit_raw_mode(self):
         self._mode = "standard"
@@ -352,11 +391,72 @@ class RobotConsole(object):
         if self._thread:
             self._thread.join()
 
-        logger.info(self.robot_obj.quit_raw_mode())
+        self.task.quit()
+        logger.info("<%s RAW", "=" * 16)
 
-    def log_progress_callback(self, robot, progress, total):
+    def log_process_callback(self, robot, progress, total):
         logger.info("Processing %3.1f %% (%i of %i)" %
                     (progress / total * 100.0, progress, total))
+
+    def print_help(self, groups=""):
+        if groups == "file":
+            logger.info("File related commands:")
+            logger.info("  'ls [path]' - List files on device, path is always "
+                        "starts with /SD or /USB.")
+            logger.info("  'fileinfo [path]' - Get f-code metadata")
+            logger.info("  'mkdir [path]' - Create dir on device.")
+            logger.info("  'rmdir [path]' - Remove dir on device.")
+            logger.info("  'cp [source path] [target path]' - Copy file in "
+                        "device. Note: files in /USB is readonly.")
+            logger.info("  'download [remote path] [local path]' - Download "
+                        "file from device to local.")
+            logger.info("  'upload [local path] [remote path]' - Upload file "
+                        "into device. If remote path is not given, file will "
+                        "put into cache and can be play directory.")
+            logger.info("  'md5 [path]' - Get file md5.")
+            logger.info("  'rmfile [path]' - Delete file.")
+        elif groups == "play":
+            logger.info("Play related commands:")
+            logger.info("  'select [path]' - Select a f-code file to play.")
+            logger.info("  'start' - Start a task.")
+            logger.info("  'pause' - Pause a task.")
+            logger.info("  'resume' - Resume a task.")
+            logger.info("  'abort' - Cancel a task.")
+            logger.info("  'play info' - Get current playing task informations"
+                        ".")
+            logger.info("  'play quit' - Terminate and clean a playing task. "
+                        "Note: Can be use when completed or aborted.")
+        elif groups == "maintain":
+            logger.info("Maintain related commands:")
+            logger.info("  'maintain' - Begin maintain mode. use 'quit' "
+                        "command to quit maintain mode. Only maintain commands"
+                        "allowed in matain mode.")
+            logger.info("  'home' - Home")
+            logger.info("  'calib [threshold] [clean]' - Do calibration, "
+                        "threshold is optional, if clean given, device will do"
+                        "calibration from clean status.")
+            logger.info("  'zprobe' - Make a zprobe")
+            logger.info("  'filament load [index] [temp]' - Load filament"
+                        " index should be 0, temp is temperature")
+            logger.info("  'filament unload [index] [temp]' - Unload filament"
+                        " index should be 0, temp is temperature")
+            logger.info("  'extruder_temp [index] [temp]' - Set toolhead "
+                        "temperature")
+            logger.info("  'headinfo' - Get toolhead informations")
+            logger.info("  'headstatus' - Get toolhead status")
+            logger.info("  'update_hbfw [local path]' - Update toolhead "
+                        "firmware.")
+        else:
+            logger.info("Commands:")
+            logger.info("  'deviceinfo' - Print device informations")
+            logger.info("  'update_fw [local file]' - Upload a firmware and "
+                        "update device.")
+            logger.info("  'kick' - Kick any other user who is using maintain"
+                        "/scan functions.")
+            logger.info("  'report' - Print device current status")
+            logger.info("  'help files' - Print file related commands")
+            logger.info("  'help play' - Print play related commands")
+            logger.info("  'help maintain' - Print maintain related commands")
 
     def __raw_mode_thread(self):
         try:

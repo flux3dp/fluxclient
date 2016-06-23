@@ -6,7 +6,7 @@ from hmac import HMAC
 import logging
 import ssl
 
-from .errors import RobotError, RobotDisconnected
+from .errors import RobotSessionError
 
 __all__ = ["SSLSocket"]
 __READY__ = 0
@@ -63,7 +63,10 @@ def parse_cert(der_cert):
 
 
 class SSLSocket(ssl.SSLSocket):
-    def __init__(self, sock, client_key=None, server_key=None,
+    server_key = None
+    client_key = None
+
+    def __init__(self, sock, client_key=None, device=None,
                  ignore_key_validation=False):
         super(SSLSocket, self).__init__(sock, do_handshake_on_connect=False)
 
@@ -73,7 +76,10 @@ class SSLSocket(ssl.SSLSocket):
         self.__handshake_flag = __WAIT_REMOTE__
 
         self._validation = not ignore_key_validation
-        self.server_key = server_key
+
+        if hasattr(device, "master_key"):
+            self.server_key = device.master_key
+
         self.client_key = client_key
 
     def __read_buffer(self, length):
@@ -85,7 +91,7 @@ class SSLSocket(ssl.SSLSocket):
             self.__buffered += l
             return l
         else:
-            raise RobotDisconnected()
+            raise RobotSessionError("Broken pipe")
 
     def do_handshake(self):
         try:
@@ -107,9 +113,10 @@ class SSLSocket(ssl.SSLSocket):
 
                 binuuid = from_hex(cert["uuid"])
                 tosign = HMAC(binuuid, self.__bufferv.tobytes(), sha1).digest()
+                access_id = self.client_key.get_access_id(binary=True)
 
                 self.__buffered = 0
-                self.__bufferv[:20] = self.client_key.get_access_id(binary=True)
+                self.__bufferv[:20] = access_id
                 self.__bufferv[20:20 + self.client_key.size] = \
                     self.client_key.sign(tosign)
                 self.__handshake_flag = __SENDING_IDENTIFY__
@@ -128,13 +135,16 @@ class SSLSocket(ssl.SSLSocket):
         if self.__handshake_flag == __WAIT_ACK__:
             self.__read_buffer(16)
             if self.__buffered == 16:
-                st = self.__buffer[:16].decode("ascii", "ignore").rstrip(" \x00")
+                st = self.__buffer[:16].\
+                    decode("ascii", "ignore").rstrip(" \x00")
                 if st == "OK":
                     logger.debug("Client identify successed")
                     self.__buffered = None
                     self.__handshake_flag = __READY__
                 else:
-                    raise RobotError(st)
+                    raise RobotSessionError(
+                        "Handshake failed (%s)" % st,
+                        error_symbol=st.split(" "))
             else:
                 return __WAIT_ACK__
 

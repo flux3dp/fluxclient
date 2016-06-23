@@ -9,7 +9,7 @@ from serial import Serial
 # for windows
 import platform
 from serial.serialutil import SerialTimeoutException
-
+from serial.serialutil import SerialException
 from fluxclient.encryptor import KeyObject
 
 logger = logging.getLogger(__name__)
@@ -34,10 +34,14 @@ class UsbTask(object):
 
     def __init__(self, port, client_key=None, baudrate=115200):
         # Select does not work with windows..
-        if is_windows():
-            self.s = Serial(port=port, baudrate=115200, timeout=0.1)
-        else:
-            self.s = Serial(port=port, baudrate=115200, timeout=0)
+        try:
+            if is_windows():
+                self.s = Serial(port=port, baudrate=115200, timeout=0.1)
+            else:
+                self.s = Serial(port=port, baudrate=115200, timeout=0)
+        except SerialException as e:
+            raise UsbTaskException("DEVICE_ERROR") from e
+
         self.s.write(b"\x00" * 16)
         if is_windows():
             try:
@@ -80,29 +84,33 @@ class UsbTask(object):
         self.device_rsakey = KeyObject.load_keyobj(rsakey)
 
     def _make_request(self, code, buf=b"", timeout=6.0):
-        header = struct.pack("<3sHH", b'\x97\xae\x02', code, len(buf))
-        payload = header + buf
-        self.s.write(payload)
+        try:
+            header = struct.pack("<3sHH", b'\x97\xae\x02', code, len(buf))
+            payload = header + buf
+            self.s.write(payload)
 
-        ttl = time() + timeout
-        resp = b""
-        while time() < ttl:
-            rl = False
-            if is_windows():  # In windows, the timeout=0.1 works like select
-                rl = True
-            else:
-                rl = select((self.s, ), (), (), max(time() - ttl, 0))[0]
-            if rl:
-                resp += self.s.readall()
-                if self._try_parse_response(code, resp):
-                    status = struct.unpack("<b", resp[7:8])[0]
-                    if status == 1:
-                        return resp[8:]
-                    else:
-                        raise UsbTaskError(resp[8:].decode("ascii", "ignore"),
-                                           "status: %i" % status)
+            ttl = time() + timeout
+            resp = b""
+            while time() < ttl:
+                rl = False
+                if is_windows():
+                    # In windows, the timeout=0.1 works like select
+                    rl = True
+                else:
+                    rl = select((self.s, ), (), (), max(time() - ttl, 0))[0]
+                if rl:
+                    resp += self.s.readall()
+                    if self._try_parse_response(code, resp):
+                        status = struct.unpack("<b", resp[7:8])[0]
+                        if status == 1:
+                            return resp[8:]
+                        else:
+                            m = resp[8:].decode("ascii", "ignore")
+                            raise UsbTaskError(m, "status: %i" % status)
 
-        raise UsbTaskException("TIMEOUT")
+            raise UsbTaskException("TIMEOUT")
+        except SerialException as e:
+            raise UsbTaskException("DEVICE_ERROR")
 
     def _try_parse_response(self, code, buf):
         buf_length = len(buf)
