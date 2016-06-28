@@ -368,8 +368,8 @@ class GcodeToFcode(FcodeBase):
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
                 self.md['SETTING'] = str(comment_list[-137:])
 
-            if "CORRECTION" not in self.md and self.md['HEAD_TYPE'] == "EXTRUDER":
-                self.md['CORRECTION'] = 'A'
+            if self.md['HEAD_TYPE'] != "EXTRUDER":
+                self.md['CORRECTION'] = 'N'
 
             self.write_metadata(output_stream)
         except Exception as e:
