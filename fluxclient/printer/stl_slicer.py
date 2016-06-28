@@ -862,8 +862,6 @@ class StlSlicerCura(StlSlicer):
 
         new_content['skirtLineCount'] = content['skirts']
         new_content['skirtDistance'] = thousand(content['skirt_distance'])
-        new_content['skirtLineCount'] = 0
-        new_content['skirtDistance'] = 0
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
