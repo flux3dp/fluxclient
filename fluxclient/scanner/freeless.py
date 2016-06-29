@@ -127,7 +127,7 @@ class freeless():
         numerator = dot(v, self.laser_plane[1])
         d = float(numerator) / denominator
         if d < 0:
-            print('warning: d < 0:')
+            print('warning: d < 0:', file=sys.stderr)
             return False, None
 
         point = [[ray[0][0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]

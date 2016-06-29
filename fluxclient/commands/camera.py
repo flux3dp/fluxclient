@@ -22,7 +22,7 @@ def serve_forever(options, camera, metadata={}):
         filename = options.filename % dataset
         with open(filename, "wb") as f:
             f.write(imagebuf)
-            print(">> %s" % filename)
+            print(">> %s" % filename, file=sys.stderr)
 
     camera.capture(callback)
 

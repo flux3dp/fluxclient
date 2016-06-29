@@ -220,7 +220,7 @@ MeshPtr createMeshPtr(){
 }
 
 int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud, float smooth){
-  puts("poisson computing");
+  // puts("poisson computing");
 
   pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
 

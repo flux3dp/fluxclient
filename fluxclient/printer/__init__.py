@@ -69,13 +69,14 @@ def hex_color(key, value):
 
 def float_or_percent(key, value, percent_start=float('-inf'), percent_end=float('inf'), float_start=float('-inf'), float_end=float('inf')):
     m = "Invalid value: '%s' for '%s', must be float or percentage" % (value, key)
+
     try:
         if value.endswith('%'):
             v = float(value[:-1])
             if v >= percent_start and v <= percent_end:
                 m = 'ok'
         else:
-            if float(value[:-1]) >= float_start and float(value[:-1]) <= float_end:
+            if float(value) >= float_start and float(value) <= float_end:
                 m = 'ok'
     except:
         pass
