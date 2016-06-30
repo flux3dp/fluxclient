@@ -330,13 +330,15 @@ class GcodeToFcode(FcodeBase):
                         elif 'SUPPORT' in comment:
                             self.now_type = POINT_TYPE['support']
                         elif 'LAYER:' in comment:
-                            self.now_type = -1
+                            self.now_type = POINT_TYPE['new layer']
                         elif 'WALL-OUTER' in comment:
                             self.now_type = POINT_TYPE['perimeter']
                         elif 'WALL-INNER' in comment:
                             self.now_type = POINT_TYPE['inner-wall']
                         elif 'RAFT' in comment:
                             self.now_type = POINT_TYPE['raft']
+                        elif 'SKIRT' in comment:
+                            self.now_type = POINT_TYPE['skirt']
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()
