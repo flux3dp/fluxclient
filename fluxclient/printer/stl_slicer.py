@@ -862,8 +862,6 @@ class StlSlicerCura(StlSlicer):
 
         new_content['skirtLineCount'] = content['skirts']
         new_content['skirtDistance'] = thousand(content['skirt_distance'])
-        new_content['skirtLineCount'] = 0
-        new_content['skirtDistance'] = 0
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
@@ -884,8 +882,11 @@ class StlSlicerCura(StlSlicer):
         # = ['support_material_speed']
 
         new_content['printSpeed'] = content['infill_speed']
-        new_content['inset0Speed'] = new_content['printSpeed']
-        new_content['inset0Speed'] = new_content['printSpeed']
+        # SETTING(inset0Speed, 50);
+        # SETTING(insetXSpeed, 50);
+        new_content['inset0Speed'] = content['external_perimeter_speed']  # WALL-OUTER
+        new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
+
         new_content['infillSpeed'] = content['infill_speed']
         new_content['skinSpeed'] = content['perimeter_speed']
 

@@ -99,12 +99,12 @@ class image_to_pc():
         s_L = sum(int(p[3]) + p[4] + p[5] for p in self.points_L)
 
         if s_R > s_L:
-            print('R')
+            print('R', file=sys.stderr)
             base = self.points_R
             add_on = self.points_L
             delta = round(60 / (360 / self.steps))
         else:
-            print('L')
+            print('L', file=sys.stderr)
             base = self.points_L
             add_on = self.points_R
             delta = -round(60 / (360 / self.steps))

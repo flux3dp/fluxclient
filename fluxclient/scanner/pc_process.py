@@ -9,6 +9,7 @@ from os import environ
 from math import sqrt, asin, pi, radians, cos, sin
 import uuid
 import threading
+import sys
 
 from scipy.interpolate import Rbf
 import numpy as np
@@ -423,7 +424,7 @@ class PcProcess():
         x = np.array([p[0] for p in plane])
         y = np.array([p[1] for p in plane])
         z = np.array([p[2] for p in plane])
-        print('plane len', len(plane))
+        print('plane len', len(plane), file=sys.stderr)
         try:
 
             rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
@@ -456,8 +457,8 @@ class PcProcess():
                         tmp.append(p)
             del rbf
         except Exception as e:
-            print('rbf error')
-            print(e.args)
+            print('rbf error', file=sys.stderr)
+            print(e.args, file=sys.stderr)
 
         plane += tmp
         for p in plane:
