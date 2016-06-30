@@ -339,6 +339,8 @@ class GcodeToFcode(FcodeBase):
                             self.now_type = POINT_TYPE['raft']
                         elif 'SKIRT' in comment:
                             self.now_type = POINT_TYPE['skirt']
+                        elif 'SKIN' in comment:
+                            self.now_type = POINT_TYPE['skin']
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()

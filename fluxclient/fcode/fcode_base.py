@@ -7,6 +7,7 @@ from json import dumps
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.utils._utils import Tools
 
+# define point type
 POINT_TYPE = {'new layer': -1,
               'infill': 0,
               'perimeter': 1,
@@ -15,7 +16,9 @@ POINT_TYPE = {'new layer': -1,
               'skirt': 4,
               'inner-wall': 5,
               'brim': 5,
-              'raft': 2}
+              'raft': 2,  # raft
+              'skin': 5  # top most and bottom most layer
+              }
 
 
 class FcodeBase(object):
@@ -53,7 +56,6 @@ class FcodeBase(object):
         """
         convert to path list(for visualizing)
         """
-        # TODO?: reconsider if theese two flag necessary
         if self.engine == 'slic3r':
             already_split = False
             self.counter_between_layers += 1
@@ -126,27 +128,20 @@ class FcodeBase(object):
     @classmethod
     def path_to_js(cls, path):
         """
-        transform path:[[[],[]]] to js object
+        * NOTE: this is deprecated, use fluxclient.utils._utils.Tools().path_to_js instead
+        transform path:[[[],[]]] in to javascript string
+        will round number to .2f
         """
         if path is None:
                 return ''
         else:
-            result = []
-            for layer in path:
-                tmp = []
-                for p in layer:
-                    # tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
-                    tmp.append([round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]])
-                result.append(tmp)
-            d = dumps(result)
-            return d
+            return dumps([[[round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]] for p in layer] for layer in path])
 
     @classmethod
     def trim_ends(cls, path):
         """
         trim the moving(non-extruding) path in path's both end
         """
-
         for layer in [0, -1]:
             while True:
                 if len(path[layer]) >= 2:

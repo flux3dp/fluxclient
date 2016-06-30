@@ -855,16 +855,12 @@ class StlSlicerCura(StlSlicer):
             new_content['raftBaseThickness'] = 0
             new_content['raftInterfaceThickness'] = 0
 
-        # brim
-        # temperature
-        # 'skirt_distance': [float_range, 0],
-        # 'skirt_height': [int_range, 0],
         new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
         if int(content['skirts']) == 0:  # brim
             new_content['skirtLineCount'] = content['brim_width']
             new_content['skirtDistance'] = 0
-        else:
+        else:  # skirt
             new_content['skirtLineCount'] = content['skirts']
             new_content['skirtDistance'] = thousand(content['skirt_distance'])
 
@@ -893,7 +889,7 @@ class StlSlicerCura(StlSlicer):
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
         new_content['infillSpeed'] = content['infill_speed']
-        new_content['skinSpeed'] = content['perimeter_speed']
+        new_content['skinSpeed'] = content['solid_infill_speed']
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
