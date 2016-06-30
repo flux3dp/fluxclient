@@ -7,7 +7,8 @@ from json import dumps
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.utils._utils import Tools
 
-POINT_TYPE = {'infill': 0,
+POINT_TYPE = {'new layer': -1,
+              'infill': 0,
               'perimeter': 1,
               'support': 2,
               'move': 3,
@@ -31,7 +32,7 @@ class FcodeBase(object):
         self.counter_between_layers = 0
         self.record_z = 0.0
         self.engine = 'slic3r'
-        self.now_type = 3
+        self.now_type = POINT_TYPE['move']
         self.path_js = None
 
     def sub_convert_path(self):
@@ -83,7 +84,7 @@ class FcodeBase(object):
                     line_type = 0
                 else:   # no data in comment
                     if extrude_flag:
-                        line_type = 1
+                        line_type = POINT_TYPE['perimeter']
                     else:
                         line_type = POINT_TYPE['move']
 
@@ -98,7 +99,7 @@ class FcodeBase(object):
             already_split = False
             self.counter_between_layers += 1
             line_type = POINT_TYPE['move']
-            if self.now_type == -1:
+            if self.now_type == POINT_TYPE['new layer']:
                 self.now_type = POINT_TYPE['move']
                 self.record_z = self.current_pos[2]
                 already_split = True
@@ -113,7 +114,10 @@ class FcodeBase(object):
 
             if move_flag:
                 if extrude_flag:
-                    line_type = self.now_type
+                    if self.now_type != POINT_TYPE['move']:
+                        line_type = self.now_type
+                    else:
+                        line_type = POINT_TYPE['perimeter']
                 elif not extrude_flag:
                     line_type = POINT_TYPE['move']
 
@@ -142,10 +146,17 @@ class FcodeBase(object):
         """
         trim the moving(non-extruding) path in path's both end
         """
+
         for layer in [0, -1]:
             while True:
-                if path[layer]:
-                    if path[layer][layer][3] == POINT_TYPE['move']:
+                if layer == -1:
+                    print(path[layer])
+                    print()
+                if len(path[layer]) >= 2:
+                    # define at end point
+                    # 0 * 2 + 1 = 1
+                    # -1 * 2 + 1 = -1
+                    if path[layer][layer * 2 + 1][3] == POINT_TYPE['move']:
                         path[layer].pop(layer)
                     else:
                         break
