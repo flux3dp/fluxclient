@@ -149,9 +149,6 @@ class FcodeBase(object):
 
         for layer in [0, -1]:
             while True:
-                if layer == -1:
-                    print(path[layer])
-                    print()
                 if len(path[layer]) >= 2:
                     # define at end point
                     # 0 * 2 + 1 = 1

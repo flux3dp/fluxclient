@@ -849,6 +849,7 @@ class StlSlicerCura(StlSlicer):
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
+        print("content['raft_layers']", content['raft_layers'], type(content['raft_layers']))
 
         if int(new_content['raftSurfaceLayers']) == 0:
             new_content['raftBaseThickness'] = 0
@@ -860,8 +861,12 @@ class StlSlicerCura(StlSlicer):
         # 'skirt_height': [int_range, 0],
         new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
-        new_content['skirtLineCount'] = content['skirts']
-        new_content['skirtDistance'] = thousand(content['skirt_distance'])
+        if int(content['skirts']) == 0:  # brim
+            new_content['skirtLineCount'] = content['brim_width']
+            new_content['skirtDistance'] = 0
+        else:
+            new_content['skirtLineCount'] = content['skirts']
+            new_content['skirtDistance'] = thousand(content['skirt_distance'])
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
