@@ -593,6 +593,13 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         if final_ret != b"ok":
             raise_error(final_ret.decode("ascii", "ignore"))
 
+    def begin_icontrol(self):
+        ret = self._make_cmd(b"task icontrol").decode("ascii", "ignore")
+        if ret == "ok":
+            return self.sock
+        else:
+            raise_error(ret)
+
     @ok_or_error
     def quit_task(self):
         return self._make_cmd(b"quit")
