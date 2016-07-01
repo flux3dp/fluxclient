@@ -66,6 +66,7 @@ class StlSlicer(object):
         self.output = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
+        self.path_js = None
         self.T = None
 
     def from_other(self, other):
@@ -151,8 +152,9 @@ class StlSlicer(object):
         """
         if name in self.models:
             self.parameter[name] = parameter
+            return 'ok'
         else:
-            raise ValueError("%s not upload yet" % (name))
+            return "%s not upload yet" % (name)
 
     def advanced_setting(self, lines):
         """
@@ -849,7 +851,6 @@ class StlSlicerCura(StlSlicer):
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
-        print("content['raft_layers']", content['raft_layers'], type(content['raft_layers']))
 
         if int(new_content['raftSurfaceLayers']) == 0:
             new_content['raftBaseThickness'] = 0
@@ -880,11 +881,8 @@ class StlSlicerCura(StlSlicer):
 
         # speed
         new_content['moveSpeed'] = content['travel_speed']
-        # = ['support_material_speed']
 
         new_content['printSpeed'] = content['infill_speed']
-        # SETTING(inset0Speed, 50);
-        # SETTING(insetXSpeed, 50);
         new_content['inset0Speed'] = content['external_perimeter_speed']  # WALL-OUTER
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 

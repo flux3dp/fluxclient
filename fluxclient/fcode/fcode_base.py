@@ -10,14 +10,14 @@ from fluxclient.utils._utils import Tools
 # define point type
 POINT_TYPE = {'new layer': -1,
               'infill': 0,
-              'perimeter': 1,
+              'perimeter': 1,  # outer-wall
               'support': 2,
               'move': 3,
               'skirt': 4,
               'inner-wall': 5,
-              'brim': 5,
-              'raft': 2,  # raft
-              'skin': 5  # top most and bottom most layer
+              'brim': 6,
+              'raft': 7,  # raft
+              'skin': 8  # top and bottom solid layer
               }
 
 
@@ -79,11 +79,11 @@ class FcodeBase(object):
                         self.path.append([self.path[-1][-1][:3] + [line_type]])
                         self.filament_this_layer = self.filament[:]
                 elif 'perimeter' in comment:
-                    line_type = 1
+                    line_type = POINT_TYPE['perimeter']
                 elif 'skirt' in comment:
-                    line_type = 4
+                    line_type = POINT_TYPE['skirt']
                 elif 'draw' in comment:
-                    line_type = 0
+                    line_type = POINT_TYPE['infill']
                 else:   # no data in comment
                     if extrude_flag:
                         line_type = POINT_TYPE['perimeter']
