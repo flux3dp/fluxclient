@@ -549,7 +549,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             # cmd = [cmd] [mimetype] [length] #
             cmd = "file upload %s %i #" % (mimetype, length)
         elif upload_to:
-            entry, path = upload_to.split("/", 1)
+            if upload_to.startswith("/"):
+                entry, path = upload_to[1:].split("/", 1)
+            else:
+                entry, path = upload_to.split("/", 1)
             # cmd = [cmd] [mimetype] [length] [entry] [path]
             cmd = "file upload %s %i %s %s" % (mimetype, length, entry, path)
         else:
