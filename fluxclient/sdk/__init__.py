@@ -153,3 +153,56 @@ CMD_KILL = 0xff
 MSG_OPERATION_ERROR = 0x01
 MSG_QUEUE_FULL = 0x02
 MSG_UNKNOWN_ERROR = 0xff
+
+
+# UDP Message
+#   (i:1, s:SALT, i:timestemp, i:head_error_code, obj:headstatus)
+#       * First 1 means it is a head status message
+#       * SALT: not for use right now
+#       * timestemp: not for use right now
+#       * head_error_code:
+#           == -2: Head Offline
+#           == -1: Not ready
+#            == 0: Ready
+#             > 0: Follow toolhead error table
+
+
+CMD_THPF = 0x51
+# Get toolhead profile
+# ()
+#    => (0x51, {"module": "EXTRUDER", "vendor": "FLUX .inc", "id": "...", }, )
+
+# CMD_THST = 0x52
+# # Get toolhead status
+# # ()
+# #    => (0x52, {"tt": [210, ], "rt": [150, ], "tf": [0.9]})
+
+CMD_M104 = 0x60
+# Set toolhead extruder temperature
+# (i:index, i:temperature)
+#
+# index: toolhead index, 0 or 1
+# temperature should positive
+# operation error raised if index out of range or temperature over limit
+
+#CMD_M106 = 0x61
+# Set fandspeed
+# (i:index, f:speed)
+#
+# index: toolhead index, 0 or 1
+# speed is a value from 0.0 to 1.0
+
+CMD_REQH = 0xf1
+# Set required toolhead type
+# (s:toolhead symbol)
+#
+# Toolhead must be "EXTRUDER" or "LASER" or "N/A", default is "N/A"
+# After CMD_REQH, A CMD_BSTH command is required to enable head, otherwise
+# toolhead will keep status at -2 (offline)
+
+#CMD_CLHE = 0xf2
+# Clear toolhead error code
+# ()
+#
+# When toolhead raise an error, this error will appear in UDP message frame
+# until this command send.

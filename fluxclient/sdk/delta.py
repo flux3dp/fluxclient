@@ -22,7 +22,6 @@ from msgpack import packb, unpackb, Unpacker
 from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
-from fluxclient.commands.misc import get_device_endpoint
 from fluxclient.robot import connect_robot
 from fluxclient.encryptor import KeyObject
 from fluxclient.upnp.task import UpnpTask
@@ -30,24 +29,6 @@ from fluxclient.commands.misc import get_or_create_default_key
 from fluxclient.sdk import *
 
 logger = logging.getLogger(__name__)
-
-
-def prepare_robot(endpoint, server_key, client_key):
-    def conn_callback(*args):
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        return True
-    robot = connect_robot(endpoint, server_key=server_key,
-                          client_key=client_key, conn_callback=conn_callback)
-    pos = robot.position()
-    if pos == "CommandTask":
-        robot.begin_scan()
-    elif pos == "ScanTask":
-        pass
-    else:
-        raise RuntimeError("Unknow position: %s" % pos)
-
-    return robot
 
 
 def type_check(instance, type_candidates, err_msg=''):
@@ -71,23 +52,27 @@ class Delta(object):
         :param bool blocking: set which mode it's in
 
     """
-    def __init__(self, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
+    def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
         super(Delta, self).__init__()
-        self._command_index = 0
-        # ipaddr, metadata = get_device_endpoint(target, client_key, 23811)
-        # self.robot = connect_robot(ipaddr, metadata=metadata, client_key=client_key)
 
+        self._command_index = 0
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
         self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
         self.laser_status = {"L": False, "R": False}
         self.motor_status = {"e0": True, "e1": True, "e2": False}  # [("e0", "E"), ("e1", "S"), ("e2", "U")]
         self.loose_flag = False
-        self.blocking_flag = blocking
         self.lock = threading.Lock()
         self.command_output = [False]
-        self.connected = False
+        self.connected = True
 
-        self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, kick=kick)
+        self.control_sock = wrapped_socket
+        self.exit_callback = exit_callback
+        self.blocking_flag = blocking
+
+        self.open_udp_sock()
+
+    # def __init__(self, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
+    #     self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, kick=kick)
 
     def __del__(self):
         if self.connected:
@@ -95,15 +80,18 @@ class Delta(object):
                 # print(self.atomic_status())
                 pass
             self.killthread = True
-            print('wait for udp socket to close')
-            self.T.join()
+            logger.debug('wait for udp socket to close')
+            self.queue_checker.join()
             sleep(1)
             self._command_index += 1
-            self.robot.sock.send(packb((self._command_index, CMD_QUIT)))
+            self.control_sock.send(packb((self._command_index, CMD_QUIT)))  # TODO: make sure it's quited
+            if self.exit_callback:
+                self.exit_callback()
             sleep(1)
             self.connected = False
 
-    def connect_delta(self, target, ip, client_key, password, kick):
+    @classmethod
+    def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False):
         """
         connect to delta
         """
@@ -139,43 +127,42 @@ class Delta(object):
                 upnp_task.authorize_with_password(password)
                 if upnp_task.authorized:
                     upnp_task.add_trust('sdk key', client_key.public_key_pem.decode())
-                    print('[Warning]: adding new key into flux delta', file=sys.stderr)
-        print('authorized', upnp_task.authorized)
+                    logger.warning('[Warning]: adding new key into flux delta', file=sys.stderr)
         if upnp_task.authorized:
-            self.robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
+            robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
 
-            st_id = self.robot.report_play()["st_id"]
+            st_id = robot.report_play()["st_id"]
             if st_id > 0:
                 if st_id not in [64, 66, 128, 130]:
-                    self.robot.abort_play()
+                    robot.abort_play()
 
-                while self.robot.report_play()["st_id"] in [66, 130]:
+                while robot.report_play()["st_id"] in [66, 130]:
                     sleep(0.5)
 
-                self.robot.quit_play()
+                robot.quit_play()
             elif st_id < 0:
-                self.robot.kick()
+                robot.kick()
 
-            while self.robot.report_play()["st_id"] != 0:
+            while robot.report_play()["st_id"] != 0:
                 sleep(0.5)
-            ret = self.robot._make_cmd(b"task icontrol")
+            m_delta = robot.icontrol()  # retuen a Delta object
+            return m_delta
 
-            assert ret == b"ok", ret
+            # assert ret == b"ok", ret
         else:
             raise RuntimeError("cannot connect to flux delta")
 
-        local_ipaddr = socket.gethostbyname(socket.gethostname())
-        self.robot.sock.send(packb((0, CMD_SYNC, local_ipaddr, 55688, b"")))
+    def open_udp_sock(self):
+        local_ipaddr = self.control_sock.getsockname()
+        self.control_sock.send(packb((0, CMD_SYNC, local_ipaddr[0], 55688, b"")))
         # init udp socket: for state
-        self.status = (1, 0)
+        self.status = (1, 0)  # index, queue_left
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_sock.bind((socket.gethostbyname(socket.gethostname()), 55688))
         buf = self.udp_sock.recv(4096)
         self.killthread = False
-        self.T = threading.Thread(target=self.delta_status)
-        self.T.start()
-
-        self.connected = True
+        self.queue_checker = threading.Thread(target=self.delta_status)
+        self.queue_checker.start()
 
     def atomic_status(self, new_staus=None):
         """
@@ -193,7 +180,6 @@ class Delta(object):
         """
         acquire result of certain index from delta
         """
-        # print('get_result index', index)
         self.lock.acquire()
         if len(self.command_output) < index:
             raise RuntimeError('Fatal Error: command index error(index:{}, total:{})'.format(index, len(self.command_output)))
@@ -206,7 +192,6 @@ class Delta(object):
                         pass
                     self.lock.acquire()
                     ret = self.command_output[index]
-                    # print('get_result ret', ret)
                 else:
                     raise RuntimeError('Not ready(index:{})'.format(index))
             elif self.command_output[index] is False:
@@ -219,7 +204,6 @@ class Delta(object):
                         pass
                     self.lock.acquire()
                     ret = self.command_output[index]
-                    # print('get_result ret', ret)
                 else:
                     raise RuntimeError('Not ready(index:{})'.format(index))
             else:
@@ -246,7 +230,7 @@ class Delta(object):
                     # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
                     for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
                         if self.command_output[i]:
-                            ret = self.robot.sock.recv(4096)
+                            ret = self.control_sock.recv(4096)
                             unpacker.feed(ret)
                             ret = unpacker.__next__()
                             self.lock.acquire()
@@ -265,7 +249,7 @@ class Delta(object):
 
     def send_command(self, command, recv_callback=False):
         self._command_index += 1
-        self.robot.sock.send(packb(tuple([self._command_index] + command)))
+        self.control_sock.send(packb(tuple([self._command_index] + command)))
 
         if recv_callback:
             self.command_output.append(recv_callback)
@@ -719,7 +703,7 @@ if __name__ == '__main__':
     # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=True)
-    f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
+    f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
 
     # f.get_head_info()
     print('----------------------------------------------------------------------->', f.home())
