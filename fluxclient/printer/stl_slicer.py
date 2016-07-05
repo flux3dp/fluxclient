@@ -310,6 +310,9 @@ class StlSlicer(object):
 
             fcode_output = BytesIO()
 
+            if config['flux_calibration'] == '0':
+                ext_metadata['CORRECTION'] = 'N'
+
             if config['detect_filament_runout'] == '1':
                 ext_metadata['FILAMENT_DETECT'] = 'Y'
             else:
@@ -724,6 +727,8 @@ class StlSlicerCura(StlSlicer):
             child_pipe.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
+            if config['flux_calibration'] == '0':
+                ext_metadata['CORRECTION'] = 'N'
 
             if config['detect_filament_runout'] == '1':
                 ext_metadata['FILAMENT_DETECT'] = 'Y'
