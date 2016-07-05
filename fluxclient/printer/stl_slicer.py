@@ -899,8 +899,9 @@ class StlSlicerCura(StlSlicer):
         new_content['nozzleSize'] = 400
         new_content['filamentDiameter'] = 1750
 
-        new_content['retractionSpeed'] = 50
-        new_content['retractionAmount'] = 4500
+        new_content['retractionSpeed'] = content['retract_speed']
+        new_content['retractionAmount'] = thousand(content['retract_length'])
+
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
         new_content['filamentFlow'] = 92
