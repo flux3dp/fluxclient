@@ -270,7 +270,7 @@ use it if and only if you have any idea about this::
 
         sock = self._backend.begin_icontrol()
         self._locked_obj = "iControl"
-
+        from fluxclient.sdk.delta import Delta
         return Delta(sock, exit_callback)
 
     @blocked_validator

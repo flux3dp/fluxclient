@@ -7,14 +7,18 @@ from json import dumps
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.utils._utils import Tools
 
-POINT_TYPE = {'infill': 0,
-              'perimeter': 1,
+# define point type
+POINT_TYPE = {'new layer': -1,
+              'infill': 0,
+              'perimeter': 1,  # outer-wall
               'support': 2,
               'move': 3,
               'skirt': 4,
               'inner-wall': 5,
-              'brim': 5,
-              'raft': 2}
+              'brim': 6,
+              'raft': 7,  # raft
+              'skin': 8  # top and bottom solid layer
+              }
 
 
 class FcodeBase(object):
@@ -31,7 +35,7 @@ class FcodeBase(object):
         self.counter_between_layers = 0
         self.record_z = 0.0
         self.engine = 'slic3r'
-        self.now_type = 3
+        self.now_type = POINT_TYPE['move']
         self.path_js = None
 
     def sub_convert_path(self):
@@ -52,7 +56,6 @@ class FcodeBase(object):
         """
         convert to path list(for visualizing)
         """
-        # TODO?: reconsider if theese two flag necessary
         if self.engine == 'slic3r':
             already_split = False
             self.counter_between_layers += 1
@@ -76,14 +79,14 @@ class FcodeBase(object):
                         self.path.append([self.path[-1][-1][:3] + [line_type]])
                         self.filament_this_layer = self.filament[:]
                 elif 'perimeter' in comment:
-                    line_type = 1
+                    line_type = POINT_TYPE['perimeter']
                 elif 'skirt' in comment:
-                    line_type = 4
+                    line_type = POINT_TYPE['skirt']
                 elif 'draw' in comment:
-                    line_type = 0
+                    line_type = POINT_TYPE['infill']
                 else:   # no data in comment
                     if extrude_flag:
-                        line_type = 1
+                        line_type = POINT_TYPE['perimeter']
                     else:
                         line_type = POINT_TYPE['move']
 
@@ -98,7 +101,7 @@ class FcodeBase(object):
             already_split = False
             self.counter_between_layers += 1
             line_type = POINT_TYPE['move']
-            if self.now_type == -1:
+            if self.now_type == POINT_TYPE['new layer']:
                 self.now_type = POINT_TYPE['move']
                 self.record_z = self.current_pos[2]
                 already_split = True
@@ -113,7 +116,10 @@ class FcodeBase(object):
 
             if move_flag:
                 if extrude_flag:
-                    line_type = self.now_type
+                    if self.now_type != POINT_TYPE['move']:
+                        line_type = self.now_type
+                    else:
+                        line_type = POINT_TYPE['perimeter']
                 elif not extrude_flag:
                     line_type = POINT_TYPE['move']
 
@@ -122,20 +128,14 @@ class FcodeBase(object):
     @classmethod
     def path_to_js(cls, path):
         """
-        transform path:[[[],[]]] to js object
+        * NOTE: this is deprecated, use fluxclient.utils._utils.Tools().path_to_js instead
+        transform path:[[[],[]]] in to javascript string
+        will round number to .2f
         """
         if path is None:
                 return ''
         else:
-            result = []
-            for layer in path:
-                tmp = []
-                for p in layer:
-                    # tmp.append({'t': p[3], 'p': [round(p[0], 2), round(p[1], 2), round(p[2], 2)]})
-                    tmp.append([round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]])
-                result.append(tmp)
-            d = dumps(result)
-            return d
+            return dumps([[[round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]] for p in layer] for layer in path])
 
     @classmethod
     def trim_ends(cls, path):
@@ -144,8 +144,11 @@ class FcodeBase(object):
         """
         for layer in [0, -1]:
             while True:
-                if path[layer]:
-                    if path[layer][layer][3] == POINT_TYPE['move']:
+                if len(path[layer]) >= 2:
+                    # define at end point
+                    # 0 * 2 + 1 = 1
+                    # -1 * 2 + 1 = -1
+                    if path[layer][layer * 2 + 1][3] == POINT_TYPE['move']:
                         path[layer].pop(layer)
                     else:
                         break

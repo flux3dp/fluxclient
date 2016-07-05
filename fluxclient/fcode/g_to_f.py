@@ -45,7 +45,7 @@ class GcodeToFcode(FcodeBase):
         if head_type:
             self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
         else:
-            self.md = {}
+            self.md = {'HEAD_TYPE': 'EXTRUDER'}
         self.md.update(ext_metadata)
 
         self.record_path = True
@@ -330,13 +330,17 @@ class GcodeToFcode(FcodeBase):
                         elif 'SUPPORT' in comment:
                             self.now_type = POINT_TYPE['support']
                         elif 'LAYER:' in comment:
-                            self.now_type = -1
+                            self.now_type = POINT_TYPE['new layer']
                         elif 'WALL-OUTER' in comment:
                             self.now_type = POINT_TYPE['perimeter']
                         elif 'WALL-INNER' in comment:
                             self.now_type = POINT_TYPE['inner-wall']
                         elif 'RAFT' in comment:
                             self.now_type = POINT_TYPE['raft']
+                        elif 'SKIRT' in comment:
+                            self.now_type = POINT_TYPE['skirt']
+                        elif 'SKIN' in comment:
+                            self.now_type = POINT_TYPE['skin']
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()

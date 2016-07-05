@@ -483,13 +483,12 @@ class SVGParser(object):
     def clean_svg(node, header, warning):
         """
         recursively clean up and set the attrib for each node
-        will pass the transform to children and delete transform when return from DFS
+        will pass the transform information to children and delete transform when return from DFS
         """
         parent = node.getparent()
         if parent is not None:
             parent_trans = parent.attrib.get('transform', '')
             if parent_trans:
-                kk = node.attrib.get('transform', '')
                 node.attrib.update({'transform': parent_trans + node.attrib.get('transform', '')})
 
         for i in node:

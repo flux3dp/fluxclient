@@ -12,7 +12,7 @@ __WAIT_RESPONSE__ = 2
 __WAIT_AESKEY__ = 3
 __READY__ = 4
 
-SOCKET_ERRORS = (ConnectionResetError, BrokenPipeError, OSError, # noqa
+SOCKET_ERRORS = (ConnectionResetError, BrokenPipeError, OSError,  # noqa
                  socket.timeout)
 
 
@@ -156,10 +156,10 @@ class AESSocket(object):
     def family(self):
         return self._sock.family
 
-    def getpeername(self, *args, **kw):
+    def getpeername(self, *args, **kw):  # peer ip and port
         return self._sock.getpeername(*args, **kw)
 
-    def getsockname(self, *args, **kw):
+    def getsockname(self, *args, **kw):  # local ip and port
         return self._sock.getsockname(*args, **kw)
 
     def getsockopt(self, *args, **kw):
