@@ -40,7 +40,7 @@ def type_check(instance, type_candidates, err_msg=''):
 
 class Delta(object):
     """
-      target=None, ip=None, client_key=None, password=None, kick=False, blocking=True
+      target=None, ip=None, client_key=None, password=None, kick=False, blocking=True  [TODO]
       Conenct and control delta
 
         :param str target: Target delta's uuid
@@ -55,15 +55,14 @@ class Delta(object):
     def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
         super(Delta, self).__init__()
 
-        self._command_index = 0
+        self._command_index = -1
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
         self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
         self.laser_status = {"L": False, "R": False}
         self.motor_status = {"e0": True, "e1": True, "e2": False}  # [("e0", "E"), ("e1", "S"), ("e2", "U")]
         self.loose_flag = False
         self.lock = threading.Lock()
-        self.command_output = [False]
-        self.connected = True
+        self.command_output = []  # record all the output return from command
 
         self.control_sock = wrapped_socket
         self.exit_callback = exit_callback
@@ -71,20 +70,25 @@ class Delta(object):
 
         self.open_udp_sock()
 
-    # def __init__(self, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
-    #     self.connect_delta(target=target, ip=ip, client_key=client_key, password=password, kick=kick)
+        self.connected = True
 
     def __del__(self):
         if self.connected:
+            logger.debug('wait for commands to finished')
             while self.atomic_status()[0] - 1 != self._command_index or self.atomic_status()[1] != 0:
                 # print(self.atomic_status())
                 pass
-            self.killthread = True
             logger.debug('wait for udp socket to close')
+            self.killthread = True
             self.queue_checker.join()
             sleep(1)
+
             self._command_index += 1
-            self.control_sock.send(packb((self._command_index, CMD_QUIT)))  # TODO: make sure it's quited
+            # self.control_sock.send(packb((self._command_index, CMD_QUIT)))  # TODO: make sure it's quited
+
+            def kk(r):
+                print('r', r)
+            self.send_command([CMD_QUIT], kk)
             if self.exit_callback:
                 self.exit_callback()
             sleep(1)
@@ -98,17 +102,20 @@ class Delta(object):
         if client_key:
             if type(client_key) == str:
                 client_key = get_or_create_default_key(client_key)
-            elif type(client_key) == KeyObject:
-                pass
+            # elif type(client_key) == KeyObject:
+            #     pass
             else:
                 type_check(client_key, (str, KeyObject), 'client_key')
         else:
             client_key = get_or_create_default_key()
+
         if target:
             type_check(target, str, 'target')
             target = UUID(target)
+
         if ip:
             type_check(ip, str, 'ip')
+
         if password:
             type_check(password, str, 'password')
 
@@ -154,7 +161,7 @@ class Delta(object):
 
     def open_udp_sock(self):
         local_ipaddr = self.control_sock.getsockname()
-        self.control_sock.send(packb((0, CMD_SYNC, local_ipaddr[0], 55688, b"")))
+        self.send_command([CMD_SYNC, local_ipaddr[0], 55688, b""])
         # init udp socket: for state
         self.status = (1, 0)  # index, queue_left
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -213,7 +220,7 @@ class Delta(object):
 
     def delta_status(self):
         """
-        thread function that collect and update delta's status and command's output
+        loop thread function that collect and update delta's status and command's output
         """
         recv_until = -1
         # udp_index = 0
@@ -225,27 +232,31 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
+                print(payload)
                 # print('payload', payload, 'recv_until', recv_until, self.command_output)
-                if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
-                    # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
-                    for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
-                        if self.command_output[i]:
-                            ret = self.control_sock.recv(4096)
-                            unpacker.feed(ret)
-                            ret = unpacker.__next__()
-                            self.lock.acquire()
-                            self.command_output[i] = self.command_output[i](ret)
-                            self.lock.release()
-                        elif self.command_output[i] is False:
-                            self.lock.acquire()
-                            self.command_output[i] = None
-                            self.lock.release()
-                        else:
-                            print('         --->>>no way!!', self.command_output[i], self.command_output)
+                if payload[0] == 0:
+                    if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
+                        # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
+                        for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
+                            if self.command_output[i]:
+                                ret = self.control_sock.recv(4096)
+                                unpacker.feed(ret)
+                                ret = unpacker.__next__()
+                                self.lock.acquire()
+                                self.command_output[i] = self.command_output[i](ret)
+                                self.lock.release()
+                            elif self.command_output[i] is False:
+                                self.lock.acquire()
+                                self.command_output[i] = None
+                                self.lock.release()
+                            else:
+                                print('         --->>>no way!!', self.command_output[i], self.command_output)
 
-                    recv_until = payload[2] - 1 - payload[3]
+                        recv_until = payload[2] - 1 - payload[3]
 
-                self.atomic_status((payload[2], payload[3]))
+                    self.atomic_status((payload[2], payload[3]))
+                elif payload[0] == 1:
+                    self.head_type
 
     def send_command(self, command, recv_callback=False):
         self._command_index += 1
@@ -679,44 +690,26 @@ class Delta(object):
     def close(self):
         self.__del__()
 
-    # def function(self):
-    #     """This function prints hello with a name
-    #     function:: format_exception(etype, value, tb[, limit=None])
-
-    #     :param str sender: The person sending the message
-    #     :param str recipient: The recipient of the message
-    #     :param str message_body: The body of the message
-    #     :param priority: The priority of the message, can be a number 1-5
-    #     :type priority: integer or None
-    #     :return: the message id
-    #     :rtype: int
-    #     :raises ValueError: if the message_body exceeds 160 characters
-    #     :raises TypeError: if the message_body is not a basestring
-
-    #     >>> print_hello_with_name('foo')
-    #     Hello, foo
-
-    #     """
-    #     pass
-
 if __name__ == '__main__':
     # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=True)
-    f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
+    # f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
+    f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
     # f.get_head_info()
-    print('----------------------------------------------------------------------->', f.home())
+    # print('----------------------------------------------------------------------->', f.home())
+    print(f.get_headinfo())
     # print(f.home())
     # print(f.home())
 
-    print('----------------------------------------------------------------------->', f.move(0, 0, 80))
-    # f.get_head_info()
-    print('----------------------------------------------------------------------->', f.move(0, 0, 100))
-    # sleep(1)
-    print(f.turn_laser('L', True))
-    # sleep(1)
-    print('----------------------------------------------------------------------->', f.move(0, 0, 80))
+    # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
+    # # f.get_head_info()
+    # print('----------------------------------------------------------------------->', f.move(0, 0, 100))
+    # # sleep(1)
+    # print(f.turn_laser('L', True))
+    # # sleep(1)
+    # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
 
     # sleep(1)
     # print(f.turn_laser('L', False))
