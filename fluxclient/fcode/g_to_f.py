@@ -45,7 +45,7 @@ class GcodeToFcode(FcodeBase):
         if head_type:
             self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
         else:
-            self.md = {}
+            self.md = {'HEAD_TYPE': 'EXTRUDER'}
         self.md.update(ext_metadata)
 
         self.record_path = True
