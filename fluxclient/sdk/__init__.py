@@ -185,12 +185,18 @@ CMD_M104 = 0x60
 # temperature should positive
 # operation error raised if index out of range or temperature over limit
 
-#CMD_M106 = 0x61
+CMD_M106 = 0x61
 # Set fandspeed
 # (i:index, f:speed)
 #
 # index: toolhead index, 0 or 1
 # speed is a value from 0.0 to 1.0
+
+CMD_HLSR = 0x62
+# Toolhead pwm
+# (f:pwm)
+#
+# pwm is a value from 0.0 to 1.0
 
 CMD_REQH = 0xf1
 # Set required toolhead type
@@ -200,7 +206,10 @@ CMD_REQH = 0xf1
 # After CMD_REQH, A CMD_BSTH command is required to enable head, otherwise
 # toolhead will keep status at -2 (offline)
 
-#CMD_CLHE = 0xf2
+CMD_BSTH = 0xf2
+# bootstrap toolhead if toolhead status is == -2 (offline)
+
+CMD_CLHE = 0xf3
 # Clear toolhead error code
 # ()
 #

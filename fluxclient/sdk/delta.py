@@ -69,6 +69,7 @@ class Delta(object):
         self.blocking_flag = blocking
 
         self.open_udp_sock()
+        # self.
 
         self.connected = True
 
@@ -256,7 +257,9 @@ class Delta(object):
 
                     self.atomic_status((payload[2], payload[3]))
                 elif payload[0] == 1:
-                    self.head_type
+                    pass
+                    # self.head_type =
+                    # print(payload)
 
     def send_command(self, command, recv_callback=False):
         self._command_index += 1
@@ -641,7 +644,7 @@ class Delta(object):
         else:
             raise RuntimeError("Head error: {}".format(self.head_type))
 
-    def set_fan(self, speed):
+    def set_fan(self, speed, toolhead_index):
         """
         Set the speed of toolhead's fan
 
@@ -679,6 +682,7 @@ class Delta(object):
         if self.head_type == "LASER":  # TODO
             if isinstance(power, (int, float)):
                 if power <= 1.0 and power >= 0.0:
+                    self.send_command([], recv=False)
                     pass  # TODO
                 else:
                     raise ValueError("Invalid laser power, should be within [0.0, 1.0]")
