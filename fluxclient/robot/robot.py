@@ -264,6 +264,16 @@ use it if and only if you have any idea about this::
         return MaintainTasks(self)
 
     @blocked_validator
+    def icontrol(self):
+        def exit_callback():
+            self._locked_obj = None
+
+        sock = self._backend.begin_icontrol()
+        self._locked_obj = "iControl"
+        from fluxclient.sdk.delta import Delta
+        return Delta(sock, exit_callback)
+
+    @blocked_validator
     def raw(self):
         return RawTasks(self)
 

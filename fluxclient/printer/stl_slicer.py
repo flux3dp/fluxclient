@@ -66,6 +66,7 @@ class StlSlicer(object):
         self.output = None
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
+        self.path_js = None
         self.T = None
 
     def from_other(self, other):
@@ -151,8 +152,9 @@ class StlSlicer(object):
         """
         if name in self.models:
             self.parameter[name] = parameter
+            return 'ok'
         else:
-            raise ValueError("%s not upload yet" % (name))
+            return "%s not upload yet" % (name)
 
     def advanced_setting(self, lines):
         """
@@ -277,7 +279,7 @@ class StlSlicer(object):
         # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         slic3r_error = False
-        slic3r_out = ''
+        slic3r_out = [None, None]
         while subp.poll() is None:
             line = subp.stdout.readline().strip()
             # subp.stdout.read()
@@ -290,7 +292,7 @@ class StlSlicer(object):
                     child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
-                slic3r_out = line
+                slic3r_out = [5, line]  # errorcode 5
         if subp.poll() != 0:
             fail_flag = True
 
@@ -307,6 +309,9 @@ class StlSlicer(object):
             child_pipe.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
+
+            if config['flux_calibration'] == '0':
+                ext_metadata['CORRECTION'] = 'N'
 
             if config['detect_filament_runout'] == '1':
                 ext_metadata['FILAMENT_DETECT'] = 'Y'
@@ -333,7 +338,7 @@ class StlSlicer(object):
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
-                    slic3r_out = "gcode area too big"
+                    slic3r_out = [6, "gcode area too big"]  # errorcode 6
 
                 del m_GcodeToFcode
 
@@ -413,7 +418,7 @@ class StlSlicer(object):
                         self.output = None
                         self.metadata = None
                         self.path = None
-                        m = '{"slice_status": "error", "error": "%s"}' % message[1]
+                        m = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
                     ret.append(m)
         return ret
 
@@ -689,7 +694,7 @@ class StlSlicerCura(StlSlicer):
             # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
             progress = 0.2
             slic3r_error = False
-            slic3r_out = ''
+            slic3r_out = [None, None]
             while subp.poll() is None:
                 chunck = subp.stdout.readline()
                 for line in chunck.split('\n'):
@@ -701,13 +706,13 @@ class StlSlicerCura(StlSlicer):
                             child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
                         elif "Unable to close this loop" in line:
                             slic3r_error = True
-                        slic3r_out = line
+                        slic3r_out = [5, line]  # errorcode 5
                     # break
             if subp.poll() != 0:
                 fail_flag = True
         except:
             fail_flag = True
-            slic3r_out = 'CuraEngine fail'
+            slic3r_out = [5, 'CuraEngine fail']  # errorcode 5
 
         if config['flux_raft'] == '1':
             m_preprocessor = Raft()
@@ -722,6 +727,8 @@ class StlSlicerCura(StlSlicer):
             child_pipe.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
+            if config['flux_calibration'] == '0':
+                ext_metadata['CORRECTION'] = 'N'
 
             if config['detect_filament_runout'] == '1':
                 ext_metadata['FILAMENT_DETECT'] = 'Y'
@@ -754,7 +761,7 @@ class StlSlicerCura(StlSlicer):
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
-                    slic3r_out = "gcode area too big"
+                    slic3r_out = [6, "gcode area too big"]  # errorcode 6
 
                 del m_GcodeToFcode
 
@@ -854,14 +861,14 @@ class StlSlicerCura(StlSlicer):
             new_content['raftBaseThickness'] = 0
             new_content['raftInterfaceThickness'] = 0
 
-        # brim
-        # temperature
-        # 'skirt_distance': [float_range, 0],
-        # 'skirt_height': [int_range, 0],
         new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
-        new_content['skirtLineCount'] = content['skirts']
-        new_content['skirtDistance'] = thousand(content['skirt_distance'])
+        if int(content['skirts']) == 0:  # brim
+            new_content['skirtLineCount'] = content['brim_width']
+            new_content['skirtDistance'] = 0
+        else:  # skirt
+            new_content['skirtLineCount'] = content['skirts']
+            new_content['skirtDistance'] = thousand(content['skirt_distance'])
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
@@ -879,24 +886,22 @@ class StlSlicerCura(StlSlicer):
 
         # speed
         new_content['moveSpeed'] = content['travel_speed']
-        # = ['support_material_speed']
 
         new_content['printSpeed'] = content['infill_speed']
-        # SETTING(inset0Speed, 50);
-        # SETTING(insetXSpeed, 50);
         new_content['inset0Speed'] = content['external_perimeter_speed']  # WALL-OUTER
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
         new_content['infillSpeed'] = content['infill_speed']
-        new_content['skinSpeed'] = content['perimeter_speed']
+        new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
         new_content['nozzleSize'] = 400
         new_content['filamentDiameter'] = 1750
 
-        new_content['retractionSpeed'] = 50
-        new_content['retractionAmount'] = 4500
+        new_content['retractionSpeed'] = content['retract_speed']
+        new_content['retractionAmount'] = thousand(content['retract_length'])
+
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
         new_content['filamentFlow'] = 92
@@ -907,6 +912,14 @@ class StlSlicerCura(StlSlicer):
 
         # special function for cura's setting file
         # replace '\\n' by '\n', add two lines of '""" indicating multiple lines of settings
+        # in slic3r's setting file:
+        # startCode=aaa\nbbb\nccc
+        #
+        # in cura's setting file:
+        #   startCode="""
+        #   aaa
+        #   bbb
+        #   """
         add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])

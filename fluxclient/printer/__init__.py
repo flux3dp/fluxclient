@@ -221,7 +221,8 @@ flux_raft = 0
 flux_floor = -1
 detect_filament_runout = 1
 detect_head_shake = 1
-detect_head_tilt = 1"""
+detect_head_tilt = 1
+flux_calibration = 1"""
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -360,5 +361,6 @@ ini_constraint = {
     'flux_floor': [float_range, -1, 240],
     'detect_filament_runout': [binary],
     'detect_head_shake': [binary],
-    'detect_head_tilt': [binary]
+    'detect_head_tilt': [binary],
+    'flux_calibration': [binary]
 }

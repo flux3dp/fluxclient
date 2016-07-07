@@ -549,7 +549,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             # cmd = [cmd] [mimetype] [length] #
             cmd = "file upload %s %i #" % (mimetype, length)
         elif upload_to:
-            entry, path = upload_to.split("/", 1)
+            if upload_to.startswith("/"):
+                entry, path = upload_to[1:].split("/", 1)
+            else:
+                entry, path = upload_to.split("/", 1)
             # cmd = [cmd] [mimetype] [length] [entry] [path]
             cmd = "file upload %s %i %s %s" % (mimetype, length, entry, path)
         else:
@@ -592,6 +595,13 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         final_ret = self.get_resp()
         if final_ret != b"ok":
             raise_error(final_ret.decode("ascii", "ignore"))
+
+    def begin_icontrol(self):
+        ret = self._make_cmd(b"task icontrol").decode("ascii", "ignore")
+        if ret == "ok":
+            return self.sock
+        else:
+            raise_error(ret)
 
     @ok_or_error
     def quit_task(self):
