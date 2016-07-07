@@ -5,7 +5,7 @@ Document
 .. toctree:: 
     :maxdepth: 2
 
+    Delta.rst
     Printer.rst
     Laser.rst
-    Delta.rst
     Scanner.rst

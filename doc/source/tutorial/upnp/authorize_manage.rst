@@ -1,4 +1,4 @@
-Authorize and manage the device
+Authorization and Configuration
 =================================
 
 FLUX Device use password and RSA key to authorizing access. At the first time a user connect to device, a RSA key and password is required. After the password is authorized, 
