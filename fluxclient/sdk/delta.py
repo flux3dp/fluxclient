@@ -2,10 +2,6 @@
 """
 
 .. moduleauthor:: Yen Feng <yen@flux3dp.com>
-.. note::
-
-   An example of intersphinx is this: you **cannot** use :mod:`pickle` on this class.
-
 
 """
 from io import BytesIO
@@ -40,19 +36,16 @@ def type_check(instance, type_candidates, err_msg=''):
 
 class Delta(object):
     """
-      target=None, ip=None, client_key=None, password=None, kick=False, blocking=True  [TODO]
-      Conenct and control delta
-
-        :param str target: Target delta's uuid
-        :param str ip:
-        :param str client_key: rsa key used for connecting
-        :param KeyObject client_key: rsa key object
-        :param str password: password used for connecting
-        :param bool kick: kick other user's task if this flag is set to be true
-        :param bool blocking: set which mode it's in
-
+      Delta is an instance that present SDK mode, which allows you to control machine motion directly.
     """
     def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
+        """
+            Initialize  Delta instance 
+
+            :param str wrapped_socket: Wrapped sockets
+            :param callback exit_callback: Callback when exited
+            :param bool blocking: Blocking means python will only send commands when prior commands are finished, otherwise the device will buffer commands.
+        """
         super(Delta, self).__init__()
 
         self._command_index = -1
@@ -96,9 +89,15 @@ class Delta(object):
             self.connected = False
 
     @classmethod
-    def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False):
+    def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         """
-        connect to delta
+            Initialize  Delta instance 
+            
+            :param str uuid: Device's UUID, optional
+            :param str ip: Device's IP, optional
+            :param str password: Device's password
+            :param bool kick: Force to kick other users
+            :param bool blocking: Blocking means python will only send commands when prior commands are finished.
         """
         if client_key:
             if type(client_key) == str:
@@ -154,6 +153,7 @@ class Delta(object):
             while robot.report_play()["st_id"] != 0:
                 sleep(0.5)
             m_delta = robot.icontrol()  # retuen a Delta object
+            m_delta.blocking_flag = blocking
             return m_delta
 
             # assert ret == b"ok", ret

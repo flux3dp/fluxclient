@@ -1,4 +1,5 @@
 Delta
 ==================================================
 
-.. autoclass:: fluxclient.sdk.Delta
+.. automodule:: fluxclient.sdk.delta
+	:members:

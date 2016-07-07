@@ -47,13 +47,13 @@ Windows
     $> python3 setup.py install
 
 
-Linking Slicing Engine
-------------------------------
+.. Linking Slicing Engine
+.. ------------------------------
 
-Slicing engine are **only required** if you are going to use FLUXClient slicing API.
+.. Slicing engine are **only required** if you are going to use FLUXClient slicing API.
 
-There are two open-source slicing engines can be utilized by FLUXClient.
+.. There are two open-source slicing engines can be utilized by FLUXClient.
 
-* `Slic3r (Compatible with latest version) <http://slic3r.org/>`_
+.. * `Slic3r (Compatible with latest version) <http://slic3r.org/>`_
 
-* `Cura (Compatible with v15.04.5) <https://ultimaker.com/en/products/cura-software/list>`_
+.. * `Cura (Compatible with v15.04.5) <https://ultimaker.com/en/products/cura-software/list>`_
