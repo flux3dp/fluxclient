@@ -892,7 +892,11 @@ class StlSlicerCura(StlSlicer):
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
         new_content['infillSpeed'] = content['infill_speed']
-        new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
+
+        if fill_density == 100:
+            new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
+        else:
+            new_content['skinSpeed'] = content['infill_speed']
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
