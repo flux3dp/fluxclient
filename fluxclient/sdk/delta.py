@@ -134,7 +134,7 @@ class Delta(object):
                 upnp_task.authorize_with_password(password)
                 if upnp_task.authorized:
                     upnp_task.add_trust('sdk key', client_key.public_key_pem.decode())
-                    logger.warning('[Warning]: adding new key into flux delta', file=sys.stderr)
+                    logger.warning('[Warning]: adding new key into flux delta')
         if upnp_task.authorized:
             robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
 
@@ -162,11 +162,12 @@ class Delta(object):
 
     def open_udp_sock(self):
         local_ipaddr = self.control_sock.getsockname()
-        self.send_command([CMD_SYNC, local_ipaddr[0], 55688, b""])
+        print(local_ipaddr[0]);
+        self.send_command([CMD_SYNC, local_ipaddr[0], 22111, b""])
         # init udp socket: for state
         self.status = (1, 0)  # index, queue_left
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_sock.bind((socket.gethostbyname(socket.gethostname()), 55688))
+        self.udp_sock.bind((socket.gethostbyname(socket.gethostname()), 22111))
         buf = self.udp_sock.recv(4096)
         self.killthread = False
         self.queue_checker = threading.Thread(target=self.delta_status)
