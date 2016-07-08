@@ -10,7 +10,7 @@ import logging
 import sys
 from uuid import UUID
 import socket
-from time import sleep
+from time import sleep, time
 import queue
 import threading
 
@@ -40,7 +40,7 @@ class Delta(object):
     """
     def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
         """
-            Initialize  Delta instance 
+            Initialize  Delta instance
 
             :param str wrapped_socket: Wrapped sockets
             :param callback exit_callback: Callback when exited
@@ -61,8 +61,8 @@ class Delta(object):
         self.exit_callback = exit_callback
         self.blocking_flag = blocking
 
+        self.head_status = [b'', -2, 0, {}]
         self.open_udp_sock()
-        # self.
 
         self.connected = True
 
@@ -91,8 +91,8 @@ class Delta(object):
     @classmethod
     def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         """
-            Initialize  Delta instance 
-            
+            Initialize  Delta instance
+
             :param str uuid: Device's UUID, optional
             :param str ip: Device's IP, optional
             :param str password: Device's password
@@ -162,7 +162,6 @@ class Delta(object):
 
     def open_udp_sock(self):
         local_ipaddr = self.control_sock.getsockname()
-        print(local_ipaddr[0]);
         self.send_command([CMD_SYNC, local_ipaddr[0], 22111, b""])
         # init udp socket: for state
         self.status = (1, 0)  # index, queue_left
@@ -178,6 +177,7 @@ class Delta(object):
         return index, queue_left
         """
         self.lock.acquire()
+
         if new_staus:
             self.status = new_staus
         else:
@@ -187,7 +187,7 @@ class Delta(object):
 
     def get_result(self, index, wait=True):
         """
-        acquire result of certain index from delta
+        acquire the result of certain index from delta
         """
         self.lock.acquire()
         if len(self.command_output) < index:
@@ -234,7 +234,7 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-                print(payload)
+                print('payload', payload)
                 # print('payload', payload, 'recv_until', recv_until, self.command_output)
                 if payload[0] == 0:
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
@@ -258,9 +258,9 @@ class Delta(object):
 
                     self.atomic_status((payload[2], payload[3]))
                 elif payload[0] == 1:
-                    pass
-                    # self.head_type =
-                    # print(payload)
+                    self.lock.acquire()
+                    self.head_status = payload[1:]
+                    self.lock.release()
 
     def send_command(self, command, recv_callback=False):
         self._command_index += 1
@@ -623,7 +623,7 @@ class Delta(object):
         """
         pass
 
-    def set_temp(self, temp):
+    def set_temp(self, temp, index=0):
         """
         Set the temperature of print head
 
@@ -634,18 +634,18 @@ class Delta(object):
 
         >>> f.set_temp(200)
         """
-        if self.head_type == "EXTRUDER":  # TODO
+        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":  # TODO
             if isinstance(temp, (int, float)):
                 if temp <= 200.0 and temp >= 0.0:
-                    pass  # TODO
+                    self.send_command([CMD_M104, index, int(temp)])
                 else:
                     raise ValueError("Invalid temperature")
             else:
                 raise TypeError("unsupported temp type: {}".format(type(temp)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
 
-    def set_fan(self, speed, toolhead_index):
+    def set_fan(self, speed, toolhead_index=0):
         """
         Set the speed of toolhead's fan
 
@@ -656,18 +656,18 @@ class Delta(object):
 
         >>> f.set_fan(0.5)
         """
-        if self.head_type == "EXTRUDER":  # TODO
+        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":  # TODO
             if isinstance(speed, (int, float)):
                 speed = float(speed)
                 if speed <= 1.0 and speed >= 0.0:
-                    self.send_command([CMD_M106, speed], recv=False)
+                    self.send_command([CMD_M106, speed])
                     pass  # TODO
                 else:
                     raise ValueError("Invalid fan speed")
             else:
                 raise TypeError("unsupported speed type: {}".format(type(speed)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
 
     def set_power(self, power):
         """
@@ -680,17 +680,32 @@ class Delta(object):
 
         >>> f.set_power(0.5)
         """
-        if self.head_type == "LASER":  # TODO
+        if self.head_status[3].get(b'module', b'N/A') == b"LASER":  # TODO
             if isinstance(power, (int, float)):
                 if power <= 1.0 and power >= 0.0:
-                    self.send_command([], recv=False)
-                    pass  # TODO
+                    self.send_command([CMD_HLSR, power])
                 else:
                     raise ValueError("Invalid laser power, should be within [0.0, 1.0]")
             else:
                 raise TypeError("unsupported power type: {}".format(type(power)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            ret = self.set_head("LASER")
+            if not ret:
+                raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
+
+    def set_head(self, head_type):
+        if head_type in ['EXTRUDER', 'LASER', 'N/A']:
+            self.send_command([CMD_REQH, 'EXTRUDER'], False)
+            self.send_command([CMD_BSTH])
+        time_s = time()
+        while True:
+            if self.head_status[1] == 0:
+                return True
+            elif time() - time_s > 5:  # not ready for too long
+                return False
+            else:
+                sleep(0.5)
+                continue
 
     def close(self):
         self.__del__()
@@ -699,12 +714,16 @@ if __name__ == '__main__':
     # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
     # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=True)
-    # f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
-    f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
+    f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
+    # f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
     # f.get_head_info()
     # print('----------------------------------------------------------------------->', f.home())
-    print(f.get_headinfo())
+    print(f.set_head('EXTRUDER'))
+    print(f.set_fan(0.5))
+    print('slepping')
+    sleep(10)
+
     # print(f.home())
     # print(f.home())
 
