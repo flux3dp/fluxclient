@@ -1,9 +1,10 @@
-Printer
+FCode
 ==================================================
 
-This is something I want to say that is not in the docstring.
+.. automodule:: fluxclient.fcode.fcode_base
+   :members:
 
-.. automodule:: fluxclient.printer.stl_slicer
+.. automodule:: fluxclient.fcode.g_to_f
    :members:
 
 .. sectionauthor:: Guido van Rossum <guido@python.org>

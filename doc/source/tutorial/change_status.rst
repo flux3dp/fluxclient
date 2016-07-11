@@ -3,5 +3,6 @@ Change Status
 
 .. automodule:: fluxclient.robot
 
-Connect to device
-===================
+More commands
++++++++++
+Kindly check references for `fluxclient.sdk.delta.Delta <API/Delta.html>`_.

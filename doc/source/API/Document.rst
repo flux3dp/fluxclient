@@ -9,3 +9,5 @@ Document
     Printer.rst
     Laser.rst
     Scanner.rst
+    Fcode.rst
+    Robot.rst

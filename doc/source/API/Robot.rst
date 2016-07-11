@@ -1,9 +1,10 @@
-Printer
+Robot
 ==================================================
 
-This is something I want to say that is not in the docstring.
+.. automodule:: fluxclient.robot
+   :members:
 
-.. automodule:: fluxclient.printer.stl_slicer
+.. autoclass:: fluxclient.robot.robot.FluxRobot
    :members:
 
 .. sectionauthor:: Guido van Rossum <guido@python.org>
