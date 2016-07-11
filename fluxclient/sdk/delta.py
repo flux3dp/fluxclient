@@ -718,6 +718,7 @@ if __name__ == '__main__':
     # f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
     # f.get_head_info()
+
     # print('----------------------------------------------------------------------->', f.home())
     print(f.set_head('EXTRUDER'))
     print(f.set_fan(0.5))
