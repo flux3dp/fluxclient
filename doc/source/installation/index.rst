@@ -17,9 +17,9 @@ OS X or Linux
 
 .. code-block:: bash
 
-    $> git clone https://github.com/flux3dp/fluxclient  
-    $> cd fluxclient
-    $> python3 setup.py install
+    $ git clone https://github.com/flux3dp/fluxclient  
+    $ cd fluxclient
+    $ python3 setup.py install
 
 Windows
 ------------------------------
@@ -42,10 +42,9 @@ Windows
 
 .. code-block:: bash
 
-    $> git clone https://github.com/flux3dp/fluxclient  
-    $> cd fluxclient
-    $> python3 setup.py install
-
+    $ git clone https://github.com/flux3dp/fluxclient  
+    $ cd fluxclient
+    $ python3 setup.py install
 
 .. Linking Slicing Engine
 .. ------------------------------

@@ -59,19 +59,19 @@ python3 setup.py install
 ## Quick Start
 ### Utility programs
 ```
-$> flux_discover
+$ flux_discover
 Description: find FLUX 3D Printer in the LAN.
 
-$> flux_auth [device uuid]
+$ flux_auth [device uuid]
 Description: Try to grant access permission to printer
 
-$> flux_passwd [device uuid]
+$ flux_passwd [device uuid]
 Description: Change device password. If password exists, old password is required
 
-$> flux_config_network [device uuid]
+$ flux_config_network [device uuid]
 Description: Set printer network
 
-$> flux_g2f -i input.gcode -o output.fc
+$ flux_g2f -i input.gcode -o output.fc
 Description: convert gcode to fcode
 ```
 
