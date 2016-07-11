@@ -3,6 +3,8 @@ SDK Mode Quick Start
 
 This chapter will show you how to control FLUX Delta's movement programmatically in FLUX Delta's SDK mode.
 
+* Required firmware version for FLUX Delta is v1.3+ *
+
 
 Finding device's IP
 ++++++++++++++++

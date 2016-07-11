@@ -6,6 +6,8 @@
 FLUXClient Documentation
 ==========================
 
+FLUXClient is all you needed to do cool projects and develop new features with your `FLUX Delta <http://flux3dp.com>`_. It provides APIs to control your machine in every possible way.
+
 Contents:
 
 .. toctree:: 
