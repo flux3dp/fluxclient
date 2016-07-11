@@ -1,4 +1,4 @@
-Control Device
+Change Status
 ****************
 
 .. automodule:: fluxclient.robot

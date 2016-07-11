@@ -1,4 +1,4 @@
-Discover devices
+Discovering Devices
 ==================
 
 .. automodule:: fluxclient.upnp.discover

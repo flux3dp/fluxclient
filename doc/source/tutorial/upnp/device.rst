@@ -1,4 +1,4 @@
-Device
+Creating a Device Instance
 =================
 
 .. automodule:: fluxclient.upnp.device

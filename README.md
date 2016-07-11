@@ -1,14 +1,14 @@
-## Fluxclient
+## FLUXClient
 
-Fluxclient is all you need to play with your Delta making fun project. It provide APIs to control your machine in every possible ways. It's written mainly in [Python](python.org) with some C++ extensions powered by [Cython](http://cython.org/). 
+FLUXClient is all you needed to do cool projects and develop new features with your FLUX Delta. It provides APIs to control your machine in every possible way. It's written mainly in [Python](python.org) with some C++ extensions powered by [Cython](http://cython.org/). 
 
 Official site: http://flux3dp.com/  
 Official forum: http://forum.flux3dp.com/  
-Official documentation: http://some.cool.name.flux3dp.com/  
+Official documentation: http://dev.flux3dp.com/  
 
 ## Features
 
-* API for controlling your Delta machine.
+* API for controlling your FLUX Delta.
 * Built-in commands:
   * gcode <-> fcode converter
   * delta discover
@@ -21,43 +21,64 @@ Official documentation: http://some.cool.name.flux3dp.com/
   * pen drawing fcode generate from svg file
   * scanning
 
-## installation
-* install [`python 3.4+`]((python.org)) and [`pip`](https://pypi.python.org/pypi/pip)  
+## Installation
+
+### Mac OS X
+* Install [`python 3.4+`]((python.org)) and [`pip`](https://pypi.python.org/pypi/pip)  
 * Pillow: `pip install Pillow`
-
 * Numpy: `pip install numpy`
-
 * Scipy: `pip install scipy`
-
+* Setuputils: `pip install setuputils`
 * pcl(optional): `brew install pcl --without-apps --without-qt`
 
-* fluxclient:
+* Compile and install FLUXClient:
 ```
 git clone https://github.com/flux3dp/fluxclient  
-python setup.py install
+cd fluxclient
+python3 setup.py install
+```
+
+### Windows
+* Install Visual Studio 2015 Community ( Select only VC++ and Python Tools )
+* Install Anaconda ( Special edition of Python 3.5 ) from [here](https://www.continuum.io/downloads)
+* Install Precompiled PCL 1.7.2 for Win64 for MSVC 2015 from
+[here](http://unanancyowen.com/?p=712)
+* Install [Github Desktop](https://desktop.github.com/) ( or git for windows )
+* Pillow: `pip install pillow`
+* Numpy: `pip install numpy`
+* Pycrypto: `pip install pycrypto`
+* Cython: `pip install Cython`
+
+* Compile and install FLUXClient:
+```
+git clone https://github.com/flux3dp/fluxclient  
+cd fluxclient
+python3 setup.py install
 ```
 
 ## Quick Start
-### commands
+### Utility programs
 ```
-* flux_discover
-> find FLUX 3D Printer in the LAN.
+$ flux_discover
+Description: find FLUX 3D Printer in the LAN.
 
-* flux_auth
-> Try to grant access permission to printer
+$ flux_auth [device uuid]
+Description: Try to grant access permission to printer
 
-* flux_passwd
-> Change password for printer. It password is exist, old password is required
+$ flux_passwd [device uuid]
+Description: Change device password. If password exists, old password is required
 
-* flux_config_network
-> Set printer network
+$ flux_config_network [device uuid]
+Description: Set printer network
 
-* flux_g2f -i input.gcode -o output.fc
-> convert gcode to fcode
+$ flux_g2f -i input.gcode -o output.fc
+Description: convert gcode to fcode
 ```
 
-### sdk: see [document website](google.com) for APIs usage
+### SDK: Check [this guide](http://dev.flux3dp.com/tutorial/sdk_quick_start.html) for a quick start
 ```
+from fluxclient.sdk.delta import Delta 
+
 # connect to machine
 my_delta = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
@@ -76,15 +97,15 @@ my_delta.close()
 
 ## Documents
 
-* see our [official documentation](google.com)
+* See [official documentation](http://dev.flux3dp.com/API/Document.html)
 
-* To generate documents by yourself
+* To generate documents by yourself:
 
 `sudo python setup.py build_sphinx`  
 `open ./build/sphinx/html/index.html`
 
 ## Community
-You can ask question and discuss with our engineers on our [official forum](http://forum.flux3dp.com/).
+You can ask questions and discuss with our developers on [FLUX Official Forum](http://forum.flux3dp.com/).
 Issues are being tracked here on GitHub  
 
 ## License

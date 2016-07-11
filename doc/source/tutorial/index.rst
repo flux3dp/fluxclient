@@ -4,6 +4,6 @@ Tutorial
 .. toctree:: 
     :maxdepth: 3
 
-    discover_and_manage_the_device.rst
-    control_device.rst
+    sdk_quick_start.rst
+    device_control.rst
 
