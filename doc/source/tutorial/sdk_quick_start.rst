@@ -51,4 +51,4 @@ Save it into ``connect_flux.py``, and run ``python3 connect_flux.py``, then you 
 
 More commands
 +++++++++
-Check this
+Kindly check references for `fluxclient.sdk.delta.Delta <API/Delta.html>`_.

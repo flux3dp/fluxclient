@@ -69,7 +69,7 @@ to assign value because it may has different definition in different version.
     :param callable conn_callback: A callback will be invoked while trying \
     connect to device
 
-    :rtype: fluxclient.robot.robot.FluxRobots
+    :rtype: fluxclient.robot.robot.FluxRobot
     """
     return FluxRobot(endpoint, client_key, device)
     # s = _connect(endpoint, conn_callback)
