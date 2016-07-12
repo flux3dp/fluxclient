@@ -2,7 +2,10 @@
 from select import select
 import struct
 
-from .errors import RobotError
+from .errors import RobotError, RobotSessionError
+from .aes_socket import AESSocket
+from .ssl_socket import SSLSocket
+from .backends import InitBackend
 
 
 class Camera(object):
@@ -10,8 +13,23 @@ class Camera(object):
     __buffer__ = b""
     __image_length__ = 0
 
-    def __init__(self, sock):
-        self.sock = sock
+    def __init__(self, endpoint, client_key, device=None, conn_callback=None):
+        self._device = device
+
+        init_backend = InitBackend(endpoint)
+        proto_ver = init_backend.do_handshake()
+
+        if proto_ver == 2:
+            self.sock = AESSocket(init_backend.sock, client_key=client_key,
+                                  device=device)
+        elif proto_ver == 3:
+            self.sock = SSLSocket(init_backend.sock, client_key=client_key,
+                                  device=device)
+        else:
+            raise RobotSessionError("Protocol not support")
+
+        while self.sock.do_handshake() > 0:
+            pass
 
     def fileno(self):
         return self.sock.fileno()

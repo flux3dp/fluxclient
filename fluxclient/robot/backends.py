@@ -1,6 +1,7 @@
 
 import logging
 import socket
+
 from .errors import RobotSessionError
 
 logger = logging.getLogger(__name__)
