@@ -1,8 +1,8 @@
-Robot
+FluxRobot
 ==================================================
 
 .. automodule:: fluxclient.robot
-   :members:
+..    :members:
 
 .. autoclass:: fluxclient.robot.robot.FluxRobot
    :members:

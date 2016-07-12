@@ -48,7 +48,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'fluxclient'
+project = 'FLUX SDK'
 copyright = '2016, FLUX Inc'
 author = 'FLUX Inc.'
 
@@ -114,6 +114,12 @@ todo_include_todos = False
 html_theme = "sphinx_rtd_theme"
 
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # overrides for wide tables in RTD theme
+        ],
+    }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -256,7 +262,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'fluxclient', 'FLUXClient Documentation',
+    (master_doc, 'fluxclient', 'FLUX Documentation',
      [author], 1)
 ]
 
@@ -270,7 +276,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'fluxclient', 'FLUXClient Documentation',
+    (master_doc, 'fluxclient', 'FLUX Documentation',
      author, 'fluxclient', 'One line description of project.',
      'Miscellaneous'),
 ]
