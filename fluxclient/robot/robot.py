@@ -38,6 +38,15 @@ def invalied_validator(fn):
 
 
 class FluxRobot(object):
+    """Make a connection to device robot service, backends will be selecte
+    automatically.
+
+    :param tuple endpoint: A tuple contain a pair of IP address and port to \
+connect. For example: ("192.168.1.1", 23811)
+    :param encrypt.KeyObject client_key: Client identify key
+    :param dict device: Device instance to assign value because it may has \
+different definition in different version.
+    """
     _device = None
     _backend = None
     _config_obj = None

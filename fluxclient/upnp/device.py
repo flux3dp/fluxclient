@@ -3,8 +3,9 @@ from uuid import UUID
 from time import time
 import warnings
 
-from fluxclient.encryptor import KeyObject
 from fluxclient.utils.version import StrictVersion
+from fluxclient.encryptor import KeyObject
+from fluxclient.robot import FluxCamera, FluxRobot
 
 __all__ = ["Device"]
 
@@ -162,18 +163,18 @@ to 1.0. Only vaild while running task (st_id > 0).
 
         :rtype: :class:`fluxclient.robot.robot.Robot`
         """
-        from fluxclient.robot import connect_robot
-        return connect_robot((self.ipaddr, port), client_key,
-                             device=self, **kw)
+        # TODO
+        kw.pop("conn_callback")
+        return FluxRobot((self.ipaddr, port), client_key, device=self, **kw)
 
     def connect_camera(self, client_key, port=23812, **kw):
         """Create a camera instance
 
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
-        from fluxclient.robot import connect_camera
-        return connect_camera((self.ipaddr, port), client_key, device=self,
-                              **kw)
+        # TODO
+        kw.pop("conn_callback")
+        return FluxCamera((self.ipaddr, port), client_key, device=self, **kw)
 
     def to_dict(self, serilize=False):
         """Create a new dictionay store divice information

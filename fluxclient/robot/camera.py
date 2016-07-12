@@ -8,12 +8,20 @@ from .ssl_socket import SSLSocket
 from .backends import InitBackend
 
 
-class Camera(object):
+class FluxCamera(object):
+    """Connect to camera service.
+
+    :param tuple endpoint: A tuple contain a pair of IP address and port to \
+connect. For example: ("192.168.1.1", 23812)
+    :param encrypt.KeyObject client_key: Client identify key
+    :param dict device: Device instance
+    """
+
     __running__ = False
     __buffer__ = b""
     __image_length__ = 0
 
-    def __init__(self, endpoint, client_key, device=None, conn_callback=None):
+    def __init__(self, endpoint, client_key, device=None):
         self._device = device
 
         init_backend = InitBackend(endpoint)
@@ -75,6 +83,3 @@ class Camera(object):
 
     def close(self):
         self.sock.close()
-
-
-FluxCamera = Camera

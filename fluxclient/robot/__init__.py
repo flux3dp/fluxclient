@@ -20,39 +20,10 @@ A simple example to connect and control a device::
     robot = device.connect_robot(client_key)
 
     # Case 2: Connect to robot direct
-    robot = connect_robot((metadata["ipaddr"], 23811), client_key)
+    robot = FluxRobot((metadata["ipaddr"], 23811), client_key)
 """
 
 from .robot import FluxRobot
 from .camera import FluxCamera
 
-
-def connect_camera(endpoint, client_key, device=None, conn_callback=None):
-    """Make a connection to device camera service, backends will be selecte
-    automatically.
-
-    :param tuple endpoint: A tuple contain a pair of IP address and port to \
-connect. For example: ("192.168.1.1", 23812)
-    :param encrypt.KeyObject client_key: Client identify key
-    :param dict device: Device instance
-    :param callable conn_callback: A callback will be invoked while trying \
-    connect to device
-    """
-    return FluxCamera(endpoint, client_key, device)
-
-
-def connect_robot(endpoint, client_key, device=None, conn_callback=None):
-    """Make a connection to device robot service, backends will be selecte
-    automatically.
-
-    :param tuple endpoint: A tuple contain a pair of IP address and port to \
-connect. For example: ("192.168.1.1", 23811)
-    :param encrypt.KeyObject client_key: Client identify key
-    :param dict device: Device instance
-to assign value because it may has different definition in different version.
-    :param callable conn_callback: A callback will be invoked while trying \
-    connect to device
-
-    :rtype: fluxclient.robot.robot.FluxRobot
-    """
-    return FluxRobot(endpoint, client_key, device)
+__all__ = ["FluxRobot", "FluxCamera"]

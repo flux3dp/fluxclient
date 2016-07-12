@@ -5,23 +5,20 @@
 
 """
 from io import BytesIO
-import struct
 import logging
-import sys
 from uuid import UUID
 import socket
 from time import sleep, time
-import queue
 import threading
 
 from msgpack import packb, unpackb, Unpacker
 from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
-from fluxclient.robot import connect_robot
 from fluxclient.encryptor import KeyObject
 from fluxclient.upnp.task import UpnpTask
 from fluxclient.commands.misc import get_or_create_default_key
+from fluxclient.robot import FluxRobot
 from fluxclient.sdk import *
 
 logger = logging.getLogger(__name__)
@@ -140,7 +137,7 @@ class Delta(object):
                     upnp_task.add_trust('sdk key', client_key.public_key_pem.decode())
                     logger.warning('[Warning]: adding new key into flux delta')
         if upnp_task.authorized:
-            robot = connect_robot((upnp_task.ipaddr, 23811), client_key)
+            robot = FluxRobot((upnp_task.ipaddr, 23811), client_key)
 
             st_id = robot.report_play()["st_id"]
             if st_id > 0:
