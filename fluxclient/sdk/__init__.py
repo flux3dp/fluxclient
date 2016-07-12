@@ -182,7 +182,7 @@ CMD_M104 = 0x60
 # (i:index, i:temperature)
 #
 # index: toolhead index, 0 or 1
-# temperature should positive
+# temperature should be positive
 # operation error raised if index out of range or temperature over limit
 
 CMD_M106 = 0x61
@@ -195,7 +195,7 @@ CMD_M106 = 0x61
 CMD_HLSR = 0x62
 # Toolhead pwm
 # (f:pwm)
-#
+# use for head laser
 # pwm is a value from 0.0 to 1.0
 
 CMD_REQH = 0xf1

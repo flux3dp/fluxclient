@@ -16,8 +16,6 @@ def check_platform():
         p = "Linux"
     elif p.startswith("Darwin"):
         p = "OSX"
-    else:
-        p = p
     return (p, platform.architecture()[0])
 
 __version__ = "0.9b4"
