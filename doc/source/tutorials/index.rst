@@ -1,9 +1,10 @@
-Tutorial
+Tutorials
 =====================
 
 .. toctree:: 
     :maxdepth: 3
 
-    sdk_quick_start.rst
+    a_quick_start.rst
     device_control.rst
 
+  

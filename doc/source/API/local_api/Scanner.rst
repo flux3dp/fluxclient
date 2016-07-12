@@ -1,9 +1,10 @@
-Printer
+Scanner
 ==================================================
 
-This is something I want to say that is not in the docstring.
+.. automodule:: fluxclient.scanner.pc_process
+   :members:
 
-.. automodule:: fluxclient.printer.stl_slicer
+.. automodule:: fluxclient.scanner.image_to_pc
    :members:
 
 .. sectionauthor:: Guido van Rossum <guido@python.org>

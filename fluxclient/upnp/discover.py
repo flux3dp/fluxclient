@@ -18,7 +18,7 @@ Basic usage example::
 
 In the example, `my_callback` will be called one a device is found or recive \
 a device status update. A callback contains two positional arguments, first \
-is `UpnpDiscover` instance and second is `Device` instance which it found or \
+is `UpnpDiscover` instance and second is :class:`fluxclient.upnp.device.Device` instance which it found or \
 been updated.
 """
 
@@ -53,7 +53,7 @@ class UpnpDiscover(object):
     want recive specified status continuously.
 
     :param uuid.UUID uuid: Discover specified uuid of device only
-    :param str device_ipaddr: Discover device from specified IP address only.
+    :param string device_ipaddr: Discover device from specified IP address only.
     """
 
     _break = True
