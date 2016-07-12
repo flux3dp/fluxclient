@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class UpnpTask(object):
-    """UpnpTask provide basic configuration method to device. When creating \
-UpnpTask instance, the argument **uuid** is required. If param \
-**device_metadata** not given, UpnpTask will use lookup_callback and \
-lookup_timeout to create a Discover instance and try to get metadata from \
+    """UpnpTask provides some configuration methods for the device. When creating \
+a UpnpTask instance, the argument **uuid** is required. If parameter \
+**device_metadata** is not given, UpnpTask will use lookup_callback and \
+lookup_timeout to create a UpnpDiscover instance and try to get metadata from \
 network.
 
     :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying to connect \
@@ -28,8 +28,8 @@ via ip address.
     :param encrypt.KeyObject client_key: Client key to connect to device.
     :param str ipaddr: IP Address of the machine.
     :param dict device_metadata: This is an internal parameter, which is not \
-recommended to assign svalue because it may has different definition in \
-different version.
+recommended to provide because it may has different definitions in \
+different versions.
     :param dict backend_options: More configuration for UpnpTask.
     :param callable lookup_callback: Invoke repeatedly while looking for device.
     :param float lookup_timeout: Raise an error if the program can not find the device in a limited time.
@@ -106,7 +106,7 @@ different version.
         raise NotSupportError(self.model_id, self.version)
 
     def close(self):
-        """Close upnp socket connection. After close(), any other method \
+        """Closes the upnp socket connection. After close(), any other method \
 should not be called anymore."""
 
         self._backend.close()
@@ -124,7 +124,7 @@ call `authorize_with_password` first to authorize."
         return self._backend.connected
 
     def authorize_with_password(self, password):
-        """Authorize via password, only use when the RSA key has not been trusted \
+        """Authorizes via password, only use when the RSA key has not been trusted \
 from device.
 
         :param str password: Device password"""
@@ -136,7 +136,7 @@ from device.
         self._backend.authorize_with_password(password)
 
     def add_trust(self, label, pem):
-        """Add client_key to device trust list
+        """Adds a client_key to device trust list
 
         :param str label: Key label will show for human only
         :param str pem: A vaild RSA key pem
@@ -146,21 +146,21 @@ from device.
         self._backend.add_trust(label, pem)
 
     def list_trust(self):
-        """Get all trusted key in device
+        """Gets all trusted key in the device
 
         :return: ((label, key hash), (label, key hash), ...)"""
 
         return self._backend.list_trust()
 
     def remove_trust(self, access_id):
-        """Remove trusted key
+        """Removes a trusted key
 
         :param str access_id: Key hash which will be removed"""
 
         return self._backend.remove_trust(access_id)
 
     def rename(self, new_name):
-        """Rename device
+        """Renames the device
 
         :param str new_name: New device name"""
 
@@ -171,7 +171,7 @@ from device.
         self._backend.rename(new_name)
 
     def modify_password(self, old_password, new_password, reset_acl=True):
-        """Change device password, if **reset_acl** set to True, all other \
+        """Changes the device password, if **reset_acl** set to True, all other \
 authorized user will be deauthorized.
 
         :param str old_password: Old device password
@@ -185,7 +185,7 @@ authorized user will be deauthorized.
         self._backend.modify_password(old_password, new_password, reset_acl)
 
     def modify_network(self, **settings):
-        """Mofify device modify_network, look document for more help"""
+        """Modifies the device network, details will be revealed in future documentation."""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")
@@ -194,7 +194,7 @@ authorized user will be deauthorized.
         self._backend.modify_network(**settings)
 
     def get_wifi_list(self):
-        """Get wifi list discovered from device"""
+        """Gets wifi lists discovered from the device"""
 
         if not self._backend.connected:
             raise UpnpError("Disconnected")

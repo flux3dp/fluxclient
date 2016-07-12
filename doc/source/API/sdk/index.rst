@@ -3,7 +3,6 @@ SDK
 ==================================================
 
 .. toctree:: 
-    :numbered:
     :maxdepth: 2
     
     Delta.rst

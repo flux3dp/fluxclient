@@ -1,26 +1,17 @@
 
-"""`fluxclient.robot` provide interface to control a FLUX device.
+"""`fluxclient.robot` provides an interface to control a FLUX device.
 
-A simple example to connect and control a device::
+An example to connect and control a device::
 
     from fluxclient.encrypt import KeyObject
     from fluxclient.robot import connect_robot
-    from fluxclient.upnp import discover_device
-    from uuid import UUID
+    from fluxclient.commands.misc import get_or_create_default_key
 
-    # Get device uuid
-    uuid = UUID(hex="123345789abcdef123456789abcdef00")
+    client_key = get_or_create_default_key("./sdk_connection.pem")
+    robot = connect_robot(("192.168.1.5", 23811), client_key)
 
-    # Load client key
-    with open("mykey.pem", "r") as f:
-        client_key = KeyObject.load_keyobj(f.read())
+.. note:: You might want to check `this link </tutorials/device_control.html>`_ for details.
 
-    # Case 1: Get device from uuid
-    device = discover_device(uuid)
-    robot = device.connect_robot(client_key)
-
-    # Case 2: Connect to robot direct
-    robot = connect_robot((metadata["ipaddr"], 23811), client_key)
 """
 
 from time import time, sleep

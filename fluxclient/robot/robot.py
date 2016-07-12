@@ -38,7 +38,7 @@ def invalied_validator(fn):
 
 
 class FluxRobot(object):
-    """A `FluxRobot` object represents a live connection with the FLUX Device."""
+    """A `FluxRobot` object represents a live connection with a FLUX device."""
 
     _device = None
     _backend = None
@@ -76,7 +76,7 @@ the name of the file or folder.
 
     @blocked_validator
     def file_info(self, path):
-        """Get fcode information from specific file path.
+        """Gets fcode information from specific file path.
 
     :param str path: File path on the device
     :return: [ \
@@ -90,7 +90,7 @@ the name of the file or folder.
 
     @blocked_validator
     def file_md5(self, path):
-        """Get file md5 on device.
+        """Gets file md5 on the device.
 
     :param str path: File path on the device
     :return: MD5 hex
@@ -99,14 +99,14 @@ the name of the file or folder.
 
     @blocked_validator
     def mkdir(self, path):
-        """Create folder on the device storage.
+        """Creates a folder on the device storage.
 
     :param str path: Path to be created"""
         return self._backend.mkdir(path)
 
     @blocked_validator
     def rmdir(self, path):
-        """Remove folder on the device storage.
+        """Removes folder on the device storage.
 
     :param str path: Path to be removed"""
         return self._backend.rmdir(path)

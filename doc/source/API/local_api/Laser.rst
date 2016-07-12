@@ -1,8 +1,6 @@
 Laser
 ==================================================
 
-This is something I want to say that is not in the docstring.
-
 .. automodule:: fluxclient.laser.laser_base
    :members:
 

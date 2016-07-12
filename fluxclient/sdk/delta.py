@@ -36,11 +36,11 @@ def type_check(instance, type_candidates, err_msg=''):
 
 class Delta(object):
     """
-      Delta is an instance that present SDK mode, which allows you to control machine motion directly.
+      Delta is an instance that presents the device in SDK mode, which allows users to control motions of the machine freely.
     """
     def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
         """
-            Initialize  Delta instance 
+            Creates a Delta ( SDK task ) instance 
 
             :param str wrapped_socket: Wrapped sockets
             :param callback exit_callback: Callback when exited
@@ -91,7 +91,7 @@ class Delta(object):
     @classmethod
     def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         """
-            Initialize  Delta instance 
+            Creates a Delta instance 
             
             :param str uuid: Device's UUID, optional
             :param str ip: Device's IP, optional
@@ -175,7 +175,7 @@ class Delta(object):
 
     def atomic_status(self, new_staus=None):
         """
-        Return the index, queue_left of commands buffer
+        Returns the index, queue_left of commands buffer
         """
         self.lock.acquire()
         if new_staus:
@@ -187,7 +187,7 @@ class Delta(object):
 
     def get_result(self, index, wait=True):
         """
-        Acquire the result of certain index from Delta
+        Acquires the result of certain index from Delta
         """
         self.lock.acquire()
         if len(self.command_output) < index:
@@ -339,7 +339,7 @@ class Delta(object):
         (0.0, 0.0, 280.0)
         >>> f.move(50, 40, 30)
         (50.0, 40.0, 30.0)
-        >>> f.move(x=80)  # only set the coordinate you want
+        >>> f.move(x=80)  # only sets the coordinate you want
         (80.0, 40.0, 30.0)
         >>> f.move(x=-10, relative=True)  # using relative flag
         (70.0, 40.0, 30.0)
@@ -411,7 +411,7 @@ class Delta(object):
 
     def move_motor(self, e0=None, e1=None, e2=None):
         """
-        Moves the motors
+        Moves stepper motors
 
         :param float e0: length to move, optional
         :param float e1: length to move, optional
@@ -425,7 +425,7 @@ class Delta(object):
 
     def lock_motor(self):
         """
-        Lock all motor.
+        Locks all motor.
 
         >>> f.lock_motor('XYZ')
 
@@ -438,7 +438,7 @@ class Delta(object):
 
     def release_motor(self):
         """
-        Release all motor.
+        Releases all motor.
 
         .. note::
 
@@ -457,7 +457,7 @@ class Delta(object):
 
     def get_position_laser(self, laser):
         """
-        Find out whether the laser is on
+        Finds out whether the laser is on
 
         :param str laser: Which laser, should be ``"L"`` or ``"R"``
         :raises ValueError: if the laser parameter is not ``"L"`` or ``"R"``
@@ -477,7 +477,7 @@ class Delta(object):
 
     def turn_laser(self, laser, on):
         """
-        Control the red laser on machine
+        Controls the scanning laser
 
         :param str laser: Which laser, should be ``"L"`` or ``"R"``
         :param bool on: turn *on* or *off* the laser
@@ -515,7 +515,7 @@ class Delta(object):
 
     def get_image(self):
         """
-        Take a picture with Delta's built in camera
+        Takes a picture with Delta's built in camera
 
         :return: a image object
         :rtype: PIL.Image.Image
@@ -540,7 +540,7 @@ class Delta(object):
 
     def disable_motor(self, motor):
         """
-        Enable motor control
+        Enables motor control
 
         :param str motor: Which motor to disable, should be one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
         :raises TypeError: motor is not str
@@ -625,7 +625,7 @@ class Delta(object):
 
     def set_temp(self, temp):
         """
-        Set the temperature of print head
+        Sets the temperature of print head
 
         :param number power: The power of print head, should be within [0.0, 200.0]
         :raises TypeError: if temp is not a number
@@ -647,7 +647,7 @@ class Delta(object):
 
     def set_fan(self, speed, toolhead_index):
         """
-        Set the speed of toolhead's fan
+        Sets the speed of toolhead's fan
 
         :param number speed: The power of laser head, should be within [0.0, 1.0]
         :raises TypeError: if speed is not a number
@@ -671,7 +671,7 @@ class Delta(object):
 
     def set_power(self, power):
         """
-        Set the power of laser toolhead
+        Sets the power of laser toolhead
 
         :param number power: The power of laser head, should be within [0.0, 1.0]
         :raises TypeError: if power is not a number

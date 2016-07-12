@@ -31,7 +31,7 @@ DEVICE_STATUS_CODE = {
 
 
 class Device(object):
-    """A `Device` object is an instance stores device information found from :class:`flux.upnp.UpnpDiscover`"""
+    """A `Device` object is an instance stores device information found from :class:`fluxclient.upnp.UpnpDiscover`"""
 
     # Device information
     #   Basic Identify
@@ -99,22 +99,22 @@ class Device(object):
 
     @property
     def uuid(self):
-        """Device unique identify"""
+        """Unique identification key of the device"""
         return self._uuid
 
     @property
     def serial(self):
-        """Device serial"""
+        """Serial number of the device"""
         return self._serial
 
     @property
     def master_key(self):
-        """Device identify key"""
+        """Master identification key of the device"""
         return self._master_key
 
     @property
     def discover_protocol_version(self):
-        """Device discover protocol version"""
+        """Discovering protocol version of the device"""
         return self._disc_ver
 
     def update_status(self, **kw):
@@ -123,7 +123,7 @@ class Device(object):
 
     @property
     def status(self):
-        """Device current status.
+        """Returns the current status of the device.
 
         :ivar int st_id: Device status in integer.
         :ivar int st_label: Device status in str.
@@ -148,7 +148,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         }
 
     def manage_device(self, client_key, **kw):
-        """Create a device management sesssion.
+        """Creates a device management sesssion.
 
         :rtype: :class:`fluxclient.upnp.task.UpnpTask`
         """
@@ -158,7 +158,7 @@ to 1.0. Only vaild while running task (st_id > 0).
                         device_metadata=self.to_old_dict(), **kw)
 
     def connect_robot(self, client_key, port=23811, **kw):
-        """Create a robot instance
+        """Creates a robot connection
 
         :rtype: :class:`fluxclient.robot.robot.Robot`
         """
@@ -167,7 +167,7 @@ to 1.0. Only vaild while running task (st_id > 0).
                              device=self, **kw)
 
     def connect_camera(self, client_key, port=23812, **kw):
-        """Create a camera instance
+        """Creates a camera connection
 
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
@@ -176,7 +176,7 @@ to 1.0. Only vaild while running task (st_id > 0).
                               **kw)
 
     def to_dict(self, serialized=False):
-        """Create a new dictionay store divice information
+        """Creates a new dictionay store device information
 
         :param bool serialized: Return a json serializeable dict if serialized is \
 True. It is useful if you want to pass flux device information over file, \
