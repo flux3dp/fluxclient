@@ -88,6 +88,10 @@ class Delta(object):
             sleep(1)
             self.connected = False
 
+    @property
+    def head_type(self):
+        return self.head_status[3].get(b'module', b'N/A')
+
     @classmethod
     def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         """
@@ -234,8 +238,7 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-                print('payload', payload)
-                # print('payload', payload, 'recv_until', recv_until, self.command_output)
+                # print('payload', payload)
                 if payload[0] == 0:
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
                         # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
@@ -572,39 +575,38 @@ class Delta(object):
             else:
                 raise TypeError("Wrong motor type: {}".format(type(motor)))
 
-    def get_head_info(self):
+    def get_head_profile(self):
         """
         Get the basic toolhead info(immutable data).
 
         :return: dict consist of toolhead's basic information
         :rtype: dict
 
-        >>> f.get_headinfo()  # no tool head connected
+        >>> f.get_head_profile()  # no tool head connected
         {"module": "N/A"}
 
-        >>> f.get_headinfo()  # print head
+        >>> f.get_head_profile()  # print head
         {"version": "1.0.8", "module": "EXTRUDER", "id": "203236325346430100240001", "vendor": "FLUX .inc"}
 
-        >>> f.get_headinfo()  # laser head
+        >>> f.get_head_profile()  # laser head
         {"version": "1.0.3", "module": "LASER", "id":"203236325346430100260004", "vendor": "FLUX .inc"}
 
 
         .. note::
 
-            For current toolhead status use :meth:`get_headstatus`
+            For current toolhead status use :meth:`get_head_status`
 
         """
-        sleep(5)
-        ret = self.send_command([CMD_THST])
-        print(ret)
-        ret = ret[1]
-        ret = self.send_command([CMD_THPF])
-        print(ret)
+        def post_process(ret):
+            return {i.decode(): ret[1][i].decode() for i in ret[1]}
 
-        # CMD_THST
-        # t = self.robot.maintain_headinfo()
-        # copy dict
-        pass
+        self.send_command([CMD_THPF])
+        command_index = self.send_command([CMD_THPF], recv_callback=post_process)
+        ret = self.get_result(command_index, wait=True)
+        if self.blocking_flag:
+            return command_index, ret
+        else:
+            return command_index, None
 
     def get_head_status(self):
         """
@@ -613,15 +615,27 @@ class Delta(object):
         :return: dict consist of toolhead's currrent information
         :rtype: dict
 
-        >>> flux.get_headstatus()
-        {"real temp": [24.8], "target_fan": [0.0], "tt":[nan]}
+        >>> flux.get_head_status()
+        {"real temp": [24.8], "target fan": [0.0], "target temp":[nan]}
 
         .. note::
 
-            For basic toolhead information use :meth:`get_headinfo`
+            For basic toolhead information use :meth:`get_head_profile`
 
         """
-        pass
+        ret = {}
+        for i in self.head_status[3]:
+            if type(self.head_status[3][i]) == bytes:
+                ret[i.decode()] = self.head_status[3][i].decode()
+            else:
+                ret[i.decode()] = self.head_status[3][i]
+        if self.head_type == b"EXTRUDER":
+            ret["real temp"] = ret.pop('rt')
+            ret["target temp"] = ret.pop('tt')
+            ret["target fan"] = ret.pop('tf')
+
+        print('self.head_status', self.head_status)
+        return ret
 
     def set_temp(self, temp, index=0):
         """
@@ -634,7 +648,7 @@ class Delta(object):
 
         >>> f.set_temp(200)
         """
-        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":  # TODO
+        if self.head_type == b"EXTRUDER":
             if isinstance(temp, (int, float)):
                 if temp <= 200.0 and temp >= 0.0:
                     self.send_command([CMD_M104, index, int(temp)])
@@ -643,7 +657,7 @@ class Delta(object):
             else:
                 raise TypeError("unsupported temp type: {}".format(type(temp)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
+            raise RuntimeError("Head error: {}".format(self.head_type))
 
     def set_fan(self, speed, toolhead_index=0):
         """
@@ -656,7 +670,7 @@ class Delta(object):
 
         >>> f.set_fan(0.5)
         """
-        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":
+        if self.head_type == b"EXTRUDER":
             if isinstance(speed, (int, float)):
                 speed = float(speed)
                 if speed <= 1.0 and speed >= 0.0:
@@ -667,7 +681,7 @@ class Delta(object):
             else:
                 raise TypeError("unsupported speed type: {}".format(type(speed)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
+            raise RuntimeError("Head error: {}".format(self.head_type))
 
     def set_power(self, power):
         """
@@ -680,7 +694,7 @@ class Delta(object):
 
         >>> f.set_power(0.5)
         """
-        if self.head_status[3].get(b'module', b'N/A') == b"LASER":  # TODO
+        if self.head_type == b"LASER":  # TODO
             if isinstance(power, (int, float)):
                 if power <= 1.0 and power >= 0.0:
                     self.send_command([CMD_HLSR, power])
@@ -691,11 +705,11 @@ class Delta(object):
         else:
             ret = self.set_head("LASER")
             if not ret:
-                raise RuntimeError("Head error: {}".format(self.head_status[3].get(b'module', b'N/A')))
+                raise RuntimeError("Head error: {}".format(self.head_type))
 
     def set_head(self, head_type):
         if head_type in ['EXTRUDER', 'LASER', 'N/A']:
-            self.send_command([CMD_REQH, 'EXTRUDER'], False)
+            self.send_command([CMD_REQH, head_type], False)
             self.send_command([CMD_BSTH])
         time_s = time()
         while True:
@@ -717,12 +731,13 @@ if __name__ == '__main__':
     f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
     # f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
-    # f.get_head_info()
+    # f.get_head_profile()
 
     # print('----------------------------------------------------------------------->', f.home())
-    print(f.set_head('EXTRUDER'))
-    print('slepping')
-    sleep(10)
+    print(f.set_head('LASER'))
+    print(f.get_head_status())
+    # print('slepping')
+    # sleep(10)
     # print(f.set_fan(-1))
     # print(f.set_fan(1))
     print('slepping')
@@ -732,7 +747,7 @@ if __name__ == '__main__':
     # print(f.home())
 
     # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
-    # # f.get_head_info()
+    # # f.get_head_profile()
     # print('----------------------------------------------------------------------->', f.move(0, 0, 100))
     # # sleep(1)
     # print(f.turn_laser('L', True))
