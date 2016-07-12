@@ -656,14 +656,14 @@ class Delta(object):
 
         >>> f.set_fan(0.5)
         """
-        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":  # TODO
+        if self.head_status[3].get(b'module', b'N/A') == b"EXTRUDER":
             if isinstance(speed, (int, float)):
                 speed = float(speed)
                 if speed <= 1.0 and speed >= 0.0:
-                    self.send_command([CMD_M106, speed])
-                    pass  # TODO
+                    print('speed', speed)
+                    self.send_command([CMD_M106, toolhead_index, speed])
                 else:
-                    raise ValueError("Invalid fan speed")
+                    raise ValueError("Invalid fan speed:{}, should be in [0.0, 1.0]".format(speed))
             else:
                 raise TypeError("unsupported speed type: {}".format(type(speed)))
         else:
@@ -721,7 +721,10 @@ if __name__ == '__main__':
 
     # print('----------------------------------------------------------------------->', f.home())
     print(f.set_head('EXTRUDER'))
-    print(f.set_fan(0.5))
+    print('slepping')
+    sleep(10)
+    # print(f.set_fan(-1))
+    # print(f.set_fan(1))
     print('slepping')
     sleep(10)
 
@@ -736,8 +739,6 @@ if __name__ == '__main__':
     # # sleep(1)
     # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
 
-    # sleep(1)
     # print(f.turn_laser('L', False))
     # f.release_motor()
-    # print(f.set_fan(-1))
     f.close()
