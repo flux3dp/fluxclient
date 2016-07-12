@@ -175,7 +175,7 @@ class Delta(object):
 
     def atomic_status(self, new_staus=None):
         """
-        return index, queue_left
+        Return the index, queue_left of commands buffer
         """
         self.lock.acquire()
         if new_staus:
@@ -187,7 +187,7 @@ class Delta(object):
 
     def get_result(self, index, wait=True):
         """
-        acquire result of certain index from delta
+        Acquire the result of certain index from Delta
         """
         self.lock.acquire()
         if len(self.command_output) < index:
@@ -222,7 +222,7 @@ class Delta(object):
 
     def delta_status(self):
         """
-        loop thread function that collect and update delta's status and command's output
+        Loop thread function that collects and updates delta's status and command's output
         """
         recv_until = -1
         # udp_index = 0
@@ -278,7 +278,7 @@ class Delta(object):
 
     def get_position(self):
         """
-        Get the current position of toolhead
+        Gets the current position of toolhead
 
         :return: coordinate of each tower
         :rtype: (float, float, float)
@@ -290,7 +290,7 @@ class Delta(object):
 
     def home(self):
         """
-        Set each axis back to home.
+        Sets each axis back to home.
 
         :return: the coordinate where the toolhead originally is
         :rtype: (float, float, float)
@@ -393,7 +393,7 @@ class Delta(object):
 
     def get_position_motor(self, motor):
         """
-        Get the current position of specified motor
+        Gets the current position of specified motor
 
         :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2"``
         :return: the current position of specified motor
@@ -411,7 +411,7 @@ class Delta(object):
 
     def move_motor(self, e0=None, e1=None, e2=None):
         """
-        Move the motors
+        Moves the motors
 
         :param float e0: length to move, optional
         :param float e1: length to move, optional
@@ -442,7 +442,7 @@ class Delta(object):
 
         .. note::
 
-            If you ever released motor , You have to :meth:`home` before calling :meth:`move` them.
+            If you ever released stepper motors, You have to :meth:`home` before calling :meth:`move` them.
 
         >>> f.release_motor()
 
@@ -557,7 +557,7 @@ class Delta(object):
 
     def enable_motor(self, motor):
         """
-        Disable a motor
+        Disables a motor
 
         :param str motor: Which motor to enable, should be one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
         :raises TypeError: motor is not str
@@ -574,7 +574,7 @@ class Delta(object):
 
     def get_head_info(self):
         """
-        Get the basic toolhead info(immutable data).
+        Gets the basic toolhead info(immutable data).
 
         :return: dict consist of toolhead's basic information
         :rtype: dict
@@ -608,7 +608,7 @@ class Delta(object):
 
     def get_head_status(self):
         """
-        Get the current toolhead status(mutable data).
+        Gets the current toolhead status(mutable data).
 
         :return: dict consist of toolhead's currrent information
         :rtype: dict

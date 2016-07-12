@@ -23,19 +23,18 @@ UpnpTask instance, the argument **uuid** is required. If param \
 lookup_timeout to create a Discover instance and try to get metadata from \
 network.
 
-    :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying connect \
+    :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying to connect \
 via ip address.
     :param encrypt.KeyObject client_key: Client key to connect to device.
-    :param str ipaddr: IP Address to connect to.
-    :param dict device_metadata: This is an internal param, it is not \
-recommend to assign value because it may has different definition in \
+    :param str ipaddr: IP Address of the machine.
+    :param dict device_metadata: This is an internal parameter, which is not \
+recommended to assign svalue because it may has different definition in \
 different version.
     :param dict backend_options: More configuration for UpnpTask.
-    :param callable lookup_callback: Invoke repeated while finding device.
-    :param float lookup_timeout: Raise error if device can not be found after \
-timeout value.
+    :param callable lookup_callback: Invoke repeatedly while looking for device.
+    :param float lookup_timeout: Raise an error if the program can not find the device in a limited time.
     :raises UpnpError: For protocol or operation error.
-    :raises socket.error: For socket error.
+    :raises socket.error: For system defined socket error.
     """
 
     name = None
@@ -114,18 +113,18 @@ should not be called anymore."""
 
     @property
     def authorized(self):
-        "Is connection authorized. If connection not authorized, it must \
-call `authorize_with_password` first to complete authorize."
+        "Indicates whether the connection has been authorized with a correct password or RSA key. If the connection is not authorized, you must \
+call `authorize_with_password` first to authorize."
 
         return self._backend.authorized
 
     @property
     def connected(self):
-        """Return True if Upnp is connected with device"""
+        """Indicates whether the upnp connection is connected with the device"""
         return self._backend.connected
 
     def authorize_with_password(self, password):
-        """Authorize via password, only use when RSA key is not been trusted \
+        """Authorize via password, only use when the RSA key has not been trusted \
 from device.
 
         :param str password: Device password"""
@@ -140,7 +139,7 @@ from device.
         """Add client_key to device trust list
 
         :param str label: Key label will show for human only
-        :param str pem: A vailed RSA key pem
+        :param str pem: A vaild RSA key pem
         :return: Key hash
         :rtype: str"""
 

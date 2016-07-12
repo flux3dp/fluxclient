@@ -31,7 +31,7 @@ DEVICE_STATUS_CODE = {
 
 
 class Device(object):
-    """Device is instance store device information found from UpnpDiscover"""
+    """A `Device` object is an instance stores device information found from :class:`flux.upnp.UpnpDiscover`"""
 
     # Device information
     #   Basic Identify
@@ -175,22 +175,22 @@ to 1.0. Only vaild while running task (st_id > 0).
         return connect_camera((self.ipaddr, port), client_key, device=self,
                               **kw)
 
-    def to_dict(self, serilize=False):
+    def to_dict(self, serialized=False):
         """Create a new dictionay store divice information
 
-        :param bool serilize: Return a json serializeable dict if serilize is \
+        :param bool serialized: Return a json serializeable dict if serialized is \
 True. It is useful if you want to pass flux device information over file, \
 socket or other serial devices"""
 
         return {
-            "uuid": str(self._uuid) if serilize else self._uuid,
+            "uuid": str(self._uuid) if serialized else self._uuid,
             "discover_version": self._disc_ver,
             "name": self.name,
             "model_id": self.model_id,
-            "version": str(self.version) if serilize else self.version,
+            "version": str(self.version) if serialized else self.version,
             "serial": self.serial,
             "master_key": (self.master_key.public_key_pem.decode()
-                           if self.master_key and serilize
+                           if self.master_key and serialized
                            else self.master_key),
 
             "ipaddr": self.ipaddr,
@@ -200,7 +200,7 @@ socket or other serial devices"""
                 "has_password": self.has_password,
                 "slave_timestemp": self.slave_timestemp,
                 "slave_key": (self.slave_key.public_key_pem.decode()
-                              if self.slave_key and serilize
+                              if self.slave_key and serialized
                               else self.slave_key),
                 "timestemp": self.timestemp,
                 "timedelta": self.timedelta

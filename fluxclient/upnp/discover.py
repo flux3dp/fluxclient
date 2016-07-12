@@ -103,18 +103,18 @@ class UpnpDiscover(object):
 
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
-        Call this method to execute discover task. The callback function has \
-minimum define::
+        Call this method to execute discovering task. The callback function has a \
+minimal definition::
 
             def callback(upnp_discover_instance, device, **kw):
                 pass
 
-        * `upnp_discover_instance` is the instance who calls this method.
+        * `upnp_discover_instance` is the instance which calls this method.
         * `device` a `fluxclient.upnp.Device` instance
 
         :param callable callback: This method will be invoked when a device \
-has been found or recive new status from device.
-        :param float timeout: The method will return when when timeout.
+has been found or the computer recived a new status from a device.
+        :param float timeout: Maximum waiting time.
         """
 
         self._break = False
@@ -134,8 +134,8 @@ has been found or recive new status from device.
     def stop(self):
         """Invoke this function to break discover task
 
-        .. note:: Note: discover method will still invoke callback even user \
-already call this method because data already in local socket buffer."""
+        .. note:: Discover method may still invoke a callback even if user \
+        called this method, because the data already in local socket buffer."""
 
         self._break = True
 
