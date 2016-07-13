@@ -32,7 +32,7 @@ DEVICE_STATUS_CODE = {
 
 
 class Device(object):
-    """Device is instance store device information found from UpnpDiscover"""
+    """A `Device` object is an instance stores device information found from :class:`fluxclient.upnp.UpnpDiscover`"""
 
     # Device information
     #   Basic Identify
@@ -100,22 +100,22 @@ class Device(object):
 
     @property
     def uuid(self):
-        """Device unique identify"""
+        """Unique identification key of the device"""
         return self._uuid
 
     @property
     def serial(self):
-        """Device serial"""
+        """Serial number of the device"""
         return self._serial
 
     @property
     def master_key(self):
-        """Device identify key"""
+        """Master identification key of the device"""
         return self._master_key
 
     @property
     def discover_protocol_version(self):
-        """Device discover protocol version"""
+        """Discovering protocol version of the device"""
         return self._disc_ver
 
     def update_status(self, **kw):
@@ -124,7 +124,7 @@ class Device(object):
 
     @property
     def status(self):
-        """Device current status.
+        """Returns the current status of the device.
 
         :ivar int st_id: Device status in integer.
         :ivar int st_label: Device status in str.
@@ -149,7 +149,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         }
 
     def manage_device(self, client_key, **kw):
-        """Create a device management sesssion.
+        """Creates a device management sesssion.
 
         :rtype: :class:`fluxclient.upnp.task.UpnpTask`
         """
@@ -159,7 +159,7 @@ to 1.0. Only vaild while running task (st_id > 0).
                         device_metadata=self.to_old_dict(), **kw)
 
     def connect_robot(self, client_key, port=23811, **kw):
-        """Create a robot instance
+        """Creates a robot connection
 
         :rtype: :class:`fluxclient.robot.robot.Robot`
         """
@@ -168,7 +168,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         return FluxRobot((self.ipaddr, port), client_key, device=self, **kw)
 
     def connect_camera(self, client_key, port=23812, **kw):
-        """Create a camera instance
+        """Creates a camera connection
 
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
@@ -176,22 +176,22 @@ to 1.0. Only vaild while running task (st_id > 0).
         kw.pop("conn_callback")
         return FluxCamera((self.ipaddr, port), client_key, device=self, **kw)
 
-    def to_dict(self, serilize=False):
-        """Create a new dictionay store divice information
+    def to_dict(self, serialized=False):
+        """Creates a new dictionay store device information
 
-        :param bool serilize: Return a json serializeable dict if serilize is \
+        :param bool serialized: Return a json serializeable dict if serialized is \
 True. It is useful if you want to pass flux device information over file, \
 socket or other serial devices"""
 
         return {
-            "uuid": str(self._uuid) if serilize else self._uuid,
+            "uuid": str(self._uuid) if serialized else self._uuid,
             "discover_version": self._disc_ver,
             "name": self.name,
             "model_id": self.model_id,
-            "version": str(self.version) if serilize else self.version,
+            "version": str(self.version) if serialized else self.version,
             "serial": self.serial,
             "master_key": (self.master_key.public_key_pem.decode()
-                           if self.master_key and serilize
+                           if self.master_key and serialized
                            else self.master_key),
 
             "ipaddr": self.ipaddr,
@@ -201,7 +201,7 @@ socket or other serial devices"""
                 "has_password": self.has_password,
                 "slave_timestemp": self.slave_timestemp,
                 "slave_key": (self.slave_key.public_key_pem.decode()
-                              if self.slave_key and serilize
+                              if self.slave_key and serialized
                               else self.slave_key),
                 "timestemp": self.timestemp,
                 "timedelta": self.timedelta

@@ -1,7 +1,7 @@
-Creating a Device Instance
+UpnpDiscover
 =================
 
-.. automodule:: fluxclient.upnp.device
+.. autoclass:: fluxclient.upnp.UpnpDiscover
    :members:
 
 .. sectionauthor:: Cerberus Yagami <cerberus@flux3dp.com>

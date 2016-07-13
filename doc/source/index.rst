@@ -3,20 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-FLUXClient Documentation
+FLUX SDK Documentation
 ==========================
 
-FLUXClient is all you needed to do cool projects and develop new features with your `FLUX Delta <http://flux3dp.com>`_. It provides APIs to control your machine in every possible way.
-
-Contents:
+`FLUX Delta <http://flux3dp.com>`_ is a modularized digital crafting tool. With the SDK Toolset, users are able to control it programmatically. The SDK is still in the early beta. Any advice would be appreciated, and your're invited to join our `online community <http://forum.flux3dp.com/>`_. 
 
 .. toctree:: 
     :numbered:
     :maxdepth: 4
 
     installation/index.rst
-    tutorial/index.rst
-    API/Document.rst
+    tutorials/index.rst
+    API/Documentation.rst
+    examples/index.rst
 
 
 Indices and tables

@@ -1,8 +1,10 @@
 Installation
 ==============
+`FLUXClient <https://github.com/flux3dp/fluxclient>`_ is the only library you needed to do cool projects and develop new features with your `FLUX Delta <http://flux3dp.com>`_. It provides APIs to control your machine in every possible way. 
+
+Here's how you install it:
 
 .. TODO: Install cython, setup.py install
-
 
 OS X or Linux
 ------------------------------
