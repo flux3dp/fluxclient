@@ -24,6 +24,7 @@ def serve_forever(options, camera, metadata={}):
             f.write(imagebuf)
             print(">> %s" % filename, file=sys.stderr)
 
+    camera.enable_streaming()
     camera.capture(callback)
 
 

@@ -3,7 +3,6 @@ from select import select
 import struct
 
 from .errors import RobotError, RobotSessionError
-from .aes_socket import AESSocket
 from .ssl_socket import SSLSocket
 from .backends import InitBackend
 
@@ -27,10 +26,7 @@ connect. For example: ("192.168.1.1", 23812)
         init_backend = InitBackend(endpoint)
         proto_ver = init_backend.do_handshake()
 
-        if proto_ver == 2:
-            self.sock = AESSocket(init_backend.sock, client_key=client_key,
-                                  device=device)
-        elif proto_ver == 3:
+        if proto_ver == 3:
             self.sock = SSLSocket(init_backend.sock, client_key=client_key,
                                   device=device)
         else:
@@ -38,6 +34,15 @@ connect. For example: ("192.168.1.1", 23812)
 
         while self.sock.do_handshake() > 0:
             pass
+
+    def enable_streaming(self):
+        self.sock.send(struct.pack("<H2s", 4, b"s+"))
+
+    def disable_streaming(self):
+        self.sock.send(struct.pack("<H2s", 4, b"s-"))
+
+    def requrest_frame(self):
+        self.sock.send(struct.pack("<H1s", 3, b"f"))
 
     def fileno(self):
         return self.sock.fileno()
