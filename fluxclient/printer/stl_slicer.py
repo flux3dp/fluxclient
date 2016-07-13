@@ -83,12 +83,17 @@ class StlSlicer(object):
         """
         upload a model's data in stl as bytes data
         """
-        if buf_type == 'stl':
-            self.models[name] = self.read_stl(buf)
-        elif buf_type == 'obj':
-            self.models[name] = self.read_obj(buf)
+        try:
+            if buf_type == 'stl':
+                self.models[name] = self.read_stl(buf)
+            elif buf_type == 'obj':
+                self.models[name] = self.read_obj(buf)
+            else:
+                raise('uknow file type')
+        except:
+            return False
         else:
-            raise('uknow file type')
+            return True
 
     def duplicate(self, name_in, name_out):
         """
