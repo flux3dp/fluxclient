@@ -135,6 +135,12 @@ MSG_UNKNOWN_ERROR = 0xff
 #           == -1: Not ready
 #            == 0: Ready
 #             > 0: Follow toolhead error table
+#               ER:16 SHAKE
+#               ER:32 TILT
+#               ER:64 HARDWARE_ERROR
+#               ER:128 FAN_FAILURE
+#               ER:256 LASER_DOWN
+#               ER:512 HEATER_FAILURE
 
 
 CMD_THPF = 0x51

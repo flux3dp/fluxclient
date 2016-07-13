@@ -75,11 +75,7 @@ class Delta(object):
             sleep(1)
 
             self._command_index += 1
-            # self.control_sock.send(packb((self._command_index, CMD_QUIT)))  # TODO: make sure it's quited
-
-            def kk(r):
-                print('r', r)
-            self.send_command([CMD_QUIT], kk)
+            self.send_command([CMD_QUIT])
             if self.exit_callback:
                 self.exit_callback()
             sleep(1)
@@ -103,8 +99,6 @@ class Delta(object):
         if client_key:
             if type(client_key) == str:
                 client_key = get_or_create_default_key(client_key)
-            # elif type(client_key) == KeyObject:
-            #     pass
             else:
                 type_check(client_key, (str, KeyObject), 'client_key')
         else:
@@ -130,7 +124,6 @@ class Delta(object):
         upnp_task = UpnpTask(**options)
 
         if not upnp_task.authorized:
-            # password = 'a'
             if password:
                 upnp_task.authorize_with_password(password)
                 if upnp_task.authorized:
@@ -156,8 +149,6 @@ class Delta(object):
             m_delta = robot.icontrol()  # retuen a Delta object
             m_delta.blocking_flag = blocking
             return m_delta
-
-            # assert ret == b"ok", ret
         else:
             raise RuntimeError("cannot connect to flux delta")
 
@@ -235,8 +226,9 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-                # print('payload', payload)
+
                 if payload[0] == 0:
+                    # print('payload', payload)
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
                         # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
                         for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
@@ -260,6 +252,10 @@ class Delta(object):
                 elif payload[0] == 1:
                     self.lock.acquire()
                     self.head_status = payload[1:]
+                    self.head_error = payload[3]
+                    if self.head_error > 0:
+                        # TODO
+                        self.send_command([CMD_CLHE])
                     self.lock.release()
 
     def send_command(self, command, recv_callback=False):
@@ -630,8 +626,6 @@ class Delta(object):
             ret["real temp"] = ret.pop('rt')
             ret["target temp"] = ret.pop('tt')
             ret["target fan"] = ret.pop('tf')
-
-        print('self.head_status', self.head_status)
         return ret
 
     def set_temp(self, temp, index=0):
@@ -708,15 +702,17 @@ class Delta(object):
         if head_type in ['EXTRUDER', 'LASER', 'N/A']:
             self.send_command([CMD_REQH, head_type], False)
             self.send_command([CMD_BSTH])
-        time_s = time()
-        while True:
-            if self.head_status[1] == 0:
-                return True
-            elif time() - time_s > 5:  # not ready for too long
-                return False
-            else:
-                sleep(0.5)
-                continue
+            time_s = time()
+            while True:  # wait for head to be ready
+                if self.head_status[1] == 0:
+                    return True
+                elif time() - time_s > 5:  # not ready for too long
+                    return False
+                else:
+                    sleep(0.5)
+                    continue
+        else:
+            raise RuntimeError("Head error: {}".format(self.head_type))
 
     def close(self):
         self.__del__()
@@ -732,6 +728,7 @@ if __name__ == '__main__':
 
     # print('----------------------------------------------------------------------->', f.home())
     print(f.set_head('LASER'))
+    # print(f.set_head('EXTRUDER'))
     print(f.get_head_status())
     # print('slepping')
     # sleep(10)
@@ -739,18 +736,4 @@ if __name__ == '__main__':
     # print(f.set_fan(1))
     print('slepping')
     sleep(10)
-
-    # print(f.home())
-    # print(f.home())
-
-    # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
-    # # f.get_head_profile()
-    # print('----------------------------------------------------------------------->', f.move(0, 0, 100))
-    # # sleep(1)
-    # print(f.turn_laser('L', True))
-    # # sleep(1)
-    # print('----------------------------------------------------------------------->', f.move(0, 0, 80))
-
-    # print(f.turn_laser('L', False))
-    # f.release_motor()
     f.close()

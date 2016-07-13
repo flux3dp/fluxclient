@@ -198,7 +198,7 @@ class GcodeToFcode(FcodeBase):
                 line = findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', line)  # split
 
                 if line:
-                    if line[0] == 'G1' or line[0] == 'G0':  # move
+                    if line[0] == 'G1' or line[0] == 'G0':  # move command
                         command = 128
                         subcommand, data = self.XYZEF(line)
 
