@@ -183,7 +183,7 @@ class Delta(object):
         """
         self.lock.acquire()
         if len(self.command_output) < index:
-            raise RuntimeError('Fatal Error: command index error(index:{}, total:{})'.format(index, len(self.command_output)))
+            raise SDKFatalError(self, 'Fatal Error: command index error(index:{}, total:{})'.format(index, len(self.command_output)))
         else:
             if callable(self.command_output[index]):
                 if wait:
@@ -194,7 +194,7 @@ class Delta(object):
                     self.lock.acquire()
                     ret = self.command_output[index]
                 else:
-                    raise RuntimeError('Not ready(index:{})'.format(index))
+                    raise SDKFatalError(self, 'Not ready(index:{})'.format(index))
             elif self.command_output[index] is False:
                 if wait:
                     self.lock.release()
@@ -206,7 +206,7 @@ class Delta(object):
                     self.lock.acquire()
                     ret = self.command_output[index]
                 else:
-                    raise RuntimeError('Not ready(index:{})'.format(index))
+                    raise SDKFatalError(self, 'Not ready(index:{})'.format(index))
             else:
                 ret = self.command_output[index]
         self.lock.release()
@@ -359,19 +359,19 @@ class Delta(object):
             elif v is None:
                 pass
             else:
-                raise TypeError("unsupported type({1}) for {0} coordinate".format(name, type(v)))
+                raise SDKFatalError(self, "unsupported type({1}) for {0} coordinate".format(name, type(v)))
                 break
 
         if isinstance(speed, (int, float)):
             speed = int(speed)
 
         if tmp_pos[0] ** 2 + tmp_pos[1] ** 2 > HW_PROFILE["model-1"]["radius"] ** 2 or tmp_pos[2] > HW_PROFILE["model-1"]["height"] or tmp_pos[2] < 0:
-            raise ValueError("Invalid coordinate")
+            raise SDKFatalError(self, "Invalid coordinate")
         else:
             self.tool_head_pos = tmp_pos
 
         if self.loose_flag:
-            raise RuntimeError('motor need to home() before moving')
+            raise SDKFatalError(self, 'motor need to home() before moving')
         else:
             tmp_d = {'X': self.tool_head_pos[0], 'Y': self.tool_head_pos[1], 'Z': self.tool_head_pos[2]}
             if speed:
@@ -403,7 +403,7 @@ class Delta(object):
         if motor in self.motor_pos:
             return self.motor_pos[motor]
         else:
-            raise ValueError("Invalid motor name")
+            raise SDKFatalError(self, "Invalid motor name {}".format(motor))
 
     def move_motor(self, e0=None, e1=None, e2=None):
         """
@@ -467,9 +467,9 @@ class Delta(object):
             return self.laser_status[laser]
         else:
             if isinstance(laser, str):
-                raise ValueError("Invalid laser name")
+                raise SDKFatalError(self, "Invalid laser name: {}".format(laser))
             else:
-                raise TypeError("Invalid argument type")
+                raise SDKFatalError(self, "Invalid argument type")
 
     def turn_laser(self, laser, on):
         """
@@ -503,9 +503,9 @@ class Delta(object):
 
         else:
             if isinstance(laser, str):
-                raise ValueError("Invalid laser name")
+                raise SDKFatalError(self, "Invalid laser name: {}".format(laser))
             else:
-                raise TypeError("Invalid argument type")
+                raise SDKFatalError(self, "Invalid argument type")
 
         return self.laser_status[laser]
 
@@ -547,9 +547,9 @@ class Delta(object):
             self.motor_status[motor] = False
         else:
             if isinstance(motor, str):
-                raise ValueError("Wrong motor name")
+                raise SDKFatalError(self, "Wrong motor name")
             else:
-                raise TypeError("Wrong motor type: {}".format(type(motor)))
+                raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
     def enable_motor(self, motor):
         """
@@ -564,9 +564,9 @@ class Delta(object):
             self.motor_status[motor] = True
         else:
             if isinstance(motor, str):
-                raise ValueError("Wrong motor name")
+                raise SDKFatalError(self, "Wrong motor name")
             else:
-                raise TypeError("Wrong motor type: {}".format(type(motor)))
+                raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
     def get_head_profile(self):
         """
@@ -644,11 +644,11 @@ class Delta(object):
                 if temp <= 200.0 and temp >= 0.0:
                     self.send_command([CMD_M104, index, int(temp)])
                 else:
-                    raise ValueError("Invalid temperature")
+                    raise SDKFatalError(self, "Invalid temperature")
             else:
-                raise TypeError("unsupported temp type: {}".format(type(temp)))
+                raise SDKFatalError(self, "unsupported temp type: {}".format(type(temp)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            raise SDKFatalError(self, 'Head error: {}, require head: "EXTRUDER"'.format(self.head_type))
 
     def set_fan(self, speed, toolhead_index=0):
         """
@@ -668,11 +668,12 @@ class Delta(object):
                     print('speed', speed)
                     self.send_command([CMD_M106, toolhead_index, speed])
                 else:
-                    raise ValueError("Invalid fan speed:{}, should be in [0.0, 1.0]".format(speed))
+                    raise SDKFatalError(self, "Invalid fan speed:{}, should be in [0.0, 1.0]".format(speed))
             else:
-                raise TypeError("unsupported speed type: {}".format(type(speed)))
+                raise SDKFatalError(self, "unsupported speed type: {}".format(type(speed)))
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            raise SDKFatalError(self, 'Head error: {}, require head: "EXTRUDER"'.format(self.head_type.decode()))
+            # raise RuntimeError()
 
     def set_power(self, power):
         """
@@ -690,13 +691,13 @@ class Delta(object):
                 if power <= 1.0 and power >= 0.0:
                     self.send_command([CMD_HLSR, power])
                 else:
-                    raise ValueError("Invalid laser power, should be within [0.0, 1.0]")
+                    raise SDKFatalError(self, "Invalid laser power, should be within [0.0, 1.0]")
             else:
-                raise TypeError("unsupported power type: {}".format(type(power)))
+                raise SDKFatalError(self, "unsupported power type: {}".format(type(power)))
         else:
             ret = self.set_head("LASER")
             if not ret:
-                raise RuntimeError("Head error: {}".format(self.head_type))
+                raise SDKFatalError(self, 'Head error: {}, require head: "LASER"'.format(self.head_type))
 
     def set_head(self, head_type):
         if head_type in ['EXTRUDER', 'LASER', 'N/A']:
@@ -712,17 +713,36 @@ class Delta(object):
                     sleep(0.5)
                     continue
         else:
-            raise RuntimeError("Head error: {}".format(self.head_type))
+            raise SDKFatalError(self, "Head error: {}".format(self.head_type))
 
     def close(self):
         self.__del__()
 
+
+class SDKFatalError(Exception):
+    def __init__(self, delta, err_msg):
+        delta.close()
+        self.err_msg = err_msg
+
+    def __repr__(self):
+        return self.err_msg
+
+    def __str__(self):
+        return self.err_msg
+
+
+class SDKRunningError(Exception):
+    def __init__(self, delta, err_msg):
+        self.err_msg = err_msg
+
+    def __repr__(self):
+        return self.err_msg
+
+    def __str__(self):
+        return self.err_msg
+
 if __name__ == '__main__':
-    # f = Delta(target='4644314102ece08561a1f89cb44fa63a', password='flux')
-    # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=False)
-    # f = Delta(ip='192.168.18.114', password='flux', kick=True, blocking=True)
     f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
-    # f = Delta.connect_delta(ip='192.168.18.135', password='flux', kick=True)
 
     # f.get_head_profile()
 
@@ -733,7 +753,7 @@ if __name__ == '__main__':
     # print('slepping')
     # sleep(10)
     # print(f.set_fan(-1))
-    # print(f.set_fan(1))
+    print(f.set_fan(1))
     print('slepping')
     sleep(10)
     f.close()
