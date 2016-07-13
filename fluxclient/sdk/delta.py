@@ -10,6 +10,7 @@ from uuid import UUID
 import socket
 from time import sleep, time
 import threading
+import sys
 
 from msgpack import packb, unpackb, Unpacker
 from PIL import Image
@@ -18,7 +19,7 @@ from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.encryptor import KeyObject
 from fluxclient.upnp.task import UpnpTask
 from fluxclient.commands.misc import get_or_create_default_key
-from fluxclient.robot import FluxRobot
+from fluxclient.robot import FluxRobot, FluxCamera
 from fluxclient.sdk import *
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,28 @@ class Delta(object):
     def head_type(self):
         return self.head_status[3].get(b'module', b'N/A')
 
+    # @property
+    # def camera(self):
+    #     self._camera = FluxCamera((self.control_sock.getpeername()[0], 23812), client_key)
+
+    #     if self._camera_sock:
+    #         return self._camera_sock
+    #     else:
+    #         # local_ipaddr = self.control_sock.getsockname()
+    #         print(self.control_sock.getpeername())
+
+    #         self._camera_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #         self._camera_sock.connect(('192.168.18.114', 23812))
+
+    #         k = self._camera_sock.recv(4096)
+    #         print('k', k)
+    #         # k = self._camera_sock.recv(4096)
+    #         # print(k)
+    #         # k = self._camera_sock.recv(4096)
+    #         # print(k)
+
+    #         return self._camera_sock
+
     @classmethod
     def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
         """
@@ -131,7 +154,7 @@ class Delta(object):
                     logger.warning('[Warning]: adding new key into flux delta')
         if upnp_task.authorized:
             robot = FluxRobot((upnp_task.ipaddr, 23811), client_key)
-
+            camera = FluxCamera((upnp_task.ipaddr, 23812), client_key)
             st_id = robot.report_play()["st_id"]
             if st_id > 0:
                 if st_id not in [64, 66, 128, 130]:
@@ -148,6 +171,7 @@ class Delta(object):
                 sleep(0.5)
             m_delta = robot.icontrol()  # retuen a Delta object
             m_delta.blocking_flag = blocking
+            m_delta._camera = camera
             return m_delta
         else:
             raise RuntimeError("cannot connect to flux delta")
@@ -226,7 +250,7 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-
+                print(payload)
                 if payload[0] == 0:
                     # print('payload', payload)
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
@@ -250,11 +274,13 @@ class Delta(object):
 
                     self.atomic_status((payload[2], payload[3]))
                 elif payload[0] == 1:
+                    # print(payload)
                     self.lock.acquire()
                     self.head_status = payload[1:]
                     self.head_error = payload[3]
                     if self.head_error > 0:
-                        # TODO
+                        ret = head_error_translator(self.head_error)
+                        print('Head error:', ret, file=sys.stderr)
                         self.send_command([CMD_CLHE])
                     self.lock.release()
 
@@ -320,8 +346,8 @@ class Delta(object):
         :param bool relative: moving relatively or not, default: False
 
         :param float e0: length mortor e0 move , optional
-        :param float e1: length mortor e0 move , optional
-        :param float e2: length mortor e0 move , optional
+        :param float e1: length mortor e1 move , optional
+        :param float e2: length mortor e2 move , optional
 
 
         :return: position after moving command
@@ -376,7 +402,10 @@ class Delta(object):
             tmp_d = {'X': self.tool_head_pos[0], 'Y': self.tool_head_pos[1], 'Z': self.tool_head_pos[2]}
             if speed:
                 tmp_d['f'] = int(speed)
-
+            for i in ['E0', 'E1', 'E2']:
+                if i in kargs:
+                    tmp_d[i] = kargs[i]
+            print(tmp_d)
             command_index = self.send_command([CMD_G001, tmp_d], recv_callback=False)
             if self.blocking_flag:
                 return command_index, self.get_result(command_index, wait=True)
@@ -501,11 +530,10 @@ class Delta(object):
             else:
                 return command_index, None
 
+        elif isinstance(laser, str):
+            raise SDKFatalError(self, "Invalid laser name: {}".format(laser))
         else:
-            if isinstance(laser, str):
-                raise SDKFatalError(self, "Invalid laser name: {}".format(laser))
-            else:
-                raise SDKFatalError(self, "Invalid argument type")
+            raise SDKFatalError(self, "Invalid argument type")
 
         return self.laser_status[laser]
 
@@ -517,10 +545,16 @@ class Delta(object):
         :rtype: PIL.Image.Image
 
         """
-        images = self.robot.oneshot()
-        image_buf = images[0][1]
+        storage = {}
 
-        return Image.open(BytesIO(image_buf))
+        def callback(c, img):
+            storage["img"] = img
+        while not storage:
+            self._camera.feed(callback)
+        # images = self.robot.oneshot()
+        # image_buf = images[0][1]
+        # print(storage)
+        return Image.open(BytesIO(storage['img']))
 
     def serial_write(self, buf):
         """
@@ -545,11 +579,10 @@ class Delta(object):
         """
         if motor in ["XYZ", "e0", "e1", "e2"]:
             self.motor_status[motor] = False
-        else:
-            if isinstance(motor, str):
+        elif isinstance(motor, str):
                 raise SDKFatalError(self, "Wrong motor name")
-            else:
-                raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
+        else:
+            raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
     def enable_motor(self, motor):
         """
@@ -562,11 +595,10 @@ class Delta(object):
         """
         if motor in ["XYZ", "e0", "e1", "e2"]:
             self.motor_status[motor] = True
+        elif isinstance(motor, str):
+            raise SDKFatalError(self, "Wrong motor name")
         else:
-            if isinstance(motor, str):
-                raise SDKFatalError(self, "Wrong motor name")
-            else:
-                raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
+            raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
     def get_head_profile(self):
         """
@@ -686,9 +718,10 @@ class Delta(object):
 
         >>> f.set_power(0.5)
         """
-        if self.head_type == b"LASER":  # TODO
+        if self.head_type == b"LASER":
             if isinstance(power, (int, float)):
                 if power <= 1.0 and power >= 0.0:
+                    print('pow', power)
                     self.send_command([CMD_HLSR, power])
                 else:
                     raise SDKFatalError(self, "Invalid laser power, should be within [0.0, 1.0]")
@@ -742,18 +775,36 @@ class SDKRunningError(Exception):
         return self.err_msg
 
 if __name__ == '__main__':
-    f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
+    # f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
+    f = Delta.connect_delta(ip='192.168.18.114', password='flux', client_key='./sdk_connection.pem', kick=True)
 
+    # f.move(e1=10)
+    sleep(1)
+    f.home()
+    f.move(E2=100)
+    # f.home()
+    # im = f.get_image()
+    # im.save('tmp.png')
+
+    # print(f.camera_sock)
+    # print(f.move())
     # f.get_head_profile()
 
     # print('----------------------------------------------------------------------->', f.home())
-    print(f.set_head('LASER'))
+    # print(f.set_head('LASER'))
     # print(f.set_head('EXTRUDER'))
-    print(f.get_head_status())
+    # print(f.get_head_profile())
     # print('slepping')
     # sleep(10)
     # print(f.set_fan(-1))
-    print(f.set_fan(1))
-    print('slepping')
-    sleep(10)
+    # print(f.set_fan(1))
+    # print(f.set_power(0.5))
+    # print(f.set_temp(50))
+    # for _ in range(10):
+    #     sleep(1)
+    #     print(f.get_head_status())
+    # sleep(20)
+    # print(f.set_power(1))
+    # print('slepping')
+
     f.close()

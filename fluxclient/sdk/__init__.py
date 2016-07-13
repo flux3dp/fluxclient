@@ -36,7 +36,7 @@
 
 CMD_G001 = 0x01
 # Move position
-# ({i:F, f:X, f:Y, f:Z, f:E1, f:E2 , f:E3})
+# ({i:F, f:X, f:Y, f:Z, f:E1, f:E2, f:E3})
 #
 # E1, E2, E3 can not set at same time
 # Dict must contains at least 1 key/value, otherwhise will get operation error
@@ -191,3 +191,28 @@ CMD_CLHE = 0xf3
 #
 # When toolhead raise an error, this error will appear in UDP message frame
 # until this command send.
+
+
+def head_error_translator(flag):
+    err_msg = {16: 'SHAKE',
+               32: 'TILT',
+               64: 'HARDWARE_ERROR',
+               128: 'FAN_FAILURE',
+               256: 'LASER_DOWN',
+               512: 'HEATER_FAILURE'
+               }
+    k = 16
+    r = []
+    while flag >= 16:
+        if flag & k:
+            r.append(err_msg[k])
+            flag ^= k
+        k <<= 1
+    return r
+
+      # ER:16: 'SHAKE'
+      #         ER:32: 'TILT'
+      #         ER:64: 'HARDWARE_ERROR'
+      #         ER:128: 'FAN_FAILURE'
+      #         ER:256: 'LASER_DOWN'
+      #         ER:512: 'HEATER_FAILURE'
