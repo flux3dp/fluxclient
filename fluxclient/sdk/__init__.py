@@ -209,10 +209,3 @@ def head_error_translator(flag):
             flag ^= k
         k <<= 1
     return r
-
-      # ER:16: 'SHAKE'
-      #         ER:32: 'TILT'
-      #         ER:64: 'HARDWARE_ERROR'
-      #         ER:128: 'FAN_FAILURE'
-      #         ER:256: 'LASER_DOWN'
-      #         ER:512: 'HEATER_FAILURE'

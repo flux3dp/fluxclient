@@ -36,7 +36,7 @@ class Delta(object):
     """
       Delta is an instance that presents the device in SDK mode, which allows users to control motions of the machine freely.
     """
-    def __init__(self, wrapped_socket, exit_callback=None, blocking=True):
+    def __init__(self, wrapped_socket, client_key, exit_callback=None, blocking=True):
         """
             Creates a Delta ( SDK task ) instance
 
@@ -53,6 +53,9 @@ class Delta(object):
         # [("E1", "E"), ("E2", "S"), ("E3", "U")]
         self.motor_status = {"XYZ": True, "E1": True, "E2": True, "E3": False}
         self.loose_flag = True
+        self.headerror_callback = None
+        self._camera = None
+        self.client_key = client_key
         self.lock = threading.Lock()
         self.command_output = []  # record all the output return from command
 
@@ -87,27 +90,15 @@ class Delta(object):
     def head_type(self):
         return self.head_status[3].get(b'module', b'N/A')
 
-    # @property
-    # def camera(self):
-    #     self._camera = FluxCamera((self.control_sock.getpeername()[0], 23812), client_key)
-
-    #     if self._camera_sock:
-    #         return self._camera_sock
-    #     else:
-    #         # local_ipaddr = self.control_sock.getsockname()
-    #         print(self.control_sock.getpeername())
-
-    #         self._camera_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #         self._camera_sock.connect(('192.168.18.114', 23812))
-
-    #         k = self._camera_sock.recv(4096)
-    #         print('k', k)
-    #         # k = self._camera_sock.recv(4096)
-    #         # print(k)
-    #         # k = self._camera_sock.recv(4096)
-    #         # print(k)
-
-    #         return self._camera_sock
+    @property
+    def camera(self):
+        if self._camera:
+            return self._camera
+        else:
+            print(self.control_sock.getpeername()[0])
+            camera = FluxCamera((self.control_sock.getpeername()[0], 23812), self.client_key)
+            self._camera = camera
+            return self._camera
 
     @classmethod
     def connect_delta(cls, target=None, ip=None, client_key=None, password=None, kick=False, blocking=True):
@@ -155,7 +146,7 @@ class Delta(object):
                     logger.warning('[Warning]: adding new key into flux delta')
         if upnp_task.authorized:
             robot = FluxRobot((upnp_task.ipaddr, 23811), client_key)
-            camera = FluxCamera((upnp_task.ipaddr, 23812), client_key)
+
             st_id = robot.report_play()["st_id"]
             if st_id > 0:
                 if st_id not in [64, 66, 128, 130]:
@@ -172,7 +163,6 @@ class Delta(object):
                 sleep(0.5)
             m_delta = robot.icontrol()  # retuen a Delta object
             m_delta.blocking_flag = blocking
-            m_delta._camera = camera
             return m_delta
         else:
             raise RuntimeError("cannot connect to flux delta")
@@ -242,7 +232,6 @@ class Delta(object):
         Loop thread function that collects and updates delta's status and command's output
         """
         recv_until = -1
-        # udp_index = 0
         unpacker = Unpacker()
         while True:
             if self.killthread:
@@ -253,9 +242,7 @@ class Delta(object):
                 payload = unpackb(buf)
                 # print(payload)
                 if payload[0] == 0:
-                    # print('payload', payload)
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
-                        # print('able range', recv_until + 1, payload[2] - 1 - payload[3] + 1)
                         for i in range(recv_until + 1, payload[2] - 1 - payload[3] + 1):
                             if self.command_output[i]:
                                 ret = self.control_sock.recv(4096)
@@ -280,8 +267,8 @@ class Delta(object):
                     self.head_status = payload[1:]
                     self.head_error = payload[3]
                     if self.head_error > 0:
-                        ret = head_error_translator(self.head_error)
-                        print('Head error:', ret, file=sys.stderr)
+                        if self.headerror_callback:
+                            self.headerror_callback(self.head_error)
                         self.send_command([CMD_CLHE])
                     self.lock.release()
 
@@ -596,11 +583,11 @@ class Delta(object):
 
         def callback(c, img):
             storage["img"] = img
+
+        self.camera.requrest_frame()
         while not storage:
-            self._camera.feed(callback)
-        # images = self.robot.oneshot()
-        # image_buf = images[0][1]
-        # print(storage)
+            self.camera.feed(callback)
+
         return Image.open(BytesIO(storage['img']))
 
     def serial_write(self, buf):
@@ -752,7 +739,6 @@ class Delta(object):
                 raise SDKFatalError(self, "unsupported speed type: {}".format(type(speed)))
         else:
             raise SDKFatalError(self, 'Head error: {}, require head: "EXTRUDER"'.format(self.head_type.decode()))
-            # raise RuntimeError()
 
     def set_power(self, power):
         """
@@ -795,6 +781,12 @@ class Delta(object):
         else:
             raise SDKFatalError(self, "Head error: {}".format(self.head_type))
 
+    def set_headerror_callback(self, callback_function):
+        if callable(callback_function):
+            self.headerror_callback = callback_function
+        else:
+            raise SDKFatalError(self, "Callback error: should be callable object")
+
     def close(self):
         self.__del__()
 
@@ -809,54 +801,3 @@ class SDKFatalError(Exception):
 
     def __str__(self):
         return self.err_msg
-
-
-class SDKRunningError(Exception):
-    def __init__(self, delta, err_msg):
-        self.err_msg = err_msg
-
-    def __repr__(self):
-        return self.err_msg
-
-    def __str__(self):
-        return self.err_msg
-
-if __name__ == '__main__':
-    # f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
-    f = Delta.connect_delta(ip='192.168.18.114', password='flux', client_key='../sdk_examples/sdk_connection.pem', kick=True)
-
-    # f.move(E2=10)
-    # sleep(1)
-    # f.home()
-    f.move(E2=0)
-    # for i in range(10):
-    f.move(E2=50, relative=True)
-    f.move(E2=0)
-    # f.move(z=50)
-    # f.move(x=50, z=60)
-    # f.home()
-    # im = f.get_image()
-    # im.save('tmp.png')
-
-    # print(f.camera_sock)
-    # print(f.move())
-    # f.get_head_profile()
-
-    # print('----------------------------------------------------------------------->', f.home())
-    # print(f.set_head('LASER'))
-    # print(f.set_head('EXTRUDER'))
-    # print(f.get_head_profile())
-    # print('slepping')
-    # sleep(10)
-    # print(f.set_fan(-1))
-    # print(f.set_fan(1))
-    # print(f.set_power(0.5))
-    # print(f.set_temp(50))
-    # for _ in range(10):
-    #     sleep(1)
-    #     print(f.get_head_status())
-    # sleep(20)
-    # print(f.set_power(1))
-    # print('slepping')
-
-    f.close()
