@@ -766,6 +766,10 @@ class Delta(object):
                 raise SDKFatalError(self, 'Head error: {}, require head: "LASER"'.format(self.head_type))
 
     def set_head(self, head_type):
+        """
+        Sets the tool head want to use
+        :param str head_type: head_type, should be one of 'EXTRUDER', 'LASER', 'N/A'
+        """
         if head_type in ['EXTRUDER', 'LASER', 'N/A']:
             self.send_command([CMD_REQH, head_type], False)
             self.send_command([CMD_BSTH])
@@ -782,12 +786,19 @@ class Delta(object):
             raise SDKFatalError(self, "Head error: {}".format(self.head_type))
 
     def set_headerror_callback(self, callback_function):
+        """
+        Sets the callback function handling tool head error
+        :param funciton callback_function: a callable function that take head error code as parameter
+        """
         if callable(callback_function):
             self.headerror_callback = callback_function
         else:
             raise SDKFatalError(self, "Callback error: should be callable object")
 
     def close(self):
+        """
+        Disconnects from delta
+        """
         self.__del__()
 
 
