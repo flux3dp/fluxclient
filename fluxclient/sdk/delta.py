@@ -344,11 +344,14 @@ class Delta(object):
         :param float x: x coordinate, optional
         :param float y: y coordinate, optional
         :param float z: z coordinate, optional
+
+        :param int speed: moving speed, should be within [20, 8000], optional
+
         :param bool relative: moving relatively or not, default: False
 
-        :param float E1: length mortor E1 move , optional
-        :param float E2: length mortor E2 move , optional
-        :param float E3: length mortor E3 move , optional
+        :param float E1: position mortor E1 move , optional
+        :param float E2: position mortor E2 move , optional
+        :param float E3: position mortor E3 move , optional
 
 
         :return: position after moving command
@@ -403,8 +406,8 @@ class Delta(object):
         # speed
         if isinstance(speed, (int, float)):
             speed = int(speed)
-            if speed < 10 or speed > 21000:  # TODO
-                raise SDKFatalError(self, "move speed:({}) out of range [10, 21000]".format(speed))
+            if speed <= 20 or speed >= 8000:  # TODO
+                raise SDKFatalError(self, "move speed:({}) out of range [20, 8000]".format(speed))
         elif speed is None:
             pass
         else:
@@ -470,13 +473,14 @@ class Delta(object):
         else:
             raise SDKFatalError(self, "Invalid motor name {}".format(motor))
 
-    def move_motor(self, E1=None, E2=None, E3=None):
+    def move_motor(self, E1=None, E2=None, E3=None, speed=None):
         """
         Moves stepper motors
 
-        :param float E1: length to move, optional
-        :param float E2: length to move, optional
-        :param float E3: length to move, optional
+        :param float E1: position to move, optional
+        :param float E2: position to move, optional
+        :param float E3: position to move, optional
+        :param int speed: moving speed, should be within [20, 8000], optional
 
         >>> f.move_motor(E1=10)
         >>> f.move_motor(E1=10, E2=10)
@@ -486,10 +490,10 @@ class Delta(object):
         for E, name in [(E1, "E1"), (E2, "E2"), (E3, "E3")]:
             if E:
                 motor[name] = E
-        if len(motors) > 1:
-            raise SDKFatalError('Can only control one motor at once')
-        else:
-            self.move(**motors)
+        if speed:
+            motors['speed'] = speed
+
+        self.move(**motors)
 
     def lock_motor(self):
         """
