@@ -40,7 +40,7 @@ class Delta(object):
         """
             Creates a Delta ( SDK task ) instance
 
-            :param str wrapped_socket: Wrapped sockets
+            :param sockets wrapped_socket: Wrapped sockets
             :param callback exit_callback: Callback when exited
             :param bool blocking: Blocking means python will only send commands when prior commands are finished, otherwise the device will buffer commands.
         """
@@ -48,10 +48,11 @@ class Delta(object):
 
         self._command_index = -1
         self.tool_head_pos = [0, 0, HW_PROFILE["model-1"]["height"]]
-        self.motor_pos = {"e0": 0.0, "e1": 0.0, "e2": 0.0}
+        self.motor_pos = {"E1": 0.0, "E2": 0.0, "E3": 0.0}
         self.laser_status = {"L": False, "R": False}
-        self.motor_status = {"e0": True, "e1": True, "e2": False}  # [("e0", "E"), ("e1", "S"), ("e2", "U")]
-        self.loose_flag = False
+        # [("E1", "E"), ("E2", "S"), ("E3", "U")]
+        self.motor_status = {"XYZ": True, "E1": True, "E2": True, "E3": False}
+        self.loose_flag = True
         self.lock = threading.Lock()
         self.command_output = []  # record all the output return from command
 
@@ -250,7 +251,7 @@ class Delta(object):
             else:
                 buf = self.udp_sock.recv(4096)
                 payload = unpackb(buf)
-                print(payload)
+                # print(payload)
                 if payload[0] == 0:
                     # print('payload', payload)
                     if payload[2] - 1 - payload[3] > recv_until:  # finish_index = next_index - 1 - command_in_queue
@@ -345,9 +346,9 @@ class Delta(object):
         :param float z: z coordinate, optional
         :param bool relative: moving relatively or not, default: False
 
-        :param float e0: length mortor e0 move , optional
-        :param float e1: length mortor e1 move , optional
-        :param float e2: length mortor e2 move , optional
+        :param float E1: length mortor E1 move , optional
+        :param float E2: length mortor E2 move , optional
+        :param float E3: length mortor E3 move , optional
 
 
         :return: position after moving command
@@ -370,49 +371,84 @@ class Delta(object):
 
         * control motor during moving
 
-        >>> f.move(50, 40, 30, e0=10)
+        >>> f.move(50, 40, 30, E1=10)
         (50.0, 40.0, 30.0)
 
         """
-        tmp_pos = self.tool_head_pos[:]
-        for name, v, index in [("x", x, 0), ("y", y, 1), ("z", z, 2)]:
-            if isinstance(v, (int, float)):
-                v = float(v)
-                if relative:
-                    tmp_pos[index] += v
-                else:
-                    tmp_pos[index] = float(v)
-            elif v is None:
-                pass
+        if [x, y, z].count(None) != 3:  # whether move the tool head
+            if self.loose_flag:
+                raise SDKFatalError(self, 'motor need to home() before moving')
             else:
-                raise SDKFatalError(self, "unsupported type({1}) for {0} coordinate".format(name, type(v)))
-                break
+                tmp_pos = self.tool_head_pos[:]
+                for name, v, index in [["X", x, 0], ["Y", y, 1], ["Z", z, 2]]:
+                    if isinstance(v, (int, float)):
+                        v = float(v)
+                        if relative:
+                            tmp_pos[index] += v
+                        else:
+                            tmp_pos[index] = v
+                    elif v is None:
+                        pass
+                    else:
+                        raise SDKFatalError(self, "unsupported type({1}) for {0} coordinate".format(name, type(v)))
+                        break
 
+                # range check
+                if tmp_pos[0] ** 2 + tmp_pos[1] ** 2 > HW_PROFILE["model-1"]["radius"] ** 2 or tmp_pos[2] > HW_PROFILE["model-1"]["height"] or tmp_pos[2] < 0:
+                    raise SDKFatalError(self, "Invalid coordinate")
+                else:
+                    for index, v in enumerate([x, y, z]):
+                        if v:
+                            self.tool_head_pos[index] = tmp_pos[index]
+        # speed
         if isinstance(speed, (int, float)):
             speed = int(speed)
-
-        if tmp_pos[0] ** 2 + tmp_pos[1] ** 2 > HW_PROFILE["model-1"]["radius"] ** 2 or tmp_pos[2] > HW_PROFILE["model-1"]["height"] or tmp_pos[2] < 0:
-            raise SDKFatalError(self, "Invalid coordinate")
+            if speed < 10 or speed > 21000:  # TODO
+                raise SDKFatalError(self, "move speed:({}) out of range [10, 21000]".format(speed))
+        elif speed is None:
+            pass
         else:
-            self.tool_head_pos = tmp_pos
+            raise SDKFatalError(self, "unsupported type({}) for speed".format(type(speed)))
 
-        if self.loose_flag:
+        # dealing with E command
+        c = 0
+        for name in ['E1', 'E2', 'E3']:
+            if name in kargs:
+                if isinstance(kargs[name], (int, float)):
+                    kargs[name] = float(kargs[name])
+                    c += 1
+                    if relative:
+                        self.motor_pos[name] += kargs[name]
+                    else:
+                        self.motor_pos[name] = kargs[name]
+                else:
+                    raise SDKFatalError(self, "unsupported type({1}) for {0} coordinate".format(name, type(kargs[name])))
+        if c > 1:
+            raise SDKFatalError(self, "too many E command at once")
+        elif self.loose_flag and c != 0:  # this could be deleted if ticket #209 is done
             raise SDKFatalError(self, 'motor need to home() before moving')
-        else:
-            tmp_d = {'X': self.tool_head_pos[0], 'Y': self.tool_head_pos[1], 'Z': self.tool_head_pos[2]}
-            if speed:
-                tmp_d['f'] = int(speed)
-            for i in ['E0', 'E1', 'E2']:
-                if i in kargs:
-                    tmp_d[i] = kargs[i]
-            print(tmp_d)
-            command_index = self.send_command([CMD_G001, tmp_d], recv_callback=False)
+
+        # form the dict passing to delta
+        command_dict = {}  # {F:int, X:float, Y:float, Z:float, E2:float, E3:float, E3:float}
+        for name, value, index in [["X", x, 0], ["Y", y, 1], ["Z", z, 2]]:
+            if value:
+                command_dict[name] = self.tool_head_pos[index]
+        if speed:
+            command_dict['F'] = speed
+
+        for name in ['E1', 'E2', 'E3']:
+            if name in kargs:
+                command_dict[name] = self.motor_pos[name]
+        # print(command_dict)
+
+        if command_dict:
+            command_index = self.send_command([CMD_G001, command_dict], recv_callback=False)
+
+            # blocking or not
             if self.blocking_flag:
                 return command_index, self.get_result(command_index, wait=True)
             else:
                 return command_index, None
-
-        # ({i:F, f:X, f:Y, f:Z, f:E1, f:E2 , f:E3})
 
         return tuple(self.tool_head_pos)
 
@@ -420,12 +456,12 @@ class Delta(object):
         """
         Gets the current position of specified motor
 
-        :param str motor: name of the motor, should be one of the ``"e0", "e1", "e2"``
+        :param str motor: name of the motor, should be one of the ``"E1", "E2", "E3"``
         :return: the current position of specified motor
         :rtype: float
         :raises ValueError: raise error if using undifine motor name
 
-        >>> f.get_position_motor("e0")
+        >>> f.get_position_motor("E1")
         12.34
 
         """
@@ -434,19 +470,26 @@ class Delta(object):
         else:
             raise SDKFatalError(self, "Invalid motor name {}".format(motor))
 
-    def move_motor(self, e0=None, e1=None, e2=None):
+    def move_motor(self, E1=None, E2=None, E3=None):
         """
         Moves stepper motors
 
-        :param float e0: length to move, optional
-        :param float e1: length to move, optional
-        :param float e2: length to move, optional
+        :param float E1: length to move, optional
+        :param float E2: length to move, optional
+        :param float E3: length to move, optional
 
-        >>> f.move_motor(e0=10)
-        >>> f.move_motor(e0=10, e1=10)
+        >>> f.move_motor(E1=10)
+        >>> f.move_motor(E1=10, E2=10)
 
         """
-        self.move(e0=e0, e1=e1, e2=e2)
+        motors = {}
+        for E, name in [(E1, "E1"), (E2, "E2"), (E3, "E3")]:
+            if E:
+                motor[name] = E
+        if len(motors) > 1:
+            raise SDKFatalError('Can only control one motor at once')
+        else:
+            self.move(**motors)
 
     def lock_motor(self):
         """
@@ -572,15 +615,15 @@ class Delta(object):
         """
         Enables motor control
 
-        :param str motor: Which motor to disable, should be one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
+        :param str motor: Which motor to disable, should be one of ``"XYZ"``, ``"E1"``, ``"E2"``, ``"E3"``
         :raises TypeError: motor is not str
-        :raises ValueError: if the motor's name is not one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
+        :raises ValueError: if the motor's name is not one of ``"XYZ"``, ``"E1"``, ``"E2"``, ``"E3"``
 
         """
-        if motor in ["XYZ", "e0", "e1", "e2"]:
+        if motor in ["XYZ", "E1", "E2", "E3"]:
             self.motor_status[motor] = False
         elif isinstance(motor, str):
-                raise SDKFatalError(self, "Wrong motor name")
+            raise SDKFatalError(self, "Wrong motor name: {}".format(motor))
         else:
             raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
@@ -588,15 +631,15 @@ class Delta(object):
         """
         Disables a motor
 
-        :param str motor: Which motor to enable, should be one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
+        :param str motor: Which motor to enable, should be one of ``"XYZ"``, ``"E1"``, ``"E2"``, ``"E3"``
         :raises TypeError: motor is not str
-        :raises ValueError: if the motor's name is not one of ``"XYZ"``, ``"e0"``, ``"e1"``, ``"e2"``
+        :raises ValueError: if the motor's name is not one of ``"XYZ"``, ``"E1"``, ``"E2"``, ``"E3"``
 
         """
-        if motor in ["XYZ", "e0", "e1", "e2"]:
+        if motor in ["XYZ", "E1", "E2", "E3"]:
             self.motor_status[motor] = True
         elif isinstance(motor, str):
-            raise SDKFatalError(self, "Wrong motor name")
+            raise SDKFatalError(self, "Wrong motor name: {}".format(motor))
         else:
             raise SDKFatalError(self, "Wrong motor type: {}".format(type(motor)))
 
@@ -776,12 +819,17 @@ class SDKRunningError(Exception):
 
 if __name__ == '__main__':
     # f = Delta.connect_delta(ip='192.168.18.114', password='flux', kick=True)
-    f = Delta.connect_delta(ip='192.168.18.114', password='flux', client_key='./sdk_connection.pem', kick=True)
+    f = Delta.connect_delta(ip='192.168.18.114', password='flux', client_key='../sdk_examples/sdk_connection.pem', kick=True)
 
-    # f.move(e1=10)
-    sleep(1)
-    f.home()
-    f.move(E2=100)
+    # f.move(E2=10)
+    # sleep(1)
+    # f.home()
+    f.move(E2=0)
+    # for i in range(10):
+    f.move(E2=50, relative=True)
+    f.move(E2=0)
+    # f.move(z=50)
+    # f.move(x=50, z=60)
     # f.home()
     # im = f.get_image()
     # im.save('tmp.png')
