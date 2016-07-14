@@ -15,8 +15,10 @@ uchar_unpacker = lambda x: struct.Struct("<B").unpack(x)[0]  # 1 byte uchar, use
 float_unpacker = lambda x: struct.Struct("<f").unpack(x)[0]  # 4 bytes float
 
 
-def XYZE(command):
+def num_to_XYZE(command):
     """
+    convert a number to information about each axis
+    command[input]: a encoded number
     return things look like this [True, True, True, None, None, None, True]
 
     in [F, X, Y, Z, E1, E2, E3] order
@@ -33,7 +35,7 @@ def XYZE(command):
 
 class FcodeToGcode(FcodeBase):
     """
-    https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
+    see here for fcode spec: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
     """
     def __init__(self, buf=''):
         super(FcodeToGcode, self).__init__()
@@ -77,7 +79,8 @@ class FcodeToGcode(FcodeBase):
 
     def full_check(self):
         """
-        fully check the fcode file, check all the checksum raise error if any error occur
+        fully check the fcode file, including all the checksum
+        raise error if any error occur
         """
         try:
             assert self.data[:8] == b"FCx0001\n"
@@ -96,7 +99,7 @@ class FcodeToGcode(FcodeBase):
 
     def get_img(self):
         """
-        get the png preview image(should be 640 * 640) in fcode, in bytes
+        get the .png preview image(should be 640 * 640) in fcode, in bytes
         """
         if self.data:
             return self.data[28 + self.script_size + self.meta_size:28 + self.script_size + self.meta_size + self.image_size]
@@ -104,6 +107,9 @@ class FcodeToGcode(FcodeBase):
             return None
 
     def change_img(self, buf):
+        """
+        change the preview image in fcode file
+        """
         if self.data:
             self.data = b''.join([self.data[:-(self.image_size + 4)], struct.pack('<I', len(buf)), buf])
             self.image_size = len(buf)
@@ -198,7 +204,7 @@ class FcodeToGcode(FcodeBase):
                 outstream.write('{} S{} T{}\n'.format(c, speed, command & 15))
                 index += 4
             elif command >= 64 and command <= 127:  # set position
-                tmp = XYZE(command)
+                tmp = num_to_XYZE(command)
                 s = ['G92 ']
                 for i, c in zip(tmp[:3], ['X', 'Y', 'Z']):
                     if i:
@@ -218,7 +224,7 @@ class FcodeToGcode(FcodeBase):
                         outstream.write('G92 E{}\n'.format(value))
 
             elif command >= 128 and command <= 255:  # moving
-                line_segment = XYZE(command)
+                line_segment = num_to_XYZE(command)
                 s = ['G1 ']
                 for f, c, i in zip(line_segment, ['F', 'X', 'Y', 'Z', 'E', 'E', 'E'], range(7)):
                     if f is True:
@@ -243,12 +249,3 @@ class FcodeToGcode(FcodeBase):
                 raise RuntimeError(FCODE_FAIL)
         self.T = Thread(target=self.sub_convert_path)
         self.T.start()
-
-
-if __name__ == '__main__':
-    m_FcodeToGcode = FcodeToGcode()
-    with open(sys.argv[1], 'rb') as f, open('tmp.gcode', 'w') as f2, open('tmp.js', 'w') as f3:
-        m_FcodeToGcode.upload_content(f.read())
-        m_FcodeToGcode.f_to_g(f2)
-        print(m_FcodeToGcode.path_to_js(m_FcodeToGcode.get_path()), file=f3)
-        print(m_FcodeToGcode.get_metadata()['CORRECTION'])

@@ -83,12 +83,17 @@ class StlSlicer(object):
         """
         upload a model's data in stl as bytes data
         """
-        if buf_type == 'stl':
-            self.models[name] = self.read_stl(buf)
-        elif buf_type == 'obj':
-            self.models[name] = self.read_obj(buf)
+        try:
+            if buf_type == 'stl':
+                self.models[name] = self.read_stl(buf)
+            elif buf_type == 'obj':
+                self.models[name] = self.read_obj(buf)
+            else:
+                raise('uknow file type')
+        except:
+            return False
         else:
-            raise('uknow file type')
+            return True
 
     def duplicate(self, name_in, name_out):
         """
@@ -892,7 +897,11 @@ class StlSlicerCura(StlSlicer):
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
         new_content['infillSpeed'] = content['infill_speed']
-        new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
+
+        if fill_density == 100:
+            new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
+        else:
+            new_content['skinSpeed'] = content['infill_speed']
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 

@@ -198,7 +198,7 @@ class GcodeToFcode(FcodeBase):
                 line = findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', line)  # split
 
                 if line:
-                    if line[0] == 'G1' or line[0] == 'G0':  # move
+                    if line[0] == 'G1' or line[0] == 'G0':  # move command
                         command = 128
                         subcommand, data = self.XYZEF(line)
 
@@ -379,22 +379,3 @@ class GcodeToFcode(FcodeBase):
         except Exception as e:
             print('FcodeError:', file=sys.stderr)
             raise e
-
-if __name__ == '__main__':
-    m_GcodeToFcode = GcodeToFcode()
-    with open(sys.argv[1], 'r') as input_stream:
-        with open(sys.argv[2], 'wb') as output_stream:
-            m_GcodeToFcode.process(input_stream, output_stream)
-            print(m_GcodeToFcode.md, file=sys.stderr)
-    if len(sys.argv) > 3:
-        with open(sys.argv[3], 'w') as f:
-            if m_GcodeToFcode.path is None:
-                print('', file=f)
-            else:
-                result = []
-                for layer in m_GcodeToFcode.path:
-                    tmp = []
-                    for p in layer:
-                        tmp.append('{"t":%d, "p":[%.5f, %.5f, %.5f]}' % (p[3], p[0], p[1], p[2]))
-                    result.append('[' + ','.join(tmp) + ']')
-                print('[' + ','.join(result) + ']', file=f)

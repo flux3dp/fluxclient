@@ -78,7 +78,7 @@ class image_to_pc():
     def points_to_bytes(self, points):
         """
         convert points to bytes
-        input format::
+        input format:
 
         [[x-coordinate, y-coord, z-coord, r, g, b],
          [x-coordinate, y-coord, z-coord, r, g, b],

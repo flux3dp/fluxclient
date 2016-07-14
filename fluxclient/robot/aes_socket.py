@@ -12,9 +12,6 @@ __WAIT_RESPONSE__ = 2
 __WAIT_AESKEY__ = 3
 __READY__ = 4
 
-SOCKET_ERRORS = (ConnectionResetError, BrokenPipeError, OSError,  # noqa
-                 socket.timeout)
-
 
 class AESSocket(object):
     _sock = None

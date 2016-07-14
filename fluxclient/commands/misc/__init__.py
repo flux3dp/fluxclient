@@ -67,7 +67,7 @@ def parse_ipaddr(target, default_port):
 def connect_robot_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
     from fluxclient.upnp import discover_device
-    from fluxclient.robot import connect_robot
+    from fluxclient.robot.robot import FluxRobot
 
     def working_callback(discover):
         logstream.write(".")
@@ -87,8 +87,7 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
         device = None
         logstream.write("Connecting...")
         endpoint = parse_ipaddr(target, 23811)
-        session = connect_robot(endpoint, client_key,
-                                conn_callback=working_callback)
+        session = FluxRobot(endpoint, client_key)
 
     logstream.write(" OK\n")
     return session, device
@@ -97,7 +96,7 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
 def connect_camera_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
     from fluxclient.upnp import discover_device
-    from fluxclient.robot import connect_camera
+    from fluxclient.robot.camera import FluxCamera
 
     def working_callback(discover):
         logstream.write(".")
@@ -117,8 +116,7 @@ def connect_camera_helper(target, client_key, logstream=sys.stdout):
         device = None
         logstream.write("Connecting...")
         endpoint = parse_ipaddr(target, 23812)
-        session = connect_camera(endpoint, client_key,
-                                 conn_callback=working_callback)
+        session = FluxCamera(endpoint, client_key)
 
     logstream.write(" OK\n")
     return session, device

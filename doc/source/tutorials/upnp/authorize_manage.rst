@@ -5,7 +5,7 @@ FLUX Device use password and RSA key to authorizing access. At the first time a 
 you can insert your RSA key into device trusted key list.
 
 .. note:: Note: You must add your RSA Key to device trusted list because robot and camera service does not accept password authorize.
-
+ 
 
 Authorize with password
 +++++++++++++++++++++++++

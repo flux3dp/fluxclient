@@ -36,7 +36,7 @@
 
 CMD_G001 = 0x01
 # Move position
-# ({i:F, f:X, f:Y, f:Z, f:E1, f:E2 , f:E3})
+# ({i:F, f:X, f:Y, f:Z, f:E1, f:E2, f:E3})
 #
 # E1, E2, E3 can not set at same time
 # Dict must contains at least 1 key/value, otherwhise will get operation error
@@ -103,36 +103,6 @@ CMD_VALU = 0x50
 #  1: FSR           2: Filament 0      4: Filament 1
 #  8: Master button
 
-CMD_THPF = 0x51
-# Get toolhead profile
-# ()
-#    => (0x51, {"module": "EXTRUDER", "vendor": "FLUX .inc", "id": "...", }, )
-
-CMD_THST = 0x52
-# Get toolhead status
-# ()
-#    => (0x52, {"tt": [210, ], "rt": [150, ], "tf": [0.9]})
-
-CMD_M104 = 0x60
-# Set toolhead extruder temperature
-# (i:index, i:temperature)
-#
-# index: toolhead index, 0 or 1
-# temperature should positive
-# operation error raised if index out of range or temperature over limit
-
-CMD_M106 = 0x61
-# Set fandspeed
-# (f:speed)
-#
-# speed is a value from 0.0 to 1.0
-
-CMD_HLSR = 0x62
-# Toolhead pwm
-# (f:pwm)
-#
-# pwm is a value from 0.0 to 1.0
-
 
 CMD_SYNC = 0xf0
 # Set sync endpoint
@@ -165,6 +135,12 @@ MSG_UNKNOWN_ERROR = 0xff
 #           == -1: Not ready
 #            == 0: Ready
 #             > 0: Follow toolhead error table
+#               ER:16 SHAKE
+#               ER:32 TILT
+#               ER:64 HARDWARE_ERROR
+#               ER:128 FAN_FAILURE
+#               ER:256 LASER_DOWN
+#               ER:512 HEATER_FAILURE
 
 
 CMD_THPF = 0x51
@@ -182,7 +158,7 @@ CMD_M104 = 0x60
 # (i:index, i:temperature)
 #
 # index: toolhead index, 0 or 1
-# temperature should positive
+# temperature should be positive
 # operation error raised if index out of range or temperature over limit
 
 CMD_M106 = 0x61
@@ -195,7 +171,7 @@ CMD_M106 = 0x61
 CMD_HLSR = 0x62
 # Toolhead pwm
 # (f:pwm)
-#
+# use for head laser
 # pwm is a value from 0.0 to 1.0
 
 CMD_REQH = 0xf1
@@ -215,3 +191,21 @@ CMD_CLHE = 0xf3
 #
 # When toolhead raise an error, this error will appear in UDP message frame
 # until this command send.
+
+
+def head_error_translator(flag):
+    err_msg = {16: 'SHAKE',
+               32: 'TILT',
+               64: 'HARDWARE_ERROR',
+               128: 'FAN_FAILURE',
+               256: 'LASER_DOWN',
+               512: 'HEATER_FAILURE'
+               }
+    k = 16
+    r = []
+    while flag >= 16:
+        if flag & k:
+            r.append(err_msg[k])
+            flag ^= k
+        k <<= 1
+    return r
