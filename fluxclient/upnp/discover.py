@@ -18,8 +18,8 @@ Basic usage example::
 
 In the example, `my_callback` will be called one a device is found or recive \
 a device status update. A callback contains two positional arguments, first \
-is `UpnpDiscover` instance and second is :class:`fluxclient.upnp.device.Device` instance which it found or \
-been updated.
+is `UpnpDiscover` instance and second is \
+:class:`fluxclient.upnp.device.Device` instance which it found or been updated.
 """
 
 from weakref import proxy
@@ -49,11 +49,12 @@ MULTICAST_VERSION = 1
 
 class UpnpDiscover(object):
     """The uuid and device_ipaddr param can limit UpnpDiscover to find device \
-    with specified uuid or IP address. These params usually be used when you \
-    want recive specified status continuously.
+with specified uuid or IP address. These params usually be used when you \
+want recive specified status continuously.
 
     :param uuid.UUID uuid: Discover specified uuid of device only
-    :param string device_ipaddr: Discover device from specified IP address only.
+    :param string device_ipaddr: Discover device from specified IP address \
+only.
     """
 
     _break = True
@@ -103,8 +104,8 @@ class UpnpDiscover(object):
 
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
-        Call this method to execute discovering task. The callback function has a \
-minimal definition::
+        Call this method to execute discovering task. The callback function \
+has a minimal definition::
 
             def callback(upnp_discover_instance, device, **kw):
                 pass
@@ -183,7 +184,9 @@ has been found or the computer recived a new status from a device.
                 raise Exception("Device %s got vart master keys",
                                 device.serial, serial)
         else:
-            self.devices[uuid] = Device(uuid, serial, master_key, disc_ver)
+            d = Device(uuid, serial, master_key, disc_ver)
+            d.update_status()
+            self.devices[uuid] = d
 
     def get_master_key(self, uuid):
         return self.devices[uuid].master_key

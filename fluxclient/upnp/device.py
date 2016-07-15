@@ -32,7 +32,8 @@ DEVICE_STATUS_CODE = {
 
 
 class Device(object):
-    """A `Device` object is an instance stores device information found from :class:`fluxclient.upnp.UpnpDiscover`"""
+    """A `Device` object is an instance stores device information found from \
+:class:`fluxclient.upnp.UpnpDiscover`"""
 
     # Device information
     #   Basic Identify
@@ -164,7 +165,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         :rtype: :class:`fluxclient.robot.robot.Robot`
         """
         # TODO
-        kw.pop("conn_callback")
+        kw.pop("conn_callback", None)
         return FluxRobot((self.ipaddr, port), client_key, device=self, **kw)
 
     def connect_camera(self, client_key, port=23812, **kw):
@@ -173,15 +174,15 @@ to 1.0. Only vaild while running task (st_id > 0).
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
         # TODO
-        kw.pop("conn_callback")
+        kw.pop("conn_callback", None)
         return FluxCamera((self.ipaddr, port), client_key, device=self, **kw)
 
     def to_dict(self, serialized=False):
         """Creates a new dictionay store device information
 
-        :param bool serialized: Return a json serializeable dict if serialized is \
-True. It is useful if you want to pass flux device information over file, \
-socket or other serial devices"""
+        :param bool serialized: Return a json serializeable dict if \
+serialized is True. It is useful if you want to pass flux device information \
+over file, socket or other serial devices"""
 
         return {
             "uuid": str(self._uuid) if serialized else self._uuid,
