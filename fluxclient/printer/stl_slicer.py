@@ -227,7 +227,7 @@ class StlSlicer(object):
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
-                return False, '%s not set yet' % (n)
+                return False, 'id:%s is not setted yet' % (n)
         # tmp files
         if platform.platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
@@ -274,6 +274,7 @@ class StlSlicer(object):
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
         p.start()
+        return True, ''
 
     def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
         tmp_gcode_file = command[3]
@@ -645,7 +646,7 @@ class StlSlicerCura(StlSlicer):
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
-                return False, '%s not set yet' % (n)
+                return False, 'id:%s is not setted yet' % (n)
         # tmp files
         if platform.platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
@@ -688,6 +689,7 @@ class StlSlicerCura(StlSlicer):
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
         p.start()
+        return True, ''
 
     def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
         tmp_gcode_file = command[2]
