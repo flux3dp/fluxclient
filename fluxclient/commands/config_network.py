@@ -1,4 +1,6 @@
 
+# WARNING: this file is deprecated and will not work anymore
+
 """
 flux_config_network is a simple tool shows how to organize and send network
 configuration to fluxmonitord daemon.

@@ -34,9 +34,6 @@ def num_to_XYZE(command):
 
 
 class FcodeToGcode(FcodeBase):
-    """
-    see here for fcode spec: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1
-    """
     def __init__(self, buf=''):
         super(FcodeToGcode, self).__init__()
         self.data = None

@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
-    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1.1
 
     this should done several thing:
       transform gcode into fcode

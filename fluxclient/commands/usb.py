@@ -2,15 +2,15 @@
 from ipaddress import IPv4Interface, IPv4Address
 from getpass import getpass
 import argparse
-import logging
 import sys
 
-from fluxclient.commands.misc import get_or_create_default_key
-from fluxclient.usb.task import UsbTask, UsbTaskError
+from fluxclient.commands.misc import get_or_create_default_key, setup_logger
 from fluxclient.upnp.misc import parse_network_config
+from fluxclient.usb.task import UsbTask, UsbTaskError
 
-logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger(__name__)
+PROG_DESCRIPTION = "Flux device usb configuration console."
+PROG_EPILOG = ""
+logger = None
 
 
 def do_auth(task):
@@ -25,7 +25,7 @@ def do_auth(task):
 
 
 def printhelp():
-    print("""Help:
+    logger.info("""Help:
     3 - Modify general settings
     4 - Modify network settings
     5 - Check current wifi SSID
@@ -81,23 +81,23 @@ def do_set_password(task):
     if getpass("Confirm new password: ") != new_pwd:
         raise RuntimeError("New password not match")
 
-    print(task.set_password(new_pwd))
+    logger.info(task.set_password(new_pwd))
 
 
 def do_get_ssid(task):
-    print(task.get_ssid())
+    logger.info(task.get_ssid())
 
 
 def do_get_ipaddr(task):
-    print(task.get_ipaddr())
+    logger.info(task.get_ipaddr())
 
 
 def do_scan_wifi(task):
     ret = task.list_ssid()
-    print("%-30s %-4s %s" % ("SSID", "RSSI", "SECURITY"))
+    logger.info("%-30s %-4s %s" % ("SSID", "RSSI", "SECURITY"))
     for l in ret:
-        print("%-30s %-4s %s" % (l.get("ssid"), l.get("rssi"),
-                                 l.get("security")))
+        logger.info("%-30s %-4s %s" % (l.get("ssid"), l.get("rssi"),
+                                       l.get("security")))
 
 
 def cmdline(task):
@@ -119,26 +119,22 @@ def cmdline(task):
         elif cmd == "8":
             do_scan_wifi(task)
         else:
-            print("Unknow command id: %s" % cmd)
+            logger.info("Unknow command id: %s" % cmd)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='flux usb tool')
-    parser.add_argument('-d', dest='debug', action='store_const',
-                        const=True, default=False, help='Print debug log')
-    parser.add_argument('-b', dest='baudrate', type=str, default=115200,
-                        help="Baudrate")
+    global logger
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
+    parser.add_argument('--verbose', dest='verbose', action='store_const',
+                        const=True, default=False, help='Verbose output')
     parser.add_argument(dest='serial', type=str,
                         help="Device serial port")
 
     options = parser.parse_args()
-    if options.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+    logger = setup_logger(__name__, debug=options.verbose)
 
-    task = UsbTask(options.serial, get_or_create_default_key(),
-                   options.baudrate)
+    task = UsbTask(options.serial, get_or_create_default_key())
     logger.info("""Device:
     Nickname: %(name)s
     Serial: %(serial)s

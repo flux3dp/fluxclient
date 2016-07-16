@@ -2,59 +2,55 @@
 from tempfile import NamedTemporaryFile
 import datetime
 import argparse
-import logging
 import sys
 import os
 
 from fluxclient.commands.misc import (get_or_create_default_key,
-                                      connect_robot_helper)
+                                      connect_robot_helper, setup_logger)
 from fluxclient.hw_profile import HW_PROFILE
 
-
-logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger(__name__)
+PROG_DESCRIPTION = "Flux raw scan tool"
+PROG_EPILOG = ""
+logger = None
 
 
 def prepare_robot(options):
-    client, _ = connect_robot_helper(options.target, options.clientkey)
+    robot, _ = connect_robot_helper(options.target, options.clientkey)
 
-    pos = client.position()
-    if pos == "CommandTask":
-        client.begin_scan()
-    elif pos == "ScanTask":
-        pass
+    status = robot.report_play()
+    if status["st_id"] == 0:
+        return robot.scan()
     else:
         raise RuntimeError("Unknow position: %s" % pos)
 
-    return client
+
+def print_help():
+    logger.info("""
+Type 'i' (image) to get a screenshot
+Type 'g' (go) to start progress
+Type 'L' (Left) toggle Left Laser
+Type 'R' (Right) toggle Right Laser
+Type 'S[number]' (Step) to mave [number] step
+Type 'C[length]' (Change) change step length for each step
+Type 'T[steps]' Set total steps
+Type 'B' show calibration
+Type 'check' to check proper camera setting
+Type 'do calibrate' to do calibrate
+Type 'quit', 'exit' to leave""")
 
 
-def logger_info(logger):
-    logger.info("Type 'i' (image) to get a screenshot")
-    logger.info("Type 'g' (go) to start progress")
-    logger.info("Type 'L' (Left) toggle Left Laser")
-    logger.info("Type 'R' (Right) toggle Right Laser")
-    logger.info("Type 'S[number]' (Step) to mave [number] step")
-    logger.info("Type 'C[length]' (Change) change step length for each step")
-    logger.info("Type 'T[steps]' Set total steps")
-    logger.info("Type 'B' show calibration")
-    logger.info("Type 'check' to check proper camera setting")
-    logger.info("Type 'do calibrate' to do calibrate")
-    logger.info("Type 'quit', 'exit' to leave")
+def interactive(scan):
+    print_help()
 
-
-def interactive(robot):
-    logger_info(logger)
     total_steps = None
     laser_left = False
     laser_right = False
+
     while True:
-        sys.stdout.write("> ")
-        sys.stdout.flush()
-        l = sys.stdin.readline()
+        l = input("> ")
         if l.startswith("i"):
             logger.info("Get an image...")
-            images = robot.oneshot()
+            images = scan.oneshot()
             tempfiles = []
             for mime, buf in images:
                 ntf = NamedTemporaryFile(suffix=".jpg", delete=False)
@@ -69,7 +65,7 @@ def interactive(robot):
         elif l.startswith('S'):
             l = l.rstrip('\n')
             if len(l) == 1:
-                robot.scan_next()
+                scan.forward()
 
             else:
                 try:
@@ -78,10 +74,10 @@ def interactive(robot):
                     step = 1
                 if step > 0:
                     for i in range(step):
-                        robot.scan_next()
+                        scan.forward()
                 else:
                     for i in range(abs(step)):
-                        robot.scan_backward()
+                        scan.backward()
 
         elif l.startswith('T'):
             l = l.rstrip("\n")
@@ -94,33 +90,32 @@ def interactive(robot):
             except:
                 step_len = 180
 
-            robot.set_scanlen(step_len)
+            scan.step_length(step_len)
 
         elif l.startswith('L'):
             laser_left = not laser_left
-            robot.scan_laser(laser_left, laser_right)
+            scan.laser(laser_left, laser_right)
         elif l.startswith('R'):
             laser_right = not laser_right
-            robot.scan_laser(laser_left, laser_right)
+            scan.laser(laser_left, laser_right)
         elif l.startswith('q') or l.startswith('e'):
-            robot.quit_task()
-            robot.close()
+            scan.quit()
             os._exit(0)
         elif l.startswith('c'):
-            res = robot.scan_check()
-            print(res)
-            print('(0: closed, 1: open, 3: open and find chess board)')
+            logger.info("Checking camera...")
+            logger.info("Done: %s", scan.check_camera())
+            logger.info('(0: closed, 1: open, 3: open and find chess board)')
 
         elif l.startswith('d'):
-            res = robot.calibrate()
-            print(res)
+            logger.info("Calibrating...")
+            logger.info("Done: %s", scan.calibrate())
 
         elif l.startswith('B'):
-            res = robot.get_calibrate()
-            print(res)
+            logger.info("Calibrate: %s", scan.get_calibrate())
 
         else:
-            logger_info(logger)
+            logger.info("Unknow command")
+            print_help()
 
 
 def print_progress(step, total):
@@ -131,50 +126,46 @@ def print_progress(step, total):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='flux scanner')
-
-    parser.add_argument('-a', dest='auto', action='store_const',
-                        const=True, default=False, help='Start with no asking')
-    parser.add_argument('-d', dest='debug', action='store_const',
-                        const=True, default=False, help='Print debug log')
-    parser.add_argument('--path', dest='dist', type=str, default=".",
-                        help="Where to save images")
-    parser.add_argument('--prefix', dest='prefix', type=str, default=None,
-                        help="Image filename prefix")
+    global logger
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
     parser.add_argument(dest='target', type=str,
                         help="Printer connect with. It can be printer UUID "
                              "or IP address like 192.168.1.1 or "
                              "192.168.1.1:23811")
     parser.add_argument('--key', dest='clientkey', type=str, default=None,
                         help='Client identify key (A RSA pem)')
+    parser.add_argument('-a', dest='auto', action='store_const',
+                        const=True, default=False, help='Start with no asking')
+    parser.add_argument('--verbose', dest='verbose', action='store_const',
+                        const=True, default=False, help='Verbose output')
+    parser.add_argument('--path', dest='dist', type=str, default=".",
+                        help="Where to save images")
+    parser.add_argument('--prefix', dest='prefix', type=str, default=None,
+                        help="Image filename prefix")
     options = parser.parse_args()
+    logger = setup_logger(__name__, debug=options.verbose)
     options.clientkey = get_or_create_default_key(options.clientkey)
 
-    if options.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
-    robot = prepare_robot(options)
-    robot.set_scanlen(HW_PROFILE['model-1']['scan_full_len'] / 400.)
+    scan = prepare_robot(options)
+    scan.step_length(HW_PROFILE['model-1']['scan_full_len'] / 400.)
 
     if not options.auto:
-        total_steps = interactive(robot)
+        total_steps = interactive(scan)
 
     filename_prefix = options.prefix or \
         datetime.datetime.now().strftime("scan_%Y%m%d_%H%M")
     filename_prefix = os.path.join(options.dist, filename_prefix)
     filename_prefix = os.path.join(options.dist, '')
-    print(filename_prefix)
 
     logger.info("Image will save to %s*.jpg" % filename_prefix)
     suffix = ['L', 'R', 'O']
-    images = robot.scanimages()
+    images = scan.scanimages()
     total_steps = 400
     for step in range(total_steps):
         print_progress(step, total_steps)
-        images = robot.scanimages()
-        robot.scan_next()
+        images = scan.scanimages()
+        scan.forward()
         for i in range(len(images)):
             mime, buf = images[i]
             filename = "%s_%03i_%i.jpg" % (filename_prefix, step, i)

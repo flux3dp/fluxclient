@@ -1,15 +1,16 @@
-#!/usr/bin/env python3
-import argparse
-import logging
-from re import findall
-from time import time
-import datetime
 
-import numpy as np
+from datetime import datetime
+from time import time
+from re import findall
+import argparse
+import random
 
 from fluxclient.scanner.scan_settings import ScanSetting
-from fluxclient.scanner.tools import read_pcd, write_stl, write_pcd
 from fluxclient.scanner.pc_process import PcProcess
+from fluxclient.scanner.tools import read_pcd
+
+PROG_DESCRIPTION = "An experiment tool for scanning improve"
+PROG_EPILOG = ""
 
 
 def show_pc(name, pc_in):
@@ -24,14 +25,15 @@ def sub_command(in_file, out_file, command=''):
 
     _PcProcess.clouds['in'] = _PcProcess.to_cpp([read_pcd(in_file), []])
     print(show_pc('pc_in', _PcProcess.clouds['in']))
-    # for i in findall('[A-Z][+-]?[0-9]+[.]?[0-9]*', command):
+
     for i in findall('[A-Z][a-z]?[+-]?[0-9]*[.]?[0-9]*', command):
-        timestamp = datetime.datetime.fromtimestamp(time()).strftime('%H:%M:%S')
+        timestamp = datetime.fromtimestamp(time()).strftime('%H:%M:%S')
         if i.startswith('N'):
             _PcProcess.delete_noise('in', 'in', float(i[1:]))
-            print(timestamp, show_pc('after noise del', _PcProcess.clouds['in']))
+            print(timestamp, show_pc('after noise del',
+                  _PcProcess.clouds['in']))
         elif i.startswith('P'):
-            print(timestamp, 'converting to mesh....', end='')
+            print(timestamp, 'converting to mesh....')
             _PcProcess.to_mesh('in')
             suffix = 'stl'
             print('done')
@@ -61,8 +63,10 @@ def sub_command(in_file, out_file, command=''):
                 tmp_index = 0
             else:
                 tmp_index = -1
-            import random
-            r = lambda: random.randint(0, 255)
+
+            def r():
+                return random.randint(0, 255)
+
             for j in output[tmp_index:]:
                 c = [r(), r(), r()]
                 for k in j:
@@ -75,19 +79,23 @@ def sub_command(in_file, out_file, command=''):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='An experiment tool for scanning improve', formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-i', '--input', help='input filename', required=True)
-    parser.add_argument('-o', '--output', help='output filename', default='output.pcd')
-    parser.add_argument('-c', '--command', default='', help='ex: N0.3PE\n'
-                                                            'N[stddev]: noise del with dev [stddev]\n'
-                                                            'P: Possion Meshing\n'
-                                                            'A[fc][value]: add [floor] or [ceiling] at z = [value]'
-                                                            'E: export file\n'
-                                                            'C[s]?[value]: clustring points base on distance'
-                        )
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
+    parser.add_argument('-i', '--input', dest='input', type=str,
+                        required=True, help='input filename')
+    parser.add_argument(dest='output', help='output filename',
+                        default='output.pcd')
+    parser.add_argument(
+        '-c', '--command', default='',
+        help='ex: N0.3PE\n'
+             ' N[stddev]: noise del with dev [stddev]\n'
+             ' P: Possion Meshing\n'
+             ' A[fc][value]: add [floor] or [ceiling] at z = [value]'
+             ' E: export file\n'
+             ' C[s]?[value]: clustring points base on distance')
+    options = parser.parse_args()
 
-    if args.output is None:
-        args.output = args.input[:-4] + "_out" + ".pcd"
+    if options.output is None:
+        options.output = options.input[:-4] + "_out" + ".pcd"
 
-    sub_command(args.input, args.output, args.command)
+    sub_command(options.input, options.output, options.command)

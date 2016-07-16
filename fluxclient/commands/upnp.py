@@ -7,6 +7,14 @@ import sys
 from .misc import (get_or_create_default_key, setup_logger,
                    network_config_helper)
 
+PROG_DESCRIPTION = "Flux upnp tool allow user change device settings."
+PROG_EPILOG = """Upnp tool support
+  'Grant access permission from password'
+  'Manage access control list'
+  'Change device password'
+  'Change device network'
+"""
+
 
 def quit_program(upnp, logger):
     """Quit"""
@@ -109,8 +117,12 @@ def run_commands(upnp, logger):
             if not r:
                 continue
 
-            i = int(r, 10)
-            t = tasks[i]
+            try:
+                i = int(r, 10)
+                t = tasks[i]
+            except (IndexError, ValueError):
+                logger.error("Unknow task: '%s'", r)
+                continue
             t(upnp, logger)
         except UpnpError as e:
             logger.error("Error '%s'", e)
@@ -121,18 +133,40 @@ def run_commands(upnp, logger):
         logger.info("")
 
 
+def fast_add_trust(upnp, logger):
+    from fluxclient.upnp import UpnpError
+
+    try:
+        upnp.add_trust(getuser(),
+                       upnp.client_key.public_key_pem.decode())
+        logger.info("authorized.")
+        return 0
+    except UpnpError as e:
+        logger.error("Error '%s'", e)
+        return 1
+
+
 def main():
-    parser = argparse.ArgumentParser(description='Flux upnp tool')
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
     parser.add_argument(dest='target', type=str,
-                        help='Device UUID or IP Address')
-    parser.add_argument('--debug', dest='debug', action='store_const',
-                        const=True, default=False, help='Print debug message')
+                        help="Device uuid or ipaddress to connect to. "
+                             "IP address can be '192.168.1.1' or "
+                             "'192.168.1.1:23811'.")
     parser.add_argument('--key', dest='client_key', type=str, default=None,
                         help='Client identify key (RSA key with pem format)')
+    parser.add_argument('-a', '--auth-only', dest='auth_only',
+                        action='store_const', const=True, default=False,
+                        help='Do a quick authorize and exit rather then enter '
+                             'the interaction shell')
+    parser.add_argument('-p', '--password', dest='password', type=str,
+                        help='Use password in argument instead. A password '
+                             'prompt will not appear.')
+    parser.add_argument('--verbose', dest='verbose', action='store_const',
+                        const=True, default=False, help='Verbose output')
 
     options = parser.parse_args()
-
-    logger = setup_logger(__name__, debug=options.debug)
+    logger = setup_logger(__name__, debug=options.verbose)
 
     from fluxclient.robot.misc import is_uuid
     from fluxclient.upnp import UpnpTask
@@ -145,7 +179,10 @@ def main():
         upnp = UpnpTask(UUID(int=0), client_key, ipaddr=options.target)
 
     if not upnp.authorized:
-        password = getpass("Device Password: ")
+        if options.password is None:
+            password = getpass("Device Password: ")
+        else:
+            password = options.password
         upnp.authorize_with_password(password)
 
     logger.info("\n"
@@ -155,7 +192,10 @@ def main():
                 "IP Address: %s\n", upnp.serial, upnp.uuid, upnp.model_id,
                 upnp.version, upnp.ipaddr)
 
-    run_commands(upnp, logger)
+    if options.auth_only:
+        return fast_add_trust(upnp, logger)
+    else:
+        run_commands(upnp, logger)
 
 
 if __name__ == "__main__":
