@@ -1,0 +1,10 @@
+
+; conftest.ini is a test setting file for some of testcase. This
+; file is not always required if you don't want to run those testcase.
+
+
+; [default_device] will let test case test real device operation.
+; Note: Thease test takes lot of time to execute.
+[default_device]
+uuid=123456789abcdef0123456789abcdef0
+password=your_password

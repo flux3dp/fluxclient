@@ -146,7 +146,7 @@ def fast_add_trust(upnp, logger):
         return 1
 
 
-def main():
+def main(params=None):
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
                                      epilog=PROG_EPILOG)
     parser.add_argument(dest='target', type=str,
@@ -165,7 +165,7 @@ def main():
     parser.add_argument('--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Verbose output')
 
-    options = parser.parse_args()
+    options = parser.parse_args(params)
     logger = setup_logger(__name__, debug=options.verbose)
 
     from fluxclient.robot.misc import is_uuid

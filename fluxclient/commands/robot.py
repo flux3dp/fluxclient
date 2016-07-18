@@ -150,7 +150,7 @@ def help_shell(options):
     logger.info(PROG_SHELL_HELP)
 
 
-def main():
+def main(params=None):
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
                                      epilog=PROG_EPILOG)
 
@@ -166,7 +166,7 @@ def main():
                              "informations.")
     parser.add_argument('--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Verbose output')
-    options = parser.parse_args()
+    options = parser.parse_args(params)
     options.clientkey = get_or_create_default_key(options.clientkey)
 
     if options.shell == "simple":

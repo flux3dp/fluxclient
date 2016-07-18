@@ -60,7 +60,7 @@ def request_frame_sender(camera, period):
     return t
 
 
-def serve_forever(options, camera, logger, metadata={}):
+def serve_forever(options, camera, logger, metadata={}, oneshot=False):
     dataset = {
         "name": metadata.get("name", "unknown"),
         "uuid": metadata["uuid"].hex if "uuid" in metadata else "unknown",
@@ -79,6 +79,8 @@ def serve_forever(options, camera, logger, metadata={}):
         with open(filename, "wb") as f:
             f.write(imagebuf)
             static.log(filename)
+        if oneshot:
+            c.abort()
 
     if options.fps:
         p = 1 / options.fps
@@ -99,7 +101,7 @@ def serve_forever(options, camera, logger, metadata={}):
         camera.close()
 
 
-def main():
+def main(params=None, oneshot=False):
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
                                      epilog=PROG_EPILOG)
 
@@ -119,7 +121,7 @@ def main():
                         help='Save photo as filename')
     parser.add_argument('--path', dest='path', type=str, default="",
                         help='Path to save photo')
-    options = parser.parse_args()
+    options = parser.parse_args(params)
     options.clientkey = get_or_create_default_key(options.clientkey)
 
     logger = setup_logger(__name__, debug=False)
@@ -130,7 +132,7 @@ def main():
             metadata = device.to_dict()
         else:
             metadata = {"ipaddr": options.target}
-        serve_forever(options, camera, logger, metadata)
+        serve_forever(options, camera, logger, metadata, oneshot=oneshot)
     finally:
         camera.close()
 

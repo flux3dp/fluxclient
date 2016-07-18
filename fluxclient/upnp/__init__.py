@@ -10,7 +10,7 @@ __all__ = ["UpnpDiscover", "UpnpTask", "UpnpError", "NotSupportError",
            "AuthError", "TimeoutError", "discover_device", "Device"]
 
 
-def discover_device(uuid, lookup_callback=None):
+def discover_device(uuid, lookup_callback=None, timeout=float("INF")):
     """Discover and return device
 
     :param uuid uuid: Device UUID
@@ -25,6 +25,6 @@ discover.
         discover.stop()
 
     discover = UpnpDiscover(uuid)
-    discover.discover(found_callback, lookup_callback)
+    discover.discover(found_callback, lookup_callback, timeout)
 
     return result[0]
