@@ -57,7 +57,6 @@ def arc(p_1, p_2, p_c, clock=True, sample_n=100):
 
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
-    fcode format: https://github.com/flux3dp/fluxmonitor/wiki/Flux-Device-Control-Describe-File-V1.1
 
     this should done several thing:
       transform gcode into fcode

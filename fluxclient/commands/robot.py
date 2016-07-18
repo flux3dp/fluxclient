@@ -1,7 +1,6 @@
 
 import readline
 import argparse
-import logging
 import atexit
 import sys
 import os
@@ -9,6 +8,42 @@ import os
 from fluxclient.commands.misc import (setup_logger,
                                       get_or_create_default_key,
                                       connect_robot_helper)
+
+
+PROG_DESCRIPTION = "Flux device control console."
+PROG_EPILOG = ""
+PROG_SHELL_HELP = """
+There are three default shell options for user:
+
+  'simple' - This is a simple interactive shell for user.
+  'curses' - Curses is an advance interactive shell but it has some bug.
+  'ipython' - If you have IPython installed, this shell will invoke IPython \
+shell after connected. You can use this shell to test your codes with device \
+control.
+
+Shell also support user custom shell. Here is an example:
+
+1. Source code layout:
+
+    myproject/
+        __init__.py
+        my_robot_shell.py
+
+2. my_robot_shell.py source code:
+
+    def my_shell(robot, device=None):
+        # Note:
+        # 'robot' argument is an instance of \
+:class:`fluxclient.robot.robot.Robot`
+        # 'device' argument is an instance of \
+:class:`fluxclient.upnp.device.Device`. This argument maybe None if user give \
+an IPAddress rather then an UUID.
+        print("Here is connected robot object: %s" % robot)
+        return 0
+
+3. Run 'flux_robot {UUID} --shell myproject.my_robot_shell.my_shell'
+
+"""
 
 
 def setup_readline():
@@ -20,7 +55,33 @@ def setup_readline():
     atexit.register(readline.write_history_file, histfile)
 
 
-def robot_shell(options):
+def simple_shell(options):
+    logger = setup_logger("Robot", debug=options.verbose)
+    setup_readline()
+
+    def conn_callback(*args):
+        sys.stdout.write(".")
+        sys.stdout.flush()
+        return True
+
+    client, _ = connect_robot_helper(options.target, options.clientkey)
+
+    from fluxclient.commands.misc.robot_console import RobotConsole
+    robot_client = RobotConsole(client)
+    logger.info("----> READY")
+    logger.info("Use command 'help' to get available commands.")
+
+    while True:
+        r = input("> ")
+        if not r:
+            continue
+        try:
+            robot_client.on_cmd(r.strip())
+        except Exception:
+            logger.exception("Unhandle Error")
+
+
+def curses_shell(options):
     from fluxclient.commands.misc.console import Console
 
     with Console() as console:
@@ -32,13 +93,14 @@ def robot_shell(options):
             return True
 
         try:
-            logger = setup_logger("Robot", console, options.debug)
+            logger = setup_logger("Robot", console, options.verbose)
             client, _ = connect_robot_helper(options.target, options.clientkey,
                                              console)
 
             from fluxclient.commands.misc.robot_console import RobotConsole
             robot_client = RobotConsole(client)
             logger.info("----> READY")
+            logger.info("Use command 'help' to get available commands.")
             while True:
                 try:
                     cmd = console.read_cmd()
@@ -54,71 +116,67 @@ def robot_shell(options):
                 cmd = console.read_cmd()
 
 
-def ipython_shell(options):
-    logger = setup_logger("Robot", debug=options.debug)
-    import IPython
+def python_shell(options):
+    logger = setup_logger("Robot", debug=options.verbose)
 
     def conn_callback(*args):
         sys.stdout.write(".")
         sys.stdout.flush()
         return True
 
-    robot, _ = connect_robot_helper(options.target, options.clientkey)  # noqa
+    if options.shell == "ipython":
+        import IPython
+    else:
+        import importlib
+        sys.path.append(os.path.abspath(""))
+        module_name, entrance_name = options.shell.rsplit(".", 1)
+        module_instance = importlib.import_module(module_name)
+        entrance = module_instance.__getattribute__(entrance_name)
 
-    logger.info("----> READY")
-    logger.info(">> robot")
-    IPython.embed()
+    robot, device = connect_robot_helper(options.target, options.clientkey)
+
+    if options.shell == "ipython":
+        logger.info("----> READY")
+        logger.info("""
+      * Hint: Try 'robot?' and 'dir(robot)' to get more informations)\n""")
+        IPython.embed()
+        return 0
+    else:
+        return entrance(robot, device)
 
 
-def simple_shell(options):
-    logger = setup_logger("Robot", debug=options.debug)
-    setup_readline()
-
-    def conn_callback(*args):
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        return True
-
-    client, _ = connect_robot_helper(options.target, options.clientkey)
-
-    from fluxclient.commands.misc.robot_console import RobotConsole
-    robot_client = RobotConsole(client)
-    logger.info("----> READY")
-
-    while True:
-        r = input("> ")
-        if not r:
-            continue
-        try:
-            robot_client.on_cmd(r.strip())
-        except Exception:
-            logger.exception("Unhandle Error")
+def help_shell(options):
+    logger = setup_logger("Robot", debug=options.verbose)
+    logger.info(PROG_SHELL_HELP)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='flux robot')
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
 
     parser.add_argument(dest='target', type=str,
-                        help="Printer connect with. It can be printer uuid "
-                             "or IP address like 192.168.1.1 or "
-                             "192.168.1.1:23811")
-    parser.add_argument('--debug', dest='debug', action='store_const',
-                        const=True, default=False, help='Print debug message')
-    parser.add_argument('--ipython', dest='ipython', action='store_const',
-                        const=True, default=False, help='Use python shell')
-    parser.add_argument('--simple', dest='simple', action='store_const',
-                        const=True, default=False, help='Use python shell')
+                        help="Device uuid or ipaddress to connect to. "
+                             "IP address can be '192.168.1.1' or "
+                             "'192.168.1.1:23811'.")
     parser.add_argument('--key', dest='clientkey', type=str, default=None,
                         help='Client identify key (A RSA pem)')
+    parser.add_argument('-s', '--shell', dest='shell', default='simple',
+                        help="Shell will active after connect to device. "
+                             "use 'flux_robot --shell help' to get more "
+                             "informations.")
+    parser.add_argument('--verbose', dest='verbose', action='store_const',
+                        const=True, default=False, help='Verbose output')
     options = parser.parse_args()
     options.clientkey = get_or_create_default_key(options.clientkey)
 
-    if options.ipython:
-        ipython_shell(options)
-    elif options.simple:
+    if options.shell == "simple":
         simple_shell(options)
+    elif options.shell == "curses":
+        curses_shell(options)
+    elif options.shell == "help":
+        help_shell(options)
     else:
-        robot_shell(options)
+        python_shell(options)
 
     return 0
 

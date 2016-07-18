@@ -8,6 +8,10 @@ from fluxclient.upnp import UpnpDiscover
 from .misc import CharacterRenderHelper
 
 
+PROG_DESCRIPTION = "Finds FLUX Delta devices in local network."
+PROG_EPILOG = ""
+
+
 class ConsoleFormatter(object):
     FORMAT_STR = "\r%32s %-10s %-9s ## %s\n%32s %-10s %-10s\n"
 
@@ -48,7 +52,7 @@ class JsonFormatter(object):
         else:
             sys.stdout.write(", ")
 
-        buf = json.dumps(device.to_dict(serilize=True))
+        buf = json.dumps(device.to_dict(serialized=True))
         sys.stdout.write(buf)
         sys.stdout.flush()
 
@@ -100,13 +104,12 @@ class FluxDeviceDiscover(object):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Flux device discover tool.")
+    parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
+                                     epilog=PROG_EPILOG)
 
     parser.add_argument(dest='uuid', type=UUID, default=None, nargs="?",
                         help='Find specific device only')
-    parser.add_argument('-f', dest='format', type=str, choices=[
-                        'console', 'json'],
+    parser.add_argument('-f', dest='format', type=str, choices=['json'],
                         default='console')
     parser.add_argument('-t', dest='timeout', type=float, default=float('inf'),
                         help='Discover timeout, flux_discover will quit after'

@@ -41,8 +41,10 @@ connect. For example: ("192.168.1.1", 23812)
     def disable_streaming(self):
         self.sock.send(struct.pack("<H2s", 4, b"s-"))
 
-    def requrest_frame(self):
+    def require_frame(self):
         self.sock.send(struct.pack("<H1s", 3, b"f"))
+
+    requrest_frame = require_frame
 
     def fileno(self):
         return self.sock.fileno()
