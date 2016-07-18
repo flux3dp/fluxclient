@@ -89,7 +89,7 @@ class StlSlicer(object):
             elif buf_type == 'obj':
                 self.models[name] = self.read_obj(buf)
             else:
-                raise('uknow file type')
+                raise('unknown file type')
         except:
             return False
         else:
