@@ -4,7 +4,7 @@ import logging
 import struct
 import sys
 from zlib import crc32
-from math import sqrt
+from math import sqrt, sin, cos, pi, atan2
 import time
 from re import findall
 from getpass import getuser
@@ -14,6 +14,45 @@ from fluxclient.fcode.fcode_base import FcodeBase, POINT_TYPE
 from fluxclient.hw_profile import HW_PROFILE
 
 logger = logging.getLogger(__name__)
+
+
+def arc(p_1, p_2, p_c, clock=True, sample_n=100):
+    """
+    https://en.wikipedia.org/wiki/Spherical_coordinate_system
+    http://www.cnccookbook.com/CCCNCGCodeArcsG02G03Part2.htm
+    """
+
+    _p_1, _p_2 = p_1[:2], p_2[:2]
+
+    for i in range(2):
+        _p_1[i] = p_1[i] - p_c[i]
+        _p_2[i] = p_2[i] - p_c[i]
+    r_1 = sum(i ** 2 for i in _p_1) ** 0.5
+    r_2 = sum(i ** 2 for i in _p_2) ** 0.5
+    # print('r12', r_1, r_2)
+    # assert r_1 - r_2 < 0.001
+    # print(_p_1, _p_2)
+
+    theta_1 = atan2(_p_1[1], _p_1[0])
+    theta_2 = atan2(_p_2[1], _p_2[0])
+    if theta_2 > theta_1 and clock:
+        theta_2 -= 2 * pi
+    elif theta_2 < theta_1 and not clock:
+        theta_2 += 2 * pi
+
+    ret = []
+    r = r_1
+    for t in range(sample_n + 1):
+        np = [None, None, None]
+        ratio = t / sample_n
+        theta = ratio * (theta_2) + (1 - ratio) * (theta_1)
+
+        np[0] = r * cos(theta)
+        np[1] = r * sin(theta)
+        np[2] = ratio * (p_2[2]) + (1 - ratio) * (p_1[2])
+        ret.append(np)
+
+    return ret
 
 
 class GcodeToFcode(FcodeBase):
@@ -116,6 +155,62 @@ class GcodeToFcode(FcodeBase):
                 logger.debug('XYZEF fail:' + i)
 
         return command, number
+
+    def G2_G3(self, input_list):
+        sample_n = 100
+        if input_list[0] == 'G2':
+            clock = True
+        else:
+            clock = False
+        command, d = self.XYZEF(input_list)
+        if d[0]:
+            self.current_speed = d[0]
+        c_delta = [0.0, 0.0, 0.0]
+        for i in input_list:
+            if i.startswith('I'):
+                c_delta[0] = float(i[1:]) * self.unit
+            elif i.startswith('J'):
+                c_delta[1] = float(i[1:]) * self.unit
+
+        p_1 = self.current_pos[:3]
+
+        # print(E_split)
+        E_index = None
+        for i in range(4, len(d)):
+            if d[i] is not None:
+                E_index = i
+        E_split = [None] * 3
+
+        if self.absolute:
+            p_2 = d[1:4]
+            E_split[E_index - 4] = (d[E_index] - self.current_pos[E_index - 1]) / sample_n
+            E_final = d[4:]
+        else:
+            p_2 = [self.current_pos[i] + d[i + 1] for i in range(3)]
+            E_split[E_index - 4] = d[E_index] / sample_n
+            E_final = [None] * 3
+            if E_index:
+                E_final[E_index - 4] = d[E_index] + self.current_pos[E_index - 1]
+            # E_final = d[4:]
+        p_c = [p_1[i] + c_delta[i] for i in range(3)]
+
+        sub_g1 = arc(p_1, p_2, p_c, clock, sample_n)
+        for i in range(3, 7):
+            command |= (1 << i)  # F, X, Y, Z
+        command |= (1 << (2 - self.tool))
+
+        # print('E_split', E_split)
+        for i in range(len(sub_g1)):
+            sub_g1[i].insert(0, self.current_speed)
+            tmp = [None] * 3
+            tmp[E_index - 4] = self.current_pos[E_index - 1] + i * E_split[E_index - 4]
+            sub_g1[i].extend(tmp)
+
+        sub_g1.append([self.current_speed] + p_2 + E_final)
+        # G1
+        # print('E_final', E_final)
+        return command, sub_g1
+        # p_1 = self.current_pos[:3]
 
     def analyze_metadata(self, input_list, comment):
         """
@@ -241,10 +336,26 @@ class GcodeToFcode(FcodeBase):
                                 self.writer(packer_f(i), output_stream)
 
                     elif line[0] == 'G2' or line[0] == 'G3':
-                        tmp_absolute = self.absolute  # record this flag
-                        self.absolute = True
+                        subcommand, sub_g1 = self.G2_G3(line)
 
-                        self.absolute = tmp_absolute
+                        command = 128 | subcommand
+                        tmp_absolute = self.absolute  # record this flag
+
+                        self.absolute = True
+                        self.writer(packer(2), output_stream)  # set to absolute
+
+                        for data in sub_g1:
+                            # print('d', data)
+                            data = self.analyze_metadata(data, comment)
+                            self.writer(packer(command), output_stream)
+
+                            for i in data:
+                                if i is not None:
+                                    self.writer(packer_f(i), output_stream)
+
+                        if not tmp_absolute:
+                            self.absolute = tmp_absolute
+                            self.writer(packer(3), output_stream)
 
                     elif line[0] == 'X2':  # laser toolhead command
                         command = 32  # only one laser so far
