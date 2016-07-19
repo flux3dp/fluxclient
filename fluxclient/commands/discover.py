@@ -15,25 +15,26 @@ PROG_EPILOG = ""
 class ConsoleFormatter(object):
     FORMAT_STR = "\r%32s %-10s %-9s ## %s\n%32s %-10s %-10s\n"
 
-    def __init__(self):
+    def __init__(self, output):
         self.char_render = CharacterRenderHelper()
+        self.output = output
 
     def print_head(self):
-        sys.stdout.write(
+        self.output.write(
             self.FORMAT_STR % ("UUID", "Serial", "PWD", "Name", "IP Addr",
                                "Version", "Model"))
-        sys.stdout.write("=" * 79 + "\n")
-        sys.stdout.flush()
+        self.output.write("=" * 79 + "\n")
+        self.output.flush()
 
     def print_device(self, device):
-        sys.stdout.write(self.FORMAT_STR % (
+        self.output.write(self.FORMAT_STR % (
             device.uuid.hex, device.serial,
             device.has_password and "YES" or "NO",
             device.name, device.ipaddr, device.version, device.model_id))
-        sys.stdout.flush()
+        self.output.flush()
 
     def print_loopback(self):
-        self.char_render.render(sys.stdout)
+        self.char_render.render(self.output)
 
     def print_tail(self):
         pass
@@ -42,26 +43,29 @@ class ConsoleFormatter(object):
 class JsonFormatter(object):
     first = True
 
+    def __init__(self, output):
+        self.output = output
+
     def print_head(self):
-        sys.stdout.write("[")
-        sys.stdout.flush()
+        self.output.write("[")
+        self.output.flush()
 
     def print_device(self, device):
         if self.first:
             self.first = False
         else:
-            sys.stdout.write(", ")
+            self.output.write(", ")
 
         buf = json.dumps(device.to_dict(serialized=True))
-        sys.stdout.write(buf)
-        sys.stdout.flush()
+        self.output.write(buf)
+        self.output.flush()
 
     def print_loopback(self):
         pass
 
     def print_tail(self):
-        sys.stdout.write("]")
-        sys.stdout.flush()
+        self.output.write("]")
+        self.output.flush()
 
 
 class FluxDeviceDiscover(object):
@@ -103,7 +107,7 @@ class FluxDeviceDiscover(object):
             discover_instance.stop()
 
 
-def main():
+def main(params=None):
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
                                      epilog=PROG_EPILOG)
 
@@ -111,16 +115,23 @@ def main():
                         help='Find specific device only')
     parser.add_argument('-f', dest='format', type=str, choices=['json'],
                         default='console')
+    parser.add_argument('-o', dest='output', type=str, default=None,
+                        help='Output to file')
     parser.add_argument('-t', dest='timeout', type=float, default=float('inf'),
                         help='Discover timeout, flux_discover will quit after'
                              'timeout')
 
-    options = parser.parse_args()
+    options = parser.parse_args(params)
+
+    if options.output:
+        output = open(options.output, "w")
+    else:
+        output = sys.stdout
 
     if options.format == 'console':
-        formatter = ConsoleFormatter()
+        formatter = ConsoleFormatter(output)
     elif options.format == 'json':
-        formatter = JsonFormatter()
+        formatter = JsonFormatter(output)
     else:
         raise ValueError("Unknow formatter: %s" % options.format)
 

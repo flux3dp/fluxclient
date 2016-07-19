@@ -21,7 +21,7 @@ def prepare_robot(options):
     if status["st_id"] == 0:
         return robot.scan()
     else:
-        raise RuntimeError("Unknow position: %s" % pos)
+        raise RuntimeError("Unknow status: %s" % status)
 
 
 def print_help():
@@ -125,7 +125,7 @@ def print_progress(step, total):
     sys.stdout.flush()
 
 
-def main():
+def main(params=None):
     global logger
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION,
                                      epilog=PROG_EPILOG)
@@ -135,20 +135,22 @@ def main():
                              "192.168.1.1:23811")
     parser.add_argument('--key', dest='clientkey', type=str, default=None,
                         help='Client identify key (A RSA pem)')
-    parser.add_argument('-a', dest='auto', action='store_const',
+    parser.add_argument('--auto', dest='auto', action='store_const',
                         const=True, default=False, help='Start with no asking')
     parser.add_argument('--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Verbose output')
+    parser.add_argument('--steps', dest='steps', type=int, default=400,
+                        help='Set steps for scan')
     parser.add_argument('--path', dest='dist', type=str, default=".",
                         help="Where to save images")
     parser.add_argument('--prefix', dest='prefix', type=str, default=None,
                         help="Image filename prefix")
-    options = parser.parse_args()
+    options = parser.parse_args(params)
     logger = setup_logger(__name__, debug=options.verbose)
     options.clientkey = get_or_create_default_key(options.clientkey)
 
     scan = prepare_robot(options)
-    scan.step_length(HW_PROFILE['model-1']['scan_full_len'] / 400.)
+    scan.step_length(HW_PROFILE['model-1']['scan_full_len'] / options.steps)
 
     if not options.auto:
         total_steps = interactive(scan)
@@ -161,17 +163,21 @@ def main():
     logger.info("Image will save to %s*.jpg" % filename_prefix)
     suffix = ['L', 'R', 'O']
     images = scan.scanimages()
-    total_steps = 400
+    total_steps = options.steps
+
     for step in range(total_steps):
         print_progress(step, total_steps)
         images = scan.scanimages()
-        scan.forward()
         for i in range(len(images)):
             mime, buf = images[i]
             filename = "%s_%03i_%i.jpg" % (filename_prefix, step, i)
             filename = "%s%03i_%s.jpg" % (filename_prefix, step, suffix[i])
             with open(filename, "wb") as f:
                 f.write(buf)
+        if step > 0:
+            scan.forward()
 
+    scan.quit()
+    print_progress(total_steps, total_steps)
     sys.stdout.write("\n Done.")
     return 0
