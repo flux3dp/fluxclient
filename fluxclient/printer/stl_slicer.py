@@ -171,6 +171,7 @@ class StlSlicer(object):
         """
         # TODO: close ignore when changing back
         counter = 1
+        lines = lines.split('\n')
         bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement
@@ -227,7 +228,7 @@ class StlSlicer(object):
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
-                return False, '%s not set yet' % (n)
+                return False, 'id:%s is not setted yet' % (n)
         # tmp files
         if platform.platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
@@ -267,13 +268,13 @@ class StlSlicer(object):
         logger.debug('command: ' + ' '.join(command))
         self.end_slicing()
 
-        # parent_pipe, child_pipe = Pipe()
-        pipe = []
+        status_list = []
 
         from threading import Thread  # Do not expose thrading in module level
-        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
-        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
+        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
         p.start()
+        return True, ''
 
     def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
         tmp_gcode_file = command[3]
@@ -645,7 +646,7 @@ class StlSlicerCura(StlSlicer):
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
-                return False, '%s not set yet' % (n)
+                return False, 'id:%s is not setted yet' % (n)
         # tmp files
         if platform.platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
@@ -683,11 +684,11 @@ class StlSlicerCura(StlSlicer):
         logger.debug('command: ' + ' '.join(command))
         self.end_slicing()
 
-        # parent_pipe, child_pipe = Pipe()
-        pipe = []
-        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, pipe, len(self.working_p)))
-        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], pipe])
+        status_list = []
+        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
         p.start()
+        return True, ''
 
     def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
         tmp_gcode_file = command[2]

@@ -17,6 +17,12 @@ def stl_binary(request):
     return buf
 
 
+@pytest.fixture(scope="module", params=["tests/printer/data/17-18.obj"])
+def obj_binary(request):
+    buf = open(request.param, 'rb').read()
+    return buf
+
+
 @pytest.fixture(scope="module")
 def img_buf(request):
     buf = open('tests/printer/data/worden.jpg', 'rb').read()
@@ -40,9 +46,19 @@ class TestPrinter:
     def test_read_stl(self, stl_binary):
         StlSlicer.read_stl(stl_binary)
 
+    def test_read_obj(self, obj_binary):
+        StlSlicer.read_obj(obj_binary)
+
     def test_upload(self, stl_binary):
         _stl_slicer = StlSlicer('')
-        _stl_slicer.upload('tmp', stl_binary)
+        assert _stl_slicer.upload('tmp', b'') is False
+        assert _stl_slicer.upload('tmp', b'', 'GG') is False
+        assert _stl_slicer.upload('tmp', stl_binary) is True
+
+    def test_upload_obj(self, obj_binary):
+        _stl_slicer = StlSlicer('')
+        assert _stl_slicer.upload('tmp', obj_binary) is False
+        assert _stl_slicer.upload('tmp', obj_binary, 'obj') is True
 
     def test_duplicate(self, stl_binary):
         _stl_slicer = StlSlicer('')
@@ -57,10 +73,17 @@ class TestPrinter:
     def test_delete(self, stl_binary):
         _stl_slicer = StlSlicer('')
         _stl_slicer.upload('tmp', stl_binary)
-        a, b = _stl_slicer.delete('tmp')
-        assert a is True
-        a, b = _stl_slicer.delete('tmp')
-        assert a is False
+
+        flag, msg = _stl_slicer.delete('tmp')
+        assert 'tmp' not in _stl_slicer.models
+        assert 'tmp' not in _stl_slicer.parameter
+        assert flag is True
+
+        flag, msg = _stl_slicer.delete('tmp')
+        assert flag is False
+
+    def test_advanced_setting(self):
+        pass
 
     @unittest.skipIf(not os.path.isfile('../Slic3r/slic3r.pl'), "specify slic3r path in os.environ")
     def test_slicing(self, stl_binary):
