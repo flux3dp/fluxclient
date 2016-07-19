@@ -83,7 +83,63 @@ class TestPrinter:
         assert flag is False
 
     def test_advanced_setting(self):
-        pass
+        # normal case
+        _stl_slicer = StlSlicer('')
+        c1 = """
+        extrusion_width = 0.4
+        fan_always_on = 0
+        fan_below_layer_time = 15
+        filament_colour = #FFFFFF
+        filament_diameter = 1.75
+        fill_angle = 45
+        fill_density = 20%
+        fill_pattern = honeycomb
+        first_layer_acceleration = 0
+        first_layer_bed_temperature = 0
+        first_layer_extrusion_width = 120%"""
+        assert _stl_slicer.advanced_setting(c1) == []
+
+        # error by checking function
+        c2 = """
+        extrusion_width = 0.4
+        fan_always_on = 0
+        fan_below_layer_time = 15
+        filament_colour = #FFFFFF
+        filament_diameter = 1.75
+        fill_angle = 45
+        fill_density = 20%
+        fill_pattern = jefkwjeofiw
+        first_layer_acceleration = 0
+        first_layer_bed_temperature = 0
+        first_layer_extrusion_width = 120%"""
+        assert _stl_slicer.advanced_setting(c2)[0][0] == 9
+
+        # errors by checking function
+        c3 = """
+        extrusion_width = 0.4
+        fan_always_on = 0
+        fan_below_layer_time = 15
+        filament_colour = #FFFFFF
+        filament_diameter = 1.75
+        fill_angle = 999
+        fill_density = 20%
+        fill_pattern = jefkwjeofiw
+        first_layer_acceleration = 0
+        first_layer_bed_temperature = 0
+        first_layer_extrusion_width = 120%"""
+        assert len(_stl_slicer.advanced_setting(c3)[0]) == 2
+
+        # syntax error
+        c4 = """fwehifuhi"""
+        assert _stl_slicer.advanced_setting(c4) == [(1, 'syntax error: ' + c4)]
+
+        # comment
+        c4 = """# fwehifuhi"""
+        assert _stl_slicer.advanced_setting(c4) == []
+
+    def test_set(self):
+        _stl_slicer = StlSlicer('')
+        assert _stl_slicer.set('tmp', [1, 2, 3]).endswith('not upload yet')
 
     @unittest.skipIf(not os.path.isfile('../Slic3r/slic3r.pl'), "specify slic3r path in os.environ")
     def test_slicing(self, stl_binary):

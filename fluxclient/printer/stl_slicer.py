@@ -169,7 +169,7 @@ class StlSlicer(object):
         return error message of bad input
 
         """
-        # TODO: close ignore when changing back
+        # TODO: close 'ignore' flag when changing some key back
         counter = 1
         lines = lines.split('\n')
         bad_lines = []
