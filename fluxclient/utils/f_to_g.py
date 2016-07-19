@@ -92,7 +92,7 @@ class FcodeToGcode(FcodeBase):
             index += 4
             return True
         except AssertionError as e:
-            raise RuntimeError(FILE_BROKEN, e.args[0] if e.args else "#")
+            return False
 
     def get_img(self):
         """
