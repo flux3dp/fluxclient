@@ -4,7 +4,7 @@ import logging
 import struct
 import sys
 from zlib import crc32
-from math import sqrt, sin, cos, pi, atan2
+# from math import sqrt, sin, cos, pi, atan2
 import time
 from re import findall
 from getpass import getuser
@@ -519,4 +519,4 @@ class GcodeToFcode(FcodeBase):
 
         except Exception as e:
             print('G_to_F fail', file=sys.stderr)
-            raise e
+            return 'broken'
