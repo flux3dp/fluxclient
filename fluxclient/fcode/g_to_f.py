@@ -4,7 +4,7 @@ import logging
 import struct
 import sys
 from zlib import crc32
-# from math import sqrt, sin, cos, pi, atan2
+from math import sqrt, sin, cos, pi, atan2
 import time
 from re import findall
 from getpass import getuser
@@ -462,8 +462,7 @@ class GcodeToFcode(FcodeBase):
                         if line[0] in ['M400']:  # TODO: define a white list
                             pass
                         else:
-                            logger.debug('Undefine gcode: {}'.format(line))
-                        # raise ValueError('Undefine gcode', line)
+                            logger.info('Undefine gcode: {}'.format(line))
                 else:
                     if self.engine == 'cura':
                         if 'FILL' in comment:
@@ -518,5 +517,7 @@ class GcodeToFcode(FcodeBase):
             self.write_metadata(output_stream)
 
         except Exception as e:
-            print('G_to_F fail', file=sys.stderr)
+            import traceback
+            logger.info('G_to_F fail')
+            traceback.print_exc(file=sys.stdout)
             return 'broken'
