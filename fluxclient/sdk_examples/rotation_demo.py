@@ -12,7 +12,6 @@ def main():
 
     # set blocking flag to true, this will return move() until it actually finish
     delta = Delta.connect_delta(ip='192.168.18.114', client_key='./sdk_connection.pem', kick=True, blocking=True)
-    delta.home()
     # move a bit to lock the motor
     delta.move(E2=0, speed=2400)
 

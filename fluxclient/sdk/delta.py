@@ -415,8 +415,6 @@ class Delta(object):
                     raise SDKFatalError(self, "unsupported type({1}) for {0} coordinate".format(name, type(kargs[name])))
         if c > 1:
             raise SDKFatalError(self, "too many E command at once")
-        elif self.loose_flag and c != 0:  # this could be deleted if ticket #209 is done
-            raise SDKFatalError(self, 'motor need to home() before moving')
 
         # form the dict passing to delta
         command_dict = {}  # {F:int, X:float, Y:float, Z:float, E2:float, E3:float, E3:float}
