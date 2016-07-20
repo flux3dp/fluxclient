@@ -5,18 +5,12 @@ from io import BytesIO, StringIO
 import subprocess
 import tempfile
 import os
-from os import remove, environ
-import platform
-import sys
-from multiprocessing import Pipe
-from threading import Thread
+from platform import platform
 import logging
 import copy
 from fluxclient.utils._utils import Tools
 
 from PIL import Image
-# from msgpack import packb, unpackb
-# import pkg_resources
 
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
@@ -133,7 +127,7 @@ class StlSlicer(object):
             self.output = b''.join([self.output[:-(self.image_size + 4)], pack('<I', len(self.image)), self.image])
 
         ######################### fake code ###################################
-        if environ.get("flux_debug") == '1':
+        if os.environ.get("flux_debug") == '1':
             with open('preview.png', 'wb') as f:
                 f.write(image_bytes)
         ############################################################
@@ -230,7 +224,7 @@ class StlSlicer(object):
             if not (n in self.models and n in self.parameter):
                 return False, 'id:%s is not setted yet' % (n)
         # tmp files
-        if platform.platform().startswith("Windows"):
+        if platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
                 os.mkdir('C:\Temp')
             temp_dir = 'C:\Temp'
@@ -282,7 +276,6 @@ class StlSlicer(object):
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
 
         self.working_p[p_index].append(subp)
-        # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         progress = 0.2
         slic3r_error = False
         slic3r_out = [None, None]
@@ -357,7 +350,7 @@ class StlSlicer(object):
                 raise('wrong output type, only support gcode and fcode')
 
             ##################### fake code ###########################
-            if environ.get("flux_debug") == '1':
+            if os.environ.get("flux_debug") == '1':
                 with open('output.gcode', 'wb') as f:
                     with open(tmp_gcode_file, 'rb') as f2:
                         f.write(f2.read())
@@ -392,7 +385,7 @@ class StlSlicer(object):
                 pass
             for filename in p[1]:
                 try:
-                    remove(filename)
+                    os.remove(filename)
                 except:
                     pass
         # self.working_p = []
@@ -415,17 +408,18 @@ class StlSlicer(object):
                     if message[0]:
                         self.output = message[0]
                         self.metadata = message[1]
-                        m = '{"slice_status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
+                        msg = '{"slice_status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
                     else:
                         self.output = None
                         self.metadata = None
-                        m = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
+                        msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
 
                     self.path = message[2]
                     self.path_js = None
+                    from threading import Thread  # Do not expose thrading in module level
                     self.T = Thread(target=self.sub_convert_path)
                     self.T.start()
-                    ret.append(m)
+                    ret.append(msg)
         return ret
 
     @classmethod
@@ -648,7 +642,7 @@ class StlSlicerCura(StlSlicer):
             if not (n in self.models and n in self.parameter):
                 return False, 'id:%s is not setted yet' % (n)
         # tmp files
-        if platform.platform().startswith("Windows"):
+        if platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
                 os.mkdir('C:\Temp')
             temp_dir = 'C:\Temp'
@@ -685,6 +679,7 @@ class StlSlicerCura(StlSlicer):
         self.end_slicing()
 
         status_list = []
+        from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
         p.start()
@@ -697,7 +692,6 @@ class StlSlicerCura(StlSlicer):
         try:
             subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
             self.working_p[p_index].append(subp)
-            # p2 = subprocess.Popen(['osascript', pkg_resources.resource_filename("fluxclient", "printer/hide.AppleScript")], stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
             progress = 0.2
             slic3r_error = False
             slic3r_out = [None, None]
@@ -780,7 +774,7 @@ class StlSlicerCura(StlSlicer):
                 raise('wrong output type, only support gcode and fcode')
 
             ##################### fake code ###########################
-            if environ.get("flux_debug") == '1':
+            if os.environ.get("flux_debug") == '1':
                 with open('output.gcode', 'wb') as f:
                     with open(tmp_gcode_file, 'rb') as f2:
                         f.write(f2.read())
@@ -818,8 +812,8 @@ class StlSlicerCura(StlSlicer):
         content[in]: dict
         write a .ini file
         specify delete not to write some key in content
+        ref: https://github.com/daid/Cura/blob/b878f7dc28698d4d605a5fe8401f9c5a57a55367/Cura/util/sliceEngine.py
         """
-        # ref: https://github.com/daid/Cura/blob/b878f7dc28698d4d605a5fe8401f9c5a57a55367/Cura/util/sliceEngine.py
         thousand = lambda x: float(x) * 1000
 
         new_content = {}

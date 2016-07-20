@@ -74,7 +74,7 @@ def fcode_2_gcode(params=None, input=None, output=sys.stdout):
 
     options = parser.parse_args(params)
 
-    from fluxclient.utils.f_to_g import FcodeToGcode
+    from fluxclient.fcode.f_to_g import FcodeToGcode
 
     try:
         if options.input:
