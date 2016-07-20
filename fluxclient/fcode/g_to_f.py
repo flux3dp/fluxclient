@@ -16,45 +16,6 @@ from fluxclient.hw_profile import HW_PROFILE
 logger = logging.getLogger(__name__)
 
 
-def arc(p_1, p_2, p_c, clock=True, sample_n=100):
-    """
-    https://en.wikipedia.org/wiki/Spherical_coordinate_system
-    http://www.cnccookbook.com/CCCNCGCodeArcsG02G03Part2.htm
-    """
-
-    _p_1, _p_2 = p_1[:2], p_2[:2]
-
-    for i in range(2):
-        _p_1[i] = p_1[i] - p_c[i]
-        _p_2[i] = p_2[i] - p_c[i]
-    r_1 = sum(i ** 2 for i in _p_1) ** 0.5
-    r_2 = sum(i ** 2 for i in _p_2) ** 0.5
-    # print('r12', r_1, r_2)
-    # assert r_1 - r_2 < 0.001
-    # print(_p_1, _p_2)
-
-    theta_1 = atan2(_p_1[1], _p_1[0])
-    theta_2 = atan2(_p_2[1], _p_2[0])
-    if theta_2 > theta_1 and clock:
-        theta_2 -= 2 * pi
-    elif theta_2 < theta_1 and not clock:
-        theta_2 += 2 * pi
-
-    ret = []
-    r = r_1
-    for t in range(sample_n + 1):
-        np = [None, None, None]
-        ratio = t / sample_n
-        theta = ratio * (theta_2) + (1 - ratio) * (theta_1)
-
-        np[0] = r * cos(theta)
-        np[1] = r * sin(theta)
-        np[2] = ratio * (p_2[2]) + (1 - ratio) * (p_1[2])
-        ret.append(np)
-
-    return ret
-
-
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
 
@@ -521,3 +482,37 @@ class GcodeToFcode(FcodeBase):
             logger.info('G_to_F fail')
             traceback.print_exc(file=sys.stdout)
             return 'broken'
+
+
+def arc(p_1, p_2, p_c, clock=True, sample_n=100):
+    """
+    a function dealing with G2, G3 commands
+    ref: http://www.cnccookbook.com/CCCNCGCodeArcsG02G03Part2.htm
+    """
+
+    _p_1, _p_2 = p_1[:2], p_2[:2]
+
+    for i in range(2):
+        _p_1[i] = p_1[i] - p_c[i]
+        _p_2[i] = p_2[i] - p_c[i]
+    r_1 = sqrt(sum(i ** 2 for i in _p_1))
+    r_2 = sqrt(sum(i ** 2 for i in _p_2))
+
+    # assert r_1 - r_2 < 0.001  # should be the same
+
+    theta_1 = atan2(_p_1[1], _p_1[0])
+    theta_2 = atan2(_p_2[1], _p_2[0])
+    if theta_2 > theta_1 and clock:
+        theta_2 -= 2 * pi
+    elif theta_2 < theta_1 and not clock:
+        theta_2 += 2 * pi
+
+    ret = []
+    r = r_1
+    for t in range(sample_n + 1):
+        ratio = t / sample_n
+        theta = ratio * (theta_2) + (1 - ratio) * (theta_1)
+        np = [r * cos(theta), r * sin(theta), ratio * (p_2[2]) + (1 - ratio) * (p_1[2])]
+        ret.append(np)
+
+    return ret
