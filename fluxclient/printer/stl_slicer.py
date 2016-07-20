@@ -276,7 +276,7 @@ class StlSlicer(object):
         p.start()
         return True, ''
 
-    def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
+    def slicing_worker(self, command, config, image, ext_metadata, output_type, status_list, p_index):
         tmp_gcode_file = command[3]
         fail_flag = False
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
@@ -295,7 +295,7 @@ class StlSlicer(object):
                 logger.info(line)
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
                     progress += 0.11
-                    child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
+                    status_list.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % ((line.rstrip())[3:], progress))
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
                 slic3r_out = [5, line]  # errorcode 5
@@ -312,7 +312,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -340,7 +340,7 @@ class StlSlicer(object):
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                    child_pipe.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+                    status_list.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
@@ -375,9 +375,9 @@ class StlSlicer(object):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
-            child_pipe.append([False, slic3r_out, []])
+            status_list.append([False, slic3r_out, path])
         else:
-            child_pipe.append([output, metadata, path])
+            status_list.append([output, metadata, path])
 
     def end_slicing(self):
         """
@@ -411,20 +411,20 @@ class StlSlicer(object):
                 if type(message) == str:
                     ret.append(message)
                 else:
+
                     if message[0]:
                         self.output = message[0]
                         self.metadata = message[1]
-                        self.path = message[2]
-                        self.path_js = None
-                        self.T = Thread(target=self.sub_convert_path)
-                        self.T.start()
                         m = '{"slice_status": "complete", "length": %d, "time": %.3f, "filament_length": %.2f}' % (len(self.output), self.metadata[0], self.metadata[1])
-
                     else:
                         self.output = None
                         self.metadata = None
-                        self.path = None
                         m = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
+
+                    self.path = message[2]
+                    self.path_js = None
+                    self.T = Thread(target=self.sub_convert_path)
+                    self.T.start()
                     ret.append(m)
         return ret
 
@@ -690,7 +690,7 @@ class StlSlicerCura(StlSlicer):
         p.start()
         return True, ''
 
-    def slicing_worker(self, command, config, image, ext_metadata, output_type, child_pipe, p_index):
+    def slicing_worker(self, command, config, image, ext_metadata, output_type, status_list, p_index):
         tmp_gcode_file = command[2]
         tmp_slic3r_setting_file = command[4]
         fail_flag = False
@@ -709,7 +709,7 @@ class StlSlicerCura(StlSlicer):
                         logger.info(line)
                         if line.endswith('s'):
                             progress += 0.12
-                            child_pipe.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
+                            status_list.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
                         elif "Unable to close this loop" in line:
                             slic3r_error = True
                         slic3r_out = [5, line]  # errorcode 5
@@ -730,7 +730,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            child_pipe.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
             if config['flux_calibration'] == '0':
@@ -763,7 +763,7 @@ class StlSlicerCura(StlSlicer):
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
-                    child_pipe.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
+                    status_list.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
@@ -801,7 +801,7 @@ class StlSlicerCura(StlSlicer):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
-            child_pipe.append([False, slic3r_out, []])
+            status_list.append([False, slic3r_out, path])
             ###########################################################
 
             with open(tmp_slic3r_setting_file, 'rb') as f:
@@ -809,7 +809,7 @@ class StlSlicerCura(StlSlicer):
                         f2.write(f.read())
             ###########################################################
         else:
-            child_pipe.append([output, metadata, path])
+            status_list.append([output, metadata, path])
 
     @classmethod
     def cura_ini_writer(cls, file_path, content, delete=None):
@@ -920,6 +920,7 @@ class StlSlicerCura(StlSlicer):
         new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
 
+        add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
         # special function for cura's setting file
         # replace '\\n' by '\n', add two lines of '""" indicating multiple lines of settings
         # in slic3r's setting file:
@@ -930,7 +931,7 @@ class StlSlicerCura(StlSlicer):
         #   aaa
         #   bbb
         #   """
-        add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
+
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])
 
