@@ -133,19 +133,19 @@ class FcodeBase(object):
         will round number to .2f
         """
         if path is None:
-                return ''
+            return ''
         else:
             return dumps([[[round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]] for p in layer] for layer in path])
 
     @classmethod
     def trim_ends(cls, path):
         """
-        trim the moving(non-extruding) path in path's both end
+        trim the moving(non-extruding) part in path's both end
         """
         for layer in [0, -1]:
             while True:
                 if len(path[layer]) >= 2:
-                    # define at end point
+                    # define an edge's type at end point
                     # 0 * 2 + 1 = 1
                     # -1 * 2 + 1 = -1
                     if path[layer][layer * 2 + 1][3] == POINT_TYPE['move']:

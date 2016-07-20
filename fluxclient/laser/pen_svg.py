@@ -1,9 +1,10 @@
+# !/usr/bin/env python3
+
 import logging
 import datetime
 import time
 
 from fluxclient.laser.laser_svg import LaserSvg
-from fluxclient.laser.laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
 from fluxclient.hw_profile import HW_PROFILE
 
@@ -53,9 +54,6 @@ class PenSvg(LaserSvg, SVGParser):
 
         # setting
         gcode += ["X3F3", "X3F2", "X3F1"]
-
-        # home
-        gcode.append("G28")
 
         # move to proper height
         self.laser_on = False

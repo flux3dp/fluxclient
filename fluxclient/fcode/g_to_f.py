@@ -134,7 +134,6 @@ class GcodeToFcode(FcodeBase):
 
         p_1 = self.current_pos[:3]
 
-        # print(E_split)
         E_index = None
         for i in range(4, len(d)):
             if d[i] is not None:
@@ -151,7 +150,7 @@ class GcodeToFcode(FcodeBase):
             E_final = [None] * 3
             if E_index:
                 E_final[E_index - 4] = d[E_index] + self.current_pos[E_index - 1]
-            # E_final = d[4:]
+
         p_c = [p_1[i] + c_delta[i] for i in range(3)]
 
         sub_g1 = arc(p_1, p_2, p_c, clock, sample_n)
@@ -159,7 +158,6 @@ class GcodeToFcode(FcodeBase):
             command |= (1 << i)  # F, X, Y, Z
         command |= (1 << (2 - self.tool))
 
-        # print('E_split', E_split)
         for i in range(len(sub_g1)):
             sub_g1[i].insert(0, self.current_speed)
             tmp = [None] * 3
@@ -167,10 +165,8 @@ class GcodeToFcode(FcodeBase):
             sub_g1[i].extend(tmp)
 
         sub_g1.append([self.current_speed] + p_2 + E_final)
-        # G1
-        # print('E_final', E_final)
+
         return command, sub_g1
-        # p_1 = self.current_pos[:3]
 
     def analyze_metadata(self, input_list, comment):
         """

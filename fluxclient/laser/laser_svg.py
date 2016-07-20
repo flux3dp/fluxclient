@@ -1,7 +1,6 @@
 # !/usr/bin/env python3
 
 import sys
-from math import sin, cos, pi, sqrt
 import logging
 from os import environ
 
@@ -93,16 +92,6 @@ class LaserSvg(LaserBase, SVGParser):
             self.dump('./preview.png')
             with open('output.gcode', 'w') as f:
                 print(gcode, file=f)
-        #######################################################################
-
-        # output only moving
-        # tmp = []
-        # for i in gcode:
-        #     tmp.append(i)
-        #     if i[:2] == 'G1':
-        #         tmp.append(i)
-        # return "\n".join(tmp) + "\n"
-
         ##########################################
 
         return gcode

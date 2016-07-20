@@ -1,7 +1,10 @@
+# !/usr/bin/env python3
+
 import sys
 
 import imageio  # pip install imageio
 import numpy as np
+
 from fluxclient.sdk.delta import Delta
 
 
