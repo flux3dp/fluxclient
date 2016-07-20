@@ -1,10 +1,11 @@
 A Quick Start
 ****************
 
-Welcome! This chapter will show you how to control FLUX Delta's movement in FLUX Delta's SDK mode.
+Welcome! This guide will show you how to control FLUX Delta's movement in FLUX Delta's SDK mode.
 
-.. note:: Required firmware version for FLUX Delta is *v1.3+*
-
+.. note:: 
+	Required firmware version for FLUX Delta is **v1.3+**.
+	You can download it from `here <http://www.mediafire.com/download/g0j49029kc81tb3/fluxfirmware-1.3a1.fxfw>`_.
 
 Finding IP Address
 ++++++++++++++++
@@ -12,7 +13,7 @@ You can get the IP address of your FLUX Delta by running utility program *flux_d
 
 .. code-block:: bash
 
-	$> flux_discover
+	$ flux_discover
 	## Returns ##
 
 	                            UUID Serial     PWD       ## Name
@@ -35,19 +36,19 @@ Open up your favorite text editor, paste and modify following example code:
 
 	from fluxclient.sdk.delta import Delta
 
-	# connect to machine
+	# Connects to machine
 	my_delta = Delta.connect_delta(ip='192.168.18.33', password='flux', kick=True, blocking=False)
 
-	# home
+	# Moves to origin
 	my_delta.home()
 
-	# move the tool head to position:(0, 0, 80)
+	# Moves the toolhead to position:(0, 0, 80)
 	my_delta.move(0, 0, 80)
 
-	# home
+	# Moves to origin
 	my_delta.home()
 
-	# disconnect with delta
+	# Disconnects with the machine
 	my_delta.close()
 
 Save it into ``connect_flux.py``, and run ``python3 connect_flux.py``, then you will see the machine moving according to your commands.
