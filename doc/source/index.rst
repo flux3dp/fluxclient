@@ -14,6 +14,7 @@ FLUX SDK Documentation
 
     installation/index.rst
     tutorials/index.rst
+    tools/index.rst
     API/Documentation.rst
     examples/index.rst
 

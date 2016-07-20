@@ -91,7 +91,9 @@ only.
         pass
 
     def poke(self, ipaddr):
-        # TODO
+        """
+        Sends a special message to destination IP address. And the destination device will send a unicast UDP package back.
+        """
         self.handlers[-1].poke(ipaddr)
 
     def source_filter(self, uuid, endpoint):
@@ -104,8 +106,8 @@ only.
 
     def discover(self, callback, lookup_callback=None, timeout=float("INF")):
         """
-        Call this method to execute discovering task. The callback function \
-has a minimal definition::
+        Executes discovering task. The callback function has a \
+minimal definition::
 
             def callback(upnp_discover_instance, device, **kw):
                 pass
