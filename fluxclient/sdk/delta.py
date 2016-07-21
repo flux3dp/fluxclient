@@ -302,11 +302,11 @@ class Delta(object):
         """
         Sets each axis back to home.
 
-        :return: the coordinate where the toolhead originally is
-        :rtype: (float, float, float)
+        :return: command index and the coordinate where the toolhead originally is
+        :rtype: (int, (float, float, float))
 
         >>> f.home()
-        (20.0, 20.0, 20.0)
+        (0, (20.0, 20.0, 20.0))
         >>> f.get_position()
         (0, 0, 280)
         """
@@ -592,7 +592,11 @@ class Delta(object):
         """
         [TODO]: support this in the future
         """
-        pass
+
+        command_index = self.send_command([CMD_THRC, buf], False)
+        print(command_index, buf)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
 
     def serial_read(self, buf_size):
         """
@@ -636,17 +640,17 @@ class Delta(object):
         """
         Gets the basic toolhead info(immutable data).
 
-        :return: dict consist of toolhead's basic information
-        :rtype: dict
+        :return: command index and dict consist of toolhead's basic information
+        :rtype: (int, dict)
 
         >>> f.get_head_profile()  # no tool head connected
-        {"module": "N/A"}
+        (0, {"module": "N/A"})
 
         >>> f.get_head_profile()  # print head
-        {"version": "1.0.8", "module": "EXTRUDER", "id": "203236325346430100240001", "vendor": "FLUX .inc"}
+        (0, {"version": "1.0.8", "module": "EXTRUDER", "id": "203236325346430100240001", "vendor": "FLUX .inc"})
 
         >>> f.get_head_profile()  # laser head
-        {"version": "1.0.3", "module": "LASER", "id":"203236325346430100260004", "vendor": "FLUX .inc"}
+        (0, {"version": "1.0.3", "module": "LASER", "id":"203236325346430100260004", "vendor": "FLUX .inc"})
 
 
         .. note::
@@ -768,12 +772,12 @@ class Delta(object):
         Sets the tool head want to use
         :param str head_type: head_type, should be one of 'EXTRUDER', 'LASER', 'N/A'
         """
-        if head_type in ['EXTRUDER', 'LASER', 'N/A']:
+        if head_type in ['EXTRUDER', 'LASER', 'N/A'] or head_type.startswith('USER'):
             self.send_command([CMD_REQH, head_type], False)
             self.send_command([CMD_BSTH])
             time_s = time()
             while True:  # wait for head to be ready
-                if self.head_status[1] == 0:
+                if self.head_status[2] == 0:
                     return True
                 elif time() - time_s > 5:  # not ready for too long
                     return False
@@ -793,11 +797,50 @@ class Delta(object):
         else:
             raise SDKFatalError(self, "Callback error: should be callable object")
 
-    # def get_fsr(self):
-    #     def a(ret):
-    #         print(ret)
-    #     command_index = self.send_command([CMD_VALU, 1], a)
-    #     ret = self.get_result(command_index, wait=True)
+    def get_fsr(self):
+        """
+        Gets the current force sensor reading.
+
+        :return: command index and dict consist of each axis' currrent reading
+        :rtype: (int, dict)
+
+        >>> flux.get_head_status()
+        (0, {'X': 3889.15, 'Y': 3958.45, 'Z': 3715.9})
+
+        """
+        def post_process(ret):
+            return {i.decode(): ret[1][i] for i in ret[1]}
+        command_index = self.send_command([CMD_VALU, 1], post_process)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
+        else:
+            return command_index, None
+
+    def get_value(self):
+        """
+        Gets some other sensor's reading.
+
+        :return: command index and dict consist of whether switch is triggered
+        :rtype: (int, dict)
+
+        F0: filament sensor 0
+
+        F1: filament sensor 1
+
+        MB: Mainboard Button
+
+        >>> flux.get_head_status()
+        (0, {'F0': True, 'MB': False, 'F1': True})
+
+        """
+
+        def post_process(ret):
+            return {i.decode(): ret[1][i] for i in ret[1]}
+        command_index = self.send_command([CMD_VALU, 2 | 4 | 8], post_process)
+        if self.blocking_flag:
+            return command_index, self.get_result(command_index, wait=True)
+        else:
+            return command_index, None
 
     def close(self):
         """
