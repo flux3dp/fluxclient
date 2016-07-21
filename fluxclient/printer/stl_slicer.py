@@ -892,6 +892,10 @@ class StlSlicerCura(StlSlicer):
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
         new_content['infillSpeed'] = content['infill_speed']
+        new_content['infillOverlap'] = content['infill_overlap'].rstrip('%')
+
+        new_content['fanSpeedMin'] = content['min_fan_speed'].rstrip('%')
+        new_content['fanSpeedMax'] = content['max_fan_speed'].rstrip('%')
 
         if fill_density == 100:
             new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
