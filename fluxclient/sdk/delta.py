@@ -173,7 +173,7 @@ class Delta(object):
         # init udp socket: for state
         self.status = (1, 0)  # index, queue_left
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_sock.bind((socket.gethostbyname(socket.gethostname()), 22111))
+        self.udp_sock.bind(('', 22111))
         buf = self.udp_sock.recv(4096)
         self.killthread = False
         self.queue_checker = threading.Thread(target=self.delta_status)
@@ -792,6 +792,12 @@ class Delta(object):
             self.headerror_callback = callback_function
         else:
             raise SDKFatalError(self, "Callback error: should be callable object")
+
+    # def get_fsr(self):
+    #     def a(ret):
+    #         print(ret)
+    #     command_index = self.send_command([CMD_VALU, 1], a)
+    #     ret = self.get_result(command_index, wait=True)
 
     def close(self):
         """
