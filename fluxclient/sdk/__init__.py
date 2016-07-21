@@ -25,13 +25,28 @@
 #
 #
 # UDP Connection part
-#   (i:0, s:SALT, i:cmd_index, i:queued_size)
-#       * First 0 means it is a status message
-#       * SALT: not for use right now
+#   (i:0, s:salt, i:cmd_index, i:queued_size)
+#       * First integer 0 means it is a status message
+#       * salt: reserved
 #       * cmd_index: next command index should given
 #       * queued_size: command is waitting to be execute in system
 #
-#   (i:1, s:SALT, s:module_type, i:errno, )
+#   (i:1, s:salt, i:timestemp, i:head_error_code, obj:headstatus)
+#       * First integer 1 means it is a toolhead status message
+#       * salt: reserved
+#       * timestemp: reserved
+#       * head_error_code:
+#           == -2: Head Offline
+#           == -1: Not ready
+#            == 0: Ready
+#             > 0: Follow toolhead error table
+#
+#   (i:2, s:salt, i:timestemp, ...)
+#       * Please assume array size is dynamic
+#       * First integer 2 means it is a user toolhead status message
+#       * salt: reserved
+#       * timestemp: reserved
+#       * Element 3: Toolhead response message stack size
 
 
 CMD_G001 = 0x01
@@ -152,6 +167,15 @@ CMD_THPF = 0x51
 # # Get toolhead status
 # # ()
 # #    => (0x52, {"tt": [210, ], "rt": [150, ], "tf": [0.9]})
+
+CMD_THRC = 0x5e
+# Send raw command to toolhead, only vaild when toolhead type is USER/*
+# (s:command)
+
+CMD_THRR = 0x5f
+# Recv raw command data from toolhead, only valid when toolhead type is USER/*
+# ()
+#    => (0x5f, ["COMMAND RESPONSE n", "COMMAND RESPONSE n + 1", ...])
 
 CMD_M104 = 0x60
 # Set toolhead extruder temperature

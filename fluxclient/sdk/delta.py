@@ -64,6 +64,8 @@ class Delta(object):
         self.blocking_flag = blocking
 
         self.head_status = [b'', -2, 0, {}]
+        self.serial_status = [b'', 0, 0]
+        self.serial_out = []
         self.open_udp_sock()
 
         self.connected = True
@@ -271,6 +273,10 @@ class Delta(object):
                             self.headerror_callback(self.head_error)
                         self.send_command([CMD_CLHE])
                     self.lock.release()
+                elif payload[0] == 2:
+                    self.lock.acquire()
+                    self.serial_status = payload[1:]
+                    self.lock.release()
 
     def send_command(self, command, recv_callback=False):
         self._command_index += 1
@@ -316,6 +322,7 @@ class Delta(object):
                 raise RuntimeError('command retrun error')
             else:
                 return tuple(ret[2])
+
         self.loose_flag = False
         command_index = self.send_command([CMD_G028], recv_callback=post_process)
         ret = self.get_result(command_index, wait=True)
@@ -590,19 +597,57 @@ class Delta(object):
 
     def serial_write(self, buf):
         """
-        [TODO]: support this in the future
+        [TODO]
         """
+        if not isinstance(buf, (str, bytes)):
+            raise SDKFatalError(self, "Invalid buffer type: {}".format(type(buf)))
 
         command_index = self.send_command([CMD_THRC, buf], False)
         print(command_index, buf)
         if self.blocking_flag:
             return command_index, self.get_result(command_index, wait=True)
 
-    def serial_read(self, buf_size):
+    def atomic_serial_list(self, param='', mode='e'):
+        ret = None
+        if mode == 'e':
+            self.serial_out.extend(param[1])
+        elif mode == 'l':
+            self.lock.acquire()
+            ret = len(self.serial_out)
+            self.lock.release()
+        elif mode == 'p':
+            self.lock.acquire()
+            ret = self.serial_out.pop(0)
+            self.lock.release()
+        return ret
+
+    def serial_read(self, timeout=0):
         """
-        [TODO]: support this in the future
+        [TODO]
         """
-        pass
+        t_s = time()
+
+        if self.atomic_serial_list(mode='l'):
+            return self.atomic_serial_list(mode='p')
+        else:
+            flag = False
+            if self.serial_status[2] != 0:
+                flag = True
+            else:
+                while time() - t_s < timeout:
+                    if self.serial_status[2] != 0:
+                        flag = True
+                        break
+            if flag:
+                command_index = self.send_command([CMD_THRR], self.atomic_serial_list)
+                if self.blocking_flag:
+                    while self.atomic_serial_list(mode='l') == 0:
+                        if time() - t_s > timeout:
+                            return ""
+
+                    return self.atomic_serial_list(mode='p')
+            else:
+                return ""
 
     def disable_motor(self, motor):
         """
