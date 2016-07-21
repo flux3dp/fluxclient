@@ -123,6 +123,7 @@ class GcodeToFcode(FcodeBase):
         else:
             clock = False
         command, d = self.XYZEF(input_list)
+
         if d[0]:
             self.current_speed = d[0]
         c_delta = [0.0, 0.0, 0.0]
@@ -139,16 +140,23 @@ class GcodeToFcode(FcodeBase):
             if d[i] is not None:
                 E_index = i
         E_split = [None] * 3
-
+        E_final = [None] * 3
+        p_2 = p_1[:]
         if self.absolute:
-            p_2 = d[1:4]
-            E_split[E_index - 4] = (d[E_index] - self.current_pos[E_index - 1]) / sample_n
-            E_final = d[4:]
-        else:
-            p_2 = [self.current_pos[i] + d[i + 1] for i in range(3)]
-            E_split[E_index - 4] = d[E_index] / sample_n
-            E_final = [None] * 3
+            # p_2 = d[1:4]
+            for k in range(1, 4):
+                if d[k]:
+                    p_2[k - 1] = d[k]
             if E_index:
+                E_split[E_index - 4] = (d[E_index] - self.current_pos[E_index - 1]) / sample_n
+                E_final = d[4:]
+        else:
+            for k in range(1, 4):
+                if d[k]:
+                    p_2[k - 1] = self.current_pos[k - 1] + d[k]
+            # p_2 = [self.current_pos[i] + d[i + 1] for i in range(3)]
+            if E_index:
+                E_split[E_index - 4] = d[E_index] / sample_n
                 E_final[E_index - 4] = d[E_index] + self.current_pos[E_index - 1]
 
         p_c = [p_1[i] + c_delta[i] for i in range(3)]
@@ -156,12 +164,15 @@ class GcodeToFcode(FcodeBase):
         sub_g1 = arc(p_1, p_2, p_c, clock, sample_n)
         for i in range(3, 7):
             command |= (1 << i)  # F, X, Y, Z
-        command |= (1 << (2 - self.tool))
+
+        if E_index:
+            command |= (1 << (2 - self.tool))
 
         for i in range(len(sub_g1)):
             sub_g1[i].insert(0, self.current_speed)
             tmp = [None] * 3
-            tmp[E_index - 4] = self.current_pos[E_index - 1] + i * E_split[E_index - 4]
+            if E_index:
+                tmp[E_index - 4] = self.current_pos[E_index - 1] + i * E_split[E_index - 4]
             sub_g1[i].extend(tmp)
 
         sub_g1.append([self.current_speed] + p_2 + E_final)
@@ -485,18 +496,16 @@ def arc(p_1, p_2, p_c, clock=True, sample_n=100):
     a function dealing with G2, G3 commands
     ref: http://www.cnccookbook.com/CCCNCGCodeArcsG02G03Part2.htm
     """
+    _p_1 = [p_1[i] - p_c[i] for i in range(2)]
+    _p_2 = [p_2[i] - p_c[i] for i in range(2)]
 
-    _p_1, _p_2 = p_1[:2], p_2[:2]
-
-    for i in range(2):
-        _p_1[i] = p_1[i] - p_c[i]
-        _p_2[i] = p_2[i] - p_c[i]
     r_1 = sqrt(sum(i ** 2 for i in _p_1))
     r_2 = sqrt(sum(i ** 2 for i in _p_2))
 
     # assert r_1 - r_2 < 0.001  # should be the same
 
     theta_1 = atan2(_p_1[1], _p_1[0])
+
     theta_2 = atan2(_p_2[1], _p_2[0])
     if theta_2 > theta_1 and clock:
         theta_2 -= 2 * pi
@@ -508,7 +517,7 @@ def arc(p_1, p_2, p_c, clock=True, sample_n=100):
     for t in range(sample_n + 1):
         ratio = t / sample_n
         theta = ratio * (theta_2) + (1 - ratio) * (theta_1)
-        np = [r * cos(theta), r * sin(theta), ratio * (p_2[2]) + (1 - ratio) * (p_1[2])]
+        np = [p_c[0] + r * cos(theta), p_c[1] + r * sin(theta), ratio * (p_2[2]) + (1 - ratio) * (p_1[2])]
         ret.append(np)
 
     return ret
