@@ -358,7 +358,9 @@ class PcProcess():
 
     def subset(self, name_base, name_out, mode):
         if not mode in ['left', 'right', 'both']:
-            return "unknown mode:{}, should be 'left', 'right' or 'both'".format(mode)
+            return "mode error:{}, should be 'left', 'right' or 'both'".format(mode)
+        if not name_base in self.clouds:
+            return "name error: {} not upload yet"
         else:
             logger.debug('generate subset from {} into as %s' % (name_base, name_2, name_out))
             out_pc = []
