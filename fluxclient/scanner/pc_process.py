@@ -362,7 +362,7 @@ class PcProcess():
         if not name_base in self.clouds:
             return "name error: {} not upload yet"
         else:
-            logger.debug('generate subset from {} into as %s' % (name_base, name_2, name_out))
+            logger.debug('generate subset from {} into {}'.format(name_base, name_out))
             out_pc = []
             if mode == 'left' or mode == 'both':
                 out_pc.append(self.clouds[name_base][0].clone())
@@ -375,6 +375,7 @@ class PcProcess():
                 out_pc.append(_scanner.PointCloudXYZRGBObj())
 
             self.clouds[name_out] = out_pc
+            return 'ok'
 
     def cone_bottom(self, name_in, name_out, z_value, thick=5):
         pass
