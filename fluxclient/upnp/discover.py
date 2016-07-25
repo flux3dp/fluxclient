@@ -23,12 +23,12 @@ is `UpnpDiscover` instance and second is \
 """
 
 from weakref import proxy
+from select import select
 from uuid import UUID
 from time import time
 from io import BytesIO
 import platform
 import logging
-import select
 import socket
 import struct
 
@@ -44,7 +44,6 @@ CODE_DISCOVER = 0x00
 CODE_RESPONSE_DISCOVER = CODE_DISCOVER + 1
 MULTICAST_IPADDR = "239.255.255.250"
 MULTICAST_PORT = 1901
-MULTICAST_VERSION = 1
 
 
 class UpnpDiscover(object):
@@ -59,6 +58,32 @@ only.
 
     _break = True
 
+    @staticmethod
+    def create_sockets(mcst_ipaddr, mcst_port):
+        mreq = struct.pack("4sl", socket.inet_aton(mcst_ipaddr),
+                           socket.INADDR_ANY)
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                          socket.IPPROTO_UDP)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
+        if platform.system() == "Windows":
+            s.bind(("", mcst_port))
+            return (s, )
+
+        else:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            s.bind((mcst_ipaddr, mcst_port))
+
+            bsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
+                                  socket.IPPROTO_UDP)
+            bsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            bsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            bsock.bind(("", 1901))
+
+            return (s, bsock)
+
     def __init__(self, uuid=None, device_ipaddr=None,
                  mcst_ipaddr=MULTICAST_IPADDR, mcst_port=MULTICAST_PORT):
         self.devices = {}
@@ -66,35 +91,20 @@ only.
         self.uuid = uuid
         self.device_ipaddr = device_ipaddr
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
-                                  socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        mreq = struct.pack("4sl", socket.inet_aton(mcst_ipaddr),
-                           socket.INADDR_ANY)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
-                             mreq)
+        self.handlers = (BroadcastHelper(self), Version1Helper(self))
 
-        if platform.system() == "Windows":
-            self.sock.bind(("", mcst_port))
-        else:
-            self.sock.bind((mcst_ipaddr, mcst_port))
-
-        self.handlers = (None, Version1Helper(self))
-
-        self.socks = (self.sock, ) + tuple(
+        self.socks = self.create_sockets(mcst_ipaddr, mcst_port) + tuple(
             (h.sock for h in self.handlers if hasattr(h, "sock")))
 
-    def add_listen_socket(self, sock, callback):
-        pass
-
-    def remove_listen_socket(self, sock):
-        pass
-
-    def poke(self, ipaddr):
+    def poke(self, ipaddr, version=None):
         """
-        Sends a special message to destination IP address. And the destination device will send a unicast UDP package back.
+        Sends a special message to destination IP address. And the destination\
+ device will send a unicast UDP package back.
         """
-        self.handlers[-1].poke(ipaddr)
+        if version:
+            self.handlers[version].poke(ipaddr)
+        else:
+            self.handlers[-1].poke(ipaddr)
 
     def source_filter(self, uuid, endpoint):
         if self.uuid and self.uuid != uuid:
@@ -143,21 +153,17 @@ has been found or the computer recived a new status from a device.
         self._break = True
 
     def try_recive(self, socks, callback, timeout=1.5):
-        timeout_at = time() + timeout
-
-        while timeout > 0:
-            for sock in select.select(socks, (), (), timeout)[0]:
-                uuid = self.on_recive(sock)
-                if uuid:
-                    device = self.devices[uuid]
-                    dataset = device.to_old_dict()
-                    dataset["device"] = device
-                    callback(self, **dataset)
-
-            timeout = timeout_at - time()
+        for sock in select(socks, (), (), timeout)[0]:
+            uuid = self.on_recive(sock)
+            if uuid:
+                device = self.devices[uuid]
+                dataset = device.to_old_dict()
+                dataset["device"] = device
+                callback(self, **dataset)
 
     def on_recive(self, sock):
         buf, endpoint = sock.recvfrom(4096)
+
         if len(buf) < 8:
             # Message too short to be process
             return
@@ -169,7 +175,6 @@ has been found or the computer recived a new status from a device.
                 # Bad magic number
                 return
 
-            # TODO: err handle
             ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
                                                           buf[6:])
             return ret
@@ -194,6 +199,30 @@ has been found or the computer recived a new status from a device.
         return self.devices[uuid].master_key
 
 
+class BroadcastHelper(object):
+    def __init__(self, server):
+        self.server = proxy(server)
+
+    def handle_message(self, endpoint, mcst_ver, payload):
+        if len(payload) == 16:
+            uuid = UUID(bytes=payload)
+
+            # if uuid.int == 0, its might be a discover request from other
+            # client.
+            if uuid.int > 0 and self._need_poke(endpoint[0], uuid):
+                self.server.poke(endpoint[0], version=mcst_ver)
+        else:
+            logger.debug("Broadcast helper can not parse payload: %s",
+                         payload)
+
+    def _need_poke(self, ipaddr, uuid):
+        device = self.server.devices.get(uuid)
+        if device:
+            return time() - device.last_update > 3.15
+        else:
+            return True
+
+
 class Version1Helper(object):
     def __init__(self, server):
         self.server = proxy(server)
@@ -204,7 +233,7 @@ class Version1Helper(object):
     def fileno(self):
         return self.sock.fileno()
 
-    def need_touch(self, uuid, slave_timestemp):
+    def _need_touch(self, uuid, slave_timestemp):
         device = self.server.devices.get(uuid)
         if device and device.slave_timestemp is not None:
             return slave_timestemp > device.slave_timestemp
@@ -212,19 +241,18 @@ class Version1Helper(object):
             return True
 
     def poke(self, ipaddr):
-        payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION, 0,
-                              UUID(int=0).bytes)
+        payload = struct.pack("<4sBB16s", b"FLUX", 1, 0, UUID(int=0).bytes)
         self.sock.sendto(payload, (ipaddr, MULTICAST_PORT))
 
     def handle_message(self, endpoint, action_id, payload):
         if action_id == 0:
-            return self.handle_discover(endpoint, payload)
+            return self._handle_discover(endpoint, payload)
         elif action_id == 3:
-            return self.handle_touch(endpoint, payload)
+            return self._handle_touch(endpoint, payload)
         else:
             logger.error("Can not handle proto_ver=1, action_id=%s", action_id)
 
-    def handle_discover(self, endpoint, payload):
+    def _handle_discover(self, endpoint, payload):
         args = struct.unpack("<16s10sfHH", payload[:34])
         uuid_bytes, bsn, master_ts = args[:3]
         l_master_pkey, l_signuture = args[3:]
@@ -245,10 +273,9 @@ class Version1Helper(object):
         master_pkey = KeyObject.load_keyobj(masterkey_doc)
         uuid = UUID(bytes=uuid_bytes)
 
-        if self.need_touch(uuid, master_ts):
+        if self._need_touch(uuid, master_ts):
             self.server.add_master_key(uuid, sn, master_pkey, 1)
-            payload = struct.pack("<4sBB16s", b"FLUX", MULTICAST_VERSION,
-                                  2, uuid.bytes)
+            payload = struct.pack("<4sBB16s", b"FLUX", 1, 2, uuid.bytes)
             try:
                 self.sock.sendto(payload, endpoint)
             except Exception:
@@ -274,7 +301,7 @@ class Version1Helper(object):
                 if basic_info.version > StrictVersion("0.13a"):
                     logger.exception("Unpack status failed")
 
-    def handle_touch(self, endpoint, payload):
+    def _handle_touch(self, endpoint, payload):
         f = BytesIO(payload)
 
         buuid, master_ts, l1, l2 = struct.unpack("<16sfHH", f.read(24))
