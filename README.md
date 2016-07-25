@@ -24,7 +24,7 @@ Official documentation: http://dev.flux3dp.com/
 ## Installation
 
 ### Mac OS X
-* Install [`python 3.4+`]((python.org)) and [`pip`](https://pypi.python.org/pypi/pip)  
+* Install [`python 3.4+`](https://python.org) and [`pip`](https://pypi.python.org/pypi/pip)  
 * Pillow: `pip install Pillow`
 * Numpy: `pip install numpy`
 * Scipy: `pip install scipy`
@@ -75,7 +75,7 @@ $ flux_g2f -i input.gcode -o output.fc
 Description: convert gcode to fcode
 ```
 
-### SDK: Check [this guide](http://dev.flux3dp.com/tutorial/sdk_quick_start.html) for a quick start
+### SDK: Check [this guide](http://dev.flux3dp.com/tutorials/a_quick_start.html) for a quick start
 ```
 from fluxclient.sdk.delta import Delta 
 
@@ -97,7 +97,7 @@ my_delta.close()
 
 ## Documents
 
-* See [official documentation](http://dev.flux3dp.com/API/Document.html)
+* See [official documentation](http://dev.flux3dp.com/API/Documentation.html)
 
 * To generate documents by yourself:
 
