@@ -152,11 +152,6 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
             raise AuthError("Bad password")
 
     def add_trust(self, label, pem):
-        if isinstance(label, str) is False:
-            raise UpnpError("label must be str", err_symbol="BAD_PARAMS")
-        if isinstance(pem, str) is False:
-            raise UpnpError("pem must be str", err_symbol="BAD_PARAMS")
-
         self.send_text("add_trust\x00%s\x00%s" % (label, pem))
         resp = self.recv_text()
         if resp != "ok":

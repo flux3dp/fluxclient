@@ -135,13 +135,20 @@ from device.
             raise UpnpError("Already authorized")
         self._backend.authorize_with_password(password)
 
-    def add_trust(self, label, pem):
+    def add_trust(self, label, key):
         """Adds a client_key to device trust list
 
         :param str label: Key label will show for human only
-        :param str pem: A vaild RSA key pem
+        :param object key: A vaild RSA key object or pem
         :return: Key hash
         :rtype: str"""
+
+        if isinstance(key, str):
+            pem = key
+        elif isinstance(key, bytes):
+            pem = key.decode("ascii")
+        else:
+            pem = key.public_key_pem.decode("ascii")
 
         self._backend.add_trust(label, pem)
 

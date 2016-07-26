@@ -27,4 +27,4 @@ discover.
     discover = UpnpDiscover(uuid)
     discover.discover(found_callback, lookup_callback, timeout)
 
-    return result[0]
+    return result[0] if result else None

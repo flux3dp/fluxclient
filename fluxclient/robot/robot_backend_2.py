@@ -522,7 +522,8 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 ts = time()
                 process_callback(self.instance, sent, size)
 
-        process_callback(self.instance, sent, size)
+        if process_callback:
+            process_callback(self.instance, sent, size)
 
     def upload_stream(self, stream, mimetype, size, upload_to=None,
                       process_callback=None):
