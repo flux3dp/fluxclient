@@ -92,7 +92,8 @@ only.
 
     def poke(self, ipaddr):
         """
-        Sends a special message to destination IP address. And the destination device will send a unicast UDP package back.
+        Sends a special message to destination IP address. And the \
+destination device will send a unicast UDP package back.
         """
         self.handlers[-1].poke(ipaddr)
 
@@ -169,12 +170,18 @@ has been found or the computer recived a new status from a device.
                 # Bad magic number
                 return
 
-            # TODO: err handle
+            if proto_ver != 1:
+                logger.debug("Got non-support proto ver: %i (payload=%s)",
+                             proto_ver, buf)
+                return
+
             ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
                                                           buf[6:])
             return ret
         except struct.error:
             logger.warning("Payload error: %s", repr(buf))
+        except Exception:
+            logger.exception("Error during process discover payload")
 
     def add_master_key(self, uuid, serial, master_key, disc_ver):
         if uuid in self.devices:
