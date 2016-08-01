@@ -301,7 +301,6 @@ class RobotConsole(object):
 
         ret = self.task.calibration(threshold=threshold, clean=clean,
                                     process_callback=callback)
-
         data_str = ", ".join(("%.4f" % i for i in ret))
         logger.info("Data: %s, Error: %.4f", data_str, (max(*ret) - min(*ret)))
         logger.info("ok")
@@ -313,7 +312,7 @@ class RobotConsole(object):
         if manual_h:
             ret = self.task.manual_level(float(manual_h))
         else:
-            ret = self.task.zprobe(navigate_callback=callback)
+            ret = self.task.zprobe(process_callback=callback)
             logger.info("Data: %s", ret)
 
         logger.info("ok")

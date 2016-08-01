@@ -381,8 +381,8 @@ class MaintainTasks(SubTasks):
 
     def calibration(self, threshold=None, clean=False, process_callback=None):
         warnings.warn("Use 'calibrate' method instead", DeprecationWarning)
-        self.calibrate(self, threshold=threshold, clean=clean,
-                       process_callback=process_callback)
+        return self.calibrate(threshold=threshold, clean=clean,
+                              process_callback=process_callback)
 
     @invalied_validator
     def zprobe(self, process_callback=None):
