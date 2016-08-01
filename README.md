@@ -60,19 +60,22 @@ python3 setup.py install
 ### Utility programs
 ```
 $ flux_discover
-Description: find FLUX 3D Printer in the LAN.
+Description: Discover FLUX 3D Printer in the LAN.
 
-$ flux_auth [device uuid]
-Description: Try to grant access permission to printer
+$ flux_upnp "device uuid"|"ip address"
+Description: Fast manage device name, password, access control and network settings.
 
-$ flux_passwd [device uuid]
-Description: Change device password. If password exists, old password is required
+$ flux_robot "device uuid"|"ip address"
+Description: Control flux device.
 
-$ flux_config_network [device uuid]
-Description: Set printer network
+$ flux_camera "device uuid"|"ip address"
+Description: Grab photo from device camera
 
-$ flux_g2f -i input.gcode -o output.fc
+$ flux_g2f -i input.gcode output.fc
 Description: convert gcode to fcode
+
+$ flux_f2g -i input.fc output.gcode
+Description: convert fcode to gcode
 ```
 
 ### SDK: Check [this guide](http://dev.flux3dp.com/tutorials/a_quick_start.html) for a quick start

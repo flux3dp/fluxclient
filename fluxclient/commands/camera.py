@@ -74,6 +74,8 @@ def serve_forever(options, camera, logger, metadata={}, oneshot=False):
     def callback(c, imagebuf):
         ts = datetime.now().strftime(options.strftime)
         dataset["time"] = ts
+        dataset["index"] = static.total
+
         filename = os.path.join(options.path, options.filename % dataset)
 
         with open(filename, "wb") as f:
@@ -112,7 +114,7 @@ def main(params=None, oneshot=False):
     parser.add_argument('--key', dest='clientkey', type=str, default=None,
                         help='Client identify key (A RSA pem)')
     parser.add_argument('-p', '--fps', dest='fps', type=float, default=None,
-                        help='Set FPS manually')
+                        help='Limit photo FPS')
     parser.add_argument('--strftime', dest='strftime', type=str,
                         default="%Y-%m-%d-%H-%M-%S-%f",
                         help='Formate datetime for filename')
