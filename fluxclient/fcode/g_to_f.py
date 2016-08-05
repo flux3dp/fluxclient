@@ -467,7 +467,7 @@ class GcodeToFcode(FcodeBase):
 
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
                 self.md['FILAMENT_USED'] = ','.join(map(str, self.filament))
-                self.md['CORRECTION'] = 'A'
+                # self.md['CORRECTION'] = 'A'
                 self.md['SETTING'] = str(comment_list[-137:])
             else:
                 self.md['CORRECTION'] = 'N'

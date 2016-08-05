@@ -180,6 +180,8 @@ has been found or the computer recived a new status from a device.
             return ret
         except struct.error:
             logger.warning("Payload error: %s", repr(buf))
+        except Exception:
+            logger.exception("Error during process discover payload")
 
     def add_master_key(self, uuid, serial, master_key, disc_ver):
         if uuid in self.devices:

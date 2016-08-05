@@ -50,8 +50,8 @@ class MaintainTaskMixIn(object):
         self._send_cmd(b"home")
         while True:
             ret = self.get_resp(6.0).decode("ascii", "ignore")
-            if ret.startswith("DEBUG:"):
-                logger.info(ret)
+            if ret.startswith("DEBUG"):
+                logger.debug(ret[6:])
             elif ret == "ok":
                 return
             else:
@@ -69,20 +69,15 @@ class MaintainTaskMixIn(object):
         if clean:
             cmd.append("clean")
 
-        ret = self._make_cmd(" ".join(cmd).encode())
-
-        if ret == b"continue":
-            nav = "continue"
-            while True:
-                if nav.startswith("ok "):
-                    return [float(item) for item in nav.split(" ")[1:]]
-                elif nav.startswith("error "):
-                    raise_error(nav)
-                elif process_callback:
-                    process_callback(self.instance, *nav.split(" "))
-                nav = self.get_resp().decode("ascii", "ignore")
-        else:
-            raise_error(ret.decode("ascii", "ignore"))
+        nav = self._make_cmd(" ".join(cmd).encode()).decode("ascii", "ignore")
+        while True:
+            if nav.startswith("ok "):
+                return [float(item) for item in nav.split(" ")[1:]]
+            elif nav.startswith("error "):
+                raise_error(nav)
+            elif process_callback:
+                process_callback(self.instance, *nav.split(" "))
+            nav = self.get_resp().decode("ascii", "ignore")
 
     def maintain_zprobe(self, process_callback=None):
         ret = self._make_cmd(b"zprobe")
@@ -522,7 +517,8 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 ts = time()
                 process_callback(self.instance, sent, size)
 
-        process_callback(self.instance, sent, size)
+        if process_callback:
+            process_callback(self.instance, sent, size)
 
     def upload_stream(self, stream, mimetype, size, upload_to=None,
                       process_callback=None):

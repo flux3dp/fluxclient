@@ -2,6 +2,7 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 import sys
 import os
+from math import sqrt
 
 from PIL import Image
 
@@ -60,10 +61,7 @@ def process_svg(options, stream):
             buf = f.read()
 
         m_laser_svg.svgs[name] = m_laser_svg.preprocess(buf)
-        tmp_buf, tmp_w, tmp_h = m_laser_svg.svgs[name]
-
-        with open('pre.svg', 'wb') as f:
-            f.write(tmp_buf)
+        tmp_buf, tmp_w, tmp_h = m_laser_svg.svgs[name][1]
 
         m_laser_svg.compute(
             name + '_ready',
@@ -81,6 +79,8 @@ def process_to_gray_bitmap(image):
 
 def process_bitmaps(options, stream):
     from fluxclient.laser.laser_bitmap import LaserBitmap
+    from fluxclient.hw_profile import HW_PROFILE
+
     lb = LaserBitmap()
 
     for arg in options.images:
@@ -103,13 +103,26 @@ def process_bitmaps(options, stream):
             filename = os.path.expanduser(arg)
             i = Image.open(arg)
             w, h = i.size
-            lb.add_image(process_to_gray_bitmap(i),
-                         w, h, -28.5, 14.25, 28.5, -14.25, .0,
+            wh_realworld = [w / 472 * 100, h / 472 * 100]  # dpi 120
+
+            tmp_index = 0 if wh_realworld[0] > wh_realworld[1] else 1
+
+            # shrink the image if needed
+            diagonal = sqrt(wh_realworld[0] ** 2 + wh_realworld[1] ** 2)
+            if diagonal * HW_PROFILE['model-1']['radius']:
+                # * 0.96 because pre-move in front of each row
+                wh_realworld[tmp_index] *= 2 * HW_PROFILE['model-1']['radius'] / diagonal * 0.96
+                wh_realworld[1 - tmp_index] *= 2 * HW_PROFILE['model-1']['radius'] / diagonal * 0.96
+
+            buf = process_to_gray_bitmap(i)
+            # print(w, h, len(buf), file=sys.stderr)
+            lb.add_image(buf,
+                         w, h, wh_realworld[0] / -2, wh_realworld[1] / 2, wh_realworld[0] / 2, wh_realworld[1] / -2, .0,
                          thres=options.threshold)
     lb.export_to_stream(stream)
 
 
-def main():
+def main(params=sys.argv[1:]):
     global logger
 
     parser = ArgumentParser(description=PROG_DESCRIPTION,
@@ -122,8 +135,8 @@ def main():
                            const="bitmap", help='Bitmap mode')
     mode_args.add_argument('-s', dest='mode', action='store_const',
                            const="svg", help='Svg mode')
-    parser.add_argument('-t', dest='threshold', type=int, default=100,
-                        help='Threshold for bitmap, default: 100')
+    parser.add_argument('-t', dest='threshold', type=int, default=128,
+                        help='Threshold for bitmap, default: 128')
     parser.add_argument('--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Verbose output')
     parser.add_argument('-o', dest='output', type=str, default=None,
@@ -131,7 +144,7 @@ def main():
     parser.add_argument(dest='images', type=str, help='Image files',
                         nargs='+')
 
-    options = parser.parse_args()
+    options = parser.parse_args(params)
     logger = setup_logger(__name__, debug=options.verbose)
 
     if options.mode == "bitmap":

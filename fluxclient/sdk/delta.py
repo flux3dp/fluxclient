@@ -597,15 +597,25 @@ class Delta(object):
 
     def serial_write(self, buf):
         """
-        [TODO]
+        Writes buffer or string to extension port
+
+        :param str/bytes buf: data sent in extension port
+        :rtype: (int, None): (command_index, None)
+
+        >>> f.serial_write(b'PING')  # write bytes
+        (1, None)
+        >>> f.serial_write('Hello')  # write string
+        (2, None)
+
         """
         if not isinstance(buf, (str, bytes)):
             raise SDKFatalError(self, "Invalid buffer type: {}".format(type(buf)))
 
         command_index = self.send_command([CMD_THRC, buf], False)
-        print(command_index, buf)
         if self.blocking_flag:
             return command_index, self.get_result(command_index, wait=True)
+        else:
+            return command_index, None
 
     def atomic_serial_list(self, param='', mode='e'):
         ret = None
@@ -623,8 +633,19 @@ class Delta(object):
 
     def serial_read(self, timeout=0):
         """
-        [TODO]
+        Reads a chunck from extension port
+        Returns b'' if timeout happened
+
+        :param int timeout: timeout trying to read data, default 0
+        :rtype: bytes: a chunck read from extension port
+
+        >>> delta.serial_read(timeout=10)
+        b'PONG'
         """
+
+        if not isinstance(timeout, (int, float)):
+            raise SDKFatalError(self, "Wrong timeout type: {}".format(type(timeout)))
+
         t_s = time()
 
         if self.atomic_serial_list(mode='l'):
@@ -643,11 +664,11 @@ class Delta(object):
                 if self.blocking_flag:
                     while self.atomic_serial_list(mode='l') == 0:
                         if time() - t_s > timeout:
-                            return ""
+                            return b""
 
                     return self.atomic_serial_list(mode='p')
             else:
-                return ""
+                return b""
 
     def disable_motor(self, motor):
         """
@@ -849,7 +870,7 @@ class Delta(object):
         :return: command index and dict consist of each axis' currrent reading
         :rtype: (int, dict)
 
-        >>> flux.get_head_status()
+        >>> flux.get_fsr()
         (0, {'X': 3889.15, 'Y': 3958.45, 'Z': 3715.9})
 
         """
@@ -874,7 +895,7 @@ class Delta(object):
 
         MB: Mainboard Button
 
-        >>> flux.get_head_status()
+        >>> flux.get_value()
         (0, {'F0': True, 'MB': False, 'F1': True})
 
         """

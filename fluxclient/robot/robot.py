@@ -1,5 +1,6 @@
 
 from functools import wraps
+import warnings
 import os
 
 from fluxclient.utils import mimetypes
@@ -373,10 +374,15 @@ class MaintainTasks(SubTasks):
         self.cleanup()
 
     @invalied_validator
-    def calibration(self, threshold=None, clean=False, process_callback=None):
+    def calibrate(self, threshold=None, clean=False, process_callback=None):
         """Does a calibration testing"""
         return self._backend.maintain_calibration(threshold, clean,
                                                   process_callback)
+
+    def calibration(self, threshold=None, clean=False, process_callback=None):
+        warnings.warn("Use 'calibrate' method instead", DeprecationWarning)
+        return self.calibrate(threshold=threshold, clean=clean,
+                              process_callback=process_callback)
 
     @invalied_validator
     def zprobe(self, process_callback=None):
