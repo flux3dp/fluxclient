@@ -14,6 +14,10 @@ def run():
 
     kw["ssid"] = input("SSID: ").strip("\n")
 
+    ret = input("Is SSID hidden? (y/n)[n]: ").strip("\n")
+    if ret.upper() == "Y":
+        kw["scan_ssid"] = "1"
+
     ret = input("Wifi-Protection (0=None,1=WEP,2=WPA2-PSK)[2]: ").strip("\n")
     if ret == "0":
         kw["security"] = "None"
