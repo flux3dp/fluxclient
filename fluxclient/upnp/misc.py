@@ -41,8 +41,8 @@ def validate_identify(uuid, identify, serial=None, masterkey_doc=None):
 
 
 def parse_network_config(method, wifi_mode=None, ipaddr=None, mask=None,
-                         route=None, ns=None, ssid=None, security=None,
-                         wepkey=None, psk=None):
+                         route=None, ns=None, ssid=None, scan_ssid=None,
+                         security=None, wepkey=None, psk=None):
     assert method in ["dhcp", "static"], "method must be dhcp or static"
 
     options = {"method": method}
@@ -59,6 +59,8 @@ def parse_network_config(method, wifi_mode=None, ipaddr=None, mask=None,
     if ssid:
         options["wifi_mode"] = wifi_mode
         options["ssid"] = ssid
+        if scan_ssid:
+            options["scan_ssid"] = "1"
 
         if security == "WEP":
             assert wepkey, "wepkey is required"
