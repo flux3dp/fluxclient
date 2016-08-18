@@ -850,7 +850,7 @@ class StlSlicerCura(StlSlicer):
         if content['support_material'] == '0':
             new_content['supportAngle'] = -1
         else:
-            new_content['supportAngle'] = content['support_material_angle']
+            new_content['supportAngle'] = 90 - int(content['support_material_threshold'])
         new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
         new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
