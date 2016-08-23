@@ -180,7 +180,7 @@ class StlSlicer(object):
                     # elif key == 'overhangs' and value == '0':
                     #     self.config['support_material'] = '0'
                     #     ini_constraint['support_material'] = [ignore]
-                    elif key == 'spiral_vase' and value == '1':
+                    if key == 'spiral_vase' and value == '1':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
                         self.config['fill_density'] = '0%'
