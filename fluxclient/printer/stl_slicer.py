@@ -175,8 +175,8 @@ class StlSlicer(object):
                 result = self.ini_value_check(key, value)
                 if result == 'ok':
                     self.config[key] = value
-                    if key == 'temperature':
-                        self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
+                    #if key == 'temperature':
+                    #    self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
                     # elif key == 'overhangs' and value == '0':
                     #     self.config['support_material'] = '0'
                     #     ini_constraint['support_material'] = [ignore]
