@@ -313,7 +313,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -740,7 +740,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
             if config['flux_calibration'] == '0':
