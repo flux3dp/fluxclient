@@ -345,7 +345,7 @@ class StlSlicer(object):
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
-                    slic3r_out = [6, "gcode area too big"]  # errorcode 6
+                    slic3r_out = [6, "Gcode area was too big"]  # errorcode 6
 
                 del m_GcodeToFcode
 
@@ -879,12 +879,12 @@ class StlSlicerCura(StlSlicer):
 
         new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
-        if int(content['skirts']) == 0:  # brim
-            new_content['skirtLineCount'] = content['brim_width']
-            new_content['skirtDistance'] = 0
-        else:  # skirt
+        if int(content['brim_width']) == 0:  # skirt
             new_content['skirtLineCount'] = content['skirts']
             new_content['skirtDistance'] = thousand(content['skirt_distance'])
+        else:  # brim
+            new_content['skirtLineCount'] = content['brim_width']
+            new_content['skirtDistance'] = 0
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
