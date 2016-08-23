@@ -241,12 +241,20 @@ class StlSlicer(object):
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = _printer.MeshObj([], [])
+        m_mesh_merge_null = True
+
         for n in names:
             points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
-        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
+            if m_mesh_merge_null:
+                m_mesh_merge_null = False
+                m_mesh_merge = m_mesh
+            else:
+                m_mesh_merge.add_on(m_mesh)
+
+        if float(self.config['cut_bottom']) > 0:
+            m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
@@ -659,12 +667,20 @@ class StlSlicerCura(StlSlicer):
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = _printer.MeshObj([], [])
+        m_mesh_merge_null = True
+
         for n in names:
             points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
-        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
+            if m_mesh_merge_null:
+                m_mesh_merge_null = False
+                m_mesh_merge = m_mesh
+            else:
+                m_mesh_merge.add_on(m_mesh)
+
+        if float(self.config['cut_bottom']) > 0:
+            m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         m_mesh_merge.write_stl(tmp_stl_file)
         self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
