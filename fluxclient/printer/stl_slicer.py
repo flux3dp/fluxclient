@@ -274,6 +274,7 @@ class StlSlicer(object):
         tmp_gcode_file = command[3]
         fail_flag = False
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        path = ''
 
         self.working_p[p_index].append(subp)
         progress = 0.2
