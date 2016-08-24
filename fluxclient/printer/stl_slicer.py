@@ -260,7 +260,7 @@ class StlSlicer(object):
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom' ,'flux_', 'detect_'])
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -683,7 +683,7 @@ class StlSlicerCura(StlSlicer):
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         m_mesh_merge.write_stl(tmp_stl_file)
-        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
+        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom', 'flux_', 'detect_'])
 
         command = [self.slic3r]
         command += ['-o', tmp_gcode_file]
