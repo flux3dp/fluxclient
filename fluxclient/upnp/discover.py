@@ -225,7 +225,7 @@ class BroadcastHelper(object):
             return True
 
 
-class Version1Helper(object):
+class Helper(object):
     def __init__(self, server):
         self.server = proxy(server)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
@@ -235,16 +235,19 @@ class Version1Helper(object):
     def fileno(self):
         return self.sock.fileno()
 
+    def poke(self, ipaddr):
+        payload = struct.pack("<4sBB16s", b"FLUX", 1, 0,
+                              UUID(int=0).bytes)
+        self.sock.sendto(payload, (ipaddr, MULTICAST_PORT))
+
+
+class Version1Helper(Helper):
     def _need_touch(self, uuid, slave_timestemp):
         device = self.server.devices.get(uuid)
         if device and device.slave_timestemp is not None:
             return slave_timestemp > device.slave_timestemp
         else:
             return True
-
-    def poke(self, ipaddr):
-        payload = struct.pack("<4sBB16s", b"FLUX", 1, 0, UUID(int=0).bytes)
-        self.sock.sendto(payload, (ipaddr, MULTICAST_PORT))
 
     def handle_message(self, endpoint, action_id, payload):
         if action_id == 0:
@@ -296,6 +299,8 @@ class Version1Helper(object):
                 device.update_status(st_id=st_id, st_ts=st_ts, st_prog=st_prog,
                                      head_module=head_module,
                                      error_label=error_label)
+                device.discover_endpoint = endpoint
+                device.ipaddr = endpoint[0]
 
                 return uuid
             except Exception:
