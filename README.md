@@ -104,7 +104,7 @@ my_delta.close()
 
 * To generate documents by yourself:
 
-`sudo python setup.py build_sphinx`  
+`sudo python3 setup.py build_sphinx`  
 `open ./build/sphinx/html/index.html`
 
 ## Community
