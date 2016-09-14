@@ -175,12 +175,12 @@ class StlSlicer(object):
                 result = self.ini_value_check(key, value)
                 if result == 'ok':
                     self.config[key] = value
-                    if key == 'temperature':
-                        self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
+                    #if key == 'temperature':
+                    #    self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
                     # elif key == 'overhangs' and value == '0':
                     #     self.config['support_material'] = '0'
                     #     ini_constraint['support_material'] = [ignore]
-                    elif key == 'spiral_vase' and value == '1':
+                    if key == 'spiral_vase' and value == '1':
                         self.config['support_material'] = '0'
                         ini_constraint['support_material'] = [ignore]
                         self.config['fill_density'] = '0%'
@@ -241,18 +241,26 @@ class StlSlicer(object):
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = _printer.MeshObj([], [])
+        m_mesh_merge_null = True
+
         for n in names:
             points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
-        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
+            if m_mesh_merge_null:
+                m_mesh_merge_null = False
+                m_mesh_merge = m_mesh
+            else:
+                m_mesh_merge.add_on(m_mesh)
+
+        if float(self.config['cut_bottom']) > 0:
+            m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         bounding_box = m_mesh_merge.bounding_box()
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom' ,'flux_', 'detect_'])
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -306,7 +314,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -338,7 +346,7 @@ class StlSlicer(object):
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     fail_flag = True
-                    slic3r_out = [6, "gcode area too big"]  # errorcode 6
+                    slic3r_out = [6, "Gcode area was too big"]  # errorcode 6
 
                 del m_GcodeToFcode
 
@@ -660,15 +668,23 @@ class StlSlicerCura(StlSlicer):
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = _printer.MeshObj([], [])
+        m_mesh_merge_null = True
+
         for n in names:
             points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
-            m_mesh_merge.add_on(m_mesh)
-        m_mesh_merge = m_mesh_merge.cut(float(self.config['flux_floor']))
+            if m_mesh_merge_null:
+                m_mesh_merge_null = False
+                m_mesh_merge = m_mesh
+            else:
+                m_mesh_merge.add_on(m_mesh)
+
+        if float(self.config['cut_bottom']) > 0:
+            m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         m_mesh_merge.write_stl(tmp_stl_file)
-        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['flux_', 'detect_'])
+        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom', 'flux_', 'detect_'])
 
         command = [self.slic3r]
         command += ['-o', tmp_gcode_file]
@@ -725,7 +741,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "analyzing metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
             if config['flux_calibration'] == '0':
@@ -864,12 +880,12 @@ class StlSlicerCura(StlSlicer):
 
         new_content['infillPattern'] = {'AUTOMATIC': 0, 'GRID': 1, 'LINES': 2, 'CONCENTRIC': 3}.get(content['fill_pattern'], 0)
 
-        if int(content['skirts']) == 0:  # brim
-            new_content['skirtLineCount'] = content['brim_width']
-            new_content['skirtDistance'] = 0
-        else:  # skirt
+        if int(content['brim_width']) == 0:  # skirt
             new_content['skirtLineCount'] = content['skirts']
             new_content['skirtDistance'] = thousand(content['skirt_distance'])
+        else:  # brim
+            new_content['skirtLineCount'] = content['brim_width']
+            new_content['skirtDistance'] = 0
 
         # other
         new_content['upSkinCount'] = content['top_solid_layers']
