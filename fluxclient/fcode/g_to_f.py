@@ -42,7 +42,7 @@ class GcodeToFcode(FcodeBase):
         self.filament = [0., 0., 0.]  # recording the filament each extruder needed, in mm
         self.previous = [0., 0., 0.]  # recording previous filament/path
 
-        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        self.md = {'HEAD_TYPE': head_type, 'TIME_COST': 0, 'FILAMENT_USED': '0,0,0'}  # basic metadata, use extruder as default
 
         self.md.update(ext_metadata)
 

@@ -15,7 +15,7 @@ from PIL import Image
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.fcode.g2fcpp import GCodeToFCodeCpp
+from fluxclient.utils._utils import GcodeToFcodeCpp
 from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
@@ -202,13 +202,18 @@ class StlSlicer(object):
         return bad_lines
 
     def sub_convert_path(self):
+        print("Subconvert_path")
+        m_GcodeToFcode = GcodeToFcodeCpp()
         self.path_js = Tools().path_to_js(self.path).decode()
+        print("End of subconvert")
+        self.T = None
 
     def get_path(self):
         """
         """
         if self.T:
             self.T.join()
+        print("Returning get path")
         return self.path_js
 
     def begin_slicing(self, names, ws, output_type):
@@ -283,7 +288,7 @@ class StlSlicer(object):
         tmp_gcode_file = command[3]
         fail_flag = False
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
-        path = ''
+        path = None
 
         self.working_p[p_index].append(subp)
         progress = 0.2
@@ -315,7 +320,7 @@ class StlSlicer(object):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
 
             fcode_output = BytesIO()
 
@@ -335,6 +340,7 @@ class StlSlicer(object):
             ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
 
             with open(tmp_gcode_file, 'r') as f:
+                status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata++", "percentage": 0.99}')
                 m_GcodeToFcode = GcodeToFcodeCpp(ext_metadata=ext_metadata)
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
@@ -425,11 +431,15 @@ class StlSlicer(object):
                         msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
 
                     self.path = message[2]
-                    self.path_js = None
-                    from threading import Thread  # Do not expose thrading in module level
-                    self.T = Thread(target=self.sub_convert_path)
-                    self.T.start()
-                    ret.append(msg)
+
+                    if self.path:
+                        self.path_js = None
+                        from threading import Thread  # Do not expose thrading in module level
+                        self.T = Thread(target=self.sub_convert_path)
+                        self.T.start()
+                        ret.append(msg)
+                    else:
+                        print("Worker didn't returned path.. can not continue")
         return ret
 
     @classmethod
@@ -742,7 +752,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "Analyzing metadata", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata++", "percentage": 0.99}')
 
             fcode_output = BytesIO()
             if config['flux_calibration'] == '0':
@@ -765,13 +775,16 @@ class StlSlicerCura(StlSlicer):
             #             f.write(f2.read())
 
             with open(tmp_gcode_file, 'r') as f:
-                m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode = GcodeToFcodeCpp(ext_metadata=ext_metadata)
                 m_GcodeToFcode.engine = 'cura'
                 # m_GcodeToFcode.process_path = self.process_path
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
+                print("Start gcode parsing from stl_slicer")
                 m_GcodeToFcode.process(f, fcode_output)
+                print("End of gcode parsing from stl_slicer")
                 path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
+                print("End of trimming from stl_slicer")
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -814,6 +827,7 @@ class StlSlicerCura(StlSlicer):
             fcode_output.close()
         if fail_flag:
             status_list.append([False, slic3r_out, path])
+            print("Appended path to status_list, but failed")
             ###########################################################
 
             with open(tmp_slic3r_setting_file, 'rb') as f:
@@ -821,6 +835,7 @@ class StlSlicerCura(StlSlicer):
                         f2.write(f.read())
             ###########################################################
         else:
+            print("Appended path to status_list")
             status_list.append([output, metadata, path])
 
     @classmethod

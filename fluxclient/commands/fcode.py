@@ -31,7 +31,7 @@ def gcode_2_fcode(params=None, input=None, output=None):
 
     options = parser.parse_args(params)
 
-    from fluxclient.fcode.g2fcpp import GcodeToFcodeCpp
+    from fluxclient.utils._utils import GcodeToFcodeCpp
     from fluxclient.fcode.g_to_f import GcodeToFcode
 
     ext_metadata = {}
