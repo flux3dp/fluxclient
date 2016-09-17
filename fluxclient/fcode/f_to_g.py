@@ -47,6 +47,7 @@ class FcodeToGcode(FcodeBase):
             self.upload_content(buf)
 
     def upload_content(self, buf):
+        print("Start upload");
         """
         upload fcode content in this object,
         buf[in]: could be string indicating the path to .fcode or bytes
@@ -81,17 +82,23 @@ class FcodeToGcode(FcodeBase):
         """
         try:
             assert self.data[:8] == b"FCx0001\n"
+            print("Passed Header Check");
             self.script_size = uint_unpacker(self.data[8:12])
+            print("Script size = " + str(self.script_size))
             assert crc32(self.data[12:12 + self.script_size]) == uint_unpacker(self.data[12 + self.script_size:16 + self.script_size])
+            print("Passed CRC32 -1 ");
             index = 16 + self.script_size
             self.meta_size = uint_unpacker(self.data[index:index + 4])
             index += 4
             assert crc32(self.data[index:index + self.meta_size]) == uint_unpacker(self.data[index + self.meta_size:index + self.meta_size + 4])
+            print("Passed CRC32 -2 ");
             index = index + self.meta_size + 4
             self.image_size = uint_unpacker(self.data[index:index + 4])
             index += 4
+            print("Passed full check");
             return True
         except AssertionError as e:
+            print(str(e));
             return False
 
     def get_img(self):
@@ -127,6 +134,7 @@ class FcodeToGcode(FcodeBase):
                     itme = item.split(b"=", 1)
                     if len(itme) == 2:
                         metadata[itme[0].decode()] = itme[1].decode()
+                        print(itme[0].decode() + " = " + itme[1].decode());
                 self.metadata = metadata
         return self.metadata
 
@@ -243,6 +251,6 @@ class FcodeToGcode(FcodeBase):
                 move_flag = any(i is not None for i in line_segment[1:4])
                 self.process_path('', move_flag, self.laserflag or self.extrudeflag)
             else:
-                raise RuntimeError(FCODE_FAIL)
+                raise RuntimeError("FCODE_FAIL unknown command "+ str(command) + " @"+str(index))
         self.T = Thread(target=self.sub_convert_path)
         self.T.start()

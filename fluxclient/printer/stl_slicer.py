@@ -15,6 +15,7 @@ from PIL import Image
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
+from fluxclient.fcode.g2fcpp import GCodeToFCodeCpp
 from fluxclient.scanner.tools import dot, normal, normalize
 from fluxclient.printer import ini_string, ini_constraint, ignore
 from fluxclient.printer.flux_raft import Raft
@@ -334,7 +335,7 @@ class StlSlicer(object):
             ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
 
             with open(tmp_gcode_file, 'r') as f:
-                m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
+                m_GcodeToFcode = GcodeToFcodeCpp(ext_metadata=ext_metadata)
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
                 m_GcodeToFcode.process(f, fcode_output)
