@@ -234,4 +234,13 @@ def create_pcl_extentions():
         include_dirs=include_dirs
     ))
 
+    extensions.append(Extension(
+        'fluxclient.fcode.g2fcpp',
+        sources=[
+            "src/printer/g2f_module.cpp",
+            "src/utils/utils_module.cpp",
+            "src/printer/g2f.pyx"],
+        language="c++"
+    ))
+
     return extensions
