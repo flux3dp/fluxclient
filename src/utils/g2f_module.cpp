@@ -59,7 +59,7 @@ float atof_with_char_ptr(char *s, char** sptr){
   return neg ? -a : a;
 }
 
-char* substr(char* str, int start){
+char* substr(const char* str, int start){
   int len = strlen(str);
   char* newstr = (char*)malloc(len - start + 1); 
   strncpy(newstr, &str[start], len-start);
@@ -67,12 +67,12 @@ char* substr(char* str, int start){
   return newstr;
 }
 
-int write_char(char** dest, char n){
+void write_char(char** dest, char n){
   strncpy(*dest, (char*)&n, 1);
   *dest += 1;
 }
 
-int write_float(char** dest, float n){
+void write_float(char** dest, float n){
   union {
     float a;
     char bytes[4];
@@ -94,7 +94,6 @@ struct token_result{
 typedef struct token_result TokenResult;
 
 TokenResult find_next_token(char** ptr){
-  char* next_token = NULL;
   TokenResult result;
   result.ch = '?';
   result.valid = 0;
@@ -175,7 +174,8 @@ FCode* createFCodePtr(){
   fc->counter_between_layers = 0;
   fc->record_z = 0;
 
-  fc->record_path = true;
+  fc->path_type = TYPE_MOVE;
+
   //TODO:: self.md.update(ext_metadata)
 
   return fc;
@@ -235,7 +235,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag){
     PathType line_type = TYPE_MOVE;
     if(fc->path_type == TYPE_NEWLAYER){
         fc->path_type = TYPE_MOVE;
-        fc->record_z = fc->current_pos[2];
+        fc->record_z = fc->current_pos[3];
         already_split = true;
         // if(fc->filament[0] == fc->filament_this_layer[0] && self.counter_between_layers > 1){
         //     self.empty_layer.append(self.layer_now)
@@ -244,7 +244,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag){
         fc->layer_now = fc->native_path->size();
         vector<PathVector> vec;
         PathVector p = fc->native_path->back().back();
-        p.type = fc->path_type;
+        p.path_type = fc->path_type;
         vec.push_back(p);
         fc->native_path->push_back(vec);
         // fc->filament_this_layer = self.filament[:]
@@ -259,7 +259,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag){
       }else{
         line_type = TYPE_MOVE;
       }      
-      PathVector p = {fc->current_pos[0], fc->current_pos[1], fc->current_pos[2], fc->path_type};
+      PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], fc->path_type};
       fc->native_path->back().push_back(p);
     }
   }
@@ -294,7 +294,7 @@ void analyze_metadata(float* data, char* comment, FCode* fc){
   tmp_path = sqrt(tmp_path);
 
   //Find largest R
-  float pos_r = (fc->current_pos[0] * fc->current_pos[0]) + (fc->current_pos[1] * fc->current_pos[1]);
+  float pos_r = (fc->current_pos[1] * fc->current_pos[1]) + (fc->current_pos[2] * fc->current_pos[2]);
   if(pos_r > fc->max_range[3]){ //compute sqrt later, save power first
     fc->max_range[3] = pos_r;
   }
@@ -317,13 +317,14 @@ void analyze_metadata(float* data, char* comment, FCode* fc){
   fc->distance += tmp_path;
   fc->time_need += tmp_path * 60 / (fc->current_speed);
   
-  if(fc->record_path) process_path(fc, comment, move_flag, extrude_flag);
+  if(fc->record_path){
+    process_path(fc, comment, move_flag, extrude_flag);
+  }
 }
 
-char* symbols[7] = {"F","X","Y","Z","E1","E2","E3"};
+const char* symbols[7] = {"F","X","Y","Z","E1","E2","E3"};
 
 int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
-  if(fc->index > 13505400) fprintf(stdout, "process %s", line);
   // printf("Tool %d\n", fc->tool);
   char* output_ptr = fcode_output;
 
@@ -338,7 +339,6 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
   } else if (comment_ptr!=NULL) {
     comment = substr(comment_ptr+1, 0);
     //comment_list.push(comment);
-    *comment_ptr = '\0';
   }
 
   if(strlen(line) == 0) return 0;
@@ -351,7 +351,7 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
   char cmd_type = parsed_command.ch;
   int cmd_no = parsed_command.f;
 
-  if(fc->index > 13505400) printf("index: %d, cmd_type: %c, cmd_no: %d\n", fc->index, cmd_type, cmd_no);
+  //printf("index: %d, cmd_type: %c, cmd_no: %d\n", fc->index, cmd_type, cmd_no);
 
   float data[7] = {FLT_SAFE,FLT_SAFE,FLT_SAFE,FLT_SAFE,FLT_SAFE,FLT_SAFE,FLT_SAFE};
   int subcommand = 0;
@@ -381,20 +381,11 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
 
         command_code = subcommand | 128;
         write_char(&output_ptr, command_code);
-
-        if(fc->index > 13505400) printf("Move %d ", command_code);
         for(int i = 0; i < 7; i++){
           if(data[i]!=FLT_SAFE){
             write_float(&output_ptr, data[i]);
-            if(fc->index > 13505400){
-              if(fc->absolute)
-                printf("%s=%f (%d), ", symbols[i], data[i], (output_ptr - fcode_output));
-              else
-                printf("%s<<%f, ", symbols[i], data[i]);
-            }
           }
         }
-        if(fc->index > 13505400) printf("\n");
         break;
       case 2: //Arc
       case 3: //Arc
@@ -420,8 +411,8 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
         break;
       case 28: //Home
         write_char(&output_ptr, 1);
-        fc->current_pos[0] = fc->current_pos[1] = 0;
-        fc->current_pos[2] = MAX_HEIGHT;
+        fc->current_pos[1] = fc->current_pos[2] = 0;
+        fc->current_pos[3] = MAX_HEIGHT;
         break;
       case 90: //Absolute
         fc->absolute = true;
@@ -513,30 +504,30 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
   }else if(cmd_type == 'T'){
     switch(cmd_no){
       case 0:
-        printf("Write tool 0");
         fc->tool = 0;
         break;
       case 1:
-        printf("Write tool 1");
         fc->tool = 1;
         break;
     }
-  }else if(comment!=NULL && fc->is_cura){
-    if(strcmp("FILL", comment + 5) == 0){
+  }else if(comment!=NULL){
+    char* cura_comment = comment;
+    if(strlen(cura_comment)>6) cura_comment = cura_comment + 6; 
+    if(strstr(comment, "FILL") != NULL){
         fc->path_type = TYPE_INFILL;
-    }else if(strcmp("SUPPORT", comment + 5)){
+    }else if(strstr(comment, "SUPPORT") != NULL){
         fc->path_type = TYPE_SUPPORT;
-    }else if(strcmp("LAYER", comment + 5)){
+    }else if(strstr(comment, "LAYER") != NULL){
         fc->path_type = TYPE_NEWLAYER;
-    }else if(strcmp("WALL-OUTER", comment + 5)){
+    }else if(strstr(comment, "WALL-OUTER") != NULL){
         fc->path_type = TYPE_PERIMETER;
-    }else if(strcmp("WALL-INNER", comment + 5)){
+    }else if(strstr(comment, "WALL-INNER") != NULL){
         fc->path_type = TYPE_INNERWALL;
-    }else if(strcmp("RAFT", comment + 5)){
+    }else if(strstr(comment, "RAFT") != NULL){
         fc->path_type = TYPE_RAFT;
-    }else if(strcmp("SKIRT", comment + 5)){
+    }else if(strstr(comment, "SKIRT") != NULL){
         fc->path_type = TYPE_SKIRT;
-    }else if(strcmp("SKIN", comment + 5)){
+    }else if(strstr(comment, "SKIN") != NULL){
         fc->path_type = TYPE_SKIN;
     } 
   }
@@ -553,29 +544,42 @@ void trim_ends_cpp(vector< vector< PathVector > >* path){
     // """
     // trim the moving(non-extruding) part in path's both end
     // """
-    while(true){
-      if(path->back().size()>=2){
-        if(path->back().back().type == TYPE_MOVE){
-          path->back().pop_back();
-        }else{
-          break;
-        }
-      }else{
-        path->back().pop_back();
-      }
-    }
+    fprintf(stderr, "Start trimming\n");
+    if(path->size()<1) fprintf(stderr, "Empty path!?\n");
+    vector<PathVector>& last_layer = path->back();
+    vector<PathVector>& first_layer = path->front();
 
-    while(true){
-      if(path->front().size()>=2){
-        if(path->front().front().type == TYPE_MOVE){
-          path->front().erase(path->front().begin());
-        }else{
-          break;
-        }
-      }else{
-        path->front().erase(path->front().begin());
-      }
-    }
+    // while(true){
+    //   if(last_layer.size()>=2){
+    //     if(last_layer.back().path_type == TYPE_MOVE){
+    //       last_layer.pop_back();
+    //     }else{
+    //       break;
+    //     }
+    //   }else if(last_layer.size()){
+    //     last_layer.pop_back();
+    //   }else{
+    //     break;
+    //   }
+    // }
+
+    fprintf(stderr, "End of trimming back\n");
+    
+    // while(true){
+    //   if(first_layer.size()>=2){
+    //     if(first_layer.front().path_type == TYPE_MOVE){
+    //       first_layer.erase(first_layer.begin());
+    //     }else{
+    //       break;
+    //     }
+    //   }else if(first_layer.size()){
+    //     first_layer.pop_back();
+    //   }else{
+    //     break;
+    //   }
+    // }
+
+    fprintf(stderr, "End of trimming front\n");
 }
 
 //For slic3r..

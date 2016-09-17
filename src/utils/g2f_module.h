@@ -1,5 +1,6 @@
 #include <vector>
 #include <string>
+#include "path_vector.h"
 
 using namespace std;
 
@@ -21,13 +22,6 @@ typedef enum{
   TYPE_RAFT,
   TYPE_SKIN
 } PathType;
-
-typedef struct{
-  float x;
-  float y;
-  float z;
-  PathType type;
-} PathVector;
 
 typedef struct{
   void* ptr;
