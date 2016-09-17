@@ -249,8 +249,8 @@ class __Pyx_FakeReference {
 #define _USE_MATH_DEFINES
 #endif
 #include <math.h>
-#define __PYX_HAVE__fluxclient__utils___utils
-#define __PYX_HAVE_API__fluxclient__utils___utils
+#define __PYX_HAVE__utils
+#define __PYX_HAVE_API__utils
 #include <vector>
 #include "ios"
 #include "new"
@@ -449,31 +449,31 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "ent-dev/src/utils/utils.pyx",
-  "ent-dev/stringsource",
+  "src/utils/utils.pyx",
+  "stringsource",
 };
 
 /*--- Type declarations ---*/
-struct __pyx_obj_10fluxclient_5utils_6_utils_Tools;
+struct __pyx_obj_5utils_Tools;
 
-/* "src/utils/utils.pyx":15
+/* "utils.pyx":15
  * 
  * 
  * cdef class Tools:             # <<<<<<<<<<<<<<
  * 	def __init__(self):
  * 		pass
  */
-struct __pyx_obj_10fluxclient_5utils_6_utils_Tools {
+struct __pyx_obj_5utils_Tools {
   PyObject_HEAD
-  struct __pyx_vtabstruct_10fluxclient_5utils_6_utils_Tools *__pyx_vtab;
+  struct __pyx_vtabstruct_5utils_Tools *__pyx_vtab;
 };
 
 
 
-struct __pyx_vtabstruct_10fluxclient_5utils_6_utils_Tools {
-  PyObject *(*path_to_js)(struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *, PyObject *, int __pyx_skip_dispatch);
+struct __pyx_vtabstruct_5utils_Tools {
+  PyObject *(*path_to_js)(struct __pyx_obj_5utils_Tools *, PyObject *, int __pyx_skip_dispatch);
 };
-static struct __pyx_vtabstruct_10fluxclient_5utils_6_utils_Tools *__pyx_vtabptr_10fluxclient_5utils_6_utils_Tools;
+static struct __pyx_vtabstruct_5utils_Tools *__pyx_vtabptr_5utils_Tools;
 
 /* --- Runtime support code (head) --- */
 #ifndef CYTHON_REFNANNY
@@ -622,7 +622,7 @@ static int __Pyx_check_binary_version(void);
 
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
-static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UNUSED struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self, PyObject *__pyx_v_path, int __pyx_skip_dispatch); /* proto*/
+static PyObject *__pyx_f_5utils_5Tools_path_to_js(CYTHON_UNUSED struct __pyx_obj_5utils_Tools *__pyx_v_self, PyObject *__pyx_v_path, int __pyx_skip_dispatch); /* proto*/
 
 /* Module declarations from 'cython' */
 
@@ -636,8 +636,8 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
 
 /* Module declarations from 'libcpp.string' */
 
-/* Module declarations from 'fluxclient.utils._utils' */
-static PyTypeObject *__pyx_ptype_10fluxclient_5utils_6_utils_Tools = 0;
+/* Module declarations from 'utils' */
+static PyTypeObject *__pyx_ptype_5utils_Tools = 0;
 static PyObject *__pyx_convert_vector_to_py_float(const std::vector<float>  &); /*proto*/
 static PyObject *__pyx_convert_vector_to_py_std_3a__3a_vector_3c_float_3e___(const std::vector<std::vector<float> >  &); /*proto*/
 static PyObject *__pyx_convert_vector_to_py_std_3a__3a_vector_3c_std_3a__3a_vector_3c_float_3e____3e___(const std::vector<std::vector<std::vector<float> > >  &); /*proto*/
@@ -654,15 +654,15 @@ static PyObject *__pyx_convert_vector_to_py_std_3a__3a_vector_3c_PathVector_3e__
 static PathVector __pyx_convert__from_py_PathVector(PyObject *); /*proto*/
 static std::vector<PathVector>  __pyx_convert_vector_from_py_PathVector(PyObject *); /*proto*/
 static std::vector<std::vector<PathVector> >  __pyx_convert_vector_from_py_std_3a__3a_vector_3c_PathVector_3e___(PyObject *); /*proto*/
-#define __Pyx_MODULE_NAME "fluxclient.utils._utils"
-int __pyx_module_is_main_fluxclient__utils___utils = 0;
+#define __Pyx_MODULE_NAME "utils"
+int __pyx_module_is_main_utils = 0;
 
-/* Implementation of 'fluxclient.utils._utils' */
+/* Implementation of 'utils' */
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_TypeError;
-static int __pyx_pf_10fluxclient_5utils_6_utils_5Tools___init__(CYTHON_UNUSED struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_10fluxclient_5utils_6_utils_5Tools_2path_to_js(struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self, PyObject *__pyx_v_path); /* proto */
-static PyObject *__pyx_tp_new_10fluxclient_5utils_6_utils_Tools(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static int __pyx_pf_5utils_5Tools___init__(CYTHON_UNUSED struct __pyx_obj_5utils_Tools *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5utils_5Tools_2path_to_js(struct __pyx_obj_5utils_Tools *__pyx_v_self, PyObject *__pyx_v_path); /* proto */
+static PyObject *__pyx_tp_new_5utils_Tools(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static char __pyx_k_sys[] = "sys";
 static char __pyx_k_main[] = "__main__";
 static char __pyx_k_test[] = "__test__";
@@ -682,7 +682,7 @@ static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_sys;
 static PyObject *__pyx_n_s_test;
 
-/* "src/utils/utils.pyx":16
+/* "utils.pyx":16
  * 
  * cdef class Tools:
  * 	def __init__(self):             # <<<<<<<<<<<<<<
@@ -691,22 +691,22 @@ static PyObject *__pyx_n_s_test;
  */
 
 /* Python wrapper */
-static int __pyx_pw_10fluxclient_5utils_6_utils_5Tools_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_10fluxclient_5utils_6_utils_5Tools_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_5utils_5Tools_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_5utils_5Tools_1__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__ (wrapper)", 0);
   if (unlikely(PyTuple_GET_SIZE(__pyx_args) > 0)) {
     __Pyx_RaiseArgtupleInvalid("__init__", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); return -1;}
   if (unlikely(__pyx_kwds) && unlikely(PyDict_Size(__pyx_kwds) > 0) && unlikely(!__Pyx_CheckKeywordStrings(__pyx_kwds, "__init__", 0))) return -1;
-  __pyx_r = __pyx_pf_10fluxclient_5utils_6_utils_5Tools___init__(((struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *)__pyx_v_self));
+  __pyx_r = __pyx_pf_5utils_5Tools___init__(((struct __pyx_obj_5utils_Tools *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10fluxclient_5utils_6_utils_5Tools___init__(CYTHON_UNUSED struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self) {
+static int __pyx_pf_5utils_5Tools___init__(CYTHON_UNUSED struct __pyx_obj_5utils_Tools *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
@@ -717,7 +717,7 @@ static int __pyx_pf_10fluxclient_5utils_6_utils_5Tools___init__(CYTHON_UNUSED st
   return __pyx_r;
 }
 
-/* "src/utils/utils.pyx":19
+/* "utils.pyx":19
  * 		pass
  * 
  * 	cpdef path_to_js(self, path):             # <<<<<<<<<<<<<<
@@ -725,8 +725,8 @@ static int __pyx_pf_10fluxclient_5utils_6_utils_5Tools___init__(CYTHON_UNUSED st
  * 		cdef vector[vector[PathVector]] native;
  */
 
-static PyObject *__pyx_pw_10fluxclient_5utils_6_utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path); /*proto*/
-static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UNUSED struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self, PyObject *__pyx_v_path, int __pyx_skip_dispatch) {
+static PyObject *__pyx_pw_5utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path); /*proto*/
+static PyObject *__pyx_f_5utils_5Tools_path_to_js(CYTHON_UNUSED struct __pyx_obj_5utils_Tools *__pyx_v_self, PyObject *__pyx_v_path, int __pyx_skip_dispatch) {
   std::vector<std::vector<std::vector<float> > >  __pyx_v_origin;
   std::vector<std::vector<PathVector> >  __pyx_v_native;
   PyObject *__pyx_r = NULL;
@@ -749,7 +749,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
   else if (unlikely(Py_TYPE(((PyObject *)__pyx_v_self))->tp_dictoffset != 0)) {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_path_to_js); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_1);
-    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_10fluxclient_5utils_6_utils_5Tools_3path_to_js)) {
+    if (!PyCFunction_Check(__pyx_t_1) || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)__pyx_pw_5utils_5Tools_3path_to_js)) {
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_t_1);
       __pyx_t_3 = __pyx_t_1; __pyx_t_4 = NULL;
@@ -785,7 +785,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
 
-  /* "src/utils/utils.pyx":22
+  /* "utils.pyx":22
  * 		cdef vector[vector[vector [float]]] origin;
  * 		cdef vector[vector[PathVector]] native;
  * 		if(type(path) == type(origin)):             # <<<<<<<<<<<<<<
@@ -800,7 +800,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_6) {
 
-    /* "src/utils/utils.pyx":23
+    /* "utils.pyx":23
  * 		cdef vector[vector[PathVector]] native;
  * 		if(type(path) == type(origin)):
  * 			return path_to_js(path)             # <<<<<<<<<<<<<<
@@ -816,7 +816,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
     goto __pyx_L0;
   }
 
-  /* "src/utils/utils.pyx":25
+  /* "utils.pyx":25
  * 			return path_to_js(path)
  * 
  * 		if(type(path) == type(native)):             # <<<<<<<<<<<<<<
@@ -830,7 +830,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
 
-    /* "src/utils/utils.pyx":26
+    /* "utils.pyx":26
  * 
  * 		if(type(path) == type(native)):
  * 			return path_to_js_cpp(path)             # <<<<<<<<<<<<<<
@@ -844,7 +844,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
     goto __pyx_L0;
   }
 
-  /* "src/utils/utils.pyx":19
+  /* "utils.pyx":19
  * 		pass
  * 
  * 	cpdef path_to_js(self, path):             # <<<<<<<<<<<<<<
@@ -861,7 +861,7 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("fluxclient.utils._utils.Tools.path_to_js", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("utils.Tools.path_to_js", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -870,19 +870,19 @@ static PyObject *__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(CYTHON_UN
 }
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10fluxclient_5utils_6_utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path); /*proto*/
-static PyObject *__pyx_pw_10fluxclient_5utils_6_utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path) {
+static PyObject *__pyx_pw_5utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path); /*proto*/
+static PyObject *__pyx_pw_5utils_5Tools_3path_to_js(PyObject *__pyx_v_self, PyObject *__pyx_v_path) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("path_to_js (wrapper)", 0);
-  __pyx_r = __pyx_pf_10fluxclient_5utils_6_utils_5Tools_2path_to_js(((struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *)__pyx_v_self), ((PyObject *)__pyx_v_path));
+  __pyx_r = __pyx_pf_5utils_5Tools_2path_to_js(((struct __pyx_obj_5utils_Tools *)__pyx_v_self), ((PyObject *)__pyx_v_path));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10fluxclient_5utils_6_utils_5Tools_2path_to_js(struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *__pyx_v_self, PyObject *__pyx_v_path) {
+static PyObject *__pyx_pf_5utils_5Tools_2path_to_js(struct __pyx_obj_5utils_Tools *__pyx_v_self, PyObject *__pyx_v_path) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -891,7 +891,7 @@ static PyObject *__pyx_pf_10fluxclient_5utils_6_utils_5Tools_2path_to_js(struct 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("path_to_js", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js(__pyx_v_self, __pyx_v_path, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __pyx_f_5utils_5Tools_path_to_js(__pyx_v_self, __pyx_v_path, 1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 19; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -900,7 +900,7 @@ static PyObject *__pyx_pf_10fluxclient_5utils_6_utils_5Tools_2path_to_js(struct 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("fluxclient.utils._utils.Tools.path_to_js", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("utils.Tools.path_to_js", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -2106,10 +2106,10 @@ static std::vector<std::vector<PathVector> >  __pyx_convert_vector_from_py_std_3
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
-static struct __pyx_vtabstruct_10fluxclient_5utils_6_utils_Tools __pyx_vtable_10fluxclient_5utils_6_utils_Tools;
+static struct __pyx_vtabstruct_5utils_Tools __pyx_vtable_5utils_Tools;
 
-static PyObject *__pyx_tp_new_10fluxclient_5utils_6_utils_Tools(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
-  struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *p;
+static PyObject *__pyx_tp_new_5utils_Tools(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+  struct __pyx_obj_5utils_Tools *p;
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -2117,12 +2117,12 @@ static PyObject *__pyx_tp_new_10fluxclient_5utils_6_utils_Tools(PyTypeObject *t,
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  p = ((struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *)o);
-  p->__pyx_vtab = __pyx_vtabptr_10fluxclient_5utils_6_utils_Tools;
+  p = ((struct __pyx_obj_5utils_Tools *)o);
+  p->__pyx_vtab = __pyx_vtabptr_5utils_Tools;
   return o;
 }
 
-static void __pyx_tp_dealloc_10fluxclient_5utils_6_utils_Tools(PyObject *o) {
+static void __pyx_tp_dealloc_5utils_Tools(PyObject *o) {
   #if PY_VERSION_HEX >= 0x030400a1
   if (unlikely(Py_TYPE(o)->tp_finalize) && (!PyType_IS_GC(Py_TYPE(o)) || !_PyGC_FINALIZED(o))) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -2131,17 +2131,17 @@ static void __pyx_tp_dealloc_10fluxclient_5utils_6_utils_Tools(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static PyMethodDef __pyx_methods_10fluxclient_5utils_6_utils_Tools[] = {
-  {"path_to_js", (PyCFunction)__pyx_pw_10fluxclient_5utils_6_utils_5Tools_3path_to_js, METH_O, 0},
+static PyMethodDef __pyx_methods_5utils_Tools[] = {
+  {"path_to_js", (PyCFunction)__pyx_pw_5utils_5Tools_3path_to_js, METH_O, 0},
   {0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_10fluxclient_5utils_6_utils_Tools = {
+static PyTypeObject __pyx_type_5utils_Tools = {
   PyVarObject_HEAD_INIT(0, 0)
-  "fluxclient.utils._utils.Tools", /*tp_name*/
-  sizeof(struct __pyx_obj_10fluxclient_5utils_6_utils_Tools), /*tp_basicsize*/
+  "utils.Tools", /*tp_name*/
+  sizeof(struct __pyx_obj_5utils_Tools), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10fluxclient_5utils_6_utils_Tools, /*tp_dealloc*/
+  __pyx_tp_dealloc_5utils_Tools, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -2168,7 +2168,7 @@ static PyTypeObject __pyx_type_10fluxclient_5utils_6_utils_Tools = {
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10fluxclient_5utils_6_utils_Tools, /*tp_methods*/
+  __pyx_methods_5utils_Tools, /*tp_methods*/
   0, /*tp_members*/
   0, /*tp_getset*/
   0, /*tp_base*/
@@ -2176,9 +2176,9 @@ static PyTypeObject __pyx_type_10fluxclient_5utils_6_utils_Tools = {
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pw_10fluxclient_5utils_6_utils_5Tools_1__init__, /*tp_init*/
+  __pyx_pw_5utils_5Tools_1__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10fluxclient_5utils_6_utils_Tools, /*tp_new*/
+  __pyx_tp_new_5utils_Tools, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -2204,7 +2204,7 @@ static struct PyModuleDef __pyx_moduledef = {
   #else
     PyModuleDef_HEAD_INIT,
   #endif
-    "_utils",
+    "utils",
     0, /* m_doc */
     -1, /* m_size */
     __pyx_methods /* m_methods */,
@@ -2249,11 +2249,11 @@ static int __Pyx_InitGlobals(void) {
 }
 
 #if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_utils(void); /*proto*/
-PyMODINIT_FUNC init_utils(void)
+PyMODINIT_FUNC initutils(void); /*proto*/
+PyMODINIT_FUNC initutils(void)
 #else
-PyMODINIT_FUNC PyInit__utils(void); /*proto*/
-PyMODINIT_FUNC PyInit__utils(void)
+PyMODINIT_FUNC PyInit_utils(void); /*proto*/
+PyMODINIT_FUNC PyInit_utils(void)
 #endif
 {
   PyObject *__pyx_t_1 = NULL;
@@ -2270,7 +2270,7 @@ PyMODINIT_FUNC PyInit__utils(void)
           Py_FatalError("failed to import 'refnanny' module");
   }
   #endif
-  __Pyx_RefNannySetupContext("PyMODINIT_FUNC PyInit__utils(void)", 0);
+  __Pyx_RefNannySetupContext("PyMODINIT_FUNC PyInit_utils(void)", 0);
   if ( __Pyx_check_binary_version() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_empty_tuple = PyTuple_New(0); if (unlikely(!__pyx_empty_tuple)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_empty_bytes = PyBytes_FromStringAndSize("", 0); if (unlikely(!__pyx_empty_bytes)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2292,7 +2292,7 @@ PyMODINIT_FUNC PyInit__utils(void)
   #endif
   /*--- Module creation code ---*/
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4("_utils", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
+  __pyx_m = Py_InitModule4("utils", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
   #else
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
@@ -2309,14 +2309,14 @@ PyMODINIT_FUNC PyInit__utils(void)
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
-  if (__pyx_module_is_main_fluxclient__utils___utils) {
+  if (__pyx_module_is_main_utils) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;};
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    if (!PyDict_GetItemString(modules, "fluxclient.utils._utils")) {
-      if (unlikely(PyDict_SetItemString(modules, "fluxclient.utils._utils", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "utils")) {
+      if (unlikely(PyDict_SetItemString(modules, "utils", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
   }
   #endif
@@ -2328,19 +2328,19 @@ PyMODINIT_FUNC PyInit__utils(void)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  __pyx_vtabptr_10fluxclient_5utils_6_utils_Tools = &__pyx_vtable_10fluxclient_5utils_6_utils_Tools;
-  __pyx_vtable_10fluxclient_5utils_6_utils_Tools.path_to_js = (PyObject *(*)(struct __pyx_obj_10fluxclient_5utils_6_utils_Tools *, PyObject *, int __pyx_skip_dispatch))__pyx_f_10fluxclient_5utils_6_utils_5Tools_path_to_js;
-  if (PyType_Ready(&__pyx_type_10fluxclient_5utils_6_utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_type_10fluxclient_5utils_6_utils_Tools.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_10fluxclient_5utils_6_utils_Tools.tp_dict, __pyx_vtabptr_10fluxclient_5utils_6_utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "Tools", (PyObject *)&__pyx_type_10fluxclient_5utils_6_utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_10fluxclient_5utils_6_utils_Tools = &__pyx_type_10fluxclient_5utils_6_utils_Tools;
+  __pyx_vtabptr_5utils_Tools = &__pyx_vtable_5utils_Tools;
+  __pyx_vtable_5utils_Tools.path_to_js = (PyObject *(*)(struct __pyx_obj_5utils_Tools *, PyObject *, int __pyx_skip_dispatch))__pyx_f_5utils_5Tools_path_to_js;
+  if (PyType_Ready(&__pyx_type_5utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_5utils_Tools.tp_print = 0;
+  if (__Pyx_SetVtable(__pyx_type_5utils_Tools.tp_dict, __pyx_vtabptr_5utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "Tools", (PyObject *)&__pyx_type_5utils_Tools) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 15; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_5utils_Tools = &__pyx_type_5utils_Tools;
   /*--- Type import code ---*/
   /*--- Variable import code ---*/
   /*--- Function import code ---*/
   /*--- Execution code ---*/
 
-  /* "src/utils/utils.pyx":2
+  /* "utils.pyx":2
  * import cython
  * import sys             # <<<<<<<<<<<<<<
  * from libcpp.vector cimport vector
@@ -2351,7 +2351,7 @@ PyMODINIT_FUNC PyInit__utils(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sys, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 2; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "src/utils/utils.pyx":1
+  /* "utils.pyx":1
  * import cython             # <<<<<<<<<<<<<<
  * import sys
  * from libcpp.vector cimport vector
@@ -2376,11 +2376,11 @@ PyMODINIT_FUNC PyInit__utils(void)
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init fluxclient.utils._utils", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init utils", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init fluxclient.utils._utils");
+    PyErr_SetString(PyExc_ImportError, "init utils");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
