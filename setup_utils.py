@@ -8,6 +8,7 @@ import os
 
 try:
     from Cython.Distutils import build_ext
+    from Cython.Build import cythonize
 except ImportError:
     print("""
  ******************************************************
@@ -222,8 +223,16 @@ def create_pcl_extentions():
         include_dirs=include_dirs
     ))
     extensions.append(Extension(
+        'fluxclient.utils.native_data',
+        sources=[
+            "src/utils/native_data.pyx"],
+        language="c++",
+        gdb_debug = True
+    ))
+    extensions.append(Extension(
         'fluxclient.utils._utils',
         sources=[
+            "src/utils/g2f_module.cpp",
             "src/utils/utils_module.cpp",
             "src/utils/utils.pyx"],
         language="c++",
@@ -231,16 +240,8 @@ def create_pcl_extentions():
         libraries=libraries,
         library_dirs=library_dirs,
         extra_objects=[],
-        include_dirs=include_dirs
+        include_dirs=["src/printer/"]
     ))
 
-    extensions.append(Extension(
-        'fluxclient.fcode.g2fcpp',
-        sources=[
-            "src/printer/g2f_module.cpp",
-            "src/utils/utils_module.cpp",
-            "src/printer/g2f.pyx"],
-        language="c++"
-    ))
 
     return extensions
