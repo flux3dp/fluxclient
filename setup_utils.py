@@ -222,13 +222,13 @@ def create_pcl_extentions():
         extra_objects=[],
         include_dirs=include_dirs
     ))
-    extensions.append(Extension(
-        'fluxclient.utils.native_data',
-        sources=[
-            "src/utils/native_data.pyx"],
-        language="c++",
-        gdb_debug = True
-    ))
+    # extensions.append(Extension(
+    #     'fluxclient.utils.native_data',
+    #     sources=[
+    #         "src/utils/native_data.pyx"],
+    #     language="c++",
+    #     gdb_debug = True
+    # ))
     extensions.append(Extension(
         'fluxclient.utils._utils',
         sources=[

@@ -30,22 +30,7 @@ float atof_with_char_ptr(char *s, char** sptr){
       e = e-1;
     }
   }
-  // if (c == 'e' || c == 'E') {
-  //   int sign = 1;
-  //   int i = 0;
-  //   c = *s++;
-  //   if (c == '+')
-  //     c = *s++;
-  //   else if (c == '-') {
-  //     c = *s++;
-  //     sign = -1;
-  //   }
-  //   while (isdigit(c)) {
-  //     i = i*10 + (c - '0');
-  //     c = *s++;
-  //   }
-  //   e += i*sign;
-  // }
+  
   while (e > 0) {
     a *= 10.0;
     e--;

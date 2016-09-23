@@ -19,8 +19,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 
 from fluxclient.utils._utils import Tools
-
-
+from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +49,9 @@ cdef class NativePath:
 
 	cdef vector[vector[PathVector]]* getPtr(self):
 		return self.ptr
+
+	def __dealloc__(self):
+		PyMem_Free(self.ptr)
 
 
 cdef class Tools: 
@@ -175,11 +177,14 @@ cdef class GcodeToFcodeCpp:
 	cpdef sub_convert_path(self):
 		# self.path_js = FcodeBase.path_to_js(self.path)
 		cdef FCode* fc = self.fc
-		self.path_js = path_to_js_cpp(fc.native_path).decode()
+		#self.path_js = path_to_js_cpp(fc.native_path).decode()
 
 	cpdef get_path(self, path_type='js'):
+		print("warning: get_path of g2fcpp function deprecated")
 		if path_type == 'js':
 			self.T.join()
+			if self.path_js is None:
+				self.path_js = path_to_js_cpp(self.fc.native_path).decode()
 			return self.path_js
 		else:
 			if self.path:
@@ -306,3 +311,6 @@ cdef class GcodeToFcodeCpp:
 			logger.info('G_to_F fail')
 			traceback.print_exc(file=sys.stdout)
 			return 'broken'
+
+	def __dealloc__(self):
+		PyMem_Free(self.fc)
