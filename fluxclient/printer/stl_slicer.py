@@ -780,11 +780,9 @@ class StlSlicerCura(StlSlicer):
                 # m_GcodeToFcode.process_path = self.process_path
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
-                print("Start gcode parsing from stl_slicer")
+                m_GcodeToFcode.offset(z=float(config.get('z_offset', 0.0)))
                 m_GcodeToFcode.process(f, fcode_output)
-                print("End of gcode parsing from stl_slicer")
                 path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
-                print("End of trimming from stl_slicer")
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
                 if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
@@ -826,6 +824,8 @@ class StlSlicerCura(StlSlicer):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
+            if path is None:
+                path = None
             status_list.append([False, slic3r_out, path])
             print("Appended path to status_list, but failed")
             ###########################################################

@@ -69,6 +69,11 @@ class GcodeToFcode(FcodeBase):
         """
         return b'FC' + b'x0001' + b'\n'
 
+    def offset(self, x=0.0, y=0.0, z=0.0):
+        self.G92_delta[0] += x
+        self.G92_delta[1] += y
+        self.G92_delta[2] += z
+
     def write_metadata(self, stream):
         """
         Writes fcode's metadata
@@ -253,6 +258,9 @@ class GcodeToFcode(FcodeBase):
         """
         Process a input_stream consist of gcode strings and write the fcode into output_stream
         """
+        # Point type in constants
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+
         packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
         packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
 
@@ -434,21 +442,21 @@ class GcodeToFcode(FcodeBase):
                 else:
                     if self.engine == 'cura':
                         if 'FILL' in comment:
-                            self.now_type = POINT_TYPE['infill']
+                            self.now_type = PY_TYPE_INFILL
                         elif 'SUPPORT' in comment:
-                            self.now_type = POINT_TYPE['support']
+                            self.now_type = PY_TYPE_SUPPORT
                         elif 'LAYER:' in comment:
-                            self.now_type = POINT_TYPE['new layer']
+                            self.now_type = PY_TYPE_NEW_LAYER
                         elif 'WALL-OUTER' in comment:
-                            self.now_type = POINT_TYPE['perimeter']
+                            self.now_type = PY_TYPE_PERIMETER
                         elif 'WALL-INNER' in comment:
-                            self.now_type = POINT_TYPE['inner-wall']
+                            self.now_type = PY_TYPE_INNER_WALL
                         elif 'RAFT' in comment:
-                            self.now_type = POINT_TYPE['raft']
+                            self.now_type = PY_TYPE_RAFT
                         elif 'SKIRT' in comment:
-                            self.now_type = POINT_TYPE['skirt']
+                            self.now_type = PY_TYPE_SKIRT
                         elif 'SKIN' in comment:
-                            self.now_type = POINT_TYPE['skin']
+                            self.now_type = PY_TYPE_SKIN
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()

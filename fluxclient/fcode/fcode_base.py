@@ -55,18 +55,22 @@ class FcodeBase(object):
         """
         convert to path list(for visualizing)
         """
+        # Point type in constants
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+
+        # Real comparison
         if self.engine == 'slic3r':
             already_split = False
             self.counter_between_layers += 1
             if move_flag:
                 if 'infill' in comment:
-                    line_type = POINT_TYPE['infill']
+                    line_type = PY_TYPE_INFILL
                 elif 'support' in comment:
-                    line_type = POINT_TYPE['support']
+                    line_type = PY_TYPE_SUPPORT
                 elif 'brim' in comment:
-                    line_type = POINT_TYPE['brim']
+                    line_type = PY_TYPE_BRIM
                 elif 'move' in comment:
-                    line_type = POINT_TYPE['move']
+                    line_type = PY_TYPE_MOVE
                     if 'to next layer' in comment:
                         self.record_z = self.current_pos[2]
                         already_split = True
@@ -78,16 +82,16 @@ class FcodeBase(object):
                         self.path.append([self.path[-1][-1][:3] + [line_type]])
                         self.filament_this_layer = self.filament[:]
                 elif 'perimeter' in comment:
-                    line_type = POINT_TYPE['perimeter']
+                    line_type = PY_TYPE_PERIMETER
                 elif 'skirt' in comment:
-                    line_type = POINT_TYPE['skirt']
+                    line_type = PY_TYPE_SKIRT
                 elif 'draw' in comment:
-                    line_type = POINT_TYPE['infill']
+                    line_type = PY_TYPE_INFILL
                 else:   # no data in comment
                     if extrude_flag:
-                        line_type = POINT_TYPE['perimeter']
+                        line_type = PY_TYPE_PERIMETER
                     else:
-                        line_type = POINT_TYPE['move']
+                        line_type = PY_TYPE_MOVE
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
 
@@ -99,9 +103,9 @@ class FcodeBase(object):
         elif self.engine == 'cura':
             already_split = False
             self.counter_between_layers += 1
-            line_type = POINT_TYPE['move']
-            if self.now_type == POINT_TYPE['new layer']:
-                self.now_type = POINT_TYPE['move']
+            line_type = PY_TYPE_MOVE
+            if self.now_type == PY_TYPE_NEW_LAYER:
+                self.now_type = PY_TYPE_MOVE
                 self.record_z = self.current_pos[2]
                 already_split = True
                 if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
@@ -115,12 +119,12 @@ class FcodeBase(object):
 
             if move_flag:
                 if extrude_flag:
-                    if self.now_type != POINT_TYPE['move']:
+                    if self.now_type != PY_TYPE_MOVE:
                         line_type = self.now_type
                     else:
-                        line_type = POINT_TYPE['perimeter']
+                        line_type = PY_TYPE_PERIMETER
                 elif not extrude_flag:
-                    line_type = POINT_TYPE['move']
+                    line_type = PY_TYPE_MOVE
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
 
@@ -128,13 +132,19 @@ class FcodeBase(object):
         """
         trim the moving(non-extruding) part in path's both end
         """
+        PY_TYPE_MOVE = 3
+        
+        if path is None:
+            return path
+        if len(path) == 0:
+            return path
         for layer in [0, -1]:
             while True:
                 if len(path[layer]) >= 2:
                     # define an edge's type at end point
                     # 0 * 2 + 1 = 1
                     # -1 * 2 + 1 = -1
-                    if path[layer][layer * 2 + 1][3] == POINT_TYPE['move']:
+                    if path[layer][layer * 2 + 1][3] == PY_TYPE_MOVE:
                         path[layer].pop(layer)
                     else:
                         break
