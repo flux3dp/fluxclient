@@ -121,6 +121,7 @@ cdef class GcodeToFcodeCpp:
 	cdef object T #Thread
 	cdef public str engine
 	cdef public object path
+	cdef public object G92_delta
 	"""transform from gcode to fcode
 
 	this should done several thing:
@@ -135,6 +136,8 @@ cdef class GcodeToFcodeCpp:
 		self.image = None  # png image that will store in fcode as perview image, should be a bytes obj
 
 		self.path = [[[0,0,0,0]]]
+
+		self.G92_delta = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # X, Y, Z, E1, E2, E3 -> recording the G92 delta for each axis
 
 		self.md = {'HEAD_TYPE': head_type, 'TIME_COST': 0, 'FILAMENT_USED': '0,0,0', 'MAX_R': 0}  # basic metadata, use extruder as default
 
@@ -178,6 +181,11 @@ cdef class GcodeToFcodeCpp:
 		# self.path_js = FcodeBase.path_to_js(self.path)
 		cdef FCode* fc = self.fc
 		#self.path_js = path_to_js_cpp(fc.native_path).decode()
+
+	def offset(self, x=0.0, y=0.0, z=0.0):
+		self.G92_delta[0] += x
+		self.G92_delta[1] += y
+		self.G92_delta[2] += z
 
 	cpdef get_path(self, path_type='js'):
 		print("warning: get_path of g2fcpp function deprecated")
@@ -234,6 +242,9 @@ cdef class GcodeToFcodeCpp:
 		fc.tool = 0;
 		print("FCode tool = " + str(<int>fc.tool))
 		fc.filament[0] = 0
+		fc.G92_delta[1] = self.G92_delta[0]
+		fc.G92_delta[2] = self.G92_delta[1]
+		fc.G92_delta[3] = self.G92_delta[2]
 
 		try:
 

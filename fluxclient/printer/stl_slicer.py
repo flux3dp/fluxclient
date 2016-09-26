@@ -824,7 +824,9 @@ class StlSlicerCura(StlSlicer):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
-            if path is None:
+            try:
+                path
+            except:
                 path = None
             status_list.append([False, slic3r_out, path])
             print("Appended path to status_list, but failed")
