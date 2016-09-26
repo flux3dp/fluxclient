@@ -37,6 +37,7 @@ class FcodeBase(object):
         self.engine = 'slic3r'
         self.now_type = POINT_TYPE['move']
         self.path_js = None
+        self.highlight_layer = -1
 
     def sub_convert_path(self):
         # self.path_js = FcodeBase.path_to_js(self.path)
@@ -84,6 +85,8 @@ class FcodeBase(object):
                         self.filament_this_layer = self.filament[:]
                 elif 'perimeter' in comment:
                     line_type = PY_TYPE_PERIMETER
+                    if self.highlight_layer == self.layer_now:
+                        self.now_type = PY_TYPE_HIGHLIGHT
                 elif 'skirt' in comment:
                     line_type = PY_TYPE_SKIRT
                 elif 'draw' in comment:

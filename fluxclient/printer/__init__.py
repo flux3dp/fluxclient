@@ -222,7 +222,8 @@ cut_bottom = -1
 detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
-flux_calibration = 1"""
+flux_calibration = 1
+pause_at_layers = """
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -362,5 +363,8 @@ ini_constraint = {
     'detect_filament_runout': [binary],
     'detect_head_shake': [binary],
     'detect_head_tilt': [binary],
-    'flux_calibration': [binary]
+    'flux_calibration': [binary],
+    'pause_at_layers': False
 }
+
+ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']

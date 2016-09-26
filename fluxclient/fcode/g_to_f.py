@@ -52,7 +52,9 @@ class GcodeToFcode(FcodeBase):
         self.layer_now = 0  # record the current layer toolhead is
 
         self._config = None  # config dict(given from fluxstudio)
+
         self.has_config = False
+        self.highlight_layer = -1
 
     def get_metadata(self):
         """
@@ -86,7 +88,8 @@ class GcodeToFcode(FcodeBase):
         self._config = value
         self.offset(z=float())
         for auto_pause_layer in self._config.get('pause_at_layers', '').split(','):
-            self.pause_at_layers.append(int(auto_pause_layer))
+            if auto_pause_layer.isdigit():
+                self.pause_at_layers.append(int(auto_pause_layer))
         self.has_config = True
 
     def write_metadata(self, stream):
@@ -274,7 +277,7 @@ class GcodeToFcode(FcodeBase):
         Process a input_stream consist of gcode strings and write the fcode into output_stream
         """
         # Point type in constants
-        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN, PY_TYPE_HIGHLIGHT = [x for x in range(-1,10)]
 
         packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
         packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
@@ -311,9 +314,29 @@ class GcodeToFcode(FcodeBase):
                                 if data[i] is not None:
                                     data[i] += self.G92_delta[i - 1]
 
-                        # auto pause for slicing
+                        # auto pause at layers
                         if self.layer_now in self.pause_at_layers:
-                            self.writer(packer(5), output_stream)
+                            if self.highlight_layer != self.layer_now:
+                                self.highlight_layer = self.layer_now
+                                speed = self.current_speed 
+                                #unload filament
+                                self.writer(packer(128 | (1<<6) ), output_stream) #F 2000
+                                self.writer(packer_f(2000), output_stream)
+                                self.writer(packer(128 | (1<<2) ), output_stream) #E -1
+                                self.writer(packer_f(-1 + self.current_pos[3]), output_stream)
+                                self.writer(packer(128 | (1<<3) ), output_stream) #Z +5
+                                self.writer(packer_f(5 + self.current_pos[2]), output_stream)
+                                self.writer(packer(128 | (1<<2) ), output_stream) #E +3
+                                self.writer(packer_f(3 + self.current_pos[3]), output_stream)
+                                self.writer(packer(128 | (1<<2) ), output_stream) #E -5
+                                self.writer(packer_f(-5 + self.current_pos[3]), output_stream)
+                                #pause
+                                self.writer(packer(5), output_stream)
+                                #extrude
+                                self.writer(packer(128 | (1<<3) ), output_stream) #Z Back
+                                self.writer(packer_f(self.current_pos[3]), output_stream)
+                                self.writer(packer(128 | (1<<6) ), output_stream) #F Back
+                                self.writer(packer_f(self.current_speed), output_stream) 
 
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':
@@ -468,6 +491,8 @@ class GcodeToFcode(FcodeBase):
                             self.now_type = PY_TYPE_NEW_LAYER
                         elif 'WALL-OUTER' in comment:
                             self.now_type = PY_TYPE_PERIMETER
+                            if self.highlight_layer == self.layer_now:
+                                self.now_type = PY_TYPE_HIGHLIGHT
                         elif 'WALL-INNER' in comment:
                             self.now_type = PY_TYPE_INNER_WALL
                         elif 'RAFT' in comment:

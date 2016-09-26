@@ -16,7 +16,7 @@ from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.scanner.tools import dot, normal, normalize
-from fluxclient.printer import ini_string, ini_constraint, ignore
+from fluxclient.printer import ini_string, ini_constraint, ignore, ini_flux_params
 from fluxclient.printer.flux_raft import Raft
 
 logger = logging.getLogger(__name__)
@@ -260,7 +260,7 @@ class StlSlicer(object):
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom' ,'flux_', 'detect_'])
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -684,7 +684,7 @@ class StlSlicerCura(StlSlicer):
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         m_mesh_merge.write_stl(tmp_stl_file)
-        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom', 'flux_', 'detect_'])
+        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r]
         command += ['-o', tmp_gcode_file]
@@ -928,11 +928,12 @@ class StlSlicerCura(StlSlicer):
 
         new_content['retractionSpeed'] = content['retract_speed']
         new_content['retractionAmount'] = thousand(content['retract_length'])
+        new_content['retractionZHop'] = thousand(content['retract_lift'])
 
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
         new_content['filamentFlow'] = 92
-        new_content['minimalLayerTime'] = 15
+        new_content['minimalLayerTime'] = thousand(content['slowdown_below_layer_time'])
 
         new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
