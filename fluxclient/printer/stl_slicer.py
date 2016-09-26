@@ -769,7 +769,6 @@ class StlSlicerCura(StlSlicer):
                 # m_GcodeToFcode.process_path = self.process_path
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
-                m_GcodeToFcode.offset(z=float(config.get('z_offset', 0.0)))
                 m_GcodeToFcode.process(f, fcode_output)
                 path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md

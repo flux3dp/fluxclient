@@ -41,15 +41,17 @@ class GcodeToFcode(FcodeBase):
         self.max_range = [0., 0., 0., 0.]  # recording max coordinate, [x,  y, z, r]
         self.filament = [0., 0., 0.]  # recording the filament each extruder needed, in mm
         self.previous = [0., 0., 0.]  # recording previous filament/path
+        
+        self.pause_at_layers = []
 
-        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        self.md = {'HEAD_TYPE': head_type, 'TIME_COST': 0, 'FILAMENT_USED': '0,0,0'}  # basic metadata, use extruder as default
 
         self.md.update(ext_metadata)
 
         self.record_path = True  # to speed up, set this flag to False
         self.layer_now = 0  # record the current layer toolhead is
 
-        self.config = None  # config dict(given from fluxstudio)
+        self._config = None  # config dict(given from fluxstudio)
 
     def get_metadata(self):
         """
@@ -73,6 +75,17 @@ class GcodeToFcode(FcodeBase):
         self.G92_delta[0] += x
         self.G92_delta[1] += y
         self.G92_delta[2] += z
+
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, value):
+        self._config = value
+        self.offset(z=float())
+        for auto_pause_layer in self._config.get('pause_at_layers', '').split(','):
+            self.pause_at_layers.append(int(auto_pause_layer))
 
     def write_metadata(self, stream):
         """
@@ -295,6 +308,10 @@ class GcodeToFcode(FcodeBase):
                             for i in range(1, 7):
                                 if data[i] is not None:
                                     data[i] += self.G92_delta[i - 1]
+
+                        # auto pause for slicing
+                        if self.layer_now in self.pause_at_layers:
+                            self.writer(packer(5), output_stream)
 
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.config is not None and self.layer_now == int(self.config['raft_layers']) and self.config['flux_first_layer'] == '1':
