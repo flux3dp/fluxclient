@@ -41,7 +41,7 @@ class GcodeToFcode(FcodeBase):
         self.max_range = [0., 0., 0., 0.]  # recording max coordinate, [x,  y, z, r]
         self.filament = [0., 0., 0.]  # recording the filament each extruder needed, in mm
         self.previous = [0., 0., 0.]  # recording previous filament/path
-        
+
         self.pause_at_layers = []
 
         self.md = {'HEAD_TYPE': head_type, 'TIME_COST': 0, 'FILAMENT_USED': '0,0,0'}  # basic metadata, use extruder as default
@@ -52,6 +52,7 @@ class GcodeToFcode(FcodeBase):
         self.layer_now = 0  # record the current layer toolhead is
 
         self._config = None  # config dict(given from fluxstudio)
+        self.has_config = False
 
     def get_metadata(self):
         """
@@ -86,6 +87,7 @@ class GcodeToFcode(FcodeBase):
         self.offset(z=float())
         for auto_pause_layer in self._config.get('pause_at_layers', '').split(','):
             self.pause_at_layers.append(int(auto_pause_layer))
+        self.has_config = True
 
     def write_metadata(self, stream):
         """
@@ -232,7 +234,7 @@ class GcodeToFcode(FcodeBase):
                 extrudeflag = True
                 if self.absolute:
                     # a special bug from slicer/cura
-                    if self.config is not None and self.config['flux_refill_empty'] == '1' and tmp_path != 0:
+                    if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
                         if input_list[i] - self.current_pos[i - 1] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path + self.current_pos[i - 1]
                             self.G92_delta[i - 1] += self.previous[i - 4] * tmp_path
@@ -242,7 +244,7 @@ class GcodeToFcode(FcodeBase):
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
                     self.current_pos[i - 1] = input_list[i]
                 else:
-                    if self.config is not None and self.config['flux_refill_empty'] == '1' and tmp_path != 0:
+                    if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
                         if input_list[i] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path
                         else:
@@ -314,8 +316,8 @@ class GcodeToFcode(FcodeBase):
                             self.writer(packer(5), output_stream)
 
                         # fix on slic3r bug slowing down in raft but not in real printing
-                        if self.config is not None and self.layer_now == int(self.config['raft_layers']) and self.config['flux_first_layer'] == '1':
-                            data[0] = float(self.config['first_layer_speed']) * 60
+                        if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':
+                            data[0] = float(self._config['first_layer_speed']) * 60
                             subcommand |= (1 << 6)
 
                         # this will change the data base on serveral settings
