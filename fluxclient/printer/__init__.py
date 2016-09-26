@@ -315,7 +315,7 @@ ini_constraint = {
     'seam_position': False,
     'skirt_distance': [float_range, 0],
     'skirt_height': [int_range, 0],
-    'skirts': [int_range, 0, 4],
+    'skirts': [int_range, 0, 20],
     'slowdown_below_layer_time': [int_range, 0],
     'small_perimeter_speed': False,
     'solid_infill_below_area': False,
