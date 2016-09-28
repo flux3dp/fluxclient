@@ -837,6 +837,7 @@ class StlSlicerCura(StlSlicer):
 
         new_content = {}
         new_content['extrusionWidth'] = int(thousand(content['nozzle_diameter']))
+
         new_content['objectPosition.X'] = -10.0
         new_content['objectPosition.Y'] = -10.0
         new_content['autoCenter'] = 0
@@ -856,7 +857,7 @@ class StlSlicerCura(StlSlicer):
         new_content['raftBaseSpeed'] = content['first_layer_speed']
 
         new_content['raftFanSpeed'] = 0
-        new_content['raftSurfaceThickness'] = 270
+        new_content['raftSurfaceThickness'] = 300
         new_content['raftSurfaceLinewidth'] = 400
         new_content['raftSurfaceLineSpacing'] = new_content['raftSurfaceLinewidth']
         new_content['raftSurfaceLayers'] = 10
@@ -928,15 +929,19 @@ class StlSlicerCura(StlSlicer):
 
         new_content['retractionSpeed'] = content['retract_speed']
         new_content['retractionAmount'] = thousand(content['retract_length'])
-        new_content['retractionZHop'] = thousand(content['retract_lift'])
+        new_content['retractionZHop'] = thousand(content['retract_lift']) 
 
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
-        new_content['filamentFlow'] = 92
+        new_content['filamentFlow'] = 96
         new_content['minimalLayerTime'] = thousand(content['slowdown_below_layer_time'])
 
         new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
+
+        new_content['layer0extrusionWidth'] = 600
+        new_content['skirtMinLength'] = 150000
+        new_content['fanFullOnLayerNr'] = 3
 
         add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
         # special function for cura's setting file

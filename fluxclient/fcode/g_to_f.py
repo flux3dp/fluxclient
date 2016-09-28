@@ -320,9 +320,8 @@ class GcodeToFcode(FcodeBase):
                                 self.highlight_layer = self.layer_now
                                 speed = self.current_speed 
                                 #unload filament
-                                self.writer(packer(128 | (1<<6) ), output_stream) #F 2000
+                                self.writer(packer(128 | (1<<6) | (1<<2) ), output_stream) #F 2000
                                 self.writer(packer_f(2000), output_stream)
-                                self.writer(packer(128 | (1<<2) ), output_stream) #E -1
                                 self.writer(packer_f(-1 + self.current_pos[3]), output_stream)
                                 self.writer(packer(128 | (1<<3) ), output_stream) #Z +5
                                 self.writer(packer_f(5 + self.current_pos[2]), output_stream)
@@ -333,10 +332,9 @@ class GcodeToFcode(FcodeBase):
                                 #pause
                                 self.writer(packer(5), output_stream)
                                 #extrude
-                                self.writer(packer(128 | (1<<3) ), output_stream) #Z Back
-                                self.writer(packer_f(self.current_pos[3]), output_stream)
-                                self.writer(packer(128 | (1<<6) ), output_stream) #F Back
+                                self.writer(packer(128 | (1<<6) | (1<<3) ), output_stream) #F Back
                                 self.writer(packer_f(self.current_speed), output_stream) 
+                                self.writer(packer_f(self.current_pos[3]), output_stream)
 
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':
