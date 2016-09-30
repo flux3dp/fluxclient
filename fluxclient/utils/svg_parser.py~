@@ -264,7 +264,7 @@ class SVGParser(object):
             x_init, y_init = 0., 0.
 
         # variable that use for 'Z' command aka 'close path'
-        Z_flag = False # Disable 'Z' command for a bug.
+        Z_flag = False # Disable 'Z' command for bug.
 
         x, y = None, None  # current x, y position
         prev_control = None  # some command need to use previous points as control point
