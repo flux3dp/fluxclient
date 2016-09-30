@@ -15,7 +15,6 @@ from fluxclient.hw_profile import HW_PROFILE
 
 logger = logging.getLogger(__name__)
 
-
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
 
@@ -245,6 +244,7 @@ class GcodeToFcode(FcodeBase):
                             self.previous[i - 4] = (input_list[i] - self.current_pos[i - 1]) / tmp_path
 
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
+                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] = input_list[i]
                 else:
                     if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
@@ -254,11 +254,12 @@ class GcodeToFcode(FcodeBase):
                             self.previous[i - 4] = input_list[i] / tmp_path
 
                     self.filament[i - 4] += input_list[i]
+                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] += input_list[i]
                 # TODO:clean up this part?, self.extrude_absolute flag
-
+        
         self.distance += tmp_path
-        self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
+        self.time_need += (tmp_path / min(6000, self.current_speed * 0.92)) * 60  # from minute to sec
         # fill in self.path
         if self.record_path:
             self.process_path(comment, moveflag, extrudeflag)
@@ -318,23 +319,20 @@ class GcodeToFcode(FcodeBase):
                         if self.layer_now in self.pause_at_layers:
                             if self.highlight_layer != self.layer_now:
                                 self.highlight_layer = self.layer_now
-                                speed = self.current_speed 
                                 #unload filament
-                                self.writer(packer(128 | (1<<6) | (1<<2) ), output_stream) #F 2000
+                                self.writer(packer(128 | (1 << 6) | (1 << 2) ), output_stream) #F 2000 E -1
                                 self.writer(packer_f(2000), output_stream)
-                                self.writer(packer_f(-1 + self.current_pos[3]), output_stream)
-                                self.writer(packer(128 | (1<<3) ), output_stream) #Z +5
-                                self.writer(packer_f(5 + self.current_pos[2]), output_stream)
-                                self.writer(packer(128 | (1<<2) ), output_stream) #E +3
-                                self.writer(packer_f(3 + self.current_pos[3]), output_stream)
-                                self.writer(packer(128 | (1<<2) ), output_stream) #E -5
-                                self.writer(packer_f(-5 + self.current_pos[3]), output_stream)
+                                self.writer(packer_f(-1 + self.current_pos[3] + self.G92_delta[3]), output_stream)
+                                self.writer(packer(128 | (1 << 3) ), output_stream) #Z +5
+                                self.writer(packer_f(5 + self.current_pos[2] + self.G92_delta[2]), output_stream)
+                                self.writer(packer(128 | (1 << 2) ), output_stream) #E +3
+                                self.writer(packer_f(3 + self.current_pos[3] + self.G92_delta[3]), output_stream)
+                                self.writer(packer(128 | (1 << 2) ), output_stream) #E -5
+                                self.writer(packer_f(-5 + self.current_pos[3] + self.G92_delta[3]), output_stream)
                                 #pause
                                 self.writer(packer(5), output_stream)
-                                #extrude
-                                self.writer(packer(128 | (1<<6) | (1<<3) ), output_stream) #F Back
-                                self.writer(packer_f(self.current_speed), output_stream) 
-                                self.writer(packer_f(self.current_pos[3]), output_stream)
+                                #back to normal
+                                self.G92_delta[3] += -5;
 
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':

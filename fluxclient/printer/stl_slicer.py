@@ -377,6 +377,10 @@ class StlSlicer(object):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
+            try:
+                path
+            except:
+                path = None
             status_list.append([False, slic3r_out, path])
         else:
             status_list.append([output, metadata, path])
