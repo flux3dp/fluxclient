@@ -832,9 +832,10 @@ class StlSlicerCura(StlSlicer):
             print("Appended path to status_list, but failed")
             ###########################################################
 
-            with open(tmp_slic3r_setting_file, 'rb') as f:
-                    with open('output.ini', 'wb') as f2:
-                        f2.write(f.read())
+            # with open(tmp_slic3r_setting_file, 'rb') as f:
+            #         with open('output.ini', 'wb') as f2:
+            #             f2.write(f.read())
+            
             ###########################################################
         else:
             print("Appended path to status_list")
