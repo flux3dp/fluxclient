@@ -15,7 +15,6 @@ from fluxclient.hw_profile import HW_PROFILE
 
 logger = logging.getLogger(__name__)
 
-
 class GcodeToFcode(FcodeBase):
     """transform from gcode to fcode
 
@@ -42,14 +41,19 @@ class GcodeToFcode(FcodeBase):
         self.filament = [0., 0., 0.]  # recording the filament each extruder needed, in mm
         self.previous = [0., 0., 0.]  # recording previous filament/path
 
-        self.md = {'HEAD_TYPE': head_type}  # basic metadata, use extruder as default
+        self.pause_at_layers = []
+
+        self.md = {'HEAD_TYPE': head_type, 'TIME_COST': 0, 'FILAMENT_USED': '0,0,0'}  # basic metadata, use extruder as default
 
         self.md.update(ext_metadata)
 
         self.record_path = True  # to speed up, set this flag to False
         self.layer_now = 0  # record the current layer toolhead is
 
-        self.config = None  # config dict(given from fluxstudio)
+        self._config = None  # config dict(given from fluxstudio)
+
+        self.has_config = False
+        self.highlight_layer = -1
 
     def get_metadata(self):
         """
@@ -73,6 +77,19 @@ class GcodeToFcode(FcodeBase):
         self.G92_delta[0] += x
         self.G92_delta[1] += y
         self.G92_delta[2] += z
+
+    @property
+    def config(self):
+        return self._config
+
+    @config.setter
+    def config(self, value):
+        self._config = value
+        self.offset(z=float())
+        for auto_pause_layer in self._config.get('pause_at_layers', '').split(','):
+            if auto_pause_layer.isdigit():
+                self.pause_at_layers.append(int(auto_pause_layer))
+        self.has_config = True
 
     def write_metadata(self, stream):
         """
@@ -219,7 +236,7 @@ class GcodeToFcode(FcodeBase):
                 extrudeflag = True
                 if self.absolute:
                     # a special bug from slicer/cura
-                    if self.config is not None and self.config['flux_refill_empty'] == '1' and tmp_path != 0:
+                    if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
                         if input_list[i] - self.current_pos[i - 1] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path + self.current_pos[i - 1]
                             self.G92_delta[i - 1] += self.previous[i - 4] * tmp_path
@@ -227,20 +244,22 @@ class GcodeToFcode(FcodeBase):
                             self.previous[i - 4] = (input_list[i] - self.current_pos[i - 1]) / tmp_path
 
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
+                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] = input_list[i]
                 else:
-                    if self.config is not None and self.config['flux_refill_empty'] == '1' and tmp_path != 0:
+                    if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
                         if input_list[i] == 0:
                             input_list[i] = self.previous[i - 4] * tmp_path
                         else:
                             self.previous[i - 4] = input_list[i] / tmp_path
 
                     self.filament[i - 4] += input_list[i]
+                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] += input_list[i]
                 # TODO:clean up this part?, self.extrude_absolute flag
-
+        
         self.distance += tmp_path
-        self.time_need += tmp_path / self.current_speed * 60  # from minute to sec
+        self.time_need += (tmp_path / min(6000, self.current_speed * 0.92)) * 60  # from minute to sec
         # fill in self.path
         if self.record_path:
             self.process_path(comment, moveflag, extrudeflag)
@@ -259,7 +278,7 @@ class GcodeToFcode(FcodeBase):
         Process a input_stream consist of gcode strings and write the fcode into output_stream
         """
         # Point type in constants
-        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN, PY_TYPE_HIGHLIGHT = [x for x in range(-1,10)]
 
         packer = lambda x: struct.pack('<B', x)  # easy alias for struct.pack('<B', x)
         packer_f = lambda x: struct.pack('<f', x)  # easy alias for struct.pack('<f', x)
@@ -296,9 +315,33 @@ class GcodeToFcode(FcodeBase):
                                 if data[i] is not None:
                                     data[i] += self.G92_delta[i - 1]
 
+                        # auto pause at layers
+                        if self.layer_now in self.pause_at_layers:
+                            if self.highlight_layer != self.layer_now:
+                                self.highlight_layer = self.layer_now
+                                #unload filament
+                                self.writer(packer(128 | (1 << 6) | (1 << 2) ), output_stream) #F 2000 E -1
+                                self.writer(packer_f(2000), output_stream)
+                                self.writer(packer_f(-1 + self.current_pos[3] + self.G92_delta[3]), output_stream)
+                                self.writer(packer(128 | (1 << 3) ), output_stream) #Z +5
+                                self.writer(packer_f(5 + self.current_pos[2] + self.G92_delta[2]), output_stream)
+                                self.writer(packer(128 | (1 << 2) ), output_stream) #E +3
+                                self.writer(packer_f(3 + self.current_pos[3] + self.G92_delta[3]), output_stream)
+                                self.writer(packer(128 | (1 << 2) ), output_stream) #E -5
+                                self.writer(packer_f(-5 + self.current_pos[3] + self.G92_delta[3]), output_stream)
+                                #pause
+                                self.writer(packer(5), output_stream)
+                                #back to normal
+                                self.G92_delta[3] += -5;
+                        
+                        #overwrite following layer temperature
+                        if self.layer_now == 2 and self.has_config and self._config['temperature']:
+                            self.writer(packer(16), output_stream)
+                            self.writer(packer_f(float(self._config['temperature'])), output_stream)
+
                         # fix on slic3r bug slowing down in raft but not in real printing
-                        if self.config is not None and self.layer_now == int(self.config['raft_layers']) and self.config['flux_first_layer'] == '1':
-                            data[0] = float(self.config['first_layer_speed']) * 60
+                        if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':
+                            data[0] = float(self._config['first_layer_speed']) * 60
                             subcommand |= (1 << 6)
 
                         # this will change the data base on serveral settings
@@ -449,6 +492,8 @@ class GcodeToFcode(FcodeBase):
                             self.now_type = PY_TYPE_NEW_LAYER
                         elif 'WALL-OUTER' in comment:
                             self.now_type = PY_TYPE_PERIMETER
+                            if self.highlight_layer == self.layer_now:
+                                self.now_type = PY_TYPE_HIGHLIGHT
                         elif 'WALL-INNER' in comment:
                             self.now_type = PY_TYPE_INNER_WALL
                         elif 'RAFT' in comment:

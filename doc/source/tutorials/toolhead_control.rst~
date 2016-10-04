@@ -30,9 +30,9 @@ The extension port is located at the top cap of FLUX Delta. It has 10pins, inclu
 
 Developing firmware for hardware extensions
 ++++++++++++++++++++++++
-A typical toolhead uses UART to communicate with its hosting machine , clone or download the example project to build your tool head.
+A typical toolhead uses UART to communicate with its hosting machine. 
 ::
-	git clone https://github.com/flux3dp/selfdefined_toolhead_example
+	//Coming soon!
 
 Communicating with hardware extensions
 ++++++++++++++++++++++++
