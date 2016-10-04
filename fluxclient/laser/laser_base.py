@@ -16,7 +16,7 @@ class LaserBase(object):
     """base class for all laser usage calss"""
     def __init__(self):
         self.laser_on = False
-        self.focal_l = 4.7  # focal z coordinate
+        self.focal_l = 6.4  # focal z coordinate
 
         self.laser_speed = 300  # speed F= mm/minute
         self.travel_speed = 1000
