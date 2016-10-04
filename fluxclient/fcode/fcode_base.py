@@ -153,11 +153,13 @@ class FcodeBase(object):
         
         if path is None:
             return path
+
         if len(path) == 0:
             return path
+
         for layer in [0, -1]:
             while True:
-                if len(path[layer]) >= 2:
+                if len(path) > 0 and len(path[layer]) >= 2:
                     # define an edge's type at end point
                     # 0 * 2 + 1 = 1
                     # -1 * 2 + 1 = -1
