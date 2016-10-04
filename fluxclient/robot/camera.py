@@ -44,8 +44,6 @@ connect. For example: ("192.168.1.1", 23812)
     def require_frame(self):
         self.sock.send(struct.pack("<H1s", 3, b"f"))
 
-    requrest_frame = require_frame
-
     def fileno(self):
         return self.sock.fileno()
 
