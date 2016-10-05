@@ -151,22 +151,17 @@ class FcodeBase(object):
         """
         PY_TYPE_MOVE = 3
         
-        if path is None:
-            return path
-
-        if len(path) == 0:
+        if path is None or len(path) == 0:
             return path
 
         for layer in [0, -1]:
-            while True:
-                if len(path) > 0 and len(path[layer]) >= 2:
+            while len(path):
+                if len(path[layer]) >= 2:
                     # define an edge's type at end point
-                    # 0 * 2 + 1 = 1
-                    # -1 * 2 + 1 = -1
-                    if path[layer][layer * 2 + 1][3] == PY_TYPE_MOVE:
+                    if path[layer][[0,-1][layer]][3] == PY_TYPE_MOVE:
                         path[layer].pop(layer)
                     else:
                         break
-                elif len(path) > 0:
+                else:
                     path.pop(layer)
         return path
