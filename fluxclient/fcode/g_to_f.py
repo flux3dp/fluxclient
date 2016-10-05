@@ -244,7 +244,6 @@ class GcodeToFcode(FcodeBase):
                             self.previous[i - 4] = (input_list[i] - self.current_pos[i - 1]) / tmp_path
 
                     self.filament[i - 4] += input_list[i] - self.current_pos[i - 1]
-                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] = input_list[i]
                 else:
                     if self.has_config and self._config['flux_refill_empty'] == '1' and tmp_path != 0:
@@ -254,7 +253,6 @@ class GcodeToFcode(FcodeBase):
                             self.previous[i - 4] = input_list[i] / tmp_path
 
                     self.filament[i - 4] += input_list[i]
-                    self.last_pos[i - 1] += input_list[i];
                     self.current_pos[i - 1] += input_list[i]
                 # TODO:clean up this part?, self.extrude_absolute flag
         

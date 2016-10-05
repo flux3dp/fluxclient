@@ -167,6 +167,6 @@ class FcodeBase(object):
                         path[layer].pop(layer)
                     else:
                         break
-                else:
+                elif len(path) > 0:
                     path.pop(layer)
         return path
