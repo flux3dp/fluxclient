@@ -938,7 +938,7 @@ class StlSlicerCura(StlSlicer):
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
         new_content['filamentFlow'] = 96
-        new_content['minimalLayerTime'] = thousand(content['slowdown_below_layer_time'])
+        new_content['minimalLayerTime'] = int(content['slowdown_below_layer_time'])
 
         new_content['startCode'] = 'M109 S{}\n'.format(content['first_layer_temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
@@ -961,6 +961,9 @@ class StlSlicerCura(StlSlicer):
 
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])
+
+        import pprint
+        pprint.pprint(new_content)
 
         cls.my_ini_writer(file_path, new_content, delete)
         return

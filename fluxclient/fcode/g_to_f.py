@@ -52,6 +52,8 @@ class GcodeToFcode(FcodeBase):
 
         self._config = None  # config dict(given from fluxstudio)
 
+        self.backed_to_normal_temperature = False
+
         self.has_config = False
         self.highlight_layer = -1
 
@@ -257,7 +259,7 @@ class GcodeToFcode(FcodeBase):
                 # TODO:clean up this part?, self.extrude_absolute flag
         
         self.distance += tmp_path
-        self.time_need += (tmp_path / min(6000, self.current_speed * 0.92)) * 60  # from minute to sec
+        self.time_need += (tmp_path / min(9000, self.current_speed * 0.92)) * 60  # from minute to sec
         # fill in self.path
         if self.record_path:
             self.process_path(comment, moveflag, extrudeflag)
@@ -333,14 +335,17 @@ class GcodeToFcode(FcodeBase):
                                 self.G92_delta[3] += -5;
                         
                         #overwrite following layer temperature
-                        if self.layer_now == 2 and self.has_config and self._config['temperature']:
+                        if (self.layer_now == 2) and self.has_config and float(self._config['temperature']) > 0 and not self.backed_to_normal_temperature:
                             self.writer(packer(16), output_stream)
                             self.writer(packer_f(float(self._config['temperature'])), output_stream)
+                            print("Setting toolhead temperature back to normal #" + str(self.layer_now) + " to " + str(float(self._config['temperature'])));
+                            self.backed_to_normal_temperature = True
 
                         # fix on slic3r bug slowing down in raft but not in real printing
                         if self.has_config and self.layer_now == int(self._config['raft_layers']) and self._config['flux_first_layer'] == '1':
                             data[0] = float(self._config['first_layer_speed']) * 60
                             subcommand |= (1 << 6)
+                            print("Oh no speed overwrite first_layer. #" + str(self.layer_now) + " to " + str(data[0]));
 
                         # this will change the data base on serveral settings
                         data = self.analyze_metadata(data, comment)

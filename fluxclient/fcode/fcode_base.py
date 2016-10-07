@@ -58,7 +58,7 @@ class FcodeBase(object):
         convert to path list(for visualizing)
         """
         # Point type in constants
-        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN, PY_TYPE_HIGHLIGHT = [x for x in range(-1,10)]
 
         # Real comparison
         if self.engine == 'slic3r':
