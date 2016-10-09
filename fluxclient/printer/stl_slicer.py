@@ -878,6 +878,7 @@ class StlSlicerCura(StlSlicer):
         new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
         new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
+        new_content['supportEverywhere'] = int(content['support_everywhere'])
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 

@@ -223,7 +223,8 @@ detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
 flux_calibration = 1
-pause_at_layers = """
+pause_at_layers = 
+support_everywhere = 0"""
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -327,6 +328,7 @@ ini_constraint = {
     'spiral_vase': [binary],
     'standby_temperature_delta': [int_range, -400, 400],
     'start_gcode': False,
+    'support_everywhere': [binary],
     'support_material': [binary],
     'support_material_angle': False,
     'support_material_contact_distance': [float_range, 0.0, 10],
