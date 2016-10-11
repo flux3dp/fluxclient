@@ -8,6 +8,7 @@ options = setup_utils.prepare_setup()
 
 ext_modules = []
 ext_modules += setup_utils.create_pcl_extentions()
+ext_modules += setup_utils.create_utils_extentions()
 
 
 setup(
