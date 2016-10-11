@@ -128,7 +128,6 @@ def create_pcl_extentions():
     # Process extra_compile_args
     extra_compile_args = get_default_extra_compile_args()
     library_dirs = []
-    pcl_found = False
 
     try:
         if is_posix():
@@ -139,12 +138,66 @@ def create_pcl_extentions():
                           "pcl_registration", "pcl_keypoints"]
             if has_package("pcl_common-1.8"):
                 include_dirs += [locate_includes("pcl_common-1.8")]
-                pcl_found = True
             elif has_package("pcl_common-1.7"):
                 include_dirs += [locate_includes("pcl_common-1.7")]
-                pcl_found = True
             else:
                 raise RuntimeError("Can not locate pcl includes.")
+        elif is_windows():
+            libraries += ["pcl_common_release", "pcl_octree_release",
+                          "pcl_io_release", "pcl_kdtree_release",
+                          "pcl_search_release", "pcl_sample_consensus_release",
+                          "pcl_filters_release", "pcl_features_release",
+                          "pcl_segmentation_release", "pcl_surface_release",
+                          "pcl_registration_release", "pcl_keypoints_release"]
+
+            def find_in_program_files(label, names):
+                global windows_program_files_sources
+                if not windows_program_files_sources:
+                    s = []
+                    s.append(os.environ["ProgramFiles"])
+                    if "ProgramFiles(x86)" in os.environ:
+                        s.append(os.environ["ProgramFiles(x86)"])
+                    windows_program_files_sources = s
+
+                dirs = []
+                for sources in windows_program_files_sources:
+                    for name in names:
+                        path = os.path.join(sources, name)
+                        if os.path.isdir(path):
+                            return path
+                        else:
+                            dirs.append(path)
+
+                raise RuntimeError("Can not find `%s` in any of follow "
+                                   "directorys: %s" % (label, dirs))
+            try:
+                eigen3_dir = os.path.join(
+                    find_in_program_files("eigin3", ["Eigen"]), "include")
+
+                flann_dir = os.path.join(
+                    find_in_program_files("flann", ["flann"]), "include")
+                include_dirs += [
+                    os.path.join(eigen3_dir, "include"),
+                    os.path.join(flann_dir, "include")]
+            except:
+                pass
+
+            pcl_dir = find_in_program_files("pcl", ["PCL 1.7.2",
+                                                    "PCL 1.7.1"])
+
+            include_dirs += [
+                os.path.join(pcl_dir, "lib"),
+                os.path.join(pcl_dir, "include", "pcl-1.7"),
+                os.path.join(pcl_dir, "3rdParty", "flann", "include"),
+                os.path.join(pcl_dir, "3rdParty", "Eigen", "eigen3"),
+                os.path.join(pcl_dir, "3rdParty", "Boost", "include",
+                             "boost-1_57")]
+            library_dirs += [
+                os.path.join(pcl_dir, "lib"),
+                os.path.join(pcl_dir, "3rdParty", "Boost", "lib")]
+        else:
+            raise RuntimeError("Unknow platform!!")
+
     except (RuntimeError, FileNotFoundError) as e:
         import traceback
         print("\033[93m", file=sys.stderr)
@@ -155,67 +208,7 @@ def create_pcl_extentions():
 * will not work properly.                                                   *
 *****************************************************************************
 \033[0m""", file=sys.stderr)
-
-    if is_darwin():
-        extra_compile_args += ["--stdlib=libc++",
-                               "-mmacosx-version-min=10.9"]
-    elif is_linux():
-        extra_compile_args += ["-lstdc++"]
-    elif is_windows():
-        libraries += ["pcl_common_release", "pcl_octree_release",
-                      "pcl_io_release", "pcl_kdtree_release",
-                      "pcl_search_release", "pcl_sample_consensus_release",
-                      "pcl_filters_release", "pcl_features_release",
-                      "pcl_segmentation_release", "pcl_surface_release",
-                      "pcl_registration_release", "pcl_keypoints_release"]
-
-        def find_in_program_files(label, names):
-            global windows_program_files_sources
-            if not windows_program_files_sources:
-                s = []
-                s.append(os.environ["ProgramFiles"])
-                if "ProgramFiles(x86)" in os.environ:
-                    s.append(os.environ["ProgramFiles(x86)"])
-                windows_program_files_sources = s
-
-            dirs = []
-            for sources in windows_program_files_sources:
-                for name in names:
-                    path = os.path.join(sources, name)
-                    if os.path.isdir(path):
-                        return path
-                    else:
-                        dirs.append(path)
-
-            raise RuntimeError("Can not find `%s` in any of follow "
-                               "directorys: %s" % (label, dirs))
-        try:
-            eigen3_dir = os.path.join(
-                find_in_program_files("eigin3", ["Eigen"]), "include")
-
-            flann_dir = os.path.join(
-                find_in_program_files("flann", ["flann"]), "include")
-            include_dirs += [
-                os.path.join(eigen3_dir, "include"),
-                os.path.join(flann_dir, "include")]
-        except:
-            pass
-
-        pcl_dir = find_in_program_files("pcl", ["PCL 1.7.2",
-                                                "PCL 1.7.1"])
-
-        include_dirs += [
-            os.path.join(pcl_dir, "lib"),
-            os.path.join(pcl_dir, "include", "pcl-1.7"),
-            os.path.join(pcl_dir, "3rdParty", "flann", "include"),
-            os.path.join(pcl_dir, "3rdParty", "Eigen", "eigen3"),
-            os.path.join(pcl_dir, "3rdParty", "Boost", "include",
-                         "boost-1_57")]
-        library_dirs += [
-            os.path.join(pcl_dir, "lib"),
-            os.path.join(pcl_dir, "3rdParty", "Boost", "lib")]
-    else:
-        raise RuntimeError("Unknow platform!!")
+        return []
 
     extensions = []
     extensions.append(Extension(
