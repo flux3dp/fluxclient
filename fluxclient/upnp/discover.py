@@ -132,8 +132,15 @@ has been found or the computer recived a new status from a device.
 
         self._break = False
         timeout_at = time() + timeout
+        poke_timer = 0
 
         while not self._break:
+            # Poke device to prevent upnp not work while device is in different
+            # subnet.
+            if self.device_ipaddr and time() - poke_timer > 3:
+                self.poke(self.device_ipaddr)
+                poke_timer = time()
+
             wait_time = min(timeout_at - time(), 0.5)
             if wait_time < 0.05:
                 self.stop()
