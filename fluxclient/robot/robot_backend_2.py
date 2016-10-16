@@ -1,4 +1,5 @@
 
+from binascii import a2b_base64
 from select import select
 from errno import EPIPE
 from io import BytesIO
@@ -656,5 +657,12 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                     key, val = raw.split(":", 1)
                     info[key] = val
             return info
+        else:
+            raise_error(ret)
+
+    def get_cloud_validation_code(self):
+        ret = self._make_cmd(b"cloud_validation_code").decode("utf8", "ignore")
+        if ret.startswith("ok "):
+            return a2b_base64(ret[3:])
         else:
             raise_error(ret)

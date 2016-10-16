@@ -1,5 +1,6 @@
 
 from functools import wraps
+from binascii import b2a_base64
 import warnings
 import os
 
@@ -55,6 +56,7 @@ different definition in different version.
     def __init__(self, endpoint, client_key, device=None,
                  ignore_key_validation=False):
         self._device = device
+        self._client_key = client_key
 
         init_backend = InitBackend(endpoint)
         proto_ver = init_backend.do_handshake()
@@ -239,6 +241,13 @@ use it if and only if you have any idea about this::
         if not self._config_obj:
             self._config_obj = RobotConfigure(self)
         return self._config_obj
+
+    def get_cloud_validation_code(self):
+        """Return a tuple for cloud device relation validation."""
+        code = self._backend.get_cloud_validation_code()
+        access_id = self._client_key.get_access_id()
+        signature = self._client_key.sign(code)
+        return (access_id, b2a_base64(signature).decode("ascii"))
 
     @blocked_validator
     def config_set(self, key, value):
