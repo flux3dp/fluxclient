@@ -663,6 +663,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def get_cloud_validation_code(self):
         ret = self._make_cmd(b"cloud_validation_code").decode("utf8", "ignore")
         if ret.startswith("ok "):
-            return a2b_base64(ret[3:])
+            token, validate_b64_hash = ret[3:].split(" ")
+            return token, a2b_base64(validate_b64_hash)
         else:
             raise_error(ret)

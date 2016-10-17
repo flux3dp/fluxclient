@@ -244,10 +244,13 @@ use it if and only if you have any idea about this::
 
     def get_cloud_validation_code(self):
         """Return a tuple for cloud device relation validation."""
-        code = self._backend.get_cloud_validation_code()
+        token, code = self._backend.get_cloud_validation_code()
         access_id = self._client_key.get_access_id()
         signature = self._client_key.sign(code)
-        return (access_id, b2a_base64(signature).decode("ascii"))
+        return {
+            "token": token, "access_id": access_id,
+            "signature": b2a_base64(signature).decode("ascii")
+        }
 
     @blocked_validator
     def config_set(self, key, value):
