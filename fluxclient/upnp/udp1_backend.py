@@ -80,7 +80,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
             self.sock = None
             self._authorized = False
 
-    def create_timestemp(self):
+    def create_timestamp(self):
         return time() + self.timedelta
 
     def make_request(self, req_code, resp_code, message, encrypt=True,
@@ -99,7 +99,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
 
     def sign_request(self, body):
         salt = ("%i" % randint(1000, 9999)).encode()
-        ts = self.create_timestemp()
+        ts = self.create_timestamp()
         message = struct.pack("<20sd4s", self.access_id, ts, salt) + body
         signature = self.client_key.sign(self.uuid.bytes + message)
         return message + signature
@@ -157,7 +157,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
 
         req_code = CODE_NOPWD_ACCESS
         resp_code = CODE_RESPONSE_NOPWD_ACCESS
-        msg = struct.pack("<d%ss" % len(der), self.create_timestemp(), der)
+        msg = struct.pack("<d%ss" % len(der), self.create_timestamp(), der)
 
         resp = self.make_request(req_code, resp_code, msg,
                                  encrypt=False, timeout=timeout)
@@ -170,7 +170,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         resp_code = CODE_RESPONSE_PWD_ACCESS
 
         buf = b"\x00".join([
-            str(self.create_timestemp()).encode(),
+            str(self.create_timestamp()).encode(),
             passwd.encode(),
             der
         ])

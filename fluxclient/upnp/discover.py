@@ -249,10 +249,10 @@ class Helper(object):
 
 
 class Version1Helper(Helper):
-    def _need_touch(self, uuid, slave_timestemp):
+    def _need_touch(self, uuid, slave_timestamp):
         device = self.server.devices.get(uuid)
-        if device and device.slave_timestemp is not None:
-            return slave_timestemp > device.slave_timestemp
+        if device and device.slave_timestamp is not None:
+            return slave_timestamp > device.slave_timestamp
         else:
             return True
 
@@ -345,11 +345,11 @@ class Version1Helper(Helper):
         if master_key.verify(payload[16:20] + slavekey_str,
                              slavekey_signuture):
             if temp_pkey.verify(bmeta, doc_signuture):
-                device.slave_timestemp = master_ts
+                device.slave_timestamp = master_ts
                 device.slave_key = temp_pkey
                 device.has_password = rawdata.get("pwd") == "T"
-                device.timestemp = float(rawdata.get("time", 0))
-                device.timedelta = device.timestemp - time()
+                device.timestamp = float(rawdata.get("time", 0))
+                device.timedelta = device.timestamp - time()
 
                 device.model_id = rawdata.get("model", "UNKNOW_MODEL")
                 device.version = StrictVersion(rawdata["ver"])

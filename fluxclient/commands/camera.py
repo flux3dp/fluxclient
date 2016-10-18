@@ -17,7 +17,7 @@ PROG_EPILOG = ""
 class Static(object):
     def __init__(self):
         self.total = 0
-        self.timestemp = deque(maxlen=64)
+        self.timestamp = deque(maxlen=64)
 
     @property
     def fps(self):
@@ -25,7 +25,7 @@ class Static(object):
         edge = None
         total = 0
         count = 0
-        for t in self.timestemp:
+        for t in self.timestamp:
             if edge is None:
                 edge = t
             total += t
@@ -37,7 +37,7 @@ class Static(object):
 
     def log(self, filename):
         self.total += 1
-        self.timestemp.append(time())
+        self.timestamp.append(time())
         sys.stdout.write(
             "\rRecived=%i FPS=%4.1f %s" %
             (self.total, self.fps, filename))

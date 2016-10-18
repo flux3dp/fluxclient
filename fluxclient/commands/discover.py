@@ -96,10 +96,10 @@ class FluxDeviceDiscover(object):
         self.devices.add(device)
 
         uuid = device.uuid
-        if uuid in self.found and device.timestemp == self.found[uuid]:
+        if uuid in self.found and device.timestamp == self.found[uuid]:
             return
         else:
-            self.found[device.uuid] = device.timestemp
+            self.found[device.uuid] = device.timestamp
 
         self.formatter.print_device(device)
 

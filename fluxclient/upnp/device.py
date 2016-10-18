@@ -54,9 +54,9 @@ class Device(object):
 
     # Old flux device field
     has_password = None
-    slave_timestemp = None
+    slave_timestamp = None
     slave_key = None
-    timestemp = None
+    timestamp = None
     timedelta = None
 
     # Device Status
@@ -83,9 +83,9 @@ class Device(object):
         if dv == 1:
             extend = dictobj["extend_v1"]
             device.has_password = extend["has_password"]
-            device.slave_timestemp = extend["slave_timestemp"]
+            device.slave_timestamp = extend["slave_timestamp"]
             device.slave_key = _to_keyobj_or_none(extend["slave_key"])
-            device.timestemp = extend["timestemp"]
+            device.timestamp = extend["timestamp"]
             device.timedelta = extend["timedelta"]
         return device
 
@@ -133,7 +133,7 @@ class Device(object):
 to 1.0. Only vaild while running task (st_id > 0).
         :ivar str head_module: Toolhead name installed on device.
         :ivar str error_label: Any error occour during the task.
-        :ivar float last_update: Device status update timestemp.
+        :ivar float last_update: Device status update timestamp.
 
         :rtype: dict
         """
@@ -200,11 +200,11 @@ over file, socket or other serial devices"""
 
             "extend_v1": {
                 "has_password": self.has_password,
-                "slave_timestemp": self.slave_timestemp,
+                "slave_timestamp": self.slave_timestamp,
                 "slave_key": (self.slave_key.public_key_pem.decode()
                               if self.slave_key and serialized
                               else self.slave_key),
-                "timestemp": self.timestemp,
+                "timestamp": self.timestamp,
                 "timedelta": self.timedelta
             },
             "last_update": self.last_update
@@ -217,8 +217,8 @@ over file, socket or other serial devices"""
         dataset = {
             "endpoint": self.discover_endpoint,
             "slave_key": self.slave_key,
-            "master_ts": self.slave_timestemp,
-            "timestemp": self.timestemp,
+            "master_ts": self.slave_timestamp,
+            "timestamp": self.timestamp,
             "timedelta": self.timedelta,
             "has_password": self.has_password,
         }
