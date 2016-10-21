@@ -429,7 +429,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             if ret == "ok":
                 return mimetype
             else:
-                raise_error(resp)
+                raise_error(ret)
         else:
             raise_error(resp)
 
@@ -659,6 +659,19 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             return info
         else:
             raise_error(ret)
+
+    def fetch_log(self, path, stream, callback=None):
+        self._send_cmd(("fetch_log %s" % path).encode())
+        resp = self.get_resp().decode("utf8", "ignore")
+        if resp.startswith("binary "):
+            mimetype = self.recv_binary_into(resp, stream, callback)
+            ret = self.get_resp().decode("utf8", "ignore")
+            if ret == "ok":
+                return mimetype
+            else:
+                raise_error(ret)
+        else:
+            raise_error(resp)
 
     def get_cloud_validation_code(self):
         ret = self._make_cmd(b"cloud_validation_code").decode("utf8", "ignore")

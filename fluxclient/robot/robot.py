@@ -242,6 +242,17 @@ use it if and only if you have any idea about this::
             self._config_obj = RobotConfigure(self)
         return self._config_obj
 
+    @blocked_validator
+    def fetch_log(self, path, stream, process_callback=None):
+        """Fetch log file from the device.
+
+    :param str path: File on device for download
+    :param filelike_obj stream: A local file-like object to write
+    :param function process_callback: A callable object which will be invoked \
+during download progress"""
+        return self._backend.fetch_log(path, stream, process_callback)
+
+    @blocked_validator
     def get_cloud_validation_code(self):
         """Return a tuple for cloud device relation validation."""
         token, code = self._backend.get_cloud_validation_code()

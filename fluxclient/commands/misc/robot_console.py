@@ -43,6 +43,9 @@ class RobotConsole(object):
             "upload": self.upload_file,
             "md5": self.md5,
 
+            "fetch_log": self.fetch_log,
+            "cloud_validation": self.get_cloud_validation_code,
+
             "select": self.select_file,
             "update_fw": self.update_fw,
             "update_atmel": self.update_atmel,
@@ -142,6 +145,19 @@ class RobotConsole(object):
                 logger.info("FILE %s" % os.path.join(path, node))
         logger.info("ls done.")
 
+    def fetch_log(self, source, target):
+        def callback(left, size):
+            logger.info("Download %i / %i" % (size - left, size))
+
+        with open(target, "wb") as f:
+            self.robot_obj.fetch_log(source, f, callback)
+
+    def get_cloud_validation_code(self):
+        code = self.robot_obj.get_cloud_validation_code()
+        for key, value in code.items():
+            logger.info("  %s=%s", key, value)
+        logger.info("done")
+
     def select_file(self, path):
         path = shlex.split(path)[0]
         entry, filename = path.split("/", 1)
@@ -203,8 +219,7 @@ class RobotConsole(object):
                 f, size, process_callback=self.log_process_callback)
 
     def md5(self, filename):
-        entry, path = filename.split("/", 1)
-        md5 = self.robot_obj.md5(entry, path)
+        md5 = self.robot_obj.file_md5(filename)
         logger.info("MD5 %s %s", filename, md5)
 
     def play_info(self):
