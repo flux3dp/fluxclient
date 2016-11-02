@@ -1,6 +1,7 @@
 
 from tempfile import NamedTemporaryFile
 from select import select
+from time import time
 import mimetypes
 import logging
 import shlex
@@ -19,7 +20,6 @@ class RobotConsole(object):
     def __init__(self, robot_obj):
         self.robot_obj = robot_obj
         self.simple_mapping = {
-            "deviceinfo": robot_obj.deviceinfo,
             "start": robot_obj.start_play,
             "pause": robot_obj.pause_play,
             "resume": robot_obj.resume_play,
@@ -33,6 +33,7 @@ class RobotConsole(object):
         }
 
         self.cmd_mapping = {
+            "deviceinfo": self.deviceinfo,
             "ls": self.list_file,
             "fileinfo": self.fileinfo,
             "mkdir": self.mkdir,
@@ -137,6 +138,10 @@ class RobotConsole(object):
         else:
             logger.info("ok")
 
+    def deviceinfo(self):
+        for k, v in self.robot_obj.deviceinfo.items():
+            logger.info("    %s: %s", k, v)
+
     def list_file(self, path):
         for is_dir, node in self.robot_obj.list_files(path):
             if is_dir:
@@ -197,14 +202,23 @@ class RobotConsole(object):
 
     def download_file(self, source, target):
         def callback(left, size):
-            logger.info("Download %i / %i" % (size - left, size))
+            if time() - callback.c > 0.9:
+                callback.c = time()
+                logger.info("Download %i / %i" % (size - left, size))
+            elif left == 0:
+                logger.info("Download %i / %i" % (size, size))
 
+        start_at = time()
+        callback.c = start_at
         with open(target, "wb") as f:
             self.robot_obj.download_file(source, f, callback)
+        logger.info("Done, spent %.2f seconds", time() - start_at)
 
     def upload_file(self, source, upload_to="#"):
+        start_at = time()
         self.robot_obj.upload_file(
             source, upload_to, process_callback=self.log_process_callback)
+        logger.info("Done, spent %.2f seconds", time() - start_at)
 
     def update_fw(self, filename):
         with open(filename, "rb") as f:
