@@ -7,6 +7,7 @@ import os
 from fluxclient.utils import mimetypes
 from .backends import InitBackend
 from .errors import RobotError, RobotSessionError
+from .robot_backend_usb import RobotBackendUSB
 from .robot_backend_2 import RobotBackend2
 
 
@@ -40,6 +41,11 @@ def invalied_validator(fn):
 
 
 class FluxRobot(object):
+    @classmethod
+    def from_usb(cls, client_key, usbprotocol):
+        backend = RobotBackendUSB(usbprotocol)
+        return cls("USB", client_key, backend=backend)
+
     """A `FluxRobot` object represents a live connection with a FLUX device.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
@@ -54,19 +60,21 @@ different definition in different version.
     _locked_obj = None
 
     def __init__(self, endpoint, client_key, device=None,
-                 ignore_key_validation=False):
+                 ignore_key_validation=False, backend=None):
         self._device = device
         self._client_key = client_key
 
-        init_backend = InitBackend(endpoint)
-        proto_ver = init_backend.do_handshake()
-
-        if proto_ver == 2:
-            self._backend = RobotBackend2(
-                self, init_backend.sock, client_key, device,
-                ignore_key_validation)
+        if backend:
+            self._backend = backend
         else:
-            raise RobotSessionError("Protocol not support")
+            init_backend = InitBackend(endpoint)
+            proto_ver = init_backend.do_handshake()
+
+            if proto_ver == 2:
+                self._backend = RobotBackend2(init_backend.sock, client_key,
+                                              device, ignore_key_validation)
+            else:
+                raise RobotSessionError("Protocol not support")
 
     @property
     def device(self):
@@ -173,7 +181,7 @@ during upload progress"""
     :param function callback: A callable object which will be invoke during \
 upload progress"""
         return self._backend.upload_stream(
-            stream, mimetype, size, upload_to,
+            self, stream, mimetype, size, upload_to,
             process_callback=process_callback)
 
     @blocked_validator
@@ -283,7 +291,8 @@ during download progress"""
     @blocked_validator
     def update_firmware(self, stream, size, process_callback=None):
         """Uploadshen and t updates a flux device firmware"""
-        return self._backend.update_firmware(stream, size, process_callback)
+        return self._backend.update_firmware(self, stream, size,
+                                             process_callback)
 
     @blocked_validator
     def scan(self):
@@ -399,7 +408,7 @@ class MaintainTasks(SubTasks):
     @invalied_validator
     def calibrate(self, threshold=None, clean=False, process_callback=None):
         """Does a calibration testing"""
-        return self._backend.maintain_calibration(threshold, clean,
+        return self._backend.maintain_calibration(self, threshold, clean,
                                                   process_callback)
 
     def calibration(self, threshold=None, clean=False, process_callback=None):
@@ -410,7 +419,7 @@ class MaintainTasks(SubTasks):
     @invalied_validator
     def zprobe(self, process_callback=None):
         """Does a zprobe testing"""
-        return self._backend.maintain_zprobe(process_callback)
+        return self._backend.maintain_zprobe(self, process_callback)
 
     @invalied_validator
     def manual_level(self, h):
@@ -431,14 +440,14 @@ class MaintainTasks(SubTasks):
     def load_filament(self, index=0, temperature=210.0,
                       process_callback=None):
         """Loads the filament"""
-        return self._backend.maintain_load_filament(index, temperature,
+        return self._backend.maintain_load_filament(self, index, temperature,
                                                     process_callback)
 
     @invalied_validator
     def unload_filament(self, index=0, temperature=210.0,
                         process_callback=None):
         """Unloads the filament"""
-        return self._backend.maintain_unload_filament(index, temperature,
+        return self._backend.maintain_unload_filament(self, index, temperature,
                                                       process_callback)
 
     @invalied_validator
@@ -454,7 +463,7 @@ class MaintainTasks(SubTasks):
     @invalied_validator
     def update_hbfw(self, stream, size, process_callback=None):
         """Uploads and then updates the toolhead firmware"""
-        return self._backend.maintain_update_hbfw(stream, size,
+        return self._backend.maintain_update_hbfw(self, stream, size,
                                                   process_callback)
 
 
