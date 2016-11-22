@@ -330,7 +330,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         if mn != "binary":
             raise RobotError("Protocol Error")
         size = int(ssize)
-        logger.debug("Recv %s %i" % (mimetype, size))
+        logger.debug("Receiving %s, length: %i", mimetype, size)
         if size == 0:
             return mimetype
         left = size
@@ -666,6 +666,12 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 if ":" in raw:
                     key, val = raw.split(":", 1)
                     info[key] = val
+            if "cloud" in info:
+                try:
+                    # TODO:...
+                    info["cloud"] = eval(info["cloud"])
+                except Exception:
+                    pass
             return info
         else:
             raise_error(ret)
