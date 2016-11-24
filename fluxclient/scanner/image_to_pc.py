@@ -4,6 +4,7 @@ from io import BytesIO
 import sys
 
 import numpy as np
+from PIL import ImageChops
 from PIL import Image
 
 try:
@@ -59,6 +60,21 @@ class image_to_pc():
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
+
+        im1 = Image.fromarray(img_O)
+        b, g, r = im1.split()
+        im1 = Image.merge("RGB", (r, g, b))
+        im1.save("/Users/simon/Dev/ScanResult/%03d_O.png" % (step))
+        im2 = Image.fromarray(img_L)
+        b, g, r = im2.split()
+        im2 = Image.merge("RGB", (r, g, b))
+        im2.save("/Users/simon/Dev/ScanResult/%03d_L.png" % (step))
+        im3 = Image.fromarray(img_R)
+        b, g, r = im3.split()
+        im3 = Image.merge("RGB", (r, g, b))
+        im3.save("/Users/simon/Dev/ScanResult/%03d_R.png" % (step))
+        im = ImageChops.difference(im1, im2)
+        im.save("/Users/simon/Dev/ScanResult/%03d_D.png" % (step))
 
         indices_L = self.fs_L.subProcess(img_O, img_L, self.settings.img_height)
 

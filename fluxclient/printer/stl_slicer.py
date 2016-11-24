@@ -763,9 +763,9 @@ class StlSlicerCura(StlSlicer):
                 tmp -= 16
             ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
 
-            with open('output.gcode', 'wb') as f:
-                    with open(tmp_gcode_file, 'rb') as f2:
-                        f.write(f2.read())
+            # with open('output.gcode', 'wb') as f:
+            #         with open(tmp_gcode_file, 'rb') as f2:
+            #             f.write(f2.read())
 
             with open(tmp_gcode_file, 'r') as f:
                 m_GcodeToFcode = GcodeToFcode(ext_metadata=ext_metadata)
