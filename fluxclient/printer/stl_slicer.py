@@ -17,7 +17,7 @@ from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.utils._utils import GcodeToFcodeCpp
 from fluxclient.scanner.tools import dot, normal, normalize
-from fluxclient.printer import ini_string, ini_constraint, ignore
+from fluxclient.printer import ini_string, ini_constraint, ignore, ini_flux_params
 from fluxclient.printer.flux_raft import Raft
 
 logger = logging.getLogger(__name__)
@@ -266,7 +266,7 @@ class StlSlicer(object):
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom' ,'flux_', 'detect_'])
+        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -384,6 +384,10 @@ class StlSlicer(object):
             # # clean up tmp files
             fcode_output.close()
         if fail_flag:
+            try:
+                path
+            except:
+                path = None
             status_list.append([False, slic3r_out, path])
         else:
             status_list.append([output, metadata, path])
@@ -695,7 +699,7 @@ class StlSlicerCura(StlSlicer):
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
         m_mesh_merge.write_stl(tmp_stl_file)
-        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=['cut_bottom', 'flux_', 'detect_'])
+        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r]
         command += ['-o', tmp_gcode_file]
@@ -780,7 +784,6 @@ class StlSlicerCura(StlSlicer):
                 # m_GcodeToFcode.process_path = self.process_path
                 m_GcodeToFcode.config = config
                 m_GcodeToFcode.image = image
-                m_GcodeToFcode.offset(z=float(config.get('z_offset', 0.0)))
                 m_GcodeToFcode.process(f, fcode_output)
                 path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
@@ -854,6 +857,7 @@ class StlSlicerCura(StlSlicer):
 
         new_content = {}
         new_content['extrusionWidth'] = int(thousand(content['nozzle_diameter']))
+
         new_content['objectPosition.X'] = -10.0
         new_content['objectPosition.Y'] = -10.0
         new_content['autoCenter'] = 0
@@ -873,7 +877,7 @@ class StlSlicerCura(StlSlicer):
         new_content['raftBaseSpeed'] = content['first_layer_speed']
 
         new_content['raftFanSpeed'] = 0
-        new_content['raftSurfaceThickness'] = 270
+        new_content['raftSurfaceThickness'] = 300
         new_content['raftSurfaceLinewidth'] = 400
         new_content['raftSurfaceLineSpacing'] = new_content['raftSurfaceLinewidth']
         new_content['raftSurfaceLayers'] = 10
@@ -890,6 +894,7 @@ class StlSlicerCura(StlSlicer):
         new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
         new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
+        new_content['supportEverywhere'] = int(content['support_everywhere'])
 
         new_content['raftSurfaceLayers'] = content['raft_layers']
 
@@ -945,14 +950,19 @@ class StlSlicerCura(StlSlicer):
 
         new_content['retractionSpeed'] = content['retract_speed']
         new_content['retractionAmount'] = thousand(content['retract_length'])
+        new_content['retractionZHop'] = thousand(content['retract_lift']) 
 
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
-        new_content['filamentFlow'] = 92
-        new_content['minimalLayerTime'] = 15
+        new_content['filamentFlow'] = 96
+        new_content['minimalLayerTime'] = int(content['slowdown_below_layer_time'])
 
-        new_content['startCode'] = 'M109 S{}\n'.format(content['temperature']) + content['start_gcode']
+        new_content['startCode'] = 'M109 S{}\n'.format(content['first_layer_temperature']) + content['start_gcode']
         new_content['endCode'] = content['end_gcode']
+
+        new_content['layer0extrusionWidth'] = 600
+        new_content['skirtMinLength'] = 150000
+        new_content['fanFullOnLayerNr'] = 3
 
         add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
         # special function for cura's setting file
@@ -968,6 +978,9 @@ class StlSlicerCura(StlSlicer):
 
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])
+
+        import pprint
+        pprint.pprint(new_content)
 
         cls.my_ini_writer(file_path, new_content, delete)
         return

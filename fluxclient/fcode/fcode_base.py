@@ -37,6 +37,7 @@ class FcodeBase(object):
         self.engine = 'slic3r'
         self.now_type = POINT_TYPE['move']
         self.path_js = None
+        self.highlight_layer = -1
 
     def sub_convert_path(self):
         self.path_js = Tools().path_to_js(self.path).decode()
@@ -56,7 +57,7 @@ class FcodeBase(object):
         convert to path list(for visualizing)
         """
         # Point type in constants
-        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN = [x for x in range(-1,9)]
+        PY_TYPE_NEW_LAYER, PY_TYPE_INFILL, PY_TYPE_PERIMETER, PY_TYPE_SUPPORT, PY_TYPE_MOVE, PY_TYPE_SKIRT, PY_TYPE_INNER_WALL, PY_TYPE_BRIM, PY_TYPE_RAFT, PY_TYPE_SKIN, PY_TYPE_HIGHLIGHT = [x for x in range(-1,10)]
 
         # Real comparison
         if self.engine == 'slic3r':
@@ -83,6 +84,8 @@ class FcodeBase(object):
                         self.filament_this_layer = self.filament[:]
                 elif 'perimeter' in comment:
                     line_type = PY_TYPE_PERIMETER
+                    if self.highlight_layer == self.layer_now:
+                        self.now_type = PY_TYPE_HIGHLIGHT
                 elif 'skirt' in comment:
                     line_type = PY_TYPE_SKIRT
                 elif 'draw' in comment:
@@ -134,17 +137,14 @@ class FcodeBase(object):
         """
         PY_TYPE_MOVE = 3
         
-        if path is None:
+        if path is None or len(path) == 0:
             return path
-        if len(path) == 0:
-            return path
+
         for layer in [0, -1]:
-            while True:
+            while len(path):
                 if len(path[layer]) >= 2:
                     # define an edge's type at end point
-                    # 0 * 2 + 1 = 1
-                    # -1 * 2 + 1 = -1
-                    if path[layer][layer * 2 + 1][3] == PY_TYPE_MOVE:
+                    if path[layer][[0,-1][layer]][3] == PY_TYPE_MOVE:
                         path[layer].pop(layer)
                     else:
                         break

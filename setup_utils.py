@@ -100,13 +100,34 @@ def get_entry_points():
     }
 
 
+def get_default_extra_compile_args():
+    if is_darwin():
+        return ["--stdlib=libc++", "-mmacosx-version-min=10.9"]
+    elif is_linux():
+        return ["-lstdc++"]
+    elif is_windows():
+        return []
+
+
+def create_utils_extentions():
+    return [
+        Extension(
+            'fluxclient.utils._utils',
+            sources=[
+                "src/utils/utils_module.cpp",
+                "src/utils/utils.pyx"],
+            language="c++",
+            extra_compile_args=get_default_extra_compile_args())
+    ]
+
+
 def create_pcl_extentions():
     # Process include_dirs
     include_dirs = []
     # Process libraries
     libraries = []
     # Process extra_compile_args
-    extra_compile_args = []
+    extra_compile_args = get_default_extra_compile_args()
     library_dirs = []
 
     try:
@@ -122,12 +143,6 @@ def create_pcl_extentions():
                 include_dirs += [locate_includes("pcl_common-1.7")]
             else:
                 raise RuntimeError("Can not locate pcl includes.")
-
-        if is_darwin():
-            extra_compile_args += ["--stdlib=libc++",
-                                   "-mmacosx-version-min=10.9"]
-        elif is_linux():
-            extra_compile_args += ["-lstdc++"]
         elif is_windows():
             libraries += ["pcl_common_release", "pcl_octree_release",
                           "pcl_io_release", "pcl_kdtree_release",
@@ -184,7 +199,7 @@ def create_pcl_extentions():
         else:
             raise RuntimeError("Unknow platform!!")
 
-    except (RuntimeError, FileNotFoundError):
+    except (RuntimeError, FileNotFoundError) as e:
         import traceback
         print("\033[93m", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
@@ -213,7 +228,6 @@ def create_pcl_extentions():
         'fluxclient.printer._printer',
         sources=[
             "src/printer/printer_module.cpp",
-            # "src/printer/tree_support.cpp",
             "src/printer/printer.pyx"],
         language="c++",
         extra_compile_args=extra_compile_args,
@@ -222,13 +236,7 @@ def create_pcl_extentions():
         extra_objects=[],
         include_dirs=include_dirs
     ))
-    # extensions.append(Extension(
-    #     'fluxclient.utils.native_data',
-    #     sources=[
-    #         "src/utils/native_data.pyx"],
-    #     language="c++",
-    #     gdb_debug = True
-    # ))
+
     extensions.append(Extension(
         'fluxclient.utils._utils',
         sources=[
@@ -242,6 +250,5 @@ def create_pcl_extentions():
         extra_objects=[],
         include_dirs=["src/printer/"]
     ))
-
 
     return extensions

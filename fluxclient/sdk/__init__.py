@@ -31,21 +31,21 @@
 #       * cmd_index: next command index should given
 #       * queued_size: command is waitting to be execute in system
 #
-#   (i:1, s:salt, i:timestemp, i:head_error_code, obj:headstatus)
+#   (i:1, s:salt, i:timestamp, i:head_error_code, obj:headstatus)
 #       * First integer 1 means it is a toolhead status message
 #       * salt: reserved
-#       * timestemp: reserved
+#       * timestamp: reserved
 #       * head_error_code:
 #           == -2: Head Offline
 #           == -1: Not ready
 #            == 0: Ready
 #             > 0: Follow toolhead error table
 #
-#   (i:2, s:salt, i:timestemp, ...)
+#   (i:2, s:salt, i:timestamp, ...)
 #       * Please assume array size is dynamic
 #       * First integer 2 means it is a user toolhead status message
 #       * salt: reserved
-#       * timestemp: reserved
+#       * timestamp: reserved
 #       * Element 3: Toolhead response message stack size
 
 
@@ -141,10 +141,10 @@ MSG_UNKNOWN_ERROR = 0xff
 
 
 # UDP Message
-#   (i:1, s:SALT, i:timestemp, i:head_error_code, obj:headstatus)
+#   (i:1, s:SALT, i:timestamp, i:head_error_code, obj:headstatus)
 #       * First 1 means it is a head status message
 #       * SALT: not for use right now
-#       * timestemp: not for use right now
+#       * timestamp: not for use right now
 #       * head_error_code:
 #           == -2: Head Offline
 #           == -1: Not ready

@@ -222,7 +222,9 @@ cut_bottom = -1
 detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
-flux_calibration = 1"""
+flux_calibration = 1
+pause_at_layers = 
+support_everywhere = 0"""
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
@@ -326,6 +328,7 @@ ini_constraint = {
     'spiral_vase': [binary],
     'standby_temperature_delta': [int_range, -400, 400],
     'start_gcode': False,
+    'support_everywhere': [binary],
     'support_material': [binary],
     'support_material_angle': False,
     'support_material_contact_distance': [float_range, 0.0, 10],
@@ -362,5 +365,8 @@ ini_constraint = {
     'detect_filament_runout': [binary],
     'detect_head_shake': [binary],
     'detect_head_tilt': [binary],
-    'flux_calibration': [binary]
+    'flux_calibration': [binary],
+    'pause_at_layers': False
 }
+
+ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']

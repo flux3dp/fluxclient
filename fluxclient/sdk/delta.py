@@ -589,7 +589,7 @@ class Delta(object):
         def callback(c, img):
             storage["img"] = img
 
-        self.camera.requrest_frame()
+        self.camera.require_frame()
         while not storage:
             self.camera.feed(callback)
 

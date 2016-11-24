@@ -83,6 +83,19 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
         logstream.write("\nConnecting...")
         session = device.connect_robot(client_key,
                                        conn_callback=working_callback)
+    elif target == "usb":
+        from fluxclient.usb.usb2 import USBProtocol
+        import threading
+        import atexit
+
+        device = None
+        logstream.write("Connecting...")
+        usbprotocol = USBProtocol()
+        t = threading.Thread(target=usbprotocol.run)
+        t.daemon = True
+        t.start()
+        atexit.register(usbprotocol.stop)
+        session = FluxRobot.from_usb(client_key, usbprotocol)
     else:
         device = None
         logstream.write("Connecting...")
