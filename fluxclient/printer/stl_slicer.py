@@ -721,9 +721,10 @@ class StlSlicerCura(StlSlicer):
             # Read old file name
             if os.path.exists('stl.cache'): 
                 f = open('stl.cache', 'r+')
-                tmp_stl_file = f.read();
+                old_stl = f.read();
                 f.close();
-                os.remove(tmp_stl_file)
+                if os.path.exists(old_stl):
+                    os.remove(old_stl)
 
 
             f = open('stl.cache', 'w+')
