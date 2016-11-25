@@ -46,7 +46,7 @@ cdef extern from "scan_module.h":
 
     int POS(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud, float smooth)
     int GPT(PointXYZRGBNormalPtr cloud_with_normals, MeshPtr triangles, PointCloudXYZRGBPtr cloud)
-    int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
+    # int STL_to_Faces(MeshPtr, vector[vector [int]] &viewp)
     int STL_to_List(MeshPtr triangles, vector[vector[vector [float]]] &data)
     int cut(PointCloudXYZRGBPtr input, PointCloudXYZRGBPtr output, int mode, int direction, float value)
 
@@ -147,10 +147,10 @@ cdef class PointCloudXYZRGBObj:
             GPT(self.bothobj, self.meshobj, self.obj)
         return 0
 
-    cpdef STL_to_Faces(self):
-        cdef vector[vector [int]] viewp
-        STL_to_Faces(self.meshobj, viewp)
-        return viewp
+    # cpdef STL_to_Faces(self):
+    #    cdef vector[vector [int]] viewp
+    #    STL_to_Faces(self.meshobj, viewp)
+    #    return viewp
 
     cpdef STL_to_List(self):
         cdef vector[vector[vector [float]]] data

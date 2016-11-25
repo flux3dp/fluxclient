@@ -13,12 +13,12 @@ from io import StringIO
 # uint8_t b = (rgb)       & 0x0000ff;
 
 
-def dot(vector_a, vector_b):
+def dot(a, b):
     """
     3d dot vector_a, vector_b
     return float
     """
-    return sum(vector_a[i] * vector_b[i] for i in range(3))
+    return a[0] * b[0] + a[1] * b[1] +a[2] * b[2]
 
 
 def cross(p0, p1, p2):
@@ -39,13 +39,13 @@ def normalize(v):
     return v
 
 
-def normal(tri):
+def normal(v):
     """
-      compute normal of a triangle surface
-      tri = [[x, y, z], [x, y, z], [x, y, z]]
+      compute normal of a vangle surface
+      v = [[x, y, z], [x, y, z], [x, y, z]]
     """
-    a = [tri[1][0] - tri[0][0], tri[1][1] - tri[0][1], tri[1][2] - tri[0][2]]  # vector v0 -> v1
-    b = [tri[2][0] - tri[0][0], tri[2][1] - tri[0][1], tri[2][2] - tri[0][2]]  # vector v0 -> v2
+    a = [v[1][0] - v[0][0], v[1][1] - v[0][1], v[1][2] - v[0][2]]  # vector v0 -> v1
+    b = [v[2][0] - v[0][0], v[2][1] - v[0][1], v[2][2] - v[0][2]]  # vector v0 -> v2
     return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
 
 
