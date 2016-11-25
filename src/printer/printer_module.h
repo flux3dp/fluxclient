@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <math.h>
 #include <vector>
 
 #include <pcl/point_types.h>
@@ -17,3 +19,7 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box);
 int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &b_box);
 int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v);
 int mesh_len(MeshPtr triangles);
+
+void xnormal(std::vector< std::vector<float> > &v, float* result);
+void xnormalize(float *v);
+int write_stl_binary(MeshPtr triangles, const char* filename);

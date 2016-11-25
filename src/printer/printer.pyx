@@ -1,8 +1,6 @@
 import cython
 from libcpp.vector cimport vector
 
-from fluxclient.scanner.tools import write_stl
-
 cdef extern from "printer_module.h":
     cdef cppclass MeshPtr:
         pass
@@ -15,6 +13,8 @@ cdef extern from "printer_module.h":
     int bounding_box(MeshPtr triangles, vector[float] &b_box)
     int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v)
     int mesh_len(MeshPtr input_mesh)
+
+    int write_stl_binary(MeshPtr triangles, char* filename)
 
 # cdef extern from "tree_support.h":
 #     int add_support(MeshPtr input_mesh, MeshPtr out_mesh, float alpha)
@@ -50,14 +50,8 @@ cdef class MeshObj:
     def __len__(self):
         return mesh_len(self.meshobj)
 
-    cpdef write_stl(self, file_name, flag=None):
-        cpdef vector[vector [vector [float]]] tri
-        STL_to_List(self.meshobj, tri)
-        if flag is None:
-            write_stl(tri, file_name)
-        else:
-            write_stl(tri, file_name, flag)
-
+    cpdef write_stl(self, filename):
+        write_stl_binary(self.meshobj, filename.encode())
 
     cpdef bounding_box(self):
         cpdef vector[float] tmp_b_box

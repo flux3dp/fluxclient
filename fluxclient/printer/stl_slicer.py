@@ -281,7 +281,7 @@ class StlSlicer(object):
 
         from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
-        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list, False])
         p.start()
         return True, ''
 
@@ -409,6 +409,8 @@ class StlSlicer(object):
                 if p[-1].poll() is None:
                     p[-1].terminate()
             else:
+                # Turn on abort tag
+                p[3] = True
                 pass
             for filename in p[1]:
                 try:
@@ -683,7 +685,7 @@ class StlSlicerCura(StlSlicer):
         from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
         # thread, files, status_list
-        self.working_p.append([p, [], status_list])
+        self.working_p.append([p, [], status_list, False])
         p.start()
         return True, ''
 
@@ -718,24 +720,40 @@ class StlSlicerCura(StlSlicer):
         currentTransform = json.dumps({'p': self.parameter, 'sink': float(self.config['cut_bottom'])})
 
         status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
+        
+        if self.working_p[p_index][3]:
+            return logger.info('Worker #%d aborted' % p_index)
+
         if oldTransform != currentTransform:
             logger.info('Generating new transformed stl');
             for n in names:
                 logger.info('Creating MeshObj %s' % n)
                 m_mesh = _printer.MeshObj(self.models[n][0], self.models[n][1])
+
+                if self.working_p[p_index][3]:
+                    return logger.info('Worker #%d aborted' % p_index)
+
                 logger.info('Applying transform %s' % n)
                 m_mesh.apply_transform(self.parameter[n])
+
+                if self.working_p[p_index][3]:
+                    return logger.info('Worker #%d aborted' % p_index)
+
                 if m_mesh_merge_null:
                     m_mesh_merge_null = False
                     m_mesh_merge = m_mesh
                 else:
                     logger.info('Merging %s' % n)
                     m_mesh_merge.add_on(m_mesh)
+            
+            if self.working_p[p_index][3]:
+                return logger.info('Worker #%d aborted' % p_index)
 
             if float(self.config['cut_bottom']) > 0:
                 status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}');
                 m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
-
+            
+            logger.info('Writing new stl');
             status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}');
             m_mesh_merge.write_stl(tmp_stl_file)
             # Save new file name for same transform
@@ -763,6 +781,7 @@ class StlSlicerCura(StlSlicer):
             logger.info('Using last stl %s' % tmp_stl_file);
             f.close();
 
+        logger.info('Writing ini');
         self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r]
@@ -772,6 +791,9 @@ class StlSlicerCura(StlSlicer):
         command.append('-v')
 
         logger.debug('command: ' + ' '.join(command))
+
+        if self.working_p[p_index][3]:
+            return logger.info('Worker #%d aborted' % p_index)
 
         status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
         logger.info('Starting slicing engine');
@@ -800,6 +822,11 @@ class StlSlicerCura(StlSlicer):
                         slic3r_out = [5, line]  # errorcode 5
                     # break
             if subp.poll() != 0:
+                chunck = subp.stderr.readline()
+                for line in chunck.split('\n'):
+                    line = line.rstrip()
+                    if line:
+                        logger.info(line)
                 logger.info("CuraEngine returned abnormal");
                 fail_flag = True
         except Exception as ex:
