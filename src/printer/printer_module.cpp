@@ -136,70 +136,37 @@ int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &
   return 0;
 }
 
+Eigen::Affine3f create_rotation_matrix(float ax, float ay, float az) {
+  Eigen::Affine3f rx =
+      Eigen::Affine3f(Eigen::AngleAxisf(ax, Eigen::Vector3f(1, 0, 0)));
+  Eigen::Affine3f ry =
+      Eigen::Affine3f(Eigen::AngleAxisf(ay, Eigen::Vector3f(0, 1, 0)));
+  Eigen::Affine3f rz =
+      Eigen::Affine3f(Eigen::AngleAxisf(az, Eigen::Vector3f(0, 0, 1)));
+  return rz * ry * rx;
+}
+
 int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z){
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   fromPCLPointCloud2(triangles->cloud, *cloud);
-
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-  Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
-  float theta; // The angle of rotation in radians
 
   std::vector<float> b_box;
   b_box.resize(3);
   std::vector<float> center;
   center.resize(3);
 
-  // scale
-  for (uint32_t i = 0; i < cloud->size(); i += 1){
-    (*cloud)[i].x *= sc_x;
-    (*cloud)[i].y *= sc_y;
-    (*cloud)[i].z *= sc_z;
-  }
-
   // move to origin
   bounding_box(cloud, b_box);
   for (int i = 0; i < 3; i += 1){
     center[i] = (b_box[i] + b_box[i + 3]) / 2;
   }
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = -center[0];
-  transform(1, 3) = -center[1];
-  transform(2, 3) = -center[2];
-  pcl::transformPointCloud(*cloud, *cloud, transform);
 
-  // rotate
-  transform = Eigen::Matrix4f::Identity();
+  Eigen::Affine3f S(Eigen::Scaling(Eigen::Vector3f(sc_x, sc_y, sc_z)));
+  Eigen::Affine3f T_0(Eigen::Translation3f(Eigen::Vector3f(-center[0] * sc_x, -center[1] * sc_y, -center[2] * sc_z)));
+  Eigen::Affine3f R = create_rotation_matrix(rx, ry, rz);
+  Eigen::Affine3f T_1(Eigen::Translation3f(Eigen::Vector3f(x, y, z)));
 
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = rx; // The angle of rotation in radians
-  tmpM(1, 1) = cos (theta); //x
-  tmpM(1, 2) = -sin(theta);
-  tmpM(2, 1) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = ry;
-  tmpM(0, 0) = cos (theta); //y
-  tmpM(2, 0) = -sin(theta);
-  tmpM(0, 2) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = rz;
-  tmpM(0, 0) = cos (theta); //z
-  tmpM(0, 1) = -sin(theta);
-  tmpM(1, 0) = sin (theta);
-  tmpM(1, 1) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  // move to proper position
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = x;
-  transform(1, 3) = y;
-  transform(2, 3) = z;
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  pcl::transformPointCloud(*cloud, *cloud, (T_1 * R * T_0 * S).matrix());
 
   toPCLPointCloud2(*cloud, triangles->cloud);
   return 0;
@@ -340,20 +307,20 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
   return 0;
 }
 
-int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
-  // index of faces
-  // data = [ f1[p1_index, p2_index, p3_index],
-  //          f2[p1_index, p2_index, p3_index], ...
-  //        ]
-  data.resize(triangles->polygons.size());
-  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-    data[i].resize(3);
-    data[i][0] = triangles->polygons[i].vertices[0];
-    data[i][1] = triangles->polygons[i].vertices[1];
-    data[i][2] = triangles->polygons[i].vertices[2];
-  }
-  return 0;
-}
+// int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
+//   // index of faces
+//   // data = [ f1[p1_index, p2_index, p3_index],
+//   //          f2[p1_index, p2_index, p3_index], ...
+//   //        ]
+//   data.resize(triangles->polygons.size());
+//   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+//     data[i].resize(3);
+//     data[i][0] = triangles->polygons[i].vertices[0];
+//     data[i][1] = triangles->polygons[i].vertices[1];
+//     data[i][2] = triangles->polygons[i].vertices[2];
+//   }
+//   return 0;
+// }
 
 int mesh_len(MeshPtr triangles){
   return triangles->polygons.size();

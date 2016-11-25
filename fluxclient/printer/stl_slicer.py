@@ -545,7 +545,9 @@ class StlSlicer(object):
             byte_order = '<'
         else:
             raise ValueError('wrong stl data type: %s' % str(type(file_data)))
-        points = {}  # key: points, value: index
+
+        points_list = []
+        points_map = {}  # key: points, value: index
         faces = []
         counter = 0
         if cls.ascii_or_binary(file_data, byte_order):
@@ -569,7 +571,7 @@ class StlSlicer(object):
                 v0 = tuple(map(float, (read_until(instl).split()[-3:])))
                 v1 = tuple(map(float, (read_until(instl).split()[-3:])))
                 v2 = tuple(map(float, (read_until(instl).split()[-3:])))
-                right_hand_mormal = normalize(normal([v0, v1, v2]))
+                right_hand_mormal = normal([v0, v1, v2])
                 if dot(right_hand_mormal, read_normal) < 0:
                     v1, v2 = v2, v1
 
@@ -578,11 +580,11 @@ class StlSlicer(object):
 
                 face = []
                 for v in [v0, v1, v2]:
-                    if v not in points:
-                        points[v] = counter
-                        points[counter] = v
+                    if v not in points_map:
+                        points_map[v] = counter
+                        points_list.append(v);
                         counter += 1
-                    face.append(points[v])
+                    face.append(points_map[v])
                 faces.append(face)
 
         else:
@@ -603,17 +605,14 @@ class StlSlicer(object):
 
                 face = []
                 for v in [v0, v1, v2]:
-                    if v not in points:
-                        points[v] = counter
-                        points[counter] = v
+                    if v not in points_map:
+                        points_map[v] = counter
+                        points_list.append(v);
                         counter += 1
-                    face.append(points[v])
+                    face.append(points_map[v])
                 faces.append(face)
                 index += 50
 
-        points_list = []
-        for i in range(counter):
-            points_list.append(points[i])
         return points_list, faces
 
     @classmethod
@@ -660,6 +659,10 @@ class StlSlicerCura(StlSlicer):
         self.now_type = 3
 
     def begin_slicing(self, names, ws, output_type):
+        # End other slicing process once called
+        self.end_slicing()
+
+        logger.info('Begin slicing');
         """
         :param list names: names of stl that need to be sliced
 
@@ -673,6 +676,19 @@ class StlSlicerCura(StlSlicer):
         for n in names:
             if not (n in self.models and n in self.parameter):
                 return False, 'id:%s is not setted yet' % (n)
+        
+        status_list = []
+
+        self.end_slicing()
+        from threading import Thread  # Do not expose thrading in module level
+        p = Thread(target=self.slicing_worker, args=(dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
+        # thread, files, status_list
+        self.working_p.append([p, [], status_list])
+        p.start()
+        return True, ''
+
+    def slicing_worker(self, config, image, ext_metadata, output_type, status_list, names, ws, p_index):
+
         # tmp files
         if platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
@@ -699,22 +715,28 @@ class StlSlicerCura(StlSlicer):
             f = open('temp.transform', 'r+')
             oldTransform = f.read();
             f.close();
-        currentTransform = json.dumps(self.parameter)
+        currentTransform = json.dumps({'p': self.parameter, 'sink': float(self.config['cut_bottom'])})
 
+        status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
         if oldTransform != currentTransform:
+            logger.info('Generating new transformed stl');
             for n in names:
-                points, faces = self.models[n]
-                m_mesh = _printer.MeshObj(points, faces)
+                logger.info('Creating MeshObj %s' % n)
+                m_mesh = _printer.MeshObj(self.models[n][0], self.models[n][1])
+                logger.info('Applying transform %s' % n)
                 m_mesh.apply_transform(self.parameter[n])
                 if m_mesh_merge_null:
                     m_mesh_merge_null = False
                     m_mesh_merge = m_mesh
                 else:
+                    logger.info('Merging %s' % n)
                     m_mesh_merge.add_on(m_mesh)
 
             if float(self.config['cut_bottom']) > 0:
+                status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}');
                 m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
-            
+
+            status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}');
             m_mesh_merge.write_stl(tmp_stl_file)
             # Save new file name for same transform
 
@@ -750,25 +772,17 @@ class StlSlicerCura(StlSlicer):
         command.append('-v')
 
         logger.debug('command: ' + ' '.join(command))
-        self.end_slicing()
 
-        status_list = []
+        status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
+        logger.info('Starting slicing engine');
 
-        status_list.append('{"slice_status": "computing", "message": "Submitting stl to engine", "percentage": 0.05}');
-
-        from threading import Thread  # Do not expose thrading in module level
-        p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
-        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
-        p.start()
-        return True, ''
-
-    def slicing_worker(self, command, config, image, ext_metadata, output_type, status_list, p_index):
         tmp_gcode_file = command[2]
         tmp_slic3r_setting_file = command[4]
         fail_flag = False
         try:
             subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
             self.working_p[p_index].append(subp)
+            
             progress = 0.2
             slic3r_error = False
             slic3r_out = [None, None]
@@ -786,9 +800,11 @@ class StlSlicerCura(StlSlicer):
                         slic3r_out = [5, line]  # errorcode 5
                     # break
             if subp.poll() != 0:
+                logger.info("CuraEngine returned abnormal");
                 fail_flag = True
-        except:
+        except Exception as ex:
             fail_flag = True
+            logger.info("CuraEngine init failed %s" % str(type(ex)));
             slic3r_out = [5, 'CuraEngine fail']  # errorcode 5
 
         if config['flux_raft'] == '1':
@@ -837,6 +853,7 @@ class StlSlicerCura(StlSlicer):
                     status_list.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
+                    logger.info("CuraEngine gcode area too big");
                     fail_flag = True
                     slic3r_out = [6, "gcode area too big"]  # errorcode 6
 
@@ -877,7 +894,7 @@ class StlSlicerCura(StlSlicer):
             except:
                 path = None
             status_list.append([False, slic3r_out, path])
-            logger.info("Appended path to status_list, but failed")
+            logger.info("[cura] Appended path to status_list, but failed")
             ###########################################################
 
             # with open(tmp_slic3r_setting_file, 'rb') as f:
