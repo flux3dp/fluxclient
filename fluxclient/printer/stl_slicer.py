@@ -8,6 +8,7 @@ import os
 from platform import platform
 import logging
 import copy
+import json
 from fluxclient.utils._utils import Tools
 
 from PIL import Image
@@ -238,7 +239,7 @@ class StlSlicer(object):
             temp_dir = None
 
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.stl', delete=False)
-        tmp_stl_file = tmp.name  # store merged stl
+        tmp_stl_file = tmp.name  # store gcode
 
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
@@ -411,7 +412,8 @@ class StlSlicer(object):
                 pass
             for filename in p[1]:
                 try:
-                    os.remove(filename)
+                    if not ".stl" in filename:
+                        os.remove(filename)
                 except:
                     pass
         # self.working_p = []
@@ -680,7 +682,7 @@ class StlSlicerCura(StlSlicer):
             temp_dir = None
 
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.stl', delete=False)
-        tmp_stl_file = tmp.name  # store merged stl
+        tmp_stl_file = tmp.name  # store gcode
 
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
@@ -691,20 +693,53 @@ class StlSlicerCura(StlSlicer):
         m_mesh_merge = _printer.MeshObj([], [])
         m_mesh_merge_null = True
 
-        for n in names:
-            points, faces = self.models[n]
-            m_mesh = _printer.MeshObj(points, faces)
-            m_mesh.apply_transform(self.parameter[n])
-            if m_mesh_merge_null:
-                m_mesh_merge_null = False
-                m_mesh_merge = m_mesh
-            else:
-                m_mesh_merge.add_on(m_mesh)
+        # Open up old transform to confirm
+        oldTransform = ""
+        if os.path.exists('temp.transform'): 
+            f = open('temp.transform', 'r+')
+            oldTransform = f.read();
+            f.close();
+        currentTransform = json.dumps(self.parameter)
 
-        if float(self.config['cut_bottom']) > 0:
-            m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
+        if oldTransform != currentTransform:
+            for n in names:
+                points, faces = self.models[n]
+                m_mesh = _printer.MeshObj(points, faces)
+                m_mesh.apply_transform(self.parameter[n])
+                if m_mesh_merge_null:
+                    m_mesh_merge_null = False
+                    m_mesh_merge = m_mesh
+                else:
+                    m_mesh_merge.add_on(m_mesh)
 
-        m_mesh_merge.write_stl(tmp_stl_file)
+            if float(self.config['cut_bottom']) > 0:
+                m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
+            
+            m_mesh_merge.write_stl(tmp_stl_file)
+            # Save new file name for same transform
+
+            # Read old file name
+            if os.path.exists('stl.cache'): 
+                f = open('stl.cache', 'r+')
+                tmp_stl_file = f.read();
+                f.close();
+                os.remove(tmp_stl_file)
+
+
+            f = open('stl.cache', 'w+')
+            f.write(tmp_stl_file)
+            f.close();
+
+            f = open('temp.transform', 'w+')
+            f.write(currentTransform)
+            f.close();
+        else:
+            # Read old file name
+            f = open('stl.cache', 'r+')
+            tmp_stl_file = f.read();
+            logger.info('Using last stl %s' % tmp_stl_file);
+            f.close();
+
         self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r]
@@ -717,6 +752,9 @@ class StlSlicerCura(StlSlicer):
         self.end_slicing()
 
         status_list = []
+
+        status_list.append('{"slice_status": "computing", "message": "Submitting stl to engine", "percentage": 0.05}');
+
         from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
         self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list])
@@ -762,7 +800,7 @@ class StlSlicerCura(StlSlicer):
 
         if not fail_flag:
             # analying gcode(even transform)
-            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata++", "percentage": 0.99}')
+            status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata++", "percentage": 0.95}')
 
             fcode_output = BytesIO()
             if config['flux_calibration'] == '0':
