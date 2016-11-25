@@ -12,12 +12,12 @@ float FLT_SAFE = -(FLT_MAX/10);
 float MAX_HEIGHT = 230;
 
 
-float atof_with_char_ptr(char *s, char** sptr){
+float atof_with_char_ptr(char *s, char** sptr) {
   bool neg = false;
   float a = 0.0;
   int e = 0;
   int c;
-  if(*s == '-'){
+  if (*s == '-') {
     neg = true;
     s++;
   }
@@ -44,7 +44,7 @@ float atof_with_char_ptr(char *s, char** sptr){
   return neg ? -a : a;
 }
 
-char* substr(const char* str, int start){
+char* substr(const char* str, int start) {
   int len = strlen(str);
   char* newstr = (char*)malloc(len - start + 1); 
   strncpy(newstr, &str[start], len-start);
@@ -52,12 +52,12 @@ char* substr(const char* str, int start){
   return newstr;
 }
 
-void write_char(char** dest, char n){
+void write_char(char** dest, char n) {
   strncpy(*dest, (char*)&n, 1);
   *dest += 1;
 }
 
-void write_float(char** dest, float n){
+void write_float(char** dest, float n) {
   union {
     float a;
     char bytes[4];
@@ -78,13 +78,13 @@ struct token_result{
 
 typedef struct token_result TokenResult;
 
-TokenResult find_next_token(char** ptr){
+TokenResult find_next_token(char** ptr) {
   TokenResult result;
   result.ch = '?';
   result.valid = 0;
   
-  while(true){
-    switch(**ptr){
+  while(true) {
+    switch(**ptr) {
       case 0:
         return result;
       case ' ':
@@ -113,16 +113,16 @@ TokenResult find_next_token(char** ptr){
 }
 
 
-void fillZero(float* nums, int length){
-  for(int i = 0; i < length; i++)
+void fillZero(float* nums, int length) {
+  for (int i = 0; i < length; i++)
     nums[i] = 0.0;
 }
 
-FILE* c_open_file(char* path){
+FILE* c_open_file(char* path) {
   return fopen(path, "r");
 }
 
-FCode* createFCodePtr(){
+FCode* createFCodePtr() {
   FCode* fc = (FCode*)malloc(sizeof(FCode));
 
   fc->tool = 0;
@@ -138,7 +138,6 @@ FCode* createFCodePtr(){
 
   fillZero(fc->max_range,4);
   fillZero(fc->filament,3);
-  fillZero(fc->previous,3);
   fillZero(fc->current_pos,7);
 
   fc->HEAD_TYPE = NULL;
@@ -149,6 +148,7 @@ FCode* createFCodePtr(){
   fc->layer_now = 0;
 
   fc->native_path = new vector< vector<PathVector> >();
+  fc->pause_at_layers = new vector<int>();
 
   PathVector p = {0, 0, MAX_HEIGHT, TYPE_MOVE};
   vector<PathVector> first_layer;
@@ -161,12 +161,10 @@ FCode* createFCodePtr(){
 
   fc->path_type = TYPE_MOVE;
 
-  //TODO:: self.md.update(ext_metadata)
-
   return fc;
 }
 
-int XYZEF(char* str, FCode* fc, float *num){
+int XYZEF(char* str, FCode* fc, float *num) {
     // """
     // Parses data into a list: [F, X, Y, Z, E1, E2, E3]
     // and forms the proper command
@@ -175,10 +173,10 @@ int XYZEF(char* str, FCode* fc, float *num){
     // """
     int command = 0;
 
-    while(true){
+    while(true) {
       TokenResult token = find_next_token(&str);
-      if(!token.valid) break;
-      switch(token.ch){
+      if (!token.valid) break;
+      switch(token.ch) {
         case 'F':
           command |= (1 << 6);
           num[0] = token.f;
@@ -196,7 +194,7 @@ int XYZEF(char* str, FCode* fc, float *num){
           num[3] = token.f * fc->unit;
           break;
         case 'E':
-          command |= (1 << 2 - fc->tool);
+          command |= (1 << (2 - fc->tool));
           num[4 + fc->tool] = token.f * fc->unit;
           break;
         default:
@@ -209,68 +207,70 @@ int XYZEF(char* str, FCode* fc, float *num){
 
 
 
-void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag){
+void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
   // """
   // convert to path list(for visualizing)
   // """
   bool already_split = false;
-  if(fc->is_cura){
+  if (fc->is_cura) {
     already_split = false;
     fc->counter_between_layers++;
     PathType line_type = TYPE_MOVE;
-    if(fc->path_type == TYPE_NEWLAYER){
+    if (fc->path_type == TYPE_NEWLAYER) {
         fc->path_type = TYPE_MOVE;
         fc->record_z = fc->current_pos[3];
         already_split = true;
-        // if(fc->filament[0] == fc->filament_this_layer[0] && self.counter_between_layers > 1){
-        //     self.empty_layer.append(self.layer_now)
-        // }
         fc->counter_between_layers = 0;
         fc->layer_now = fc->native_path->size();
+
         vector<PathVector> vec;
         PathVector p = fc->native_path->back().back();
         p.path_type = fc->path_type;
         vec.push_back(p);
         fc->native_path->push_back(vec);
-        // fc->filament_this_layer = self.filament[:]
     }
-    if(move_flag){
-      if(extrude_flag){
-          if(fc->path_type != TYPE_MOVE){
+    if (move_flag) {
+      if (extrude_flag) {
+          if (fc->path_type != TYPE_MOVE) {
             line_type = fc->path_type;
-          }else{
+          } else {
             line_type = TYPE_PERIMETER;
           }
-      }else{
+      } else {
         line_type = TYPE_MOVE;
       }      
-      PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], fc->path_type};
+      if (line_type == TYPE_PERIMETER && fc->highlight_layer == fc->layer_now) { 
+        line_type = TYPE_HIGHLIGHT;
+      }
+      PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], line_type};
       fc->native_path->back().push_back(p);
     }
+  } else {
+
   }
 }
 
-void analyze_metadata(float* data, char* comment, FCode* fc){
+void analyze_metadata(float* data, char* comment, FCode* fc) {
   //  """
   // input_list: [F, X, Y, Z, E1, E2, E3]
   // compute filament need for each extruder
   // compute time needed
   // """
-  if(data[0]!= FLT_SAFE) fc->current_speed = data[0];
+  if (data[0]!= FLT_SAFE) fc->current_speed = data[0];
 
   float tmp_path = 0;
   bool move_flag = 0;  //record if position change in this command
-  for(int i = 1; i < 4; i++){
-    if(data[i]!= FLT_SAFE){
+  for (int i = 1; i < 4; i++) {
+    if (data[i]!= FLT_SAFE) {
       move_flag = 1;
-      if(fc->absolute){
+      if (fc->absolute) {
         tmp_path += (data[i] - fc->current_pos[i]) * (data[i] - fc->current_pos[i]);
         fc->current_pos[i] = data[i];
-      }else{
+      } else {
         tmp_path += data[i] * data[i];
         fc->current_pos[i] += data[i];
       }
-      if(quick_abs(fc->current_pos[i]) > fc->max_range[i - 1]){
+      if (quick_abs(fc->current_pos[i]) > fc->max_range[i - 1]) {
         fc->max_range[i - 1] = quick_abs(fc->current_pos[i]);
       }
     }
@@ -280,36 +280,35 @@ void analyze_metadata(float* data, char* comment, FCode* fc){
 
   //Find largest R
   float pos_r = (fc->current_pos[1] * fc->current_pos[1]) + (fc->current_pos[2] * fc->current_pos[2]);
-  if(pos_r > fc->max_range[3]){ //compute sqrt later, save power first
+  if (pos_r > fc->max_range[3]) { //compute sqrt later, save power first
     fc->max_range[3] = pos_r;
   }
 
   bool extrude_flag = 0;
 
-  for(int i = 4; i < 7; i++){
-    if(data[i]!= FLT_SAFE){
+  for (int i = 4; i < 7; i++) {
+    if (data[i]!= FLT_SAFE) {
       extrude_flag = 1;
-      if(fc->absolute){
-          fc->filament[i-4] += data[i] - fc->current_pos[i];
-          fc->current_pos[i] = data[i];
-      }else{
-
-          fc->filament[i-4] += data[i];
-          fc->current_pos[i] += data[i];
-        }
+      if (fc->absolute) {
+        fc->filament[i-4] += data[i] - fc->current_pos[i];
+        fc->current_pos[i] = data[i];
+      } else {
+        fc->filament[i-4] += data[i];
+        fc->current_pos[i] += data[i];
+      }
     }
   }
   fc->distance += tmp_path;
   fc->time_need += tmp_path * 60 / (fc->current_speed);
   
-  if(fc->record_path){
+  if (fc->record_path) {
     process_path(fc, comment, move_flag, extrude_flag);
   }
 }
 
 const char* symbols[7] = {"F","X","Y","Z","E1","E2","E3"};
 
-int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
+int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output) {
   // printf("Tool %d\n", fc->tool);
   char* output_ptr = fcode_output;
 
@@ -326,7 +325,7 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
     //comment_list.push(comment);
   }
 
-  if(strlen(line) == 0) return 0;
+  if (strlen(line) == 0) return 0;
 
   char* cmd = line;
 
@@ -345,29 +344,62 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
   char* data_output;
   TokenResult token;
 
-  if(cmd_type == 'G'){
-    switch(cmd_no){
+  if (cmd_type == 'G') {
+    switch(cmd_no) {
       case 0:
       case 1:
         subcommand = XYZEF(cmd, fc, data);
         //data: [F, X, Y, Z, E1, E2, E3]
 
-        //TODO fix g92 offset
-        if(fc->absolute){
-          for(int i = 0; i < 7; i++){
-            if(data[i]!=FLT_SAFE){
+        // TODO fix g92 offset ? to be tested
+        if (fc->absolute) {
+          for (int i = 0; i < 7; i++) {
+            if (data[i]!=FLT_SAFE) {
               data[i] += fc->G92_delta[i];
             }
           }
         }
 
+        // Auto pause at layers
+        if (find(fc->pause_at_layers->begin(), fc->pause_at_layers->end(), fc->layer_now) != fc->pause_at_layers->end()) {
+            if (fc->highlight_layer != fc->layer_now) {
+                fprintf(stderr, "[G2FCPP-EXT] Auto pause at %d\n", fc->layer_now);
+                fc->highlight_layer = fc->layer_now;
+                // Retract filament 1mm F2000
+                write_char(&output_ptr, 128 | (1 << 6) | (1 << 2));
+                write_float(&output_ptr, 2000);
+                write_float(&output_ptr, -1 + fc->current_pos[3] + fc->G92_delta[3]);
+                // Lift z height 5mm
+                write_char(&output_ptr, 128 | (1 << 3) );
+                write_float(&output_ptr, 5 + fc->current_pos[2] + fc->G92_delta[2]);
+
+                // Extrude a little and retract
+                write_char(&output_ptr, 128 | (1 << 2) );
+                write_float(&output_ptr, 3 + fc->current_pos[3] + fc->G92_delta[3]);
+                write_char(&output_ptr, 128 | (1 << 2) );
+                write_float(&output_ptr, -5 + fc->current_pos[3] + fc->G92_delta[3]);
+                // Pause
+                write_char(&output_ptr, 5);
+
+                // Push down 5mm to normal z height
+                write_float(&output_ptr, fc->current_pos[2] + fc->G92_delta[2]);
+            }
+        }
         
+        // Overwrite following layer temperature
+        if (fc->layer_now == 2 && fc->printing_temperature > 50 && !fc->is_backed_to_normal_temperature){
+            write_char(&output_ptr, 16);
+            write_float(&output_ptr, fc->printing_temperature);
+            fprintf(stderr, "[G2FCPP-EXT] Setting toolhead temperature back to normal # %d to %f\n", fc->layer_now, fc->printing_temperature);
+            fc->printing_temperature = true;
+        }
+
         analyze_metadata(data, comment, fc);
 
         command_code = subcommand | 128;
         write_char(&output_ptr, command_code);
-        for(int i = 0; i < 7; i++){
-          if(data[i]!=FLT_SAFE){
+        for (int i = 0; i < 7; i++) {
+          if (data[i]!=FLT_SAFE) {
             write_float(&output_ptr, data[i]);
           }
         }
@@ -378,10 +410,10 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
       case 4: //Pause for a while
         write_char(&output_ptr, 4);
         token = find_next_token(&cmd);
-        if(token.valid){
+        if (token.valid) {
           float ms = (token.ch == 'S') ? token.f * 1000 : token.f;
           token = find_next_token(&cmd);
-          if(ms < 0){
+          if (ms < 0) {
             ms = 0;
           }
           write_float(&output_ptr, ms); 
@@ -409,21 +441,21 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
         break;
       case 92: //Set Position
         subcommand = XYZEF(cmd, fc, data);
-        if(subcommand == 0){
-          for(int i = 0; i < 7; i++){
+        if (subcommand == 0) {
+          for (int i = 0; i < 7; i++) {
             fc->G92_delta[i] = 0.0;
           }
-        }else{
-          for(int i = 0; i < 7; i++){
-            if(data[i]!=FLT_SAFE){
+        } else {
+          for (int i = 0; i < 7; i++) {
+            if (data[i]!=FLT_SAFE) {
               fc->G92_delta[i] = fc->current_pos[i] - data[i];
             }
           }
         }
         break;
     }
-  }else if(cmd_type == 'M'){
-    switch(cmd_no){
+  } else if (cmd_type == 'M') {
+    switch(cmd_no) {
       case 25: // Pause
       case 0: //Pause
         write_char(&output_ptr, 5);
@@ -437,18 +469,18 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
       case 104: //Temp
       case 109: //Temp
         command_code = 16;
-        if(cmd_no == 109) command_code |= (1 << 3);
-        while(true){
+        if (cmd_no == 109) command_code |= (1 << 3);
+        while(true) {
           token = find_next_token(&cmd);
-          if(!token.valid) break;
-          if(token.ch == 'S'){
+          if (!token.valid) break;
+          if (token.ch == 'S') {
             temperature = token.f;
-          }else if(token.ch == 'T'){
+          } else if (token.ch == 'T') {
             fc->tool = (int)token.f;
           }
         }
 
-        if(fc->tool > 7 || fc->tool <0){
+        if (fc->tool > 7 || fc->tool <0) {
           //Too many extruder!
           break;
         }
@@ -460,13 +492,13 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
       case 106: //Fan
       case 107: //Fan
         write_char(&output_ptr, 48 | 0); // TODO: change this part, consder muti-fan control protocol
-        if(cmd_no == 107){
+        if (cmd_no == 107) {
           write_float(&output_ptr, 0.0);
-        }else if(cmd_no == 106){
+        } else if (cmd_no == 106) {
             token = find_next_token(&cmd);
-            if(token.valid){
+            if (token.valid) {
               write_float(&output_ptr, token.f / 255.0);
-            }else{
+            } else {
               write_float(&output_ptr, 1.0);
             }
         }
@@ -476,8 +508,8 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
         break;
     }
 
-  }else if(cmd_type == 'X'){
-    switch(cmd_no){
+  } else if (cmd_type == 'X') {
+    switch(cmd_no) {
       case 2:
         write_char(&output_ptr, 32);
         token = find_next_token(&cmd);
@@ -486,8 +518,8 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
         fc->HEAD_TYPE = "LASER";
         break;
     }
-  }else if(cmd_type == 'T'){
-    switch(cmd_no){
+  } else if (cmd_type == 'T') {
+    switch(cmd_no) {
       case 0:
         fc->tool = 0;
         break;
@@ -495,24 +527,24 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
         fc->tool = 1;
         break;
     }
-  }else if(comment!=NULL){
+  } else if (comment!=NULL) {
     char* cura_comment = comment;
-    if(strlen(cura_comment)>6) cura_comment = cura_comment + 6; 
-    if(strstr(comment, "FILL") != NULL){
+    if (strlen(cura_comment)>6) cura_comment = cura_comment + 6; 
+    if (strstr(comment, "FILL") != NULL) {
         fc->path_type = TYPE_INFILL;
-    }else if(strstr(comment, "SUPPORT") != NULL){
+    } else if (strstr(comment, "SUPPORT") != NULL) {
         fc->path_type = TYPE_SUPPORT;
-    }else if(strstr(comment, "LAYER") != NULL){
+    } else if (strstr(comment, "LAYER") != NULL) {
         fc->path_type = TYPE_NEWLAYER;
-    }else if(strstr(comment, "WALL-OUTER") != NULL){
+    } else if (strstr(comment, "WALL-OUTER") != NULL) {
         fc->path_type = TYPE_PERIMETER;
-    }else if(strstr(comment, "WALL-INNER") != NULL){
+    } else if (strstr(comment, "WALL-INNER") != NULL) {
         fc->path_type = TYPE_INNERWALL;
-    }else if(strstr(comment, "RAFT") != NULL){
+    } else if (strstr(comment, "RAFT") != NULL) {
         fc->path_type = TYPE_RAFT;
-    }else if(strstr(comment, "SKIRT") != NULL){
+    } else if (strstr(comment, "SKIRT") != NULL) {
         fc->path_type = TYPE_SKIRT;
-    }else if(strstr(comment, "SKIN") != NULL){
+    } else if (strstr(comment, "SKIN") != NULL) {
         fc->path_type = TYPE_SKIN;
     } 
   }
@@ -521,54 +553,54 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output){
   return (int)(output_ptr - fcode_output);
 }
 
-// PathVector createPathPoint(float x, float y, float z, PathType t){
+// PathVector createPathPoint(float x, float y, float z, PathType t) {
 
 // }
 
-void trim_ends_cpp(vector< vector< PathVector > >* path){
+void trim_ends_cpp(vector< vector< PathVector > >* path) {
     // """
     // trim the moving(non-extruding) part in path's both end
     // """
-    fprintf(stderr, "Start trimming\n");
-    if(path->size()<1) fprintf(stderr, "Empty path!?\n");
-    vector<PathVector>& last_layer = path->back();
-    vector<PathVector>& first_layer = path->front();
+    // fprintf(stderr, "Start trimming\n");
+    // if (path->size()<1) fprintf(stderr, "Empty path!?\n");
+    // vector<PathVector>& last_layer = path->back();
+    // vector<PathVector>& first_layer = path->front();
 
-    // while(true){
-    //   if(last_layer.size()>=2){
-    //     if(last_layer.back().path_type == TYPE_MOVE){
+    // while(true) {
+    //   if (last_layer.size()>=2) {
+    //     if (last_layer.back().path_type == TYPE_MOVE) {
     //       last_layer.pop_back();
-    //     }else{
+    //     } else {
     //       break;
     //     }
-    //   }else if(last_layer.size()){
+    //   } else if (last_layer.size()) {
     //     last_layer.pop_back();
-    //   }else{
+    //   } else {
     //     break;
     //   }
     // }
 
-    fprintf(stderr, "End of trimming back\n");
+    //fprintf(stderr, "End of trimming back\n");
     
-    // while(true){
-    //   if(first_layer.size()>=2){
-    //     if(first_layer.front().path_type == TYPE_MOVE){
+    // while(true) {
+    //   if (first_layer.size()>=2) {
+    //     if (first_layer.front().path_type == TYPE_MOVE) {
     //       first_layer.erase(first_layer.begin());
-    //     }else{
+    //     } else {
     //       break;
     //     }
-    //   }else if(first_layer.size()){
+    //   } else if (first_layer.size()) {
     //     first_layer.pop_back();
-    //   }else{
+    //   } else {
     //     break;
     //   }
     // }
 
-    fprintf(stderr, "End of trimming front\n");
+    // fprintf(stderr, "End of trimming front\n");
 }
 
 //For slic3r..
-    // }else{
+    // } else {
 
     //     already_split = False
     //     self.counter_between_layers += 1

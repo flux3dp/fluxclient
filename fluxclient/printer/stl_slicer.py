@@ -202,10 +202,10 @@ class StlSlicer(object):
         return bad_lines
 
     def sub_convert_path(self):
-        print("Subconvert_path")
+        logger.info("Converting path to json")
         m_GcodeToFcode = GcodeToFcodeCpp()
         self.path_js = Tools().path_to_js(self.path).decode()
-        print("End of subconvert")
+        logger.info("Converted path to json")
         self.T = None
 
     def get_path(self):
@@ -294,6 +294,7 @@ class StlSlicer(object):
         progress = 0.2
         slic3r_error = False
         slic3r_out = [None, None]
+
         while subp.poll() is None:
             line = subp.stdout.readline().strip()
             # subp.stdout.read()
@@ -307,7 +308,11 @@ class StlSlicer(object):
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
                 slic3r_out = [5, line]  # errorcode 5
-        if subp.poll() != 0:
+        
+        subp_returned = subp.poll()
+
+        if subp_returned!= 0:
+            raise('Process return exit code %d ' % subp_returned)
             fail_flag = True
 
         if config['flux_raft'] == '1':
@@ -383,6 +388,7 @@ class StlSlicer(object):
 
             # # clean up tmp files
             fcode_output.close()
+
         if fail_flag:
             try:
                 path
@@ -832,7 +838,7 @@ class StlSlicerCura(StlSlicer):
             except:
                 path = None
             status_list.append([False, slic3r_out, path])
-            print("Appended path to status_list, but failed")
+            logger.info("Appended path to status_list, but failed")
             ###########################################################
 
             # with open(tmp_slic3r_setting_file, 'rb') as f:
@@ -841,7 +847,7 @@ class StlSlicerCura(StlSlicer):
             
             ###########################################################
         else:
-            print("Appended path to status_list")
+            logger.info("Appended path to status_list")
             status_list.append([output, metadata, path])
 
     @classmethod

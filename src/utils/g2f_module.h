@@ -20,7 +20,8 @@ typedef enum{
   TYPE_SKIRT,
   TYPE_INNERWALL,
   TYPE_RAFT,
-  TYPE_SKIN
+  TYPE_SKIN,
+  TYPE_HIGHLIGHT
 } PathType;
 
 typedef struct{
@@ -39,22 +40,20 @@ typedef struct{
   float distance;
   float max_range[4];
   float filament[3];
-  float previous[3];
   float current_pos[7];
+  float printing_temperature;
   char* HEAD_TYPE;
   int layer_now;
- 
   PathType path_type;
-  char is_cura;
   vector< vector<PathVector> >* native_path;
-
+  vector<int>* pause_at_layers;
   int counter_between_layers;
   float record_z;
-
-  char record_path;
-
   int index;
-  //image
+	int highlight_layer;
+  char is_cura;
+  char record_path;
+  char is_backed_to_normal_temperature;
   //config = None  # config dict(given from fluxstudio)
 
 } FCode;
