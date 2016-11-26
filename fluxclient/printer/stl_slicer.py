@@ -781,7 +781,7 @@ class StlSlicerCura(StlSlicer):
             logger.info('Using last stl %s' % tmp_stl_file);
             f.close();
 
-        logger.info('Writing ini');
+        logger.info('Writing ini to %s' % tmp_slic3r_setting_file);
         self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r]
@@ -1017,7 +1017,9 @@ class StlSlicerCura(StlSlicer):
         # speed
         new_content['moveSpeed'] = content['travel_speed']
 
-        new_content['printSpeed'] = content['infill_speed']
+        #support speed
+        new_content['printSpeed'] = content['support_material_speed']
+
         new_content['inset0Speed'] = content['external_perimeter_speed']  # WALL-OUTER
         new_content['insetXSpeed'] = content['perimeter_speed']  # WALL-INNER
 
@@ -1027,10 +1029,11 @@ class StlSlicerCura(StlSlicer):
         new_content['fanSpeedMin'] = content['min_fan_speed'].rstrip('%')
         new_content['fanSpeedMax'] = content['max_fan_speed'].rstrip('%')
 
+        #speed top bottom
         if fill_density == 100:
             new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
         else:
-            new_content['skinSpeed'] = content['infill_speed']
+            new_content['skinSpeed'] = content['solid_infill_speed']
 
         new_content['initialLayerSpeed'] = content['first_layer_speed']
 
