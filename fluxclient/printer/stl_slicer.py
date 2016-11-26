@@ -1046,7 +1046,7 @@ class StlSlicerCura(StlSlicer):
 
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
-        new_content['filamentFlow'] = 96
+        new_content['filamentFlow'] = 97
         new_content['minimalLayerTime'] = int(content['slowdown_below_layer_time'])
 
         new_content['startCode'] = 'M109 S{}\n'.format(content['first_layer_temperature']) + content['start_gcode']
