@@ -212,42 +212,94 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
   // """
   // convert to path list(for visualizing)
   // """
-  bool already_split = false;
   if (fc->is_cura) {
-    already_split = false;
+    // Cura
     fc->counter_between_layers++;
     PathType line_type = TYPE_MOVE;
     if (fc->path_type == TYPE_NEWLAYER) {
         fc->path_type = TYPE_MOVE;
         fc->record_z = fc->current_pos[3];
-        already_split = true;
         fc->counter_between_layers = 0;
         fc->layer_now = fc->native_path->size();
 
-        vector<PathVector> vec;
+        vector<PathVector> new_layer;
         PathVector p = fc->native_path->back().back();
         p.path_type = fc->path_type;
-        vec.push_back(p);
-        fc->native_path->push_back(vec);
+        new_layer.push_back(p);
+        fc->native_path->push_back(new_layer);
     }
     if (move_flag) {
-      if (extrude_flag) {
-          if (fc->path_type != TYPE_MOVE) {
-            line_type = fc->path_type;
-          } else {
-            line_type = TYPE_PERIMETER;
-          }
-      } else {
-        line_type = TYPE_MOVE;
-      }      
-      if (line_type == TYPE_PERIMETER && fc->highlight_layer == fc->layer_now) { 
-        line_type = TYPE_HIGHLIGHT;
-      }
-      PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], line_type};
-      fc->native_path->back().push_back(p);
+        if (extrude_flag) {
+            if (fc->path_type != TYPE_MOVE) {
+              line_type = fc->path_type;
+            } else {
+              line_type = TYPE_PERIMETER;
+            }
+        } else {
+          line_type = TYPE_MOVE;
+        }      
+        if (line_type == TYPE_PERIMETER && fc->highlight_layer == fc->layer_now) { 
+          line_type = TYPE_HIGHLIGHT;
+        }
+        PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], line_type};
+        fc->native_path->back().push_back(p);
     }
   } else {
+    bool splitted = false;
+    fc->counter_between_layers++;
+    PathType line_type = TYPE_MOVE;
 
+    if (move_flag) {
+        if (strstr(comment, "infill")) {
+            line_type = TYPE_INFILL;
+        } else if(strstr(comment, "support")) {
+            line_type = TYPE_SUPPORT;
+        } else if(strstr(comment,"brim")) {
+            line_type = TYPE_SUPPORT;
+        } else if(strstr(comment,"move")) {
+            line_type = TYPE_MOVE;
+            if(strstr(comment,"to next layer")){
+                fc->record_z = fc->current_pos[2];
+                splitted = true;
+
+                fc->counter_between_layers = 0;
+                fc->layer_now = fc->native_path->size();
+
+                vector<PathVector> new_layer;
+                PathVector p = fc->native_path->back().back();
+                p.path_type = fc->path_type;
+                new_layer.push_back(p);
+                fc->native_path->push_back(new_layer);
+            }
+        } else if(strstr(comment,"perimeter")) {
+            line_type = TYPE_PERIMETER;
+        } else if(strstr(comment,"skirt")) {
+            line_type = TYPE_SKIRT;
+        } else if(strstr(comment,"draw")) {
+            line_type = TYPE_INFILL;
+        }else {
+            line_type = extrude_flag ? TYPE_PERIMETER : TYPE_MOVE;
+        }
+        
+        if (line_type == TYPE_PERIMETER && fc->highlight_layer == fc->layer_now) { 
+          line_type = TYPE_HIGHLIGHT;
+        }
+        PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], line_type};
+        fc->native_path->back().push_back(p);
+        
+        if (strlen(comment) == 0 && !splitted && fc->current_pos[2] - fc->record_z > 0.3) {
+          // 0.3 is the max layer height in fluxstudio
+          vector<PathVector> new_layer;
+          PathVector p = fc->native_path->back().back();
+          p.path_type = fc->path_type;
+          new_layer.push_back(p);
+          fc->native_path->push_back(new_layer);
+
+          fc->record_z = fc->current_pos[2];
+          fc->counter_between_layers = 0;
+          fc->layer_now = fc->native_path->size();
+      }
+    }
   }
 }
 
@@ -583,46 +635,3 @@ void trim_ends_cpp(vector< vector< PathVector > >* path) {
 
     // fprintf(stderr, "End of trimming front\n");
 }
-
-//For slic3r..
-    // } else {
-
-    //     already_split = False
-    //     self.counter_between_layers += 1
-    //     if move_flag:
-    //         if 'infill' in comment:
-    //             line_type = POINT_TYPE['infill']
-    //         elif 'support' in comment:
-    //             line_type = POINT_TYPE['support']
-    //         elif 'brim' in comment:
-    //             line_type = POINT_TYPE['brim']
-    //         elif 'move' in comment:
-    //             line_type = POINT_TYPE['move']
-    //             if 'to next layer' in comment:
-    //                 self.record_z = self.current_pos[2]
-    //                 already_split = True
-    //                 if self.filament == self.filament_this_layer and self.counter_between_layers > 1:
-    //                     self.empty_layer.append(self.layer_now)
-    //                 tmp = findall('[0-9]+', comment)[-1]
-    //                 self.counter_between_layers = 0
-    //                 self.layer_now = int(tmp)
-    //                 self.path.append([self.path[-1][-1][:3] + [line_type]])
-    //                 self.filament_this_layer = self.filament[:]
-    //         elif 'perimeter' in comment:
-    //             line_type = POINT_TYPE['perimeter']
-    //         elif 'skirt' in comment:
-    //             line_type = POINT_TYPE['skirt']
-    //         elif 'draw' in comment:
-    //             line_type = POINT_TYPE['infill']
-    //         else:   # no data in comment
-    //             if extrude_flag:
-    //                 line_type = POINT_TYPE['perimeter']
-    //             else:
-    //                 line_type = POINT_TYPE['move']
-
-    //         self.path[-1].append(self.current_pos[:3] + [line_type])
-
-    //         if len(comment) == 0 and not already_split and self.current_pos[2] - self.record_z > 0.3:  # 0.3 is the max layer height in fluxstudio
-    //             self.path.append([self.path[-1][-1][:3] + [line_type]])
-    //             self.record_z = self.current_pos[2]
-    //             self.layer_now = len(self.path)
