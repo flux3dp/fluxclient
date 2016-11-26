@@ -4,7 +4,7 @@ from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
 import subprocess
 import tempfile
-import os
+import os, sys
 from platform import platform
 import logging
 import copy
@@ -313,7 +313,7 @@ class StlSlicer(object):
         subp_returned = subp.poll()
 
         if subp_returned!= 0:
-            raise('Process return exit code %d ' % subp_returned)
+            logger.info('Slic3r Process return exit code %d ' % subp_returned)
             fail_flag = True
 
         if config['flux_raft'] == '1':
@@ -717,7 +717,11 @@ class StlSlicerCura(StlSlicer):
             f = open('temp.transform', 'r+')
             oldTransform = f.read();
             f.close();
-        currentTransform = json.dumps({'p': self.parameter, 'sink': float(self.config['cut_bottom'])})
+
+        params = {}
+        for n in names:
+            params[n] = self.parameter[n]
+        currentTransform = json.dumps({'p': params, 'sink': float(self.config['cut_bottom'])})
 
         status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
         
@@ -821,17 +825,18 @@ class StlSlicerCura(StlSlicer):
                             slic3r_error = True
                         slic3r_out = [5, line]  # errorcode 5
                     # break
-            if subp.poll() != 0:
-                chunck = subp.stderr.readline()
-                for line in chunck.split('\n'):
-                    line = line.rstrip()
-                    if line:
-                        logger.info(line)
-                logger.info("CuraEngine returned abnormal");
+            cura_result = subp.poll()
+            if cura_result != 0:
+                logger.info("CuraEngine returned abnormal %d" % cura_result);
                 fail_flag = True
         except Exception as ex:
             fail_flag = True
             logger.info("CuraEngine init failed %s" % str(type(ex)));
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.info("*** print_exception:")
+            traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                    limit=10, file=sys.stdout)
+
             slic3r_out = [5, 'CuraEngine fail']  # errorcode 5
 
         if config['flux_raft'] == '1':
