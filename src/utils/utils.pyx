@@ -245,6 +245,7 @@ cdef class GcodeToFcodeCpp:
                 if auto_pause_layer.isdigit():
                     fc.pause_at_layers.push_back(int(auto_pause_layer))
             fc.printing_temperature = float(self.config.get('temperature', '0'))
+            logger.info("[G2FCPP] FCode Printing Temperature = " + str(fc.printing_temperature))
 
         fc.is_cura = self.engine == 'cura'
         fc.tool = 0;

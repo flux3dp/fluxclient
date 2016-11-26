@@ -158,6 +158,7 @@ FCode* createFCodePtr() {
 
   fc->counter_between_layers = 0;
   fc->record_z = 0;
+  fc->is_backed_to_normal_temperature = 0;
 
   fc->path_type = TYPE_MOVE;
 
@@ -365,24 +366,8 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output) {
             if (fc->highlight_layer != fc->layer_now) {
                 fprintf(stderr, "[G2FCPP-EXT] Auto pause at %d\n", fc->layer_now);
                 fc->highlight_layer = fc->layer_now;
-                // Retract filament 1mm F2000
-                write_char(&output_ptr, 128 | (1 << 6) | (1 << 2));
-                write_float(&output_ptr, 2000);
-                write_float(&output_ptr, -1 + fc->current_pos[3] + fc->G92_delta[3]);
-                // Lift z height 5mm
-                write_char(&output_ptr, 128 | (1 << 3) );
-                write_float(&output_ptr, 5 + fc->current_pos[2] + fc->G92_delta[2]);
-
-                // Extrude a little and retract
-                write_char(&output_ptr, 128 | (1 << 2) );
-                write_float(&output_ptr, 3 + fc->current_pos[3] + fc->G92_delta[3]);
-                write_char(&output_ptr, 128 | (1 << 2) );
-                write_float(&output_ptr, -5 + fc->current_pos[3] + fc->G92_delta[3]);
-                // Pause
+                
                 write_char(&output_ptr, 5);
-
-                // Push down 5mm to normal z height
-                write_float(&output_ptr, fc->current_pos[2] + fc->G92_delta[2]);
             }
         }
         
@@ -391,7 +376,7 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output) {
             write_char(&output_ptr, 16);
             write_float(&output_ptr, fc->printing_temperature);
             fprintf(stderr, "[G2FCPP-EXT] Setting toolhead temperature back to normal # %d to %f\n", fc->layer_now, fc->printing_temperature);
-            fc->printing_temperature = true;
+            fc->is_backed_to_normal_temperature = true;
         }
 
         analyze_metadata(data, comment, fc);
