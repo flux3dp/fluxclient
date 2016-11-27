@@ -48,6 +48,19 @@ def normal(v):
     b = [v[2][0] - v[0][0], v[2][1] - v[0][1], v[2][2] - v[0][2]]  # vector v0 -> v2
     return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]  # cross product -> surface normal vector
 
+def normalX(v0, v1, v2):
+    """
+      compute normal of a vangle surface,
+      reduce allocation version
+    """
+    return [(v1[1]-v0[1])*(v2[2]-v0[2])-(v1[2]-v0[2])*(v2[1]-v0[1]),(v1[2]-v0[2])*(v2[0]-v0[0])-(v1[0]-v0[0])*(v2[2]-v0[2]),(v1[0]-v0[0])*(v2[1]-v0[1])-(v1[1]-v0[1])*(v2[0]-v0[0])]  # cross product -> surface normal vector
+
+def dotX(v0, v1, v2, b):
+    """
+    3d dot vector_a in args, vector_b
+    return float
+    """
+    return ( (v1[1]-v0[1])*(v2[2]-v0[2])-(v1[2]-v0[2])*(v2[1]-v0[1])) * b[0] + ((v1[2]-v0[2])*(v2[0]-v0[0])-(v1[0]-v0[0])*(v2[2]-v0[2])) * b[1] + ((v1[0]-v0[0])*(v2[1]-v0[1])-(v1[1]-v0[1])*(v2[0]-v0[0])) * b[2]
 
 def point_dis_sq(a, b):
     return sum((a[i] - b[i]) ** 2 for i in range(3))

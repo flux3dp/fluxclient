@@ -20,7 +20,7 @@ from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.utils._utils import GcodeToFcodeCpp
-from fluxclient.scanner.tools import dot, normal, normalize
+from fluxclient.scanner.tools import dot, normal, normalize, dotX, normalX
 from fluxclient.printer import ini_string, ini_constraint, ignore, ini_flux_params
 from fluxclient.printer.flux_raft import Raft
 
@@ -577,8 +577,7 @@ class StlSlicer(object):
                 v0 = tuple(map(float, (read_until(instl).split()[-3:])))
                 v1 = tuple(map(float, (read_until(instl).split()[-3:])))
                 v2 = tuple(map(float, (read_until(instl).split()[-3:])))
-                right_hand_mormal = normal([v0, v1, v2])
-                if dot(right_hand_mormal, read_normal) < 0:
+                if dotX(v0, v1, v2, read_normal) < 0:
                     v1, v2 = v2, v1
 
                 read_until(instl)  # read in: "endloop"
@@ -614,8 +613,7 @@ class StlSlicer(object):
                 v0 = unpack(patten, file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
                 v1 = unpack(patten, file_data[index + (4 * 3 * 2):index + (4 * 3 * 3)])
                 v2 = unpack(patten, file_data[index + (4 * 3 * 3):index + (4 * 3 * 4)])
-                right_hand_mormal = normalize(normal([v0, v1, v2]))
-                if dot(right_hand_mormal, read_normal) < 0:
+                if dotX(v0, v1, v2, read_normal) < 0:
                     v1, v2 = v2, v1
 
                 for v in [v0, v1, v2]:

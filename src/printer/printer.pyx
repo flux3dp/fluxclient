@@ -1,5 +1,6 @@
 import cython
 from libcpp.vector cimport vector
+import logging
 
 logger = logging.getLogger(__name__)
 
