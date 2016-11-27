@@ -12,8 +12,24 @@ MeshPtr createMeshPtr(){
   return mesh;
 }
 
-int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+CloudPtr createCloudPtr(std::vector< std::vector<float> > points){
+  CloudPtr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+  for (uint32_t i = 0; i < points.size(); i += 1){
+    pcl::PointXYZ p;
+    p.x = points[i][0];
+    p.y = points[i][1];
+    p.z = points[i][2];
+    cloud -> push_back(p);
+  }
+  return cloud;
+}
+
+int setCloud(MeshPtr triangles, CloudPtr cloud){
+  toPCLPointCloud2(*cloud, triangles->cloud);
+}
+
+int setPoints(MeshPtr triangles, std::vector< std::vector<float> > points){
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   for (uint32_t i = 0; i < points.size(); i += 1){
     pcl::PointXYZ p;
     p.x = points[i][0];
@@ -23,7 +39,7 @@ int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
   }
 
   toPCLPointCloud2(*cloud, triangles->cloud);
-  return 0;
+  delete cloud;
 }
 
 int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
@@ -37,11 +53,11 @@ int push_backFace(MeshPtr triangles, int v0, int v1, int v2){
 }
 
 int add_on(MeshPtr base, MeshPtr add_on_mesh){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(base->cloud, *cloud);
   int size_to_add_on = cloud->size();
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud2 = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(add_on_mesh->cloud, *cloud2);
 
     // add cloud together
@@ -58,11 +74,13 @@ int add_on(MeshPtr base, MeshPtr add_on_mesh){
   }
 
   toPCLPointCloud2(*cloud, base->cloud);
+  delete cloud;
+  delete cloud2;
   return 0;
 }
 
 int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(triangles->cloud, *cloud);
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
@@ -96,11 +114,11 @@ int bounding_box(MeshPtr triangles, std::vector<float> &b_box){
   b_box[3] = maxx;
   b_box[4] = maxy;
   b_box[5] = maxz;
-
+  delete cloud;
   return 0;
 }
 
-int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &b_box){
+int bounding_box(pcl::PointCloud<pcl::PointXYZ>* cloud, std::vector<float> &b_box){
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
   float maxx = -1 * std::numeric_limits<double>::infinity(), maxy = -1 * std::numeric_limits<double>::infinity(), maxz = -1 * std::numeric_limits<double>::infinity();
 
@@ -134,74 +152,42 @@ int bounding_box(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<float> &
   b_box[5] = maxz;
 
   return 0;
+}
+
+Eigen::Affine3f create_rotation_matrix(float ax, float ay, float az) {
+  Eigen::Affine3f rx =
+      Eigen::Affine3f(Eigen::AngleAxisf(ax, Eigen::Vector3f(1, 0, 0)));
+  Eigen::Affine3f ry =
+      Eigen::Affine3f(Eigen::AngleAxisf(ay, Eigen::Vector3f(0, 1, 0)));
+  Eigen::Affine3f rz =
+      Eigen::Affine3f(Eigen::AngleAxisf(az, Eigen::Vector3f(0, 0, 1)));
+  return rz * ry * rx;
 }
 
 int apply_transform(MeshPtr triangles, float x, float y, float z, float rx, float ry, float rz, float sc_x, float sc_y, float sc_z){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(triangles->cloud, *cloud);
-
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-  Eigen::Matrix4f tmpM = Eigen::Matrix4f::Identity();
-  float theta; // The angle of rotation in radians
 
   std::vector<float> b_box;
   b_box.resize(3);
   std::vector<float> center;
   center.resize(3);
 
-  // scale
-  for (uint32_t i = 0; i < cloud->size(); i += 1){
-    (*cloud)[i].x *= sc_x;
-    (*cloud)[i].y *= sc_y;
-    (*cloud)[i].z *= sc_z;
-  }
-
   // move to origin
   bounding_box(cloud, b_box);
   for (int i = 0; i < 3; i += 1){
     center[i] = (b_box[i] + b_box[i + 3]) / 2;
   }
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = -center[0];
-  transform(1, 3) = -center[1];
-  transform(2, 3) = -center[2];
-  pcl::transformPointCloud(*cloud, *cloud, transform);
 
-  // rotate
-  transform = Eigen::Matrix4f::Identity();
+  Eigen::Affine3f S(Eigen::Scaling(Eigen::Vector3f(sc_x, sc_y, sc_z)));
+  Eigen::Affine3f T_0(Eigen::Translation3f(Eigen::Vector3f(-center[0] * sc_x, -center[1] * sc_y, -center[2] * sc_z)));
+  Eigen::Affine3f R = create_rotation_matrix(rx, ry, rz);
+  Eigen::Affine3f T_1(Eigen::Translation3f(Eigen::Vector3f(x, y, z)));
 
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = rx; // The angle of rotation in radians
-  tmpM(1, 1) = cos (theta); //x
-  tmpM(1, 2) = -sin(theta);
-  tmpM(2, 1) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = ry;
-  tmpM(0, 0) = cos (theta); //y
-  tmpM(2, 0) = -sin(theta);
-  tmpM(0, 2) = sin (theta);
-  tmpM(2, 2) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  tmpM = Eigen::Matrix4f::Identity();
-  theta = rz;
-  tmpM(0, 0) = cos (theta); //z
-  tmpM(0, 1) = -sin(theta);
-  tmpM(1, 0) = sin (theta);
-  tmpM(1, 1) = cos (theta);
-  pcl::transformPointCloud(*cloud, *cloud, tmpM);
-
-  // move to proper position
-  transform = Eigen::Matrix4f::Identity();
-  transform(0, 3) = x;
-  transform(1, 3) = y;
-  transform(2, 3) = z;
-  pcl::transformPointCloud(*cloud, *cloud, transform);
+  pcl::transformPointCloud(*cloud, *cloud, (T_1 * R * T_0 * S).matrix());
 
   toPCLPointCloud2(*cloud, triangles->cloud);
+  delete cloud;
   return 0;
 }
 
@@ -221,7 +207,7 @@ int find_intersect(pcl::PointXYZ &a, pcl::PointXYZ &b, float floor_v, pcl::Point
 
 
 int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(input_mesh->cloud, *cloud);
 
   pcl::Vertices v;
@@ -297,6 +283,7 @@ int cut(MeshPtr input_mesh, MeshPtr out_mesh, float floor_v){
   }
 
   toPCLPointCloud2(*cloud, out_mesh->cloud);
+  delete cloud;
   return 0;
 }
 
@@ -308,7 +295,7 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
   //           t3[p1[x, y, z], p2[x, y, z], p3[x, y, z]],
   //             ...
   //       ]
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   fromPCLPointCloud2(triangles->cloud, *cloud);
 
   int v0, v1, v2;
@@ -337,24 +324,88 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
     data[i][2][2] = (*cloud)[v2].z;
       // std::cout << "  polygons[" << i << "]: " <<std::endl;
   }
+  delete cloud;
   return 0;
 }
 
-int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
-  // index of faces
-  // data = [ f1[p1_index, p2_index, p3_index],
-  //          f2[p1_index, p2_index, p3_index], ...
-  //        ]
-  data.resize(triangles->polygons.size());
-  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-    data[i].resize(3);
-    data[i][0] = triangles->polygons[i].vertices[0];
-    data[i][1] = triangles->polygons[i].vertices[1];
-    data[i][2] = triangles->polygons[i].vertices[2];
-  }
-  return 0;
-}
+// int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
+//   // index of faces
+//   // data = [ f1[p1_index, p2_index, p3_index],
+//   //          f2[p1_index, p2_index, p3_index], ...
+//   //        ]
+//   data.resize(triangles->polygons.size());
+//   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+//     data[i].resize(3);
+//     data[i][0] = triangles->polygons[i].vertices[0];
+//     data[i][1] = triangles->polygons[i].vertices[1];
+//     data[i][2] = triangles->polygons[i].vertices[2];
+//   }
+//   return 0;
+// }
 
 int mesh_len(MeshPtr triangles){
   return triangles->polygons.size();
+}
+
+
+void xnormal(float v[3][3], float* result){
+    float a[3] = {v[1][0] - v[0][0], v[1][1] - v[0][1], v[1][2] - v[0][2]};  // std::vector v0 -> v1
+    float b[3] = {v[2][0] - v[0][0], v[2][1] - v[0][1], v[2][2] - v[0][2]};  // std::vector v0 -> v2
+    result[0] = a[1] * b[2] - a[2] * b[1];
+    result[1] = a[2] * b[0] - a[0] * b[2];
+    result[2] = a[0] * b[1] - a[1] * b[0];  // cross product -> surface normal std::vector
+}
+
+void xnormalize(float *v){
+    float l = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if(l != 0){
+        v[0] /= l;
+        v[1] /= l;
+        v[2] /= l;
+    }
+}
+
+int write_stl_binary(MeshPtr triangles, const char* filename) {
+    int v0, v1, v2, face_count = triangles->polygons.size();
+    short padding = 0;
+
+    FILE* ptr_stl = fopen(filename, "wb");
+
+    fprintf(stderr, "Writing STL Binary %s\n", filename);
+    fprintf(ptr_stl, "%-80s", "FLUX 3d printer: flux3dp.com, 2015");
+
+    pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
+    fromPCLPointCloud2(triangles->cloud, *cloud);
+
+    fwrite(&face_count, sizeof(int), 1, ptr_stl);
+    fprintf(stderr, "Triangle Faces %d\n", face_count);
+
+    for (int i = 0; i < face_count; i += 1){
+
+      v0 = triangles->polygons[i].vertices[0];
+      v1 = triangles->polygons[i].vertices[1];
+      v2 = triangles->polygons[i].vertices[2];
+
+      float n[3];
+      // output normal
+
+      float vecs[3][3] = {
+        {(*cloud)[v0].x, (*cloud)[v0].y, (*cloud)[v0].z},
+        {(*cloud)[v1].x, (*cloud)[v1].y, (*cloud)[v1].z},
+        {(*cloud)[v2].x, (*cloud)[v2].y, (*cloud)[v2].z}
+      };
+
+      xnormal(vecs, n);
+      xnormalize(n);
+      fwrite(n, sizeof(float), 3, ptr_stl);
+
+      fwrite(vecs[0], sizeof(float), 3, ptr_stl);
+      fwrite(vecs[1], sizeof(float), 3, ptr_stl);
+      fwrite(vecs[2], sizeof(float), 3, ptr_stl);
+
+      fwrite(&padding, sizeof(short), 1, ptr_stl);
+    }
+
+    delete cloud;
+    fclose(ptr_stl);
 }

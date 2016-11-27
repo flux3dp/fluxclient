@@ -40,7 +40,6 @@ class FcodeBase(object):
         self.highlight_layer = -1
 
     def sub_convert_path(self):
-        # self.path_js = FcodeBase.path_to_js(self.path)
         self.path_js = Tools().path_to_js(self.path).decode()
 
     def get_path(self, path_type='js'):
@@ -132,20 +131,7 @@ class FcodeBase(object):
 
                 self.path[-1].append(self.current_pos[:3] + [line_type])
 
-    @classmethod
-    def path_to_js(cls, path):
-        """
-        * NOTE: this is deprecated, use fluxclient.utils._utils.Tools().path_to_js instead
-        transform path:[[[],[]]] in to javascript string
-        will round number to .2f
-        """
-        if path is None:
-            return ''
-        else:
-            return dumps([[[round(p[0], 2), round(p[1], 2), round(p[2], 2), p[3]] for p in layer] for layer in path])
-
-    @classmethod
-    def trim_ends(cls, path):
+    def trim_ends(self, path):
         """
         trim the moving(non-extruding) part in path's both end
         """

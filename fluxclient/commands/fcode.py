@@ -2,6 +2,8 @@
 import argparse
 import sys
 
+from io import BytesIO, StringIO
+
 PROG_DESCRIPTION = 'Flux fcode/gcode convertor.'
 PROG_EPILOG = ''
 
@@ -29,6 +31,7 @@ def gcode_2_fcode(params=None, input=None, output=None):
 
     options = parser.parse_args(params)
 
+    from fluxclient.utils._utils import GcodeToFcodeCpp
     from fluxclient.fcode.g_to_f import GcodeToFcode
 
     ext_metadata = {}
@@ -46,15 +49,22 @@ def gcode_2_fcode(params=None, input=None, output=None):
             input = open(options.input, 'r')
 
         if options.output:
-            output = open(options.output, 'wb')
+            output = BytesIO()
         else:
             output = sys.stdout.buffer
 
         if not input:
             input = sys.stdin
 
-        conv = GcodeToFcode(ext_metadata=ext_metadata)
+        conv = GcodeToFcodeCpp(ext_metadata=ext_metadata)
         conv.process(input, output)
+
+
+        f = open(options.output, "wb");
+        f.write(output.getvalue())
+        output = f
+
+        print(str(conv.md))
 
     finally:
         input.close()
@@ -81,7 +91,7 @@ def fcode_2_gcode(params=None, input=None, output=sys.stdout):
             input = open(options.input, "rb")
 
         if options.output:
-            output = open(options.output, "w")
+            output = open(options.output, "w+")
         else:
             output = sys.stdout.buffer
 
@@ -89,8 +99,12 @@ def fcode_2_gcode(params=None, input=None, output=sys.stdout):
             input = sys.stdin.buffer
 
         parser = FcodeToGcode()
-        parser.upload_content(input.read())
-        parser.f_to_g(output, include_meta=True)
+        res = parser.upload_content(input.read())
+        print("Check file:: " + str(res));
+        tmp_output = StringIO()
+        parser.f_to_g(tmp_output, include_meta=True)
+        gcode = tmp_output.getvalue();
+        output.write(gcode)
     finally:
         input.close()
         output.close()

@@ -278,22 +278,22 @@ int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> >
   return 0;
 }
 
-int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
-  // index of faces
-  // data = [ f1[p1_index, p2_index, p3_index],
-  //          f2[p1_index, p2_index, p3_index], ...
-  //        ]
+// int STL_to_Faces(MeshPtr triangles, std::vector< std::vector<int> > &data){
+//   // index of faces
+//   // data = [ f1[p1_index, p2_index, p3_index],
+//   //          f2[p1_index, p2_index, p3_index], ...
+//   //        ]
 
-  data.resize(triangles->polygons.size());
-  for (size_t i = 0; i < triangles->polygons.size(); i += 1){
-    data[i].resize(3);
+//   data.resize(triangles->polygons.size());
+//   for (size_t i = 0; i < triangles->polygons.size(); i += 1){
+//     data[i].resize(3);
 
-    data[i][0] = triangles->polygons[i].vertices[0];
-    data[i][1] = triangles->polygons[i].vertices[1];
-    data[i][2] = triangles->polygons[i].vertices[2];
-  }
-  return 0;
-}
+//     data[i][0] = triangles->polygons[i].vertices[0];
+//     data[i][1] = triangles->polygons[i].vertices[1];
+//     data[i][2] = triangles->polygons[i].vertices[2];
+//   }
+//   return 0;
+// }
 
 int bounding_box(PointCloudXYZRGBPtr cloud, std::vector<float> &b_box){
   float minx = std::numeric_limits<double>::infinity(), miny = std::numeric_limits<double>::infinity(), minz = std::numeric_limits<double>::infinity();
