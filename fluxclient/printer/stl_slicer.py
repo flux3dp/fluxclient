@@ -45,9 +45,6 @@ class StlSlicer(object):
         super(StlSlicer, self).__init__()
         self.reset(slic3r)
 
-    def __del__(self):
-        self.end_slicing()
-
     def reset(self, slic3r):
         self.working_p = []  # process that are slicing
         self.models = {}  # models data, store the buf(stl file)
@@ -278,13 +275,13 @@ class StlSlicer(object):
         command += ['--load', tmp_slic3r_setting_file]
 
         logger.debug('command: ' + ' '.join(command))
-        self.end_slicing()
+        self.end_slicing('slic3r begin next slicing')
 
         status_list = []
 
         from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(command[:], dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, len(self.working_p)))
-        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list, False])
+        self.working_p.append([p, [tmp_stl_file, tmp_gcode_file, tmp_slic3r_setting_file], status_list, False, len(self.working_p)])
         p.start()
         return True, ''
 
@@ -293,8 +290,9 @@ class StlSlicer(object):
         fail_flag = False
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         path = None
-
         self.working_p[p_index].append(subp)
+        logger.info("#%d Real slicing started" % (p_index));
+
         progress = 0.2
         slic3r_error = False
         slic3r_out = [None, None]
@@ -314,9 +312,10 @@ class StlSlicer(object):
                 slic3r_out = [5, line]  # errorcode 5
         
         subp_returned = subp.poll()
-
+        if self.working_p[p_index][3]:
+            return logger.info('Worker #%d aborted' % p_index)
         if subp_returned!= 0:
-            logger.info('Slic3r Process return exit code %d ' % subp_returned)
+            logger.info('#%d Slic3r returned abnormal %d ' % (p_index, subp_returned))
             fail_flag = True
 
         if config['flux_raft'] == '1':
@@ -402,18 +401,23 @@ class StlSlicer(object):
         else:
             status_list.append([output, metadata, path])
 
-    def end_slicing(self):
+    def end_slicing(self, exit_reason=""):
         """
         when being called, end every working slic3r process
         but couldn't kill the thread
         """
+        print("Abort slicing:: %s" % exit_reason)
         for p in self.working_p:
             if type(p[-1]) == (subprocess.Popen):
                 if p[-1].poll() is None:
+                    print("Aborting 'process' managed by worker:: #%d " % p[4])
                     p[-1].terminate()
+                    p[3] = True
             else:
                 # Turn on abort tag
-                p[3] = True
+                if not p[3]:
+                    print("Aborting 'thread' managed by worker:: #%d " % p[4])
+                    p[3] = True
                 pass
             for filename in p[1]:
                 try:
@@ -445,7 +449,10 @@ class StlSlicer(object):
                     else:
                         self.output = None
                         self.metadata = None
-                        msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
+                        if message[1][0] is None:
+                            msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (6, 'UNDEFINED_SLICING_ERROR')
+                        else:
+                            msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
 
                     self.path = message[2]
 
@@ -456,7 +463,8 @@ class StlSlicer(object):
                         self.T.start()
                         ret.append(msg)
                     else:
-                        print("Worker didn't returned path.. can not continue")
+                        ret.append('{"slice_status": "error", "error": "%d", "info": "%s"}' % (6, 'UNDEFINED_SLICING_ERROR'))
+                        logger.info("Worker didn't returned path.. can not continue")
         return ret
 
     @classmethod
@@ -677,7 +685,7 @@ class StlSlicerCura(StlSlicer):
 
     def begin_slicing(self, names, ws, output_type):
         # End other slicing process once called
-        self.end_slicing()
+        self.end_slicing('cura next slicing')
 
         logger.info('Begin slicing');
         """
@@ -700,7 +708,7 @@ class StlSlicerCura(StlSlicer):
         from threading import Thread  # Do not expose thrading in module level
         p = Thread(target=self.slicing_worker, args=(dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
         # thread, files, status_list
-        self.working_p.append([p, [], status_list, False])
+        self.working_p.append([p, [], status_list, False, len(self.working_p)])
         p.start()
         return True, ''
 
@@ -810,7 +818,8 @@ class StlSlicerCura(StlSlicer):
         logger.debug('command: ' + ' '.join(command))
 
         if self.working_p[p_index][3]:
-            return logger.info('Worker #%d aborted' % p_index)
+            fail_flag = True
+            logger.info('Worker #%d aborted' % p_index)
 
         status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
         logger.info('Starting slicing engine');
@@ -821,6 +830,7 @@ class StlSlicerCura(StlSlicer):
         try:
             subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
             self.working_p[p_index].append(subp)
+            logger.info("#%d Real slicing started" % (p_index));
             
             progress = 0.2
             slic3r_error = False
@@ -839,8 +849,11 @@ class StlSlicerCura(StlSlicer):
                         slic3r_out = [5, line]  # errorcode 5
                     # break
             cura_result = subp.poll()
+            if self.working_p[p_index][3]:
+                fail_flag = True
+                logger.info('Worker #%d aborted' % p_index)
             if cura_result != 0:
-                logger.info("CuraEngine returned abnormal %d" % cura_result);
+                logger.info("#%d CuraEngine returned abnormal %d" % (p_index, cura_result));
                 fail_flag = True
         except Exception as ex:
             fail_flag = True
