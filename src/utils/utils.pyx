@@ -10,7 +10,6 @@ from re import findall
 from getpass import getuser
 from threading import Thread
 
-from fluxclient.fcode.fcode_base import FcodeBase, POINT_TYPE
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.hw_profile import HW_PROFILE
 

@@ -212,7 +212,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
   // """
   // convert to path list(for visualizing)
   // """
-  if (fc->is_cura) {
+  if (fc->is_cura || comment == NULL) {
     // Cura
     fc->counter_between_layers++;
     PathType line_type = TYPE_MOVE;
