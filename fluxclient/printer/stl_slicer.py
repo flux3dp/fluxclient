@@ -450,7 +450,7 @@ class StlSlicer(object):
                         self.output = None
                         self.metadata = None
                         if message[1][0] is None:
-                            msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (6, 'UNDEFINED_SLICING_ERROR')
+                            msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (16, 'UNDEFINED_SLICING_ERROR')
                         else:
                             msg = '{"slice_status": "error", "error": "%d", "info": "%s"}' % (message[1][0], message[1][1])
 
@@ -463,7 +463,7 @@ class StlSlicer(object):
                         self.T.start()
                         ret.append(msg)
                     else:
-                        ret.append('{"slice_status": "error", "error": "%d", "info": "%s"}' % (6, 'UNDEFINED_SLICING_ERROR'))
+                        ret.append('{"slice_status": "error", "error": "%d", "info": "%s"}' % (16, 'UNDEFINED_SLICING_ERROR'))
                         logger.info("Worker didn't returned path.. can not continue")
         return ret
 
