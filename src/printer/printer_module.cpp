@@ -12,7 +12,23 @@ MeshPtr createMeshPtr(){
   return mesh;
 }
 
-int set_point(MeshPtr triangles, std::vector< std::vector<float> > points){
+CloudPtr createCloudPtr(std::vector< std::vector<float> > points){
+  CloudPtr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+  for (uint32_t i = 0; i < points.size(); i += 1){
+    pcl::PointXYZ p;
+    p.x = points[i][0];
+    p.y = points[i][1];
+    p.z = points[i][2];
+    cloud -> push_back(p);
+  }
+  return cloud;
+}
+
+int setCloud(MeshPtr triangles, CloudPtr cloud){
+  toPCLPointCloud2(*cloud, triangles->cloud);
+}
+
+int setPoints(MeshPtr triangles, std::vector< std::vector<float> > points){
   pcl::PointCloud<pcl::PointXYZ>* cloud = new pcl::PointCloud<pcl::PointXYZ>();
   for (uint32_t i = 0; i < points.size(); i += 1){
     pcl::PointXYZ p;

@@ -10,7 +10,11 @@
 typedef pcl::PolygonMesh::Ptr MeshPtr;
 MeshPtr createMeshPtr();
 
-int set_point(MeshPtr triangles, std::vector< std::vector<float> > points);
+typedef pcl::PointCloud<pcl::PointXYZ>::Ptr CloudPtr;
+CloudPtr createCloudPtr(std::vector< std::vector<float> > points);
+
+int setCloud(MeshPtr triangles, CloudPtr cloud);
+int setPoints(MeshPtr triangles, std::vector< std::vector<float> > points);
 int push_backFace(MeshPtr triangles, int v0, int v1, int v2);
 int add_on(MeshPtr base, MeshPtr new_mesh);
 int STL_to_List(MeshPtr triangles, std::vector<std::vector< std::vector<float> > > &data);

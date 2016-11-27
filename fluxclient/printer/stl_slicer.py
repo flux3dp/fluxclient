@@ -2,6 +2,9 @@
 
 from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
+import traceback
+import numpy as np
+import gc
 import subprocess
 import tempfile
 import os, sys
@@ -87,6 +90,8 @@ class StlSlicer(object):
             else:
                 raise('unknown file type')
         except:
+            logger.info("oops");
+            traceback.print_exc(file=sys.stdout)
             return False
         else:
             return True
@@ -247,15 +252,13 @@ class StlSlicer(object):
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
-        m_mesh_merge = _printer.MeshObj([], [])
-        m_mesh_merge_null = True
+        m_mesh_merge = None
 
         for n in names:
             points, faces = self.models[n]
             m_mesh = _printer.MeshObj(points, faces)
             m_mesh.apply_transform(self.parameter[n])
-            if m_mesh_merge_null:
-                m_mesh_merge_null = False
+            if m_mesh_merge is None:
                 m_mesh_merge = m_mesh
             else:
                 m_mesh_merge.add_on(m_mesh)
@@ -550,9 +553,10 @@ class StlSlicer(object):
 
         points_list = []
         points_map = {}  # key: points, value: index
-        faces = []
         counter = 0
+        faces = np.zeros(0, dtype=np.int)
         if cls.ascii_or_binary(file_data, byte_order):
+            tFaces = []
             # ascii stl file
             instl = StringIO(file_data.decode('utf8'))
 
@@ -580,15 +584,19 @@ class StlSlicer(object):
                 read_until(instl)  # read in: "endloop"
                 read_until(instl)  # read in: "endfacet"
 
-                face = []
                 for v in [v0, v1, v2]:
-                    if v not in points_map:
+                    pIdx = points_map.get(v, None)
+                    if pIdx is None:
                         points_map[v] = counter
+                        pIdx = counter
                         points_list.append(v);
                         counter += 1
-                    face.append(points_map[v])
-                faces.append(face)
-
+                    tFaces.append(pIdx)
+            # Compact python list to nparray
+            logger.info("np array convert (ascii) %d " % len(tFaces))
+            faces = np.array(tFaces, dtype=np.int)
+            del tFaces
+            gc.collect()
         else:
             # binary stl file
             header = file_data[:80]
@@ -596,6 +604,11 @@ class StlSlicer(object):
 
             patten = byte_order + 'fff'
             index = 84
+
+            # declare static type np array
+            faces = np.zeros(length * 3, dtype=np.int)
+            fptr = 0
+
             for i in range(length):
                 read_normal = unpack(patten, file_data[index + (4 * 3 * 0):index + (4 * 3 * 1)])
                 v0 = unpack(patten, file_data[index + (4 * 3 * 1):index + (4 * 3 * 2)])
@@ -605,17 +618,20 @@ class StlSlicer(object):
                 if dot(right_hand_mormal, read_normal) < 0:
                     v1, v2 = v2, v1
 
-                face = []
                 for v in [v0, v1, v2]:
-                    if v not in points_map:
+                    pIdx = points_map.get(v, None)
+                    if pIdx is None:
                         points_map[v] = counter
+                        pIdx = counter
                         points_list.append(v);
                         counter += 1
-                    face.append(points_map[v])
-                faces.append(face)
+                    faces[fptr] = pIdx
+                    fptr = fptr + 1
                 index += 50
-
-        return points_list, faces
+            logger.info("np array convert (bin) %d" % faces.size)
+        
+        print("Faces[0] type %s " % type(faces).__name__)
+        return _printer.MeshCloud(points_list), faces
 
     @classmethod
     def read_obj(cls, file_data):
@@ -650,8 +666,9 @@ class StlSlicer(object):
                     faces[i][j] -= 1
                 else:
                     faces[i][j] = len(points_list) + faces[i][j]
-
-        return points_list, faces
+        
+        print("Faces[0] type %s " % type(faces).__name__)
+        return _printer.MeshCloud(points_list), faces
 
 
 class StlSlicerCura(StlSlicer):
@@ -708,8 +725,7 @@ class StlSlicerCura(StlSlicer):
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
         tmp_slic3r_setting_file = tmp.name  # store gcode
 
-        m_mesh_merge = _printer.MeshObj([], [])
-        m_mesh_merge_null = True
+        m_mesh_merge = None
 
         # Open up old transform to confirm
         oldTransform = ""
@@ -743,8 +759,7 @@ class StlSlicerCura(StlSlicer):
                 if self.working_p[p_index][3]:
                     return logger.info('Worker #%d aborted' % p_index)
 
-                if m_mesh_merge_null:
-                    m_mesh_merge_null = False
+                if m_mesh_merge is None:
                     m_mesh_merge = m_mesh
                 else:
                     logger.info('Merging %s' % n)
