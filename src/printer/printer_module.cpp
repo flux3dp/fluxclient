@@ -26,6 +26,7 @@ CloudPtr createCloudPtr(std::vector< std::vector<float> > points){
 
 int setCloud(MeshPtr triangles, CloudPtr cloud){
   toPCLPointCloud2(*cloud, triangles->cloud);
+  return 1;
 }
 
 int setPoints(MeshPtr triangles, std::vector< std::vector<float> > points){
