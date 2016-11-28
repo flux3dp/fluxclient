@@ -259,7 +259,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
         } else if(strstr(comment,"move")) {
             line_type = TYPE_MOVE;
             if(strstr(comment,"to next layer")){
-                fc->record_z = fc->current_pos[2];
+                fc->record_z = fc->current_pos[3];
                 splitted = true;
 
                 fc->counter_between_layers = 0;
@@ -287,7 +287,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
         PathVector p = {fc->current_pos[1], fc->current_pos[2], fc->current_pos[3], line_type};
         fc->native_path->back().push_back(p);
         
-        if (strlen(comment) == 0 && !splitted && fc->current_pos[2] - fc->record_z > 0.3) {
+        if (strlen(comment) == 0 && !splitted && fc->current_pos[3] - fc->record_z > 0.3) {
           // 0.3 is the max layer height in fluxstudio
           vector<PathVector> new_layer;
           PathVector p = fc->native_path->back().back();
@@ -295,7 +295,7 @@ void process_path(FCode* fc, char* comment, bool move_flag, bool extrude_flag) {
           new_layer.push_back(p);
           fc->native_path->push_back(new_layer);
 
-          fc->record_z = fc->current_pos[2];
+          fc->record_z = fc->current_pos[3];
           fc->counter_between_layers = 0;
           fc->layer_now = fc->native_path->size();
       }
