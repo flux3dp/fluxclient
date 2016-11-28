@@ -97,7 +97,7 @@ cdef extern from "g2f_module.h":
         int highlight_layer;
         char is_cura
         char record_path
-        char backed_to_normal_temperature # For first layer temperature settings
+        char is_backed_to_normal_temperature # For first layer temperature settings
 
     int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output);
     char* c_open_file(char* path)
@@ -255,20 +255,6 @@ cdef class GcodeToFcodeCpp:
       
         logger.info("[G2FCPP] FCode Tool = " + str(<int>fc.tool))
 
-        # Special fake print
-        fake_print = int(self.config.get('fake_print', 0))
-        cdef FCode* fake_fc = createFCodePtr()
-        fake_stream = None
-        fake_stream_length = 0
-        fake_print_inited = False
-
-        if fake_print > 0:
-            fake_stream = BytesIO()
-            fake_stream.write(self.header())
-            fake_stream.write(struct.pack('<I', 0))  # script length, will be modify in the end
-            # TODO fake stream add homing
-
-
         try:
             output_stream.write(self.header())
             output_stream.write(struct.pack('<I', 0))  # script length, will be modify in the end
@@ -281,21 +267,10 @@ cdef class GcodeToFcodeCpp:
                 fc.index = 12 + script_length
                 py_byte_string = line.encode('ascii')
                 output_len = convert_to_fcode_by_line(py_byte_string, fc, output)
+                
                 output_stream.write(output[:output_len])
                 script_length += output_len
-
-                if fake_print > 0:
-                    if fc.layer_now >= fake_print and not fake_print_inited:
-                        fake_print_inited = True
-                        #G28
-                        fake_stream.write(bytes([1]))
-                        fake_stream_length += 1
-                        #G92
-                        fake_fc.G92_delta[4] = -fake_fc.current_pos[4]
-
-                    fake_length = convert_to_fcode_by_line(py_byte_string, fake_fc, output)
-                    fake_stream.write(output[:fake_length])
-                    fake_stream_length += fake_length
+                    
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()
@@ -312,19 +287,6 @@ cdef class GcodeToFcodeCpp:
             output_stream.seek(8, 0)
             output_stream.write(struct.pack('<I', script_length))
             output_stream.seek(0, 2)  # go back to file end
-
-
-            # Fake Print
-            if fake_print > 0:
-                fake_stream.seek(12, 0);
-                fake_data = fake_stream.read(fake_stream_length)
-                fake_stream.seek(0, 2)  # 
-                # Write back crc and length info 
-                fake_stream.write(struct.pack('<I', crc32(fake_data)))
-                fake_stream.seek(8, 0)
-                fake_stream.write(struct.pack('<I', script_length))
-                fake_stream.seek(0, 2)  # go back to file end
-
 
             if len(self.empty_layer) > 0 and self.empty_layer[0] == 0:  # clean up first empty layer
                 self.empty_layer.pop(0)
@@ -355,16 +317,9 @@ cdef class GcodeToFcodeCpp:
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
 
-
             logger.info("[G2FCPP] Finished parsing");
             self.write_metadata(output_stream, self.md)
 
-            # fake_print metadata
-            if fake_print > 0:
-                old_correction = self.md['CORRECTION']
-                self.md['CORRECTION'] = 'N'
-                self.write_metadata(fake_stream, self.md)
-                self.md['CORRECTION'] = old_correction
 
         except Exception as e:
             import traceback

@@ -161,7 +161,6 @@ FCode* createFCodePtr() {
   fc->is_backed_to_normal_temperature = 0;
 
   fc->path_type = TYPE_MOVE;
-
   return fc;
 }
 

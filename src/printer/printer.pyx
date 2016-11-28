@@ -67,7 +67,7 @@ cdef class MeshObj:
         add_on(self.meshobj, new_mesh.meshobj)
 
     def cut(self, float floor_v):
-        out_mesh = MeshObj([], [])
+        out_mesh = MeshObj(MeshCloud([]), [])
         cut(self.meshobj, out_mesh.meshobj, floor_v)
         return out_mesh
 
