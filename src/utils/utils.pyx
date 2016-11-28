@@ -9,8 +9,8 @@ import time
 from re import findall
 from getpass import getuser
 from threading import Thread
+from io import BytesIO, StringIO
 
-from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.hw_profile import HW_PROFILE
 
 import cython
@@ -206,12 +206,12 @@ cdef class GcodeToFcodeCpp:
         return np
 
         
-    def write_metadata(self, stream):
+    def write_metadata(self, stream, md):
         """
         Writes fcode's metadata
         including a dict, and a png image
         """
-        md_join = '\x00'.join([i + '=' + self.md[i] for i in self.md]).encode()
+        md_join = '\x00'.join([i + '=' + md[i] for i in md]).encode()
 
         stream.write(struct.pack('<I', len(md_join)))
         stream.write(md_join)
@@ -252,24 +252,50 @@ cdef class GcodeToFcodeCpp:
         fc.G92_delta[1] = self.G92_delta[0]
         fc.G92_delta[2] = self.G92_delta[1]
         fc.G92_delta[3] = self.G92_delta[2]
-
       
         logger.info("[G2FCPP] FCode Tool = " + str(<int>fc.tool))
+
+        # Special fake print
+        fake_print = int(self.config.get('fake_print', 0))
+        cdef FCode* fake_fc = createFCodePtr()
+        fake_stream = None
+        fake_stream_length = 0
+        fake_print_inited = False
+
+        if fake_print > 0:
+            fake_stream = BytesIO()
+            fake_stream.write(self.header())
+            fake_stream.write(struct.pack('<I', 0))  # script length, will be modify in the end
+            # TODO fake stream add homing
+
 
         try:
             output_stream.write(self.header())
             output_stream.write(struct.pack('<I', 0))  # script length, will be modify in the end
 
             comment_list = []  # recorad a list of comments wrritten in gcode
-
+            
             logger.info("[G2FCPP] Start parsing...")
             for line in input_stream:
                 #process lines in C++
-                fc.index = 12+script_length
+                fc.index = 12 + script_length
                 py_byte_string = line.encode('ascii')
                 output_len = convert_to_fcode_by_line(py_byte_string, fc, output)
                 output_stream.write(output[:output_len])
                 script_length += output_len
+
+                if fake_print > 0:
+                    if fc.layer_now >= fake_print and not fake_print_inited:
+                        fake_print_inited = True
+                        #G28
+                        fake_stream.write(bytes([1]))
+                        fake_stream_length += 1
+                        #G92
+                        fake_fc.G92_delta[4] = -fake_fc.current_pos[4]
+
+                    fake_length = convert_to_fcode_by_line(py_byte_string, fake_fc, output)
+                    fake_stream.write(output[:fake_length])
+                    fake_stream_length += fake_length
 
             self.T = Thread(target=self.sub_convert_path)
             self.T.start()
@@ -287,17 +313,31 @@ cdef class GcodeToFcodeCpp:
             output_stream.write(struct.pack('<I', script_length))
             output_stream.seek(0, 2)  # go back to file end
 
+
+            # Fake Print
+            if fake_print > 0:
+                fake_stream.seek(12, 0);
+                fake_data = fake_stream.read(fake_stream_length)
+                fake_stream.seek(0, 2)  # 
+                # Write back crc and length info 
+                fake_stream.write(struct.pack('<I', crc32(fake_data)))
+                fake_stream.seek(8, 0)
+                fake_stream.write(struct.pack('<I', script_length))
+                fake_stream.seek(0, 2)  # go back to file end
+
+
             if len(self.empty_layer) > 0 and self.empty_layer[0] == 0:  # clean up first empty layer
                 self.empty_layer.pop(0)
 
             # warning: fileformat didn't consider multi-extruder, use first extruder instead
-            #todo: test
-            if fc.filament[0] and fc.HEAD_TYPE == NULL:
-                self.md['HEAD_TYPE'] = 'EXTRUDER'
-            elif fc.HEAD_TYPE == NULL:
-                self.md['HEAD_TYPE'] = "" + fc.HEAD_TYPE
-            else:
-                self.md['HEAD_TYPE'] = "None";
+            # todo: test
+            if self.md['HEAD_TYPE'] is None:
+                if fc.filament[0] and fc.HEAD_TYPE == NULL:
+                    self.md['HEAD_TYPE'] = 'EXTRUDER'
+                elif fc.HEAD_TYPE == NULL:
+                    self.md['HEAD_TYPE'] = "" + fc.HEAD_TYPE
+                else:
+                    self.md['HEAD_TYPE'] = "None";
 
             if self.md['HEAD_TYPE'] == 'EXTRUDER':
                 self.md['FILAMENT_USED'] = ','.join(map(str, fc.filament))
@@ -317,7 +357,14 @@ cdef class GcodeToFcodeCpp:
 
 
             logger.info("[G2FCPP] Finished parsing");
-            self.write_metadata(output_stream)
+            self.write_metadata(output_stream, self.md)
+
+            # fake_print metadata
+            if fake_print > 0:
+                old_correction = self.md['CORRECTION']
+                self.md['CORRECTION'] = 'N'
+                self.write_metadata(fake_stream, self.md)
+                self.md['CORRECTION'] = old_correction
 
         except Exception as e:
             import traceback

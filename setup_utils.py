@@ -132,7 +132,7 @@ def create_pcl_extentions():
 
     try:
         if is_posix():
-            include_dirs += [locate_includes("eigen3"), ]
+            include_dirs += [locate_includes("eigen3")]
             libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
                           "pcl_search", "pcl_sample_consensus", "pcl_filters",
                           "pcl_features", "pcl_segmentation", "pcl_surface",

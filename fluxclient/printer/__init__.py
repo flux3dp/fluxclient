@@ -224,6 +224,7 @@ detect_head_shake = 1
 detect_head_tilt = 1
 flux_calibration = 1
 pause_at_layers = 
+fake_print = 0
 support_everywhere = 0"""
 
 ini_constraint = {
@@ -366,7 +367,8 @@ ini_constraint = {
     'detect_head_shake': [binary],
     'detect_head_tilt': [binary],
     'flux_calibration': [binary],
-    'pause_at_layers': False
+    'pause_at_layers': False,
+    'fake_print': [int_range, 0, 9999]
 }
 
 ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']
