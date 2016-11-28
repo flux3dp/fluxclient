@@ -102,7 +102,7 @@ class StlSlicer(object):
         """
         logger.debug('duplicate in:{} out:{}'.format(name_in, name_out))
         if name_in in self.models:
-            self.models[name_out] = copy.deepcopy(self.models[name_in])
+            self.models[name_out] = [self.models[name_in][0], self.models[name_in][1]]
             return True
         else:
             return False
