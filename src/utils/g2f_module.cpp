@@ -413,7 +413,7 @@ int convert_to_fcode_by_line(char* line, FCode* fc, char* fcode_output) {
         }
 
         // Auto pause at layers
-        if (find(fc->pause_at_layers->begin(), fc->pause_at_layers->end(), fc->layer_now) != fc->pause_at_layers->end()) {
+        if (std::find(fc->pause_at_layers->begin(), fc->pause_at_layers->end(), fc->layer_now) != fc->pause_at_layers->end()) {
             if (fc->highlight_layer != fc->layer_now) {
                 fprintf(stderr, "[G2FCPP-EXT] Auto pause at %d\n", fc->layer_now);
                 fc->highlight_layer = fc->layer_now;
