@@ -162,6 +162,7 @@ perimeter_speed = 30
 perimeters = 3
 post_process =
 pressure_advance = 0
+raft = 1
 raft_layers = 0
 resolution = 0.01
 retract_before_travel = 2
@@ -224,7 +225,6 @@ detect_head_shake = 1
 detect_head_tilt = 1
 flux_calibration = 1
 pause_at_layers = 
-fake_print = 0
 support_everywhere = 0"""
 
 ini_constraint = {
@@ -305,6 +305,7 @@ ini_constraint = {
     'perimeters': [int_range, 0, 20],
     'post_process': False,
     'pressure_advance': False,
+    'raft': [binary],
     'raft_layers': [int_range, 0, 20],
     'resolution': False,
     'retract_before_travel': False,

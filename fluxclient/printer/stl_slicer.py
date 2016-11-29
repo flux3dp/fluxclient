@@ -318,14 +318,6 @@ class StlSlicer(object):
             logger.info('#%d Slic3r returned abnormal %d ' % (p_index, subp_returned))
             fail_flag = True
 
-        if config['flux_raft'] == '1':
-            m_preprocessor = Raft()
-            raft_output = StringIO()
-            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
-            raft_output = raft_output.getvalue()
-            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
-                print(raft_output, file=f)
-
         if not fail_flag:
             # analying gcode(even transform)
             status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata", "percentage": 0.99}')
@@ -518,6 +510,11 @@ class StlSlicer(object):
         write a .ini file
         specify delete not to write some key in content
         """
+
+        if int(content.get('raft','1')) == 0:
+            logger.info("Raft off, remove raft_layers")
+            content['raft_layers'] = '0';
+
         with open(file_path, 'w') as f:
             for i in content:
                 if delete and any(j in i for j in delete):
@@ -866,14 +863,6 @@ class StlSlicerCura(StlSlicer):
 
             slic3r_out = [5, 'CuraEngine fail']  # errorcode 5
 
-        if config['flux_raft'] == '1':
-            m_preprocessor = Raft()
-            raft_output = StringIO()
-            m_preprocessor.main(tmp_gcode_file, raft_output, debug=False)
-            raft_output = raft_output.getvalue()
-            with open(tmp_gcode_file, 'w') as f:  # overwrite the file
-                print(raft_output, file=f)
-
         if not fail_flag:
             # analying gcode(even transform)
             status_list.append('{"slice_status": "computing", "message": "Analyzing Metadata++", "percentage": 0.95}')
@@ -1017,7 +1006,12 @@ class StlSlicerCura(StlSlicer):
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
         new_content['supportEverywhere'] = int(content['support_everywhere'])
 
-        new_content['raftSurfaceLayers'] = content['raft_layers']
+        if int(content.get('raft','1')) == 0:
+            logger.info("Raft off, remove raft_layers")
+            new_content['raftSurfaceLayers'] = 0
+        else:
+            logger.info("Raft on %d" % int(content['raft_layers']))
+            new_content['raftSurfaceLayers'] = int(content['raft_layers'])
 
         if int(new_content['raftSurfaceLayers']) == 0:
             new_content['raftBaseThickness'] = 0
