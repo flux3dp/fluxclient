@@ -15,7 +15,7 @@ class RobotBackendUSB(RobotBackend2):
         self.channel.send_object((cmd, ))
 
     def get_resp(self, timeout=3.0):
-        return self.channel.get_object(timeout)[0]
+        return self.channel.get_object(timeout)
 
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):

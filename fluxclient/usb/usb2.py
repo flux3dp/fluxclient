@@ -25,6 +25,7 @@ def match_direction(direction):
 
 class USBProtocol(object):
     running = False
+    session = None
     _buf = b""
 
     def __init__(self):
@@ -88,8 +89,6 @@ class USBProtocol(object):
         l = len(self._buf)
         if l > 3:
             size, channel_idx = HEAD_PACKER.unpack(self._buf[:3])
-            if size > 1024:
-                raise FluxUSBError("Bad payload size")
             if size == 0:
                 self._buf = self._buf[2:]
                 return -1, None, None
@@ -100,67 +99,67 @@ class USBProtocol(object):
                 return channel_idx, buf, fin
         return None, None, None
 
-    def _begin_handshake(self):
-        data = None
-        self._feed_buffer(timeout=0.1)
+    def _handle_handshake(self, buf):
+        data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
+                               unicode_errors="ignore")
+        session = data["session"]
+        if self.session is None:
+            logger.debug("Get handshake session: %s", session)
+        else:
+            logger.debug("Replace handshake session: %s", session)
+        self.session = session
+        self.send_object(0xfe, {"session": self.session,
+                                "client": "fluxclient-%s" % __version__})
 
-        while True:
-            d = self._unpack_buffer()
-            if d[0] is None:
-                break
-            else:
-                data = d
-
-        if data is not None:
-            channel_idx, buf, fin = data
-            if channel_idx != 0xff or fin != 0xfe:
-                return False
-
-            data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
-                                   unicode_errors="ignore")
-            self.session = data["session"]
-            logger.debug("Get handshake session: %s", self.session)
-            self.send_object(0xff, {"session": self.session,
-                                    "client": "fluxclient-%s" % __version__})
+    def _final_handshake(self, buf):
+        data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
+                               unicode_errors="ignore")
+        if data["session"] == self.session:
+            logger.debug("USB handshake completed")
             return True
         else:
+            logger.debug("USB final handshake error with wrong session "
+                         "recv=%i, except=%i", data["session"], self.session)
+            self.session = None
             return False
-
-    def _complete_handshake(self):
-        self._feed_buffer(timeout=0.05)
-        channel_idx, buf, fin = self._unpack_buffer()
-        if channel_idx == 0xfe and fin == 0xfe:
-            data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
-                                   unicode_errors="ignore")
-            if data["session"] == self.session:
-                logger.debug("USB handshake completed")
-                return True
-            else:
-                logger.debug("Recv handshake session: %s", data["session"])
-                logger.debug("Handshake failed")
-                return False
-
-        if channel_idx is not None:
-            logger.debug("USB handshake response wrong channel: 0x%02x",
-                         channel_idx)
-            return False
-
-        logger.debug("USB handshake response timeout")
-        return False
 
     def do_handshake(self):
-        ttl = 3
-        while not self._begin_handshake():
-            if ttl:
-                logger.debug("Handshake timeout, retry")
-                ttl -= 1
+        ttl = 5
+        while ttl:
+            self._feed_buffer(timeout=0.1)
+            data = None
+
+            while True:
+                d = self._unpack_buffer()
+                if d[0] is None:
+                    break
+                else:
+                    data = d
+
+            if data and data[0] is not None:
+                channel_idx, buf, fin = data
+                if channel_idx == 0xff and fin == 0xf0:
+                    self._handle_handshake(buf)
+                    continue
+                elif channel_idx == 0xfd and fin == 0xf0:
+                    if self.session is not None:
+                        if self._final_handshake(buf):
+                            return True
+                    else:
+                        logger.debug("Recv unexcept final handshake")
+                elif channel_idx == -1:
+                    logger.debug("Recv 0")
+                    continue
+                else:
+                    logger.debug("Recv unexcept channel idx %r and fin "
+                                 "%r in handshake", channel_idx, fin)
+                    continue
             else:
-                raise FluxUSBError(ETIMEDOUT, "Timeout")
-            self.send_object(0xfd, None)
-            logger.debug("Handshake message not recived, retry.")
-        if self._complete_handshake() is False:
-            logger.debug("Handshake response error, retry.")
-            self.do_handshake()
+                logger.debug("Handshake timeout, retry")
+
+            ttl -= 1
+            self.send_object(0xfc, None)
+        raise FluxUSBError("Handshake failed.")
 
     def run_once(self):
         self._feed_buffer()
@@ -173,17 +172,17 @@ class USBProtocol(object):
             channel = self.channels.get(channel_idx)
             if channel is None:
                 raise FluxUSBError("Recv bad channel idx 0x%02x" % channel_idx)
-            if fin == 0xfe:
+            if fin == 0xf0:
                 channel.on_object(msgpack.unpackb(buf))
             elif fin == 0xff:
                 self._send_binary_ack(channel_idx)
                 channel.on_binary(buf)
-            elif fin == 0x80:
+            elif fin == 0xc0:
                 channel.on_binary_ack()
             else:
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
-        elif channel_idx == 0xf0:
-            if fin != 0xfe:
+        elif channel_idx == 0xf1:
+            if fin != 0xf0:
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
             self._on_channel_ctrl_response(msgpack.unpackb(buf))
         else:
@@ -195,7 +194,7 @@ class USBProtocol(object):
             while self.running:
                 self.run_once()
         except Exception:
-            logger.exception("USB run got error")
+            logger.error("USB run got error")
             self.running = False
             raise
 
@@ -204,11 +203,11 @@ class USBProtocol(object):
 
     def send_object(self, channel, obj):
         payload = msgpack.packb(obj)
-        buf = HEAD_PACKER.pack(len(payload) + 4, channel) + payload + b"\xfe"
+        buf = HEAD_PACKER.pack(len(payload) + 4, channel) + payload + b"\xb0"
         self._send(buf)
 
     def send_binary(self, channel, buf):
-        buf = HEAD_PACKER.pack(len(buf) + 4, channel) + buf + b"\xff"
+        buf = HEAD_PACKER.pack(len(buf) + 4, channel) + buf + b"\xbf"
         self._send(buf)
 
     def _on_channel_ctrl_response(self, obj):

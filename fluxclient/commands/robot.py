@@ -79,6 +79,7 @@ def simple_shell(options):
             robot_client.on_cmd(r.strip())
         except Exception:
             logger.exception("Unhandle Error")
+            return
 
 
 def curses_shell(options):
