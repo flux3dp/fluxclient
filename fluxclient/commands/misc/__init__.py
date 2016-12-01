@@ -90,7 +90,17 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
 
         device = None
         logstream.write("Connecting...")
-        usbprotocol = USBProtocol()
+        usbdevs = USBProtocol.get_interfaces()
+        usbdev = None
+
+        if len(usbdevs) == 0:
+            raise RuntimeError("USB Device not found.")
+        elif len(usbdevs) == 1:
+            usbdev = usbdevs[0]
+        else:
+            raise RuntimeError("Multi usb devices found")
+
+        usbprotocol = USBProtocol(usbdev)
         t = threading.Thread(target=usbprotocol.run)
         t.daemon = True
         t.start()

@@ -28,16 +28,13 @@ class USBProtocol(object):
     session = None
     _buf = b""
 
-    def __init__(self):
-        devices = list(usb.core.find(idVendor=ID_VENDOR, idProduct=ID_PRODUCT,
-                                     find_all=True))
-        devices.sort(key=lambda d: d.address)
-        if len(devices) == 0:
-            raise FluxUSBError("FLUX Device not found")
-        elif len(devices) > 1:
-            raise FluxUSBError("More then 1 FLUX Device found")
+    @classmethod
+    def get_interfaces(cls):
+        return list(usb.core.find(idVendor=ID_VENDOR, idProduct=ID_PRODUCT,
+                                  find_all=True))
 
-        self._usbdev = dev = devices[-1]
+    def __init__(self, usbdev):
+        self._usbdev = dev = usbdev
         logger.debug("USB device found")
         if dev.is_kernel_driver_active(0):
             dev.detach_kernel_driver(0)
