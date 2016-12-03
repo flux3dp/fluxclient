@@ -67,3 +67,6 @@ class RobotBackendUSB(RobotBackend2):
 
     def begin_raw(self):
         raise RuntimeError("NOT_SUPPORT")
+
+    def close(self):
+        self.channel.close()

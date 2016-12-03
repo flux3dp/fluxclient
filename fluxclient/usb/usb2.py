@@ -1,8 +1,8 @@
 
 from collections import deque
-from threading import Semaphore
+from threading import Semaphore, Lock
 from struct import Struct
-from errno import ETIMEDOUT
+from errno import errorcode, ETIMEDOUT
 import logging
 import msgpack
 
@@ -43,17 +43,22 @@ class USBProtocol(object):
         cfg = dev.get_active_configuration()
         intf = cfg[(0, 0)]
 
-        self._rx = usb.util.find_descriptor(
-            intf, bmAttributes=0x2,
-            custom_match=match_direction(usb.util.ENDPOINT_IN))
+        try:
+            self._rx = usb.util.find_descriptor(
+                intf, bmAttributes=0x2,
+                custom_match=match_direction(usb.util.ENDPOINT_IN))
 
-        self._tx = usb.util.find_descriptor(
-            intf, bmAttributes=0x2,
-            custom_match=match_direction(usb.util.ENDPOINT_OUT))
-        logger.debug("USB TX/RX confirmed")
-        self.do_handshake()
-        self.chl_semaphore = Semaphore(0)
-        self.channels = {}
+            self._tx = usb.util.find_descriptor(
+                intf, bmAttributes=0x2,
+                custom_match=match_direction(usb.util.ENDPOINT_OUT))
+            logger.debug("USB TX/RX confirmed")
+            self.do_handshake()
+            self.chl_semaphore = Semaphore(0)
+            self.chl_open_mutex = Lock()
+            self.channels = {}
+        except Exception:
+            usb.util.dispose_resources(self._usbdev)
+            raise
 
     def _send(self, buf):
         # Low level send
@@ -61,9 +66,11 @@ class USBProtocol(object):
             self._tx.write(buf)
         except usb.core.USBError as e:
             if e.errno == ETIMEDOUT:
-                raise FluxUSBError("USB operation timeout")
+                raise FluxUSBError(*e.args, symbol=("TIMEOUT", ))
             else:
-                raise FluxUSBError("USB io error: %s" % e)
+                raise FluxUSBError(*e.args,
+                                   symbol=("UNKNOWN_ERROR",
+                                           errorcode.get(e.errno, e.errno)))
 
     def _send_binary_ack(self, channel_idx):
         self._send(HEAD_PACKER.pack(4, channel_idx) + b"\x80")
@@ -77,7 +84,7 @@ class USBProtocol(object):
             if e.errno == ETIMEDOUT:
                 return b""
             else:
-                raise FluxUSBError("USB io error: %s" % e)
+                raise FluxUSBError(*e.args)
 
     def _feed_buffer(self, timeout=0.05):
         self._buf += self._recv(1024, timeout=0.05)
@@ -99,11 +106,13 @@ class USBProtocol(object):
     def _handle_handshake(self, buf):
         data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
                                unicode_errors="ignore")
-        session = data["session"]
+        session = data.pop("session", "?")
         if self.session is None:
             logger.debug("Get handshake session: %s", session)
         else:
             logger.debug("Replace handshake session: %s", session)
+
+        self.endpoint_profile = data
         self.session = session
         self.send_object(0xfe, {"session": self.session,
                                 "client": "fluxclient-%s" % __version__})
@@ -198,6 +207,9 @@ class USBProtocol(object):
     def stop(self):
         self.running = False
 
+    def close(self):
+        usb.util.dispose_resources(self._usbdev)
+
     def send_object(self, channel, obj):
         payload = msgpack.packb(obj)
         buf = HEAD_PACKER.pack(len(payload) + 4, channel) + payload + b"\xb0"
@@ -210,30 +222,42 @@ class USBProtocol(object):
     def _on_channel_ctrl_response(self, obj):
         index = obj.get(b"channel")
         status = obj.get(b"status")
-        if status == b"ok":
-            self.channels[index] = Channel(self, index)
-            self.chl_semaphore.release()
+        action = obj.get(b"action")
+        if action == b"open":
+            if status == b"ok":
+                self.channels[index] = Channel(self, index)
+                self.chl_semaphore.release()
+                logger.debug("Channel %i opened", index)
+            else:
+                logger.error("Channel %i open failed", index)
+        elif action == b"close":
+            if status == b"ok":
+                self.channels.pop(index)
+                logger.debug("Channel %i closed", index)
+            else:
+                logger.error("Channel %i close failed", index)
         else:
-            logger.error("Create channel error: %s", status.decode())
+            logger.error("Unknown channel action: %r", action)
 
     def _close_channel(self, channel):
         self.send_object(0xf0, {"channel": channel.index, "action": "close"})
 
     def open_channel(self):
         # Send request
-        idx = None
-        for i in range(len(self.channels) + 1):
-            if self.channels.get(i) is None:
-                idx = i
-        logger.debug("Request channel %i", idx)
-        self.send_object(0xf0, {"channel": idx, "action": "open"})
+        with self.chl_open_mutex:
+            idx = None
+            for i in range(len(self.channels) + 1):
+                if self.channels.get(i) is None:
+                    idx = i
+            logger.debug("Request channel %i", idx)
+            self.send_object(0xf0, {"channel": idx, "action": "open"})
 
-        self.chl_semaphore.acquire(timeout=3.0)
-        channel = self.channels.get(idx)
-        if channel:
-            return self.channels[idx]
-        else:
-            raise RuntimeError("Channel creation failed")
+            self.chl_semaphore.acquire(timeout=3.0)
+            channel = self.channels.get(idx)
+            if channel:
+                return self.channels[idx]
+            else:
+                raise RuntimeError("Channel creation failed")
 
 
 class Channel(object):
@@ -246,8 +270,15 @@ class Channel(object):
         self.objq = deque()
         self.bufq = deque()
 
+        self.__opened = True
+
     def __del__(self):
-        self.usbprotocol._close_channel(self)
+        self.close()
+
+    def close(self):
+        if self.__opened:
+            self.__opened = False
+            self.usbprotocol._close_channel(self)
 
     def on_object(self, obj):
         self.objq.append(obj)
@@ -280,4 +311,6 @@ class Channel(object):
 
 
 class FluxUSBError(Exception):
-    pass
+    def __init__(self, *args, **kw):
+        self.symbol = kw.get("symbol", ("UNKNOWN_ERROR", ))
+        super().__init__(*args)
