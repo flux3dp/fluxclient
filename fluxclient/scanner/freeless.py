@@ -14,6 +14,10 @@ except:
 NUM_LASER_RANGE_THRESHOLD = 3
 RED_HUE_UPPER_THRESHOLD = 5
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def pre_cut(img, x=0, y=0, w=None, h=None):
     return img[y: y + h, x: x + w]  # x, y, w, h
@@ -224,6 +228,7 @@ class freeless():
           find out the location of the laser dots
           return a list of indices [[x,y], [x,y], [x,y]]
         """
+        logger.info("subprocess start")
         laserLocations = []
         numMerged = 0
         prevLaserCol = self.firstRowLaserCol
@@ -253,6 +258,8 @@ class freeless():
         # print(mag, np.amax(mag), file=sys.stderr)
         # self.m_laserMagnitudeThreshold = .3
 
+        logger.info("subprocess inited")
+        logger.info("subprocess row %d col %d" %(self.settings.img_height, self.settings.img_width))
         for row in range(self.settings.img_height):
             m_laserRanges = []
             # candidates, [ [starting index, ending index, middle point], ... ]
@@ -260,6 +267,7 @@ class freeless():
 
             for col in range(self.settings.img_width):
                 # diff value is bigger than threshold
+
                 if mag[row][col] > self.m_laserMagnitudeThreshold:
                     # new candidate appear: first time > threshold, record as starting index
                     if m_laserRanges[-1][0] == -1:
@@ -313,6 +321,8 @@ class freeless():
                 # suspect bad laser
                 if len(m_laserRanges) > NUM_LASER_RANGE_THRESHOLD:
                     self.numSuspectedBadLaserLocations += 1
+
+        logger.info("subprocess end")
 
         return laserLocations
 

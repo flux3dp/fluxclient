@@ -10,8 +10,8 @@ class ScanSetting(object):
         self.scan_step = 400  # steps
         self.theta_a = pi / 6  # radius between center and laser
 
-        self.img_width = 640
-        self.img_height = 480
+        self.img_width = 1280
+        self.img_height = 720
 
         self.sensorWidth = 3.67
         self.sensorHeight = 2.74 + 0.08

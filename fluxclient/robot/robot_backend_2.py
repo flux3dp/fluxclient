@@ -8,6 +8,8 @@ import logging
 import socket
 import struct
 import json
+from PIL import Image
+from io import StringIO
 
 from .aes_socket import AESSocket
 from .errors import RobotError, RobotSessionError
@@ -239,7 +241,14 @@ class ScanTaskMixIn(object):
             resp = self.get_resp().decode("ascii", "ignore")
 
             if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
+                mime, img = self.recv_binary_buff(resp)
+                img.seek(0)
+                img = Image.open(img)
+                img = img.rotate(-90)
+                fake_file = BytesIO()
+                img.save(fake_file, "jpeg")
+                logger.info("Save jpeg")
+                images.append((mime,fake_file.getvalue()))
 
             elif resp == "ok":
                 return images
@@ -252,15 +261,27 @@ class ScanTaskMixIn(object):
         images = []
         while True:
             resp = self.get_resp().decode("ascii", "ignore")
-
+            logger.info("receive %s" % resp)
+            
             if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
+                mime, img = self.recv_binary_buff(resp)
+                logger.info("scanimmages %s" % mime)
+                img.seek(0)
+                img = Image.open(img)
+                img = img.rotate(-90)
+                fake_file = BytesIO()
+                img.save(fake_file, "jpeg")
+                logger.info("Save jpeg")
+                images.append((mime,fake_file.getvalue()))
 
             elif resp == "ok":
+                logger.info("return images")
                 return images
 
             else:
+                logger.info("robot error")
                 raise RobotError(resp)
+        logger.info("exit loop")
 
     @ok_or_error
     def scan_forward(self):
@@ -344,6 +365,11 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         buf = BytesIO()
         mimetype = self.recv_binary_into(binary_header, buf, callback)
         return (mimetype, buf.getvalue())
+
+    def recv_binary_buff(self, binary_header, callback=None):
+        buf = BytesIO()
+        mimetype = self.recv_binary_into(binary_header, buf, callback)
+        return (mimetype, buf)
 
     # Command Tasks
     def position(self):
