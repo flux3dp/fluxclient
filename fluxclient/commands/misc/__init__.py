@@ -64,6 +64,30 @@ def parse_ipaddr(target, default_port):
         return (target, default_port)
 
 
+def start_usb_daemon(logstream):
+    from fluxclient.usb.usb2 import USBProtocol
+    import threading
+    import atexit
+
+    logstream.write("Connecting...")
+    usbdevs = USBProtocol.get_interfaces()
+    usbdev = None
+
+    if len(usbdevs) == 0:
+        raise RuntimeError("USB Device not found.")
+    elif len(usbdevs) == 1:
+        usbdev = usbdevs[0]
+    else:
+        raise RuntimeError("Multi usb devices found")
+
+    usbprotocol = USBProtocol(usbdev)
+    t = threading.Thread(target=usbprotocol.run)
+    t.daemon = True
+    t.start()
+    atexit.register(usbprotocol.stop)
+    return usbprotocol
+
+
 def connect_robot_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
     from fluxclient.upnp import discover_device
@@ -84,28 +108,10 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
         session = device.connect_robot(client_key,
                                        conn_callback=working_callback)
     elif target == "usb":
-        from fluxclient.usb.usb2 import USBProtocol
-        import threading
-        import atexit
-
         device = None
-        logstream.write("Connecting...")
-        usbdevs = USBProtocol.get_interfaces()
-        usbdev = None
-
-        if len(usbdevs) == 0:
-            raise RuntimeError("USB Device not found.")
-        elif len(usbdevs) == 1:
-            usbdev = usbdevs[0]
-        else:
-            raise RuntimeError("Multi usb devices found")
-
-        usbprotocol = USBProtocol(usbdev)
-        t = threading.Thread(target=usbprotocol.run)
-        t.daemon = True
-        t.start()
-        atexit.register(usbprotocol.stop)
+        usbprotocol = start_usb_daemon(logstream)
         session = FluxRobot.from_usb(client_key, usbprotocol)
+
     else:
         device = None
         logstream.write("Connecting...")
@@ -135,6 +141,11 @@ def connect_camera_helper(target, client_key, logstream=sys.stdout):
         logstream.write("\nConnecting...")
         session = device.connect_camera(client_key,
                                         conn_callback=working_callback)
+    elif target == "usb":
+        device = None
+        usbprotocol = start_usb_daemon(logstream)
+        session = FluxCamera.from_usb(client_key, usbprotocol)
+
     else:
         device = None
         logstream.write("Connecting...")

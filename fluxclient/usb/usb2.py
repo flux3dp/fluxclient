@@ -242,7 +242,7 @@ class USBProtocol(object):
     def _close_channel(self, channel):
         self.send_object(0xf0, {"channel": channel.index, "action": "close"})
 
-    def open_channel(self):
+    def open_channel(self, channel_type="robot"):
         # Send request
         with self.chl_open_mutex:
             idx = None
@@ -250,7 +250,8 @@ class USBProtocol(object):
                 if self.channels.get(i) is None:
                     idx = i
             logger.debug("Request channel %i", idx)
-            self.send_object(0xf0, {"channel": idx, "action": "open"})
+            self.send_object(0xf0, {"channel": idx, "action": "open",
+                                    "type": channel_type})
 
             self.chl_semaphore.acquire(timeout=3.0)
             channel = self.channels.get(idx)
@@ -261,14 +262,14 @@ class USBProtocol(object):
 
 
 class Channel(object):
+    binary_stream = None
+
     def __init__(self, usbprotocol, index):
         self.index = index
         self.usbprotocol = usbprotocol
         self.obj_semaphore = Semaphore(0)
-        self.buf_semaphore = Semaphore(0)
         self.ack_semaphore = Semaphore(0)
         self.objq = deque()
-        self.bufq = deque()
 
         self.__opened = True
 
@@ -285,8 +286,10 @@ class Channel(object):
         self.obj_semaphore.release()
 
     def on_binary(self, buf):
-        self.bufq.append(buf)
-        self.buf_semaphore.release()
+        if self.binary_stream:
+            self.binary_stream.send(buf)
+        else:
+            logger.error("Recv binary but no output direction")
 
     def on_binary_ack(self):
         self.ack_semaphore.release()
@@ -295,11 +298,6 @@ class Channel(object):
         if self.obj_semaphore.acquire(timeout=timeout) is False:
             raise SystemError("TIMEOUT")
         return self.objq.popleft()
-
-    def get_buffer(self, timeout=3.0):
-        if self.buf_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
-        return self.bufq.popleft()
 
     def send_object(self, obj):
         self.usbprotocol.send_object(self.index, obj)
