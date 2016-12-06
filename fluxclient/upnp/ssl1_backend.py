@@ -76,11 +76,9 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
         return buf.decode("utf8", "ignore")
 
     def send_text(self, message):
-        self.sock.send(SHORT_PACKER.pack(len(message) + 2))
         if isinstance(message, str):
-            self.sock.send(message.encode())
-        else:
-            self.sock.send(message)
+            message = message.encode()
+        self.sock.send(SHORT_PACKER.pack(len(message) + 2))
 
     def connect(self):
         if self.sock:
