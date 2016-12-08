@@ -138,7 +138,7 @@ def fast_add_trust(manager, logger):
 
     try:
         manager.add_trust(getuser(),
-                       manager.client_key.public_key_pem.decode())
+                          manager.client_key.public_key_pem.decode())
         logger.info("authorized.")
         return 0
     except ManagerError as e:
@@ -174,9 +174,9 @@ def main(params=None):
     client_key = get_or_create_default_key(options.client_key)
 
     if is_uuid(options.target):
-        manager = DeviceManager(UUID(hex=options.target), client_key)
+        manager = DeviceManager.from_uuid(client_key, UUID(hex=options.target))
     else:
-        manager = DeviceManager(UUID(int=0), client_key, ipaddr=options.target)
+        manager = DeviceManager.from_ipaddr(client_key, options.target)
 
     if not manager.authorized:
         if options.password is None:
@@ -189,8 +189,8 @@ def main(params=None):
                 "Serial: %s (uuid={%s})\n"
                 "Model: %s\n"
                 "Version: %s\n"
-                "IP Address: %s\n", manager.serial, manager.uuid,
-                manager.model_id, manager.version, manager.ipaddr)
+                "Endpoint: %s\n", manager.serial, manager.uuid,
+                manager.model_id, manager.version, manager.endpoint)
 
     if options.auth_only:
         return fast_add_trust(manager, logger)

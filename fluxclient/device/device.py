@@ -156,8 +156,7 @@ to 1.0. Only vaild while running task (st_id > 0).
         """
 
         from fluxclient.device.manager import DeviceManager
-        return DeviceManager(self.uuid, client_key, self.ipaddr,
-                             device_metadata=self.to_old_dict(), **kw)
+        return DeviceManager.from_device(client_key, self)
 
     def connect_robot(self, client_key, port=23811, **kw):
         """Creates a robot connection

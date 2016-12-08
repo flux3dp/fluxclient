@@ -40,16 +40,14 @@ class SSL1Backend(ManagerAbstractBackend):
     def support_device(cls, model_id, version):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
-    def __init__(self, client_key, uuid, version, model_id, ipaddr,
-                 metadata=None, options={}, port=1901):
-        super(SSL1Backend, self).__init__(
-            client_key, uuid, version, model_id, ipaddr, metadata, options)
+    def __init__(self, client_key, device, port=1901):
+        super(SSL1Backend, self).__init__(client_key, device)
 
-        self.endpoint = (ipaddr, port)
-        self.timedelta = metadata["timedelta"]
-        self.has_password = metadata["has_password"]
-        self.master_key = metadata["master_key"]
-        self.options = options
+        self.endpoint = (device.ipaddr, port)
+        # self.timedelta = metadata["timedelta"]
+        # self.has_password = metadata["has_password"]
+        # self.master_key = metadata["master_key"]
+        # self.options = options
 
         self.connect()
 

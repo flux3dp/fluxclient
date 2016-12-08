@@ -1,10 +1,9 @@
 
 import logging
 
-from fluxclient.utils.version import StrictVersion
-from fluxclient.device.discover import DeviceDiscover
-from .manager_backends import (ManagerError, ManagerException, NotSupportError,
-                               NETWORK_BACKENDS)
+from .manager_backends import (ManagerError, ManagerException,
+                               get_backend_via_ipaddr, get_backend_via_uuid,
+                               get_backend_via_network)
 
 __all__ = ["DeviceManager", "ManagerError", "ManagerException"]
 
@@ -12,95 +11,48 @@ logger = logging.getLogger(__name__)
 
 
 class DeviceManager(object):
-    """DeviceManager provides some configuration methods for the device. When \
-creating a DeviceManager instance, the argument **uuid** is required. If \
-parameter **device_metadata** is not given, DeviceManager will use \
-lookup_callback and lookup_timeout to create a DeviceDiscover instance and \
-try to get metadata from network.
-
-    :param uuid.UUID uuid: Device uuid, set UUID(int=0) while trying to \
-connect via ip address.
-    :param encrypt.KeyObject client_key: Client key to connect to device.
-    :param str ipaddr: IP Address of the machine.
-    :param dict device_metadata: This is an internal parameter, which is not \
-recommended to provide because it may has different definitions in \
-different versions.
-    :param dict backend_options: More configuration for DeviceManager.
-    :param callable lookup_callback: Invoke repeatedly while looking for \
-device.
-    :param float lookup_timeout: Raise an error if the program can not find \
-the device in a limited time.
-    :raises ManagerError: For protocol or operation error.
-    :raises socket.error: For system defined socket error.
+    """DeviceManager provides configuration methods for the device. Use the
+following class methods to create a new manager instance:
+    `fluxclient.device.manager.DeviceManager.from_uuid`
+    `fluxclient.device.manager.DeviceManager.from_ipaddr`
+    `fluxclient.device.manager.DeviceManager.from_device`
     """
-
-    name = None
-    uuid = None
-    serial = None
-    model_id = None
-    version = None
-    ipaddr = None
-    meta = None
 
     _backend = None
 
-    def __init__(self, uuid, client_key, ipaddr=None, device_metadata=None,
-                 remote_profile=None, backend_options={}, lookup_callback=None,
-                 lookup_timeout=float("INF")):
-        self.uuid = uuid
-        self.ipaddr = ipaddr
-        self.client_key = client_key
-        self.backend_options = backend_options
+    def __init__(self, backend):
+        self._backend = backend
 
-        if device_metadata:
-            if 'uuid' in device_metadata:
-                device_metadata.pop('uuid')
-            self.update_remote_profile(uuid, **device_metadata)
-        elif remote_profile:
-            self.update_remote_profile(uuid, **remote_profile)
-        else:
-            self.reload_remote_profile(lookup_callback, lookup_timeout)
+    @classmethod
+    def from_uuid(cls, client_key, uuid, lookup_callback=None,
+                  lookup_timeout=float("INF")):
+        """Manage device by uuid
 
-        self.initialize_backend()
+        :param uuid.UUID uuid: Device uuid"""
+        klass, device = get_backend_via_uuid(uuid, lookup_callback,
+                                             lookup_timeout)
+        backend = klass(client_key, device)
+        return cls(backend)
 
-    def reload_remote_profile(self, lookup_callback=None,
-                              lookup_timeout=float("INF")):
-        def on_discovered(instance, device, **kw):
-            self.update_remote_profile(**(device.to_old_dict()))
-            instance.stop()
+    @classmethod
+    def from_ipaddr(cls, client_key, ipaddr, lookup_callback=None,
+                    lookup_timeout=float("INF")):
+        """Manage device by ip address
 
-        if self.uuid.int:
-            d = DeviceDiscover(uuid=self.uuid)
-        else:
-            d = DeviceDiscover(device_ipaddr=self.ipaddr)
+        :param str ipaddr: IP Address of the machine"""
+        klass, device = get_backend_via_ipaddr(ipaddr, lookup_callback,
+                                               lookup_timeout)
+        backend = klass(client_key, device)
+        return cls(backend)
 
-        d.discover(on_discovered, lookup_callback, lookup_timeout)
+    @classmethod
+    def from_device(cls, client_key, device):
+        """Manage device by device object
 
-    def update_remote_profile(self, uuid, name, serial, model_id, version,
-                              ipaddr, **meta):
-        if not self.uuid or self.uuid.int == 0:
-            self.uuid = uuid
-        self.name = name
-        self.serial = serial
-        self.model_id = model_id
-        self.version = StrictVersion(str(version))
-        self.ipaddr = ipaddr
-        self.device_meta = meta
-
-    def initialize_backend(self):
-        for klass in NETWORK_BACKENDS:
-            if klass.support_device(self.model_id, self.version):
-                self._backend = klass(self.client_key, self.uuid, self.version,
-                                      self.model_id, self.ipaddr,
-                                      self.device_meta, self.backend_options)
-                # TODO: debug information, remove after bugfix
-                logger.info("Backend %s selected", klass.__name__)
-                return
-            # TODO: debug information, remove after bugfix
-            logger.warn("Backend %s does not support device version `%s`",
-                        klass.__name__, self.version)
-
-        raise NotSupportError(self.model_id, self.version)
+        :param fluxclient.device.device.Device device: Device object"""
+        klass = get_backend_via_network(device)
+        backend = klass(client_key, device)
+        return cls(backend)
 
     def close(self):
         """Closes the manager socket connection. After close(), any other \
@@ -115,6 +67,26 @@ password or RSA key. If the connection is not authorized, you must call \
 `authorize_with_password` first to authorize."
 
         return self._backend.authorized
+
+    @property
+    def serial(self):
+        return self._backend.serial
+
+    @property
+    def uuid(self):
+        return self._backend.uuid
+
+    @property
+    def version(self):
+        return self._backend.version
+
+    @property
+    def model_id(self):
+        return self._backend.model_id
+
+    @property
+    def endpoint(self):
+        return self._backend.endpoint
 
     @property
     def connected(self):

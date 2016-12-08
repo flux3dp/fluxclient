@@ -8,13 +8,12 @@ class ManagerAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
     _authorized = False
 
-    def __init__(self, client_key, uuid, version, model_id, ipaddr,
-                 metadata=None, options=None):
+    def __init__(self, client_key, device):
         self.client_key = client_key
-        self.uuid = uuid
-        self.version = version
-        self.model_id = model_id
-        self.ipaddr = ipaddr
+        self.uuid = device.uuid
+        self.version = device.version
+        self.model_id = device.model_id
+        self.serial = device.serial
 
     @classmethod
     def support_device(cls, model_id, version):
