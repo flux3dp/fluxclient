@@ -1,30 +1,20 @@
 
+import warnings
 
-from .abstract_backend import (UpnpError, NotSupportError, AuthError,
-                               TimeoutError)
+from fluxclient.device import discover_device
 from .discover import UpnpDiscover
 from .device import Device
-from .task import UpnpTask
+from .task import UpnpTask, UpnpError, UpnpException
 
-__all__ = ["UpnpDiscover", "UpnpTask", "UpnpError", "NotSupportError",
-           "AuthError", "TimeoutError", "discover_device", "Device"]
+__all__ = ["UpnpTask", "UpnpDiscover", "discover_device", "Device",
+           "UpnpError", "UpnpException"]
 
+warnings.warn("fluxclient.upnp. is going to be deprecate, "
+              "use fluxclient.device instead", DeprecationWarning)
 
-def discover_device(uuid, lookup_callback=None, timeout=float("INF")):
-    """Discover and return device
-
-    :param uuid uuid: Device UUID
-    :param callable lookup_callback: A callable object will be invoke during \
-discover.
-    :rtype: :class:`fluxclient.upnp.device.Device`"""
-
-    result = []
-
-    def found_callback(discover, device, **kw):
-        result.append(device)
-        discover.stop()
-
-    discover = UpnpDiscover(uuid)
-    discover.discover(found_callback, lookup_callback, timeout)
-
-    return result[0] if result else None
+# Module rename note:
+#   fluxclient.upnp.device.Device -> fluxclient.device.device.Device
+#   fluxclient.upnp.discover.UpnpDiscover -> fluxclient.device.discover.DeviceDiscover
+#   fluxclient.upnp.task.UpnpTask -> fluxclient.device.manager.DeviceManager
+#   fluxclient.upnp.task.UpnpError -> fluxclient.device.manager.CommandError
+#   fluxclient.upnp.task.UpnpException -> fluxclient.device.manager.ManagerException

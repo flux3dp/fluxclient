@@ -7,10 +7,10 @@ import struct
 import json
 
 from fluxclient.utils.version import StrictVersion
-from .abstract_backend import (UpnpAbstractBackend, TimeoutError, AuthError,
-                               NotSupportError, UpnpError)
+from .base import (ManagerAbstractBackend, TimeoutError, AuthError,
+                   NotSupportError, ManagerError)
 
-__all__ = ["UpnpUdp1Backend"]
+__all__ = ["Udp1Backend"]
 
 
 CODE_NOPWD_ACCESS = 0x04
@@ -28,7 +28,7 @@ CODE_RESPONSE_SET_NETWORK = 0xa3
 SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b1"))
 
 
-class UpnpUdp1Backend(UpnpAbstractBackend):
+class Udp1Backend(ManagerAbstractBackend):
     sock = None
     _access_id = None
     _authorized = False
@@ -39,7 +39,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
 
     def __init__(self, client_key, uuid, version, model_id, ipaddr,
                  metadata=None, options={}):
-        super(UpnpUdp1Backend, self).__init__(
+        super(Udp1Backend, self).__init__(
             client_key, uuid, version, model_id, ipaddr, metadata, options)
 
         self.endpoint = metadata["endpoint"] if metadata else (ipaddr, 1901)
@@ -127,7 +127,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         if self.slave_key.verify(body, signature):
             message = body.decode("utf8")
             if message[0] == "E":
-                raise UpnpError(message[1:])
+                raise ManagerError(message[1:])
             else:
                 return json.loads(message)
 
@@ -144,11 +144,13 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
                     return
 
                 elif resp.get("status") == "padding":
-                    raise UpnpError("Can not auth because device does not has "
-                                    "password", err_symbol=("NOT_SUPPORT", ))
+                    raise ManagerError(
+                        "Can not auth because device does not has password",
+                        err_symbol=("NOT_SUPPORT", ))
 
                 else:
-                    raise UpnpError("Unknown status '%s'" % resp.get("status"))
+                    raise ManagerError(
+                        "Unknown status '%s'" % resp.get("status"))
 
         raise TimeoutError()
 

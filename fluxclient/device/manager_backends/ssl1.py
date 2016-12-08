@@ -8,10 +8,10 @@ import json
 import ssl
 
 from fluxclient.utils.version import StrictVersion
-from .abstract_backend import (UpnpAbstractBackend, AuthError,
-                               NotSupportError, ConnectionBroken, UpnpError, )
+from .base import (ManagerAbstractBackend, AuthError,
+                   NotSupportError, ConnectionBroken, ManagerError, )
 
-__all__ = ["UpnpSSL1Backend"]
+__all__ = ["SSL1Backend"]
 
 SHORT_PACKER = Struct("<H")
 SUPPORT_VERSION = (StrictVersion("1.1a1"), StrictVersion("2.0a1"))
@@ -23,16 +23,16 @@ def raise_error(ret, **ref):
         message = ref.get(errno[0])
         if not message:
             message = "Error: " + " ".join(errno)
-        return UpnpError(message, err_symbol=errno)
+        return ManagerError(message, err_symbol=errno)
     else:
-        return UpnpError(ret, err_symbol=("UNKNOW_ERROR", ))
+        return ManagerError(ret, err_symbol=("UNKNOW_ERROR", ))
 
 
 def ensure_pair(key, value=None):
     return (key, value)
 
 
-class UpnpSSL1Backend(UpnpAbstractBackend):
+class SSL1Backend(ManagerAbstractBackend):
     sock = None
     _access_id = None
 
@@ -42,7 +42,7 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
 
     def __init__(self, client_key, uuid, version, model_id, ipaddr,
                  metadata=None, options={}, port=1901):
-        super(UpnpSSL1Backend, self).__init__(
+        super(SSL1Backend, self).__init__(
             client_key, uuid, version, model_id, ipaddr, metadata, options)
 
         self.endpoint = (ipaddr, port)
@@ -128,7 +128,7 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
             if err == "AUTH_ERROR":
                 raise AuthError()
             else:
-                raise UpnpError(err)
+                raise ManagerError(err)
 
     @property
     def connected(self):

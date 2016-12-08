@@ -1,10 +1,10 @@
 
 import abc
 
-__all__ = ["UpnpAbstractBackend"]
+__all__ = ["ManagerAbstractBackend"]
 
 
-class UpnpAbstractBackend(object):
+class ManagerAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
     _authorized = False
 
@@ -69,22 +69,22 @@ class UpnpAbstractBackend(object):
         pass
 
 
-class UpnpError(RuntimeError):
-    """When a request can not be processed, UpnpError will be raised"""
+class ManagerError(RuntimeError):
+    """When a request can not be processed, ManagerError will be raised"""
     def __init__(self, *args, **kw):
-        super(UpnpError, self).__init__(*args)
+        super(ManagerError, self).__init__(*args)
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
             self.err_symbol = ("UNKNOWN_ERROR", )
 
 
-class UpnpException(Exception):
-    """When upnp session got a fatel error, UpnpException will be raised and \
+class ManagerException(Exception):
+    """When upnp session got a fatel error, ManagerException will be raised and \
 the UpnpTask instance should be closed and can not be used anymore."""
 
     def __init__(self, *args, **kw):
-        super(UpnpException, self).__init__(*args)
+        super(ManagerException, self).__init__(*args)
         if "err_symbol" in kw:
             self.err_symbol = kw["err_symbol"]
         else:
@@ -92,19 +92,19 @@ the UpnpTask instance should be closed and can not be used anymore."""
 
 
 def NotSupportError(model_id, version):  # noqa
-    return UpnpError(
+    return ManagerError(
         "Device '%s' with '%s' is not supported" % (model_id, version),
         err_symbol=("NOT_SUPPORT", ))
 
 
 def AuthError(reason):  # noqa
-    return UpnpError(reason, err_symbol=("AUTH_ERROR",))
+    return ManagerError(reason, err_symbol=("AUTH_ERROR",))
 
 
 def TimeoutError():  # noqa
-    return UpnpException("Connection timeout", err_symbol=("TIMEOUT", ))
+    return ManagerException("Connection timeout", err_symbol=("TIMEOUT", ))
 
 
 def ConnectionBroken():  # noqa
-    return UpnpException("Connection broken",
-                         err_symbol=("CONNECTION_BROKEN", ))
+    return ManagerException("Connection broken",
+                            err_symbol=("CONNECTION_BROKEN", ))
