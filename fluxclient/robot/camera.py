@@ -1,5 +1,6 @@
 
 from select import select
+import socket
 import struct
 
 from .errors import RobotError, RobotSessionError
@@ -7,7 +8,29 @@ from .ssl_socket import SSLSocket
 from .backends import InitBackend
 
 
+class USBBridgeSocket(object):
+    def __init__(self, usbprotocol):
+        self.channel = usbprotocol.open_channel("camera")
+        self.lsock, self.rsock = socket.socketpair()
+        self.channel.binary_stream = self.rsock
+
+    def __getattr__(self, name):
+        return getattr(self.lsock, name)
+
+    def send(self, buf):
+        self.channel.send_binary(buf)
+
+    def close(self):
+        self.lsock.close()
+        self.channel.close()
+
+
 class FluxCamera(object):
+    @classmethod
+    def from_usb(cls, client_key, usbprotocol):
+        sock = USBBridgeSocket(usbprotocol)
+        return cls("USB", client_key, sock=sock)
+
     """Connect to camera service.
 
     :param tuple endpoint: A tuple contain a pair of IP address and port to \
@@ -20,20 +43,23 @@ connect. For example: ("192.168.1.1", 23812)
     __buffer__ = b""
     __image_length__ = 0
 
-    def __init__(self, endpoint, client_key, device=None):
+    def __init__(self, endpoint, client_key, sock=None, device=None):
         self._device = device
 
-        init_backend = InitBackend(endpoint)
-        proto_ver = init_backend.do_handshake()
-
-        if proto_ver == 3:
-            self.sock = SSLSocket(init_backend.sock, client_key=client_key,
-                                  device=device)
+        if sock:
+            self.sock = sock
         else:
-            raise RobotSessionError("Protocol not support")
+            init_backend = InitBackend(endpoint)
+            proto_ver = init_backend.do_handshake()
 
-        while self.sock.do_handshake() > 0:
-            pass
+            if proto_ver == 3:
+                self.sock = SSLSocket(init_backend.sock, client_key=client_key,
+                                      device=device)
+            else:
+                raise RobotSessionError("Protocol not support")
+
+            while self.sock.do_handshake() > 0:
+                pass
 
     def enable_streaming(self):
         self.sock.send(struct.pack("<H2s", 4, b"s+"))

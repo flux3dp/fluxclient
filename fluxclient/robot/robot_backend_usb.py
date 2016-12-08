@@ -1,6 +1,8 @@
 
+from threading import Thread
 from time import time
 import logging
+import socket
 
 from .robot_backend_2 import RobotBackend2, RobotError, raise_error
 
@@ -9,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 class RobotBackendUSB(RobotBackend2):
     def __init__(self, usbprotocol):
-        self.channel = usbprotocol.open_channel()
+        self.channel = usbprotocol.open_channel("robot")
 
     def send_cmd(self, cmd):
         self.channel.send_object((cmd, ))
 
     def get_resp(self, timeout=3.0):
-        return self.channel.get_object(timeout)[0]
+        return self.channel.get_object(timeout)
 
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):
@@ -66,4 +68,40 @@ class RobotBackendUSB(RobotBackend2):
         return mimetype
 
     def begin_raw(self):
-        raise RuntimeError("NOT_SUPPORT")
+        ret = self.make_cmd(b"task raw")
+        if ret == b"continue":
+            self.raw_stream = USB2Stream(self.channel)
+            return self.raw_stream.public
+        else:
+            raise_error(ret.decode("ascii", "ignore"))
+
+    def quit_raw_mode(self):
+        self.channel.send_binary(b"quit")
+        ret = self.get_resp().decode("ascii", "ignore")
+        if ret != "ok":
+            raise_error(ret)
+
+        self.raw_stream.running = False
+        del self.raw_stream
+
+    def close(self):
+        self.channel.close()
+
+
+class USB2Stream(object):
+    def __init__(self, channel):
+        self.running = True
+        self.channel = channel
+        self.internal, self.public = socket.socketpair()
+
+        self.channel.binary_stream = self.internal
+        self.thread_tx = Thread(target=self.run_tx)
+        self.thread_tx.daemon = True
+        self.thread_tx.start()
+
+    def run_tx(self):
+        while self.running:
+            self.channel.send_binary(self.internal.recv(128))
+
+    def close(self):
+        self.channel.binary_stream = None

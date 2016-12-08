@@ -76,11 +76,10 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
         return buf.decode("utf8", "ignore")
 
     def send_text(self, message):
-        self.sock.send(SHORT_PACKER.pack(len(message) + 2))
         if isinstance(message, str):
-            self.sock.send(message.encode())
-        else:
-            self.sock.send(message)
+            message = message.encode()
+        self.sock.send(SHORT_PACKER.pack(len(message) + 2))
+        self.sock.send(message)
 
     def connect(self):
         if self.sock:
@@ -163,7 +162,10 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
         self.send_text("list_trust")
         while True:
             resp = self.recv_text()
-            if resp.startswith("data "):
+            if resp.startswith("data {") and resp.endswith("}"):
+                data.append(json.loads(resp[5:]))
+
+            elif resp.startswith("data "):
                 d = {}
                 for strpair in resp[5:].split("\x00"):
                     key, value = ensure_pair(*(strpair.split("=", 1)))

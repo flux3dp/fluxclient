@@ -113,8 +113,8 @@ def main():
     """ % {"name": task.name, "serial": task.serial, "uuid": task.uuid.hex,
            "ver": task.remote_version, "pwd": task.has_password})
 
-    resp = do_auth(task).decode("ascii", "ignore")
-    if resp not in ("OK", "ALREADY_TRUSTED"):
-        raise RuntimeError(resp)
+    # resp = do_auth(task).decode("ascii", "ignore")
+    # if resp not in ("OK", "ALREADY_TRUSTED"):
+    #     raise RuntimeError(resp)
 
     cmdline(task)
