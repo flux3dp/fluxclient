@@ -13,7 +13,7 @@ def discover_device(uuid, lookup_callback=None, timeout=float("INF")):
     :param uuid uuid: Device UUID
     :param callable lookup_callback: A callable object will be invoke during \
 discover.
-    :rtype: :class:`fluxclient.upnp.device.Device`"""
+    :rtype: :class:`fluxclient.device.device.Device`"""
 
     result = []
 

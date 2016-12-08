@@ -1,11 +1,11 @@
 
 """
-To find flux devices in the network, `fluxclient.upnp.Discover` class provide \
-interface to discover and collect informations continuously.
+To find flux devices in the network, `fluxclient.device.DeviceDiscover` class \
+provide interface to discover and collect informations continuously.
 
 Basic usage example::
 
-    from fluxclient.upnp import DeviceDiscover
+    from fluxclient.device import DeviceDiscover
 
     def my_callback(discover, device, **kw):
         print("Device '%s' found at %s" % (device.name, device.ipaddr))
@@ -19,7 +19,8 @@ Basic usage example::
 In the example, `my_callback` will be called one a device is found or recive \
 a device status update. A callback contains two positional arguments, first \
 is `DeviceDiscover` instance and second is \
-:class:`fluxclient.upnp.device.Device` instance which it found or been updated.
+:class:`fluxclient.device.device.Device` instance which it found or been \
+updated.
 """
 
 from weakref import proxy
@@ -119,11 +120,11 @@ only.
         Executes discovering task. The callback function has a \
 minimal definition::
 
-            def callback(upnp_discover_instance, device, **kw):
+            def callback(device_discover_instance, device, **kw):
                 pass
 
-        * `upnp_discover_instance` is the instance which calls this method.
-        * `device` a `fluxclient.upnp.Device` instance
+        * `device_discover_instance` is the instance which calls this method.
+        * `device` a `fluxclient.device.device.Device` instance
 
         :param callable callback: This method will be invoked when a device \
 has been found or the computer recived a new status from a device.
@@ -135,8 +136,8 @@ has been found or the computer recived a new status from a device.
         poke_timer = 0
 
         while not self._break:
-            # Poke device to prevent upnp not work while device is in different
-            # subnet.
+            # Poke device to prevent discover not work while device is in
+            # different subnet.
             if self.device_ipaddr and time() - poke_timer > 3:
                 self.poke(self.device_ipaddr)
                 poke_timer = time()

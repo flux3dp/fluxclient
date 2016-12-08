@@ -7,8 +7,8 @@ import sys
 from .misc import (get_or_create_default_key, setup_logger,
                    network_config_helper)
 
-PROG_DESCRIPTION = "Flux upnp tool allow user change device settings."
-PROG_EPILOG = """Upnp tool support
+PROG_DESCRIPTION = "Flux device manage tool allow user change device settings."
+PROG_EPILOG = """Device manage tool support
   'Grant access permission from password'
   'Manage access control list'
   'Change device password'
@@ -16,22 +16,22 @@ PROG_EPILOG = """Upnp tool support
 """
 
 
-def quit_program(upnp, logger):
+def quit_program(manager, logger):
     """Quit"""
     sys.exit(0)
 
 
-def change_device_name(upnp, logger):
+def change_device_name(manager, logger):
     """Change device name"""
     name = input("New device name: ").strip()
     if name:
-        upnp.rename(name)
+        manager.rename(name)
         logger.error("Done.")
     else:
         logger.error("No name given.")
 
 
-def change_device_password(upnp, logger):
+def change_device_password(manager, logger):
     """Change device password"""
     old_pass = getpass("Old password: ")
     new_pass = getpass("New password: ")
@@ -41,59 +41,59 @@ def change_device_password(upnp, logger):
     if len(new_pass) < 3:
         logger.error("Password too short")
         return
-    upnp.modify_password(old_pass, new_pass)
+    manager.modify_password(old_pass, new_pass)
 
 
-def change_network_settings(upnp, logger):
+def change_network_settings(manager, logger):
     """Change network settings"""
     settings = network_config_helper.run()
-    upnp.modify_network(**settings)
+    manager.modify_network(**settings)
 
 
-def get_wifi_list(upnp, logger):
+def get_wifi_list(manager, logger):
     """Get wifi list"""
     logger.info("%17s %5s %23s %s", "bssid", "rssi", "security", "ssid")
-    for r in upnp.get_wifi_list():
+    for r in manager.get_wifi_list():
         logger.info("%17s %5s %23s %s", r["bssid"], r["rssi"], r["security"],
                     r["ssid"])
 
     logger.info("--\n")
 
 
-def add_trust(upnp, logger):
+def add_trust(manager, logger):
     """Add an ID to trusted list"""
 
     filename = input("Keyfile (keep emptry to use current session key): ")
     if filename:
         with open(filename, "r") as f:
-            aid = upnp.add_trust(getuser(), f.read())
+            aid = manager.add_trust(getuser(), f.read())
     else:
-        aid = upnp.add_trust(getuser(),
-                             upnp.client_key.public_key_pem.decode())
+        aid = manager.add_trust(getuser(),
+                                manager.client_key.public_key_pem.decode())
 
     logger.info("Key added with Access ID: %s\n", aid)
 
 
-def list_trust(upnp, logger):
+def list_trust(manager, logger):
     """List trusted ID"""
 
     logger.info("=" * 79)
     logger.info("%40s  %s", "access_id", "label")
     logger.info("-" * 79)
-    for meta in upnp.list_trust():
+    for meta in manager.list_trust():
         logger.info("%40s  %s", meta["access_id"], meta.get("label"))
     logger.info("=" * 79 + "\n")
 
 
-def remove_trust(upnp, logger):
+def remove_trust(manager, logger):
     """Remove trusted ID"""
     access_id = input("Access id to remove: ")
-    upnp.remove_trust(access_id)
+    manager.remove_trust(access_id)
     logger.info("Access ID %s REMOVED.\n", access_id)
 
 
-def run_commands(upnp, logger):
-    from fluxclient.upnp import UpnpError
+def run_commands(manager, logger):
+    from fluxclient.device.manager import ManagerError
 
     tasks = [
         quit_program,
@@ -107,7 +107,7 @@ def run_commands(upnp, logger):
     ]
 
     while True:
-        logger.info("Upnp tool: Choose task id")
+        logger.info("Manage tool: Choose task id")
         for i, t in enumerate(tasks):
             logger.info("  %i: %s", i, t.__doc__)
         logger.info("")
@@ -123,8 +123,8 @@ def run_commands(upnp, logger):
             except (IndexError, ValueError):
                 logger.error("Unknow task: '%s'", r)
                 continue
-            t(upnp, logger)
-        except UpnpError as e:
+            t(manager, logger)
+        except ManagerError as e:
             logger.error("Error '%s'", e)
         except KeyboardInterrupt as e:
             logger.info("\n")
@@ -133,15 +133,15 @@ def run_commands(upnp, logger):
         logger.info("")
 
 
-def fast_add_trust(upnp, logger):
-    from fluxclient.upnp import UpnpError
+def fast_add_trust(manager, logger):
+    from fluxclient.device.manager import ManagerError
 
     try:
-        upnp.add_trust(getuser(),
-                       upnp.client_key.public_key_pem.decode())
+        manager.add_trust(getuser(),
+                       manager.client_key.public_key_pem.decode())
         logger.info("authorized.")
         return 0
-    except UpnpError as e:
+    except ManagerError as e:
         logger.error("Error '%s'", e)
         return 1
 
@@ -169,33 +169,33 @@ def main(params=None):
     logger = setup_logger(__name__, debug=options.verbose)
 
     from fluxclient.robot.misc import is_uuid
-    from fluxclient.upnp import UpnpTask
+    from fluxclient.device import DeviceManager
 
     client_key = get_or_create_default_key(options.client_key)
 
     if is_uuid(options.target):
-        upnp = UpnpTask(UUID(hex=options.target), client_key)
+        manager = DeviceManager(UUID(hex=options.target), client_key)
     else:
-        upnp = UpnpTask(UUID(int=0), client_key, ipaddr=options.target)
+        manager = DeviceManager(UUID(int=0), client_key, ipaddr=options.target)
 
-    if not upnp.authorized:
+    if not manager.authorized:
         if options.password is None:
             password = getpass("Device Password: ")
         else:
             password = options.password
-        upnp.authorize_with_password(password)
+        manager.authorize_with_password(password)
 
     logger.info("\n"
                 "Serial: %s (uuid={%s})\n"
                 "Model: %s\n"
                 "Version: %s\n"
-                "IP Address: %s\n", upnp.serial, upnp.uuid, upnp.model_id,
-                upnp.version, upnp.ipaddr)
+                "IP Address: %s\n", manager.serial, manager.uuid,
+                manager.model_id, manager.version, manager.ipaddr)
 
     if options.auth_only:
-        return fast_add_trust(upnp, logger)
+        return fast_add_trust(manager, logger)
     else:
-        run_commands(upnp, logger)
+        run_commands(manager, logger)
 
 
 if __name__ == "__main__":

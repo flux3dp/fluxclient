@@ -17,7 +17,7 @@ from PIL import Image
 
 from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.encryptor import KeyObject
-from fluxclient.upnp.task import UpnpTask
+from fluxclient.device.manager import DeviceManager
 from fluxclient.commands.misc import get_or_create_default_key
 from fluxclient.robot import FluxRobot, FluxCamera
 from fluxclient.sdk import *
@@ -138,16 +138,16 @@ class Delta(object):
         if password:
             options['backend_options'] = {'password': password}
 
-        upnp_task = UpnpTask(**options)
+        manager = DeviceManager(**options)
 
-        if not upnp_task.authorized:
+        if not manager.authorized:
             if password:
-                upnp_task.authorize_with_password(password)
-                if upnp_task.authorized:
-                    upnp_task.add_trust('sdk key', client_key.public_key_pem.decode())
+                manager.authorize_with_password(password)
+                if manager.authorized:
+                    manager.add_trust('sdk key', client_key.public_key_pem.decode())
                     logger.warning('[Warning]: adding new key into flux delta')
-        if upnp_task.authorized:
-            robot = FluxRobot((upnp_task.ipaddr, 23811), client_key)
+        if manager.authorized:
+            robot = FluxRobot((manager.ipaddr, 23811), client_key)
 
             st_id = robot.report_play()["st_id"]
             if st_id > 0:

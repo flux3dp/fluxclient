@@ -33,7 +33,7 @@ DEVICE_STATUS_CODE = {
 
 class Device(object):
     """A `Device` object is an instance stores device information found from \
-:class:`fluxclient.upnp.UpnpDiscover`"""
+:class:`fluxclient.device.DeviceDiscover`"""
 
     # Device information
     #   Basic Identify
@@ -152,12 +152,12 @@ to 1.0. Only vaild while running task (st_id > 0).
     def manage_device(self, client_key, **kw):
         """Creates a device management sesssion.
 
-        :rtype: :class:`fluxclient.upnp.task.UpnpTask`
+        :rtype: :class:`fluxclient.device.manager.DeviceManager`
         """
 
-        from fluxclient.upnp.task import UpnpTask
-        return UpnpTask(self.uuid, client_key, self.ipaddr,
-                        device_metadata=self.to_old_dict(), **kw)
+        from fluxclient.device.manager import DeviceManager
+        return DeviceManager(self.uuid, client_key, self.ipaddr,
+                             device_metadata=self.to_old_dict(), **kw)
 
     def connect_robot(self, client_key, port=23811, **kw):
         """Creates a robot connection

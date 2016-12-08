@@ -65,7 +65,7 @@ def parse_ipaddr(target, default_port):
 
 
 def start_usb_daemon(logstream):
-    from fluxclient.usb.usb2 import USBProtocol
+    from fluxclient.device.host2host_usb import USBProtocol
     import threading
     import atexit
 
@@ -90,7 +90,7 @@ def start_usb_daemon(logstream):
 
 def connect_robot_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
-    from fluxclient.upnp import discover_device
+    from fluxclient.device import discover_device
     from fluxclient.robot.robot import FluxRobot
 
     def working_callback(discover):
@@ -124,7 +124,7 @@ def connect_robot_helper(target, client_key, logstream=sys.stdout):
 
 def connect_camera_helper(target, client_key, logstream=sys.stdout):
     from fluxclient.robot.misc import is_uuid
-    from fluxclient.upnp import discover_device
+    from fluxclient.device import discover_device
     from fluxclient.robot.camera import FluxCamera
 
     def working_callback(discover):

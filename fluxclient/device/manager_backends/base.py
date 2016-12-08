@@ -80,8 +80,8 @@ class ManagerError(RuntimeError):
 
 
 class ManagerException(Exception):
-    """When upnp session got a fatel error, ManagerException will be raised and \
-the UpnpTask instance should be closed and can not be used anymore."""
+    """When manage session got a fatel error, ManagerException will be raised \
+and the UpnpTask instance should be closed and can not be used anymore."""
 
     def __init__(self, *args, **kw):
         super(ManagerException, self).__init__(*args)

@@ -36,8 +36,8 @@ Shell also support user custom shell. Here is an example:
         # 'robot' argument is an instance of \
 :class:`fluxclient.robot.robot.Robot`
         # 'device' argument is an instance of \
-:class:`fluxclient.upnp.device.Device`. This argument maybe None if user give \
-an IPAddress rather then an UUID.
+:class:`fluxclient.device.device.Device`. This argument maybe None if user \
+give an IPAddress rather then an UUID.
         print("Here is connected robot object: %s" % robot)
         return 0
 

@@ -103,8 +103,8 @@ the device in a limited time.
         raise NotSupportError(self.model_id, self.version)
 
     def close(self):
-        """Closes the upnp socket connection. After close(), any other method \
-should not be called anymore."""
+        """Closes the manager socket connection. After close(), any other \
+method should not be called anymore."""
 
         self._backend.close()
 
@@ -118,7 +118,7 @@ password or RSA key. If the connection is not authorized, you must call \
 
     @property
     def connected(self):
-        """Indicates whether the upnp connection is connected with the \
+        """Indicates whether the manager connection is connected with the \
 device"""
         return self._backend.connected
 
