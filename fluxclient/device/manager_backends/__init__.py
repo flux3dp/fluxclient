@@ -5,8 +5,10 @@ from .base import (ManagerError, ManagerException, NotSupportError, AuthError,
 from .ssl1 import SSL1Backend
 from .udp1 import Udp1Backend
 from .host2host1 import Host2HostBackend1
+from .uart import UartBackend
 
-__all__ = ["Host2HostBackend1", "ManagerError", "ManagerException",
+__all__ = ["Host2HostBackend1", "UartBackend",
+           "ManagerError", "ManagerException",
            "NotSupportError", "AuthError", "TimeoutError", "ConnectionBroken",
            "get_backend_via_uuid", "get_backend_via_ipaddr"]
 

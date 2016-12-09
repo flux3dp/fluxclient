@@ -1,5 +1,6 @@
 
 from getpass import getpass, getuser
+from platform import platform
 from uuid import UUID
 import argparse
 import readline  # noqa
@@ -19,6 +20,13 @@ PROG_EPILOG = """Device manage tool support
 
 class AbortException(Exception):
     pass
+
+
+def is_uart(target):
+    if platform().startswith("Windows"):
+        return target.startswith("COM") and target[3:].isdigit()
+    else:
+        return target.startswith("/")
 
 
 def input_helper(txt):
@@ -220,6 +228,8 @@ def main(params=None):
     elif options.target == "usb":
         usbprotocol = start_usb_daemon(sys.stderr)
         manager = DeviceManager.from_usb(client_key, usbprotocol)
+    elif is_uart(options.target):
+        manager = DeviceManager.from_uart(client_key, options.target)
     else:
         manager = DeviceManager.from_ipaddr(client_key, options.target)
 

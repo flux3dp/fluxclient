@@ -87,10 +87,13 @@ and the UpnpTask instance should be closed and can not be used anymore."""
             self.err_symbol = ("UNKNOWN_ERROR", )
 
 
-def NotSupportError(model_id, version):  # noqa
-    return ManagerError(
-        "Device '%s' with '%s' is not supported" % (model_id, version),
-        err_symbol=("NOT_SUPPORT", ))
+def NotSupportError(model_id, version, text=None):  # noqa
+    if text:
+        return ManagerError(text, err_symbol=("NOT_SUPPORT", ))
+    else:
+        return ManagerError(
+            "Device '%s' with '%s' is not supported" % (model_id, version),
+            err_symbol=("NOT_SUPPORT", ))
 
 
 def AuthError(reason):  # noqa
@@ -104,3 +107,7 @@ def TimeoutError():  # noqa
 def ConnectionBroken():  # noqa
     return ManagerException("Connection broken",
                             err_symbol=("CONNECTION_BROKEN", ))
+
+
+def BadProtocol(txt="Protocol broken"):  # noqa
+    return ManagerException(txt, err_symbol=("BAD_PROTOCOL"))

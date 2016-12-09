@@ -88,10 +88,9 @@ def get_entry_points():
         "console_scripts": [
             "flux_discover=fluxclient.commands.discover:main",
             "flux_robot=fluxclient.commands.robot:main",
-            "flux_upnp=fluxclient.commands.upnp:main",
+            "flux_manager=fluxclient.commands.manager:main",
             "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
-            "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",

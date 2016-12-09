@@ -2,7 +2,7 @@
 import logging
 
 from .manager_backends import (ManagerError, ManagerException,
-                               Host2HostBackend1,
+                               Host2HostBackend1, UartBackend,
                                get_backend_via_ipaddr, get_backend_via_uuid,
                                get_backend_via_network)
 
@@ -60,6 +60,11 @@ following class methods to create a new manager instance:
     @classmethod
     def from_usb(cls, client_key, usbprotocol):
         backend = Host2HostBackend1(client_key, usbprotocol)
+        return cls(backend)
+
+    @classmethod
+    def from_uart(cls, client_key, port, baudrate=115200):
+        backend = UartBackend(client_key, port, baudrate)
         return cls(backend)
 
     def close(self):
