@@ -2,10 +2,11 @@
 from getpass import getpass, getuser
 from uuid import UUID
 import argparse
+import readline  # noqa
 import sys
 
 from .misc import (get_or_create_default_key, setup_logger,
-                   network_config_helper)
+                   network_config_helper, start_usb_daemon)
 
 PROG_DESCRIPTION = "Flux device manage tool allow user change device settings."
 PROG_EPILOG = """Device manage tool support
@@ -16,25 +17,40 @@ PROG_EPILOG = """Device manage tool support
 """
 
 
+class AbortException(Exception):
+    pass
+
+
+def input_helper(txt):
+    try:
+        return input(txt)
+    except KeyboardInterrupt:
+        raise AbortException()
+
+
 def quit_program(manager, logger):
     """Quit"""
     sys.exit(0)
 
 
-def change_device_name(manager, logger):
+def set_nickname(manager, logger):
     """Change device name"""
-    name = input("New device name: ").strip()
+    name = input_helper("New device name: ").strip()
     if name:
-        manager.rename(name)
-        logger.error("Done.")
-    else:
-        logger.error("No name given.")
+        manager.set_nickname(name)
+        logger.info("Done.")
+    elif name == "":
+        logger.error("Name can not be blank")
 
 
-def change_device_password(manager, logger):
+def set_password(manager, logger):
     """Change device password"""
-    old_pass = getpass("Old password: ")
-    new_pass = getpass("New password: ")
+    try:
+        old_pass = getpass("Old password: ")
+        new_pass = getpass("New password: ")
+    except KeyboardInterrupt:
+        raise AbortException()
+
     if getpass("Confirm new password: ") != new_pass:
         logger.error("New password not match")
         return
@@ -44,17 +60,20 @@ def change_device_password(manager, logger):
     manager.modify_password(old_pass, new_pass)
 
 
-def change_network_settings(manager, logger):
+def set_network(manager, logger):
     """Change network settings"""
-    settings = network_config_helper.run()
+    try:
+        settings = network_config_helper.run()
+    except KeyboardInterrupt:
+        raise AbortException
     manager.modify_network(**settings)
 
 
-def get_wifi_list(manager, logger):
+def list_wifi(manager, logger):
     """Get wifi list"""
-    logger.info("%17s %5s %23s %s", "bssid", "rssi", "security", "ssid")
+    logger.info("%17s %5s %10s %s", "bssid", "rssi", "security", "ssid")
     for r in manager.get_wifi_list():
-        logger.info("%17s %5s %23s %s", r["bssid"], r["rssi"], r["security"],
+        logger.info("%17s %5s %10s %s", r["bssid"], r["rssi"], r["security"],
                     r["ssid"])
 
     logger.info("--\n")
@@ -63,15 +82,16 @@ def get_wifi_list(manager, logger):
 def add_trust(manager, logger):
     """Add an ID to trusted list"""
 
-    filename = input("Keyfile (keep emptry to use current session key): ")
+    filename = input_helper("Keyfile (keep emptry to use current session "
+                            "key): ")
     if filename:
         with open(filename, "r") as f:
-            aid = manager.add_trust(getuser(), f.read())
+            manager.add_trust(getuser(), f.read())
     else:
-        aid = manager.add_trust(getuser(),
-                                manager.client_key.public_key_pem.decode())
+        manager.add_trust(getuser(),
+                          manager.client_key.public_key_pem.decode())
 
-    logger.info("Key added with Access ID: %s\n", aid)
+    logger.info("Key added.")
 
 
 def list_trust(manager, logger):
@@ -87,29 +107,48 @@ def list_trust(manager, logger):
 
 def remove_trust(manager, logger):
     """Remove trusted ID"""
-    access_id = input("Access id to remove: ")
-    manager.remove_trust(access_id)
-    logger.info("Access ID %s REMOVED.\n", access_id)
+
+    access_id = input_helper("Access id to remove (input 'all' to delete all "
+                             "keys': ")
+
+    if access_id == "all":
+        for r in manager.list_trust():
+            manager.remove_trust(r["access_id"])
+            logger.info("Access ID %s REMOVED.\n", r["access_id"])
+    elif access_id:
+        manager.remove_trust(access_id)
+        logger.info("Access ID %s REMOVED.\n", access_id)
+    else:
+        logger.info("Abort")
+
+
+def get_network(manager, logger):
+    """Get network informations"""
+    ssid = manager.get_wifi_ssid()
+    ipaddrs = manager.get_ipaddr()
+    logger.info("\nWifi SSID: %s, IP Address: %s\n", ssid, ", ".join(ipaddrs))
 
 
 def run_commands(manager, logger):
     from fluxclient.device.manager import ManagerError
 
-    tasks = [
-        quit_program,
-        change_device_name,
-        change_device_password,
-        change_network_settings,
-        get_wifi_list,
-        add_trust,
-        list_trust,
-        remove_trust,
+    itasks = [
+        ("nickname", set_nickname),
+        ("password", set_password),
+        ("trust", list_trust),
+        ("addtrust", add_trust),
+        ("rmtrust", remove_trust),
+        ("network", set_network),
+        ("listwifi", list_wifi),
+        ("netstat", get_network),
+        ("quit", quit_program),
     ]
 
     while True:
-        logger.info("Manage tool: Choose task id")
-        for i, t in enumerate(tasks):
-            logger.info("  %i: %s", i, t.__doc__)
+        logger.info("%10s   %s", "Command", "Help")
+        logger.info("-" * 36)
+        for cmd, fn in itasks:
+            logger.info("%10s   %s", cmd, fn.__doc__)
         logger.info("")
 
         try:
@@ -117,13 +156,16 @@ def run_commands(manager, logger):
             if not r:
                 continue
 
-            try:
-                i = int(r, 10)
-                t = tasks[i]
-            except (IndexError, ValueError):
-                logger.error("Unknow task: '%s'", r)
-                continue
-            t(manager, logger)
+            task = [fn for cmd, fn in itasks if cmd.startswith(r)]
+            if len(task) == 1:
+                try:
+                    task[0](manager, logger)
+                except AbortException:
+                    logger.info("\n == Abort task, nothing changed. ==")
+            elif len(task) > 1:
+                logger.error("Command %r is ambiguous", r)
+            else:
+                logger.error("Unknow command: '%s'", r)
         except ManagerError as e:
             logger.error("Error '%s'", e)
         except KeyboardInterrupt as e:
@@ -175,6 +217,9 @@ def main(params=None):
 
     if is_uuid(options.target):
         manager = DeviceManager.from_uuid(client_key, UUID(hex=options.target))
+    elif options.target == "usb":
+        usbprotocol = start_usb_daemon(sys.stderr)
+        manager = DeviceManager.from_usb(client_key, usbprotocol)
     else:
         manager = DeviceManager.from_ipaddr(client_key, options.target)
 

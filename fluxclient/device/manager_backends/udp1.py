@@ -38,14 +38,14 @@ class Udp1Backend(ManagerAbstractBackend):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
     def __init__(self, client_key, device):
-        super(Udp1Backend, self).__init__(client_key, device)
+        super(Udp1Backend, self).__init__(
+            client_key, device.uuid, device.serial, device.model_id,
+            device.version)
 
         self.endpoint = device.discover_endpoint
         self.timedelta = device.timedelta
         self.master_key = device.master_key
         self.slave_key = device.slave_key
-
-        self.connect()
 
     @property
     def publickey_der(self):
@@ -187,26 +187,26 @@ class Udp1Backend(ManagerAbstractBackend):
     def remove_trust(self, access_id):
         raise NotSupportError(self.model_id, self.version)
 
-    def rename(self, new_name):
+    def set_nickname(self, nickname):
         raise NotSupportError(self.model_id, self.version)
 
-    def modify_password(self, old_password, new_password, reset_acl):
+    def set_password(self, old_passwd, new_passwd, reset_acl):
         if reset_acl is False:
             raise NotSupportError("Reset ACL can not be false on this version")
 
         req_code = CODE_CHANGE_PWD
         resp_code = CODE_RESPONSE_CHANGE_PWD
 
-        message = "\x00".join((new_password, old_password))
+        message = "\x00".join((new_passwd, old_passwd))
         request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)
 
-    def modify_network(self, options):
+    def set_network(self, **network_options):
         req_code = CODE_SET_NETWORK
         resp_code = CODE_RESPONSE_SET_NETWORK
 
-        message = "\x00".join(("%s=%s" % i for i in options.items()))
+        message = "\x00".join(("%s=%s" % i for i in network_options.items()))
         request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)

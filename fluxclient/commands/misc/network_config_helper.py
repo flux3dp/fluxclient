@@ -41,4 +41,5 @@ def run():
     else:
         kw["method"] = "dhcp"
 
+    print(">>", kw)
     return parse_network_config(**kw)

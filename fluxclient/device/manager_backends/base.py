@@ -8,18 +8,17 @@ class ManagerAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
     _authorized = False
 
-    def __init__(self, client_key, device):
+    def __init__(self, client_key, uuid, serial, model_id, version):
         self.client_key = client_key
-        self.uuid = device.uuid
-        self.version = device.version
-        self.model_id = device.model_id
-        self.serial = device.serial
+        self.uuid = uuid
+        self.serial = serial
+        self.model_id = model_id
+        self.version = version
 
     @classmethod
     def support_device(cls, model_id, version):
         return False
 
-    @abc.abstractproperty
     def authorized(self):
         return self._authorized
 
@@ -35,37 +34,35 @@ class ManagerAbstractBackend(object):
     def close(self):
         pass
 
-    @abc.abstractmethod
     def authorize_with_password(self, password):
-        pass
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
     def add_trust(self, label, pem):
-        pass
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
     def list_trust(self):
-        pass
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
     def remove_trust(self, access_id):
-        pass
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
-    def rename(self, new_device_name):
-        pass
+    def set_nickname(self, nickname):
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
-    def modify_password(self, old_password, new_password, reset_acl):
-        pass
+    def set_password(self, old_passwd, new_passwd, reset_acl):
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
-    def modify_network(self, network_options):
-        pass
+    def set_network(self, **network_options):
+        raise NotSupportError(self.model_id, self.version)
 
-    @abc.abstractmethod
-    def get_wifi_list(self):
-        pass
+    def scan_wifi_access_points(self):
+        raise NotSupportError(self.model_id, self.version)
+
+    def get_wifi_ssid(self):
+        raise NotSupportError(self.model_id, self.version)
+
+    def get_ipaddr(self):
+        raise NotSupportError(self.model_id, self.version)
 
 
 class ManagerError(RuntimeError):

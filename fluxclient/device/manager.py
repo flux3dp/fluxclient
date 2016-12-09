@@ -2,6 +2,7 @@
 import logging
 
 from .manager_backends import (ManagerError, ManagerException,
+                               Host2HostBackend1,
                                get_backend_via_ipaddr, get_backend_via_uuid,
                                get_backend_via_network)
 
@@ -21,7 +22,9 @@ following class methods to create a new manager instance:
     _backend = None
 
     def __init__(self, backend):
+        backend.connect()
         self._backend = backend
+        self.client_key = backend.client_key
 
     @classmethod
     def from_uuid(cls, client_key, uuid, lookup_callback=None,
@@ -54,6 +57,11 @@ following class methods to create a new manager instance:
         backend = klass(client_key, device)
         return cls(backend)
 
+    @classmethod
+    def from_usb(cls, client_key, usbprotocol):
+        backend = Host2HostBackend1(client_key, usbprotocol)
+        return cls(backend)
+
     def close(self):
         """Closes the manager socket connection. After close(), any other \
 method should not be called anymore."""
@@ -66,7 +74,7 @@ method should not be called anymore."""
 password or RSA key. If the connection is not authorized, you must call \
 `authorize_with_password` first to authorize."
 
-        return self._backend.authorized
+        return self._backend.authorized()
 
     @property
     def serial(self):
@@ -102,7 +110,7 @@ trusted from device.
 
         if not self._backend.connected:
             raise ManagerError("Disconnected")
-        if self._backend.authorized:
+        if self._backend.authorized():
             raise ManagerError("Already authorized")
         self._backend.authorize_with_password(password)
 
@@ -123,11 +131,18 @@ trusted from device.
 
         self._backend.add_trust(label, pem)
 
+    def _check_status(self):
+        if not self._backend.connected:
+            raise ManagerError("Disconnected")
+        if not self._backend.authorized:
+            raise ManagerError("Authorize required")
+
     def list_trust(self):
         """Gets all trusted key in the device
 
         :return: ((label, key hash), (label, key hash), ...)"""
 
+        self._check_status()
         return self._backend.list_trust()
 
     def remove_trust(self, access_id):
@@ -135,20 +150,18 @@ trusted from device.
 
         :param str access_id: Key hash which will be removed"""
 
+        self._check_status()
         return self._backend.remove_trust(access_id)
 
-    def rename(self, new_name):
+    def set_nickname(self, nickname):
         """Renames the device
 
-        :param str new_name: New device name"""
+        :param str nickname: Change device nickname"""
 
-        if not self._backend.connected:
-            raise ManagerError("Disconnected")
-        if not self._backend.authorized:
-            raise ManagerError("Authorize required")
-        self._backend.rename(new_name)
+        self._check_status()
+        self._backend.set_nickname(nickname)
 
-    def modify_password(self, old_password, new_password, reset_acl=True):
+    def set_password(self, old_password, new_password, reset_acl=True):
         """Changes the device password, if **reset_acl** set to True, all other \
 authorized user will be deauthorized.
 
@@ -156,27 +169,42 @@ authorized user will be deauthorized.
         :param str new_password: New device password
         :param bool reset_acl: Clear authorized user list in device"""
 
-        if not self._backend.connected:
-            raise ManagerError("Disconnected")
-        if not self._backend.authorized:
-            raise ManagerError("Authorize required")
-        self._backend.modify_password(old_password, new_password, reset_acl)
+        self._check_status()
+        self._backend.set_password(old_password, new_password, reset_acl)
 
-    def modify_network(self, **settings):
+    def set_network(self, **network_options):
         """Modifies the device network, details will be revealed in future \
 documentation."""
 
-        if not self._backend.connected:
-            raise ManagerError("Disconnected")
-        if not self._backend.authorized:
-            raise ManagerError("Authorize required")
-        self._backend.modify_network(**settings)
+        self._check_status()
+        self._backend.set_network(**network_options)
 
-    def get_wifi_list(self):
+    def scan_wifi_access_points(self):
         """Gets wifi lists discovered from the device"""
 
-        if not self._backend.connected:
-            raise ManagerError("Disconnected")
-        if not self._backend.authorized:
-            raise ManagerError("Authorize required")
-        return self._backend.get_wifi_list()
+        self._check_status()
+        return self._backend.scan_wifi_access_points()
+
+    def get_wifi_ssid(self):
+        """Gets wifi ssid connected, return None if not connected"""
+
+        self._check_status()
+        return self._backend.get_wifi_ssid()
+
+    def get_ipaddr(self):
+        """"Gets device ipaddr, return a list"""
+
+        self._check_status()
+        return self._backend.get_ipaddr()
+
+    def rename(self, new_name):
+        return self.set_nickname(new_name)
+
+    def modify_password(self, old_password, new_password, reset_acl=True):
+        return self.set_password(old_password, new_password, reset_acl)
+
+    def modify_network(self, **settings):
+        return self.set_network(**settings)
+
+    def get_wifi_list(self):
+        return self.scan_wifi_access_points()

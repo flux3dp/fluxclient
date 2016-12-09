@@ -4,16 +4,15 @@ from .base import (ManagerError, ManagerException, NotSupportError, AuthError,
                    TimeoutError, ConnectionBroken)
 from .ssl1 import SSL1Backend
 from .udp1 import Udp1Backend
+from .host2host1 import Host2HostBackend1
 
-__all__ = ["ManagerError", "ManagerException", "NotSupportError", "AuthError",
-           "TimeoutError", "ConnectionBroken", "get_backend_via_uuid",
-           "get_backend_via_ipaddr"]
-
-NETWORK_BACKENDS = (SSL1Backend, Udp1Backend)
+__all__ = ["Host2HostBackend1", "ManagerError", "ManagerException",
+           "NotSupportError", "AuthError", "TimeoutError", "ConnectionBroken",
+           "get_backend_via_uuid", "get_backend_via_ipaddr"]
 
 
 def get_backend_via_network(device):
-    for klass in NETWORK_BACKENDS:
+    for klass in (SSL1Backend, Udp1Backend):
         if klass.support_device(device.model_id, device.version):
             return klass
 

@@ -41,15 +41,15 @@ class SSL1Backend(ManagerAbstractBackend):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
     def __init__(self, client_key, device, port=1901):
-        super(SSL1Backend, self).__init__(client_key, device)
+        super(SSL1Backend, self).__init__(
+            client_key, device.uuid, device.serial, device.model_id,
+            device.version)
 
         self.endpoint = (device.ipaddr, port)
         # self.timedelta = metadata["timedelta"]
         # self.has_password = metadata["has_password"]
         # self.master_key = metadata["master_key"]
         # self.options = options
-
-        self.connect()
 
     @property
     def access_id(self):
@@ -181,30 +181,30 @@ class SSL1Backend(ManagerAbstractBackend):
         if resp == "ok":
             return
         else:
-            raise raise_error(resp)
+            raise raise_error(resp, NOT_FOUND="Access id not exist")
 
-    def rename(self, new_name):
-        self.send_text(("\x00".join(("rename", new_name))).encode())
+    def set_nickname(self, nickname):
+        self.send_text(("\x00".join(("rename", nickname))).encode())
         resp = self.recv_text()
         if resp != "ok":
             raise raise_error(resp)
 
-    def modify_password(self, old_password, new_password, reset_acl):
+    def set_password(self, old_passwd, new_passwd, reset_acl):
         clean_acl = "Y" if reset_acl else "F"
-        cmd = "\x00".join(("passwd", old_password, new_password, clean_acl))
+        cmd = "\x00".join(("passwd", old_passwd, new_passwd, clean_acl))
         self.send_text(cmd.encode())
         resp = self.recv_text()
         if resp != "ok":
             raise raise_error(resp)
 
-    def modify_network(self, **settings):
+    def set_network(self, **network_options):
         opts = ["network"]
-        for key, value in settings.items():
+        for key, value in network_options.items():
             opts.append("%s=%s" % (key, value))
         cmd = "\x00".join(opts)
         self.send_text(cmd)
 
-    def get_wifi_list(self):
+    def scan_wifi_access_points(self):
         self.send_text("scan_wifi")
         l = []
 
