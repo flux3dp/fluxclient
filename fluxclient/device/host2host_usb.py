@@ -174,7 +174,7 @@ class USBProtocol(object):
 
             ttl -= 1
             self.send_object(0xfc, None)
-        raise FluxUSBError("Handshake failed.")
+        raise FluxUSBError("Handshake failed.", symbol=("TIMEOUT", ))
 
     def run_once(self):
         self._feed_buffer()
@@ -202,6 +202,8 @@ class USBProtocol(object):
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
             self._on_channel_ctrl_response(msgpack.unpackb(buf))
         else:
+            self.stop()
+            self.close()
             raise FluxUSBError("Recv bad control channel 0x%02x" % channel_idx)
 
     def run(self):
@@ -218,6 +220,10 @@ class USBProtocol(object):
         self.running = False
 
     def close(self):
+        self.send_object(0xfc, None)
+        for idx, channel in self.channels.items():
+            channel.close(directly=True)
+        logger.info("Host2Host closed")
         usb.util.dispose_resources(self._usbdev)
 
     def send_object(self, channel, obj):
@@ -279,18 +285,25 @@ class Channel(object):
         self.index = index
         self.usbprotocol = usbprotocol
         self.obj_semaphore = Semaphore(0)
+        self.buf_semaphore = Semaphore(0)
         self.ack_semaphore = Semaphore(0)
         self.objq = deque()
+        self.bufq = deque()
 
         self.__opened = True
 
     def __del__(self):
         self.close()
 
-    def close(self):
+    @property
+    def alive(self):
+        return self.__opened
+
+    def close(self, directly=False):
         if self.__opened:
             self.__opened = False
-            self.usbprotocol._close_channel(self)
+            if directly is False:
+                self.usbprotocol._close_channel(self)
 
     def on_object(self, obj):
         self.objq.append(obj)
@@ -300,7 +313,13 @@ class Channel(object):
         if self.binary_stream:
             self.binary_stream.send(buf)
         else:
-            logger.error("Recv binary but no output direction")
+            self.bufq.append(buf)
+            self.buf_semaphore.release()
+
+    def get_buffer(self, timeout=3.0):
+        if self.buf_semaphore.acquire(timeout=timeout) is False:
+            raise SystemError("TIMEOUT")
+        return self.bufq.popleft()
 
     def on_binary_ack(self):
         self.ack_semaphore.release()
