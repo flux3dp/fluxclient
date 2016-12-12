@@ -37,8 +37,11 @@ class USBProtocol(object):
 
     def __init__(self, usbdev):
         self._usbdev = dev = usbdev
-        if dev.is_kernel_driver_active(0):
-            dev.detach_kernel_driver(0)
+        try:
+            if dev.is_kernel_driver_active(0):
+                dev.detach_kernel_driver(0)
+        except NotImplementedError:
+            pass
 
         dev.set_configuration()
         cfg = dev.get_active_configuration()
@@ -82,7 +85,7 @@ class USBProtocol(object):
             # note: thread will dead lock if tiemout is 0
             return self._rx.read(length, int(timeout * 1000)).tobytes()
         except usb.core.USBError as e:
-            if e.errno == ETIMEDOUT:
+            if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 return b""
             else:
                 raise FluxUSBError(*e.args)
