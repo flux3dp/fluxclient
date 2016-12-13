@@ -606,7 +606,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def update_firmware(self, instance, stream, size, process_callback=None):
         cmd = "update_fw binary/flux-firmware %i #" % (size)
         self._upload_stream(instance, cmd, stream, size, process_callback)
-        final_ret = self.get_resp()
+        final_ret = self.get_resp(timeout=45.0)
         if final_ret != "ok":
             raise_error(final_ret)
 
