@@ -42,6 +42,13 @@ def split_path(rawpath):
     return entry, path
 
 
+def make_pair(item):
+    if "=" in item:
+        return item.split("=", 1)
+    else:
+        return item, None
+
+
 class MaintainTaskMixIn(object):
     @ok_or_error
     def begin_maintain(self):
@@ -120,6 +127,13 @@ class MaintainTaskMixIn(object):
         ret = self.make_cmd(b"headstatus")
         if ret.startswith("ok "):
             return json.loads(ret[3:])
+        else:
+            raise_error(ret)
+
+    def maintain_diagnosis_sensor(self):
+        ret = self.make_cmd(b"diagnosis_sensor")
+        if ret.startswith("ok "):
+            return dict(make_pair(item) for item in ret[3:].split("\x00"))
         else:
             raise_error(ret)
 

@@ -75,6 +75,7 @@ class RobotConsole(object):
             },
             "headinfo": self.maintain_headinfo,
             "headstatus": self.maintain_headstatus,
+            "diagnosis_sensor": self.maintain_diagnosis_sensor,
 
             "scan": {
                 "begin": self.begin_scan,
@@ -387,6 +388,11 @@ class RobotConsole(object):
 
     def maintain_headstatus(self):
         for key, value in self.task.head_status().items():
+            logger.info("    :%s => %s", key, value)
+        logger.info("ok")
+
+    def maintain_diagnosis_sensor(self):
+        for key, value in self.task.diagnosis_sensor().items():
             logger.info("    :%s => %s", key, value)
         logger.info("ok")
 

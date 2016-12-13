@@ -437,6 +437,10 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_head_status()
 
     @invalied_validator
+    def diagnosis_sensor(self):
+        return self._backend.maintain_diagnosis_sensor()
+
+    @invalied_validator
     def load_filament(self, index=0, temperature=210.0,
                       process_callback=None):
         """Loads the filament"""
