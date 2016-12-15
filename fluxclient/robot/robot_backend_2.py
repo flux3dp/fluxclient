@@ -495,7 +495,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         resp = self.get_resp()
         if resp.startswith("binary text/json"):
             _, bm = self.recv_binary(resp)
-            metadata = json.loads(bm)
+            metadata = json.loads(bm.decode("utf8", "ascii"))
         else:
             raise_error(resp)
 
