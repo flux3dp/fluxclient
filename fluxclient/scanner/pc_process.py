@@ -14,7 +14,7 @@ import sys
 from scipy.interpolate import Rbf
 import numpy as np
 
-from fluxclient.scanner.tools import write_stl, write_pcd, read_pcd, cross
+from fluxclient.scanner.tools import write_stl, write_pcd, write_asc, read_pcd, cross
 from fluxclient.scanner import _scanner
 
 
@@ -204,6 +204,19 @@ class PcProcess():
                     pc_add.append(pc.get_item(p_i))
             tmp = StringIO()
             write_pcd(pc_add, tmp)
+            return tmp.getvalue().encode()
+
+        elif file_format == 'asc':
+            pc_both = self.clouds[name]
+            # WARNING: merge L and R here!
+            pc_add = []
+            pc_size = []
+            for pc in pc_both:
+                pc_size.append(len(pc))
+                for p_i in range(pc_size[-1]):
+                    pc_add.append(pc.get_item(p_i))
+            tmp = StringIO()
+            write_asc(pc_add, tmp)
             return tmp.getvalue().encode()
 
         elif file_format == 'ply':
