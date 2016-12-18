@@ -1,16 +1,21 @@
+
 from select import select
 from time import time
 from uuid import UUID
+import platform
 import logging
 import struct
 import json
+
 from serial import Serial
 
-# for windows
-import platform
 from serial.serialutil import SerialTimeoutException
 from serial.serialutil import SerialException
+
+from fluxclient.utils.version import StrictVersion
 from fluxclient.encryptor import KeyObject
+from .base import (ManagerAbstractBackend, ManagerException, ManagerError,
+                   NotSupportError, TimeoutError, BadProtocol)
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +34,28 @@ def is_windows():
     return platform.platform().startswith("Windows")
 
 
-class UsbTask(object):
+class UartBackend(ManagerAbstractBackend):
+    _authorized = True
     s = None
 
-    def __init__(self, port, client_key=None, baudrate=115200):
+    def __init__(self, client_key, port, baudrate=115200):
         # Select does not work with windows..
+        super(UartBackend, self).__init__(
+            client_key, None, None, None, None)
+
+        self.port = port
+        self.baudrate = baudrate
+
+    def connect(self):
         try:
             if is_windows():
-                self.s = Serial(port=port, baudrate=115200, timeout=0.1)
+                self.s = Serial(port=self.port, baudrate=self.baudrate,
+                                timeout=0.1)
             else:
-                self.s = Serial(port=port, baudrate=115200, timeout=0)
+                self.s = Serial(port=self.port, baudrate=self.baudrate,
+                                timeout=0)
         except SerialException as e:
-            raise UsbTaskException("DEVICE_ERROR") from e
+            raise ManagerException(*e.args, err_symbol=("DEVICE_ERROR", ))
 
         self.s.write(b"\x00" * 16)
         if is_windows():
@@ -55,11 +70,6 @@ class UsbTask(object):
                     self.s.readall()
                 else:
                     break
-
-        if client_key:
-            self.keyobj = client_key
-        else:
-            self.keyobj = KeyObject.get_or_create_keyobj()
         self._discover()
 
     def _discover(self):
@@ -74,14 +84,20 @@ class UsbTask(object):
         self.uuid = UUID(hex=info["uuid"])
         self.serial = info["serial"]
         self.model_id = info["model"]
-        self.timedelta = time() - float(info["time"])
-        self.remote_version = info["ver"]
-        self.has_password = True if int(info["pwd"]) == 1 else False
-        self.name = info["name"]
-        self.remote_addrs = None
+        self.version = StrictVersion(info["ver"])
+        self.nickname = info["name"]
+        self.endpoint = "UART:%s" % self.port
 
         rsakey = self._make_request(CODE_RSAKEY)
         self.device_rsakey = KeyObject.load_keyobj(rsakey)
+
+    @property
+    def connected(self):
+        return self.s is not None
+
+    def close(self):
+        self.s.close()
+        self.s = None
 
     def _make_request(self, code, buf=b"", timeout=6.0):
         try:
@@ -106,11 +122,14 @@ class UsbTask(object):
                             return resp[8:]
                         else:
                             m = resp[8:].decode("ascii", "ignore")
-                            raise UsbTaskError(m, "status: %i" % status)
+                            raise ManagerError("Operation error",
+                                               "status: %i" % status,
+                                               err_symbol=m.split(" "))
 
-            raise UsbTaskException("TIMEOUT")
+            raise TimeoutError()
         except SerialException as e:
-            raise UsbTaskException("DEVICE_ERROR")
+            logger.exception("UART device error")
+            raise ManagerException(*e.args, err_symbol="DEVICE_ERROR")
 
     def _try_parse_response(self, code, buf):
         buf_length = len(buf)
@@ -120,10 +139,9 @@ class UsbTask(object):
 
         mn, rcode, length, status = struct.unpack("<3sHHb", buf[:8])
         if mn != b'\x97\xae\x02':
-            raise UsbTaskException("BAD_PROTOCOL")
+            raise BadProtocol("BAD_PROTOCOL")
         if rcode != code:
-            raise UsbTaskException("BAD_PROTOCOL",
-                                   "Should get %i but get %i" % (code, rcode))
+            raise BadProtocol("Should get %i but get %i" % (code, rcode))
 
         total_length = length + 8
 
@@ -132,45 +150,44 @@ class UsbTask(object):
         elif buf_length == total_length:
             return True
         else:
-            raise UsbTaskException("BAD_PROTOCOL",
-                                   "Response too long")
+            raise BadProtocol("Response too long")
 
-    def require_auth(self, timeout=6.0):
-        ret = self._make_request(CODE_AUTH, self.keyobj.public_key_pem,
-                                 timeout=timeout)
-        if ret not in (b"OK", b"ALREADY_TRUSTED"):
-            raise RuntimeError(ret)
-
-    def auth(self, passwd=None):
-        if passwd:
-            payload = b"PASSWORD" + passwd.encode() + b"\x00" + \
-                      self.keyobj.public_key_pem
-        else:
-            payload = self.keyobj.public_key_pem
-
-        return self._make_request(CODE_AUTH, payload)
-
-    def config_general(self, options):
-        message = "\x00".join(("%s=%s" % i for i in options.items()))
+    def set_nickname(self, nickname):
+        message = "name=%s" % nickname
         ret = self._make_request(CODE_CONFIG_GENERAL, message.encode())
         return ret.decode("ascii", "ignore")
 
-    def config_network(self, options):
-        message = "\x00".join(("%s=%s" % i for i in options.items()))
+    def set_password(self, old_passwd, new_passwd, reset_acl):
+        # TODO: API FIX!
+        if not reset_acl:
+            raise NotSupportError("reset_acl can not be false")
+
+        ret = self._make_request(
+            CODE_SET_PASSWORD,
+            new_passwd.encode() + b"\x00" + self.client_key.public_key_pem)
+        return ret.decode("utf8", "ignore")
+
+    def add_trust(self, label, pem, timeout=6.0):
+        ret = self._make_request(CODE_AUTH, pem.encode(),
+                                 timeout=timeout)
+        if ret == b"OK":
+            pass
+        elif ret == b"ALREADY_TRUSTED":
+            raise ManagerError("Key already in list",
+                               err_symbol=("OPERATION_ERROR", ))
+        else:
+            raise ManagerError(ret.decode("ascii", "ignore"))
+
+    def set_network(self, **network_options):
+        message = "\x00".join(("%s=%s" % i for i in network_options.items()))
         ret = self._make_request(CODE_CONFIG_NETWORK, message.encode())
         return ret.decode("ascii", "ignore")
 
-    def set_password(self, passwd):
-        ret = self._make_request(
-            CODE_SET_PASSWORD,
-            passwd.encode() + b"\x00" + self.keyobj.public_key_pem)
-        return ret.decode("utf8", "ignore")
-
-    def get_ssid(self):
+    def get_wifi_ssid(self):
         return self._make_request(CODE_GET_SSID,
                                   timeout=15.0).decode("utf8", "ignore")
 
-    def list_ssid(self):
+    def scan_wifi_access_points(self):
         doc = self._make_request(CODE_LIST_SSID,
                                  timeout=15.0).decode("utf8", "ignore")
         return json.loads(doc)
@@ -182,14 +199,3 @@ class UsbTask(object):
             return ret.split(" ")
         else:
             return []
-
-    def close(self):
-        self.s.close()
-
-
-class UsbTaskError(RuntimeError):
-    pass
-
-
-class UsbTaskException(SystemError):
-    pass

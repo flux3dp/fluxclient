@@ -5,6 +5,6 @@ Upnp
 .. toctree:: 
     :maxdepth: 2
     
-    UpnpDiscover.rst
-    UpnpTask.rst
+    DeviceDiscover.rst
+    DeviceManager.rst
     Device.rst

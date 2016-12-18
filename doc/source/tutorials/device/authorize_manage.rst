@@ -10,18 +10,18 @@ you can insert your RSA key into device trusted key list.
 Authorize with password
 +++++++++++++++++++++++++
 
-When create a UpnpTask instance, call :func:`fluxclient.upnp.task.UpnpTask.authorized` to ensure your connection grant permission to operation. If `authorized` return False, you have to call :func:`fluxclient.upnp.task.UpnpTask.authorize_with_password` to complete authorize.::
+When create a DeviceManager instance, call :func:`fluxclient.device.manager.DeviceManager.authorized` to ensure your connection grant permission to operation. If `authorized` return False, you have to call :func:`fluxclient.device.manager.DeviceManager.authorize_with_password` to complete authorize.::
 
-    upnptask = UpnpTask(uuid)
-    if upnptask.authorized:
+    manager = DeviceManager(uuid)
+    if manager.authorized:
         pass  # authorized
 
     else:
         password = getpass("Password: ")
         try:
-            upnptask.authorize_with_password(password)
+            manager.authorize_with_password(password)
             print("Authorized")
-        except UpnpError as e:
+        except ManagerError as e:
             print("Authorize failed: %s" % e)
             raise
 
@@ -29,7 +29,7 @@ When create a UpnpTask instance, call :func:`fluxclient.upnp.task.UpnpTask.autho
 Manage device name, network and security
 ++++++++++++++++++++++++++++++++++++++++++
 
-.. autoclass:: fluxclient.upnp.task.UpnpTask
+.. autoclass:: fluxclient.device.manager.DeviceManager
   :members:
 
 Network config settings
@@ -74,7 +74,7 @@ Network config settings
 Error Handling
 ++++++++++++++++++++++++++++++++++++++++++
 
-.. autoclass:: fluxclient.upnp.task.UpnpError
-.. autoclass:: fluxclient.upnp.task.UpnpException
+.. autoclass:: fluxclient.device.manager_backends.base.ManagerError
+.. autoclass:: fluxclient.device.manager_backends.base.ManagerException
 
 .. sectionauthor:: Cerberus Yagami <cerberus@flux3dp.com>

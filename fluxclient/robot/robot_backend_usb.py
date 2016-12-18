@@ -22,7 +22,7 @@ class RobotBackendUSB(RobotBackend2):
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):
         if cmd:
-            upload_ret = self.make_cmd(cmd.encode()).decode("ascii", "ignore")
+            upload_ret = self.make_cmd(cmd.encode())
 
             if upload_ret == "continue":
                 logger.info(upload_ret)
@@ -69,15 +69,15 @@ class RobotBackendUSB(RobotBackend2):
 
     def begin_raw(self):
         ret = self.make_cmd(b"task raw")
-        if ret == b"continue":
+        if ret == "continue":
             self.raw_stream = USB2Stream(self.channel)
             return self.raw_stream.public
         else:
-            raise_error(ret.decode("ascii", "ignore"))
+            raise_error(ret)
 
     def quit_raw_mode(self):
         self.channel.send_binary(b"quit")
-        ret = self.get_resp().decode("ascii", "ignore")
+        ret = self.get_resp()
         if ret != "ok":
             raise_error(ret)
 

@@ -1,10 +1,9 @@
 
-from ipaddress import IPv4Interface, IPv4Address
 from getpass import getpass
 import argparse
 import sys
 
-from fluxclient.upnp.misc import parse_network_config
+from fluxclient.utils.network_config import parse_network_config
 from fluxclient.usb.task import UsbTask, UsbTaskError
 from .misc import get_or_create_default_key, setup_logger, network_config_helper
 

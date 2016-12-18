@@ -8,10 +8,10 @@ import json
 import ssl
 
 from fluxclient.utils.version import StrictVersion
-from .abstract_backend import (UpnpAbstractBackend, AuthError,
-                               NotSupportError, ConnectionBroken, UpnpError, )
+from .base import (ManagerAbstractBackend, AuthError,
+                   NotSupportError, ConnectionBroken, ManagerError, )
 
-__all__ = ["UpnpSSL1Backend"]
+__all__ = ["SSL1Backend"]
 
 SHORT_PACKER = Struct("<H")
 SUPPORT_VERSION = (StrictVersion("1.1a1"), StrictVersion("2.0a1"))
@@ -23,16 +23,16 @@ def raise_error(ret, **ref):
         message = ref.get(errno[0])
         if not message:
             message = "Error: " + " ".join(errno)
-        return UpnpError(message, err_symbol=errno)
+        return ManagerError(message, err_symbol=errno)
     else:
-        return UpnpError(ret, err_symbol=("UNKNOW_ERROR", ))
+        return ManagerError(ret, err_symbol=("UNKNOW_ERROR", ))
 
 
 def ensure_pair(key, value=None):
     return (key, value)
 
 
-class UpnpSSL1Backend(UpnpAbstractBackend):
+class SSL1Backend(ManagerAbstractBackend):
     sock = None
     _access_id = None
 
@@ -40,18 +40,16 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
     def support_device(cls, model_id, version):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
-    def __init__(self, client_key, uuid, version, model_id, ipaddr,
-                 metadata=None, options={}, port=1901):
-        super(UpnpSSL1Backend, self).__init__(
-            client_key, uuid, version, model_id, ipaddr, metadata, options)
+    def __init__(self, client_key, device, port=1901):
+        super(SSL1Backend, self).__init__(
+            client_key, device.uuid, device.serial, device.model_id,
+            device.version)
 
-        self.endpoint = (ipaddr, port)
-        self.timedelta = metadata["timedelta"]
-        self.has_password = metadata["has_password"]
-        self.master_key = metadata["master_key"]
-        self.options = options
-
-        self.connect()
+        self.endpoint = (device.ipaddr, port)
+        # self.timedelta = metadata["timedelta"]
+        # self.has_password = metadata["has_password"]
+        # self.master_key = metadata["master_key"]
+        # self.options = options
 
     @property
     def access_id(self):
@@ -128,7 +126,7 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
             if err == "AUTH_ERROR":
                 raise AuthError()
             else:
-                raise UpnpError(err)
+                raise ManagerError(err)
 
     @property
     def connected(self):
@@ -183,30 +181,30 @@ class UpnpSSL1Backend(UpnpAbstractBackend):
         if resp == "ok":
             return
         else:
-            raise raise_error(resp)
+            raise raise_error(resp, NOT_FOUND="Access id not exist")
 
-    def rename(self, new_name):
-        self.send_text(("\x00".join(("rename", new_name))).encode())
+    def set_nickname(self, nickname):
+        self.send_text(("\x00".join(("rename", nickname))).encode())
         resp = self.recv_text()
         if resp != "ok":
             raise raise_error(resp)
 
-    def modify_password(self, old_password, new_password, reset_acl):
+    def set_password(self, old_passwd, new_passwd, reset_acl):
         clean_acl = "Y" if reset_acl else "F"
-        cmd = "\x00".join(("passwd", old_password, new_password, clean_acl))
+        cmd = "\x00".join(("passwd", old_passwd, new_passwd, clean_acl))
         self.send_text(cmd.encode())
         resp = self.recv_text()
         if resp != "ok":
             raise raise_error(resp)
 
-    def modify_network(self, **settings):
+    def set_network(self, **network_options):
         opts = ["network"]
-        for key, value in settings.items():
+        for key, value in network_options.items():
             opts.append("%s=%s" % (key, value))
         cmd = "\x00".join(opts)
         self.send_text(cmd)
 
-    def get_wifi_list(self):
+    def scan_wifi_access_points(self):
         self.send_text("scan_wifi")
         l = []
 

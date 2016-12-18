@@ -3,12 +3,14 @@ from collections import deque
 from threading import Semaphore, Lock
 from struct import Struct
 from errno import errorcode, ETIMEDOUT
+from uuid import UUID
 import logging
 import msgpack
 
 import usb.core
 import usb.util
 
+from fluxclient.utils.version import StrictVersion
 from fluxclient import __version__
 
 logger = logging.getLogger(__name__)
@@ -35,9 +37,11 @@ class USBProtocol(object):
 
     def __init__(self, usbdev):
         self._usbdev = dev = usbdev
-        logger.debug("USB device found")
-        if dev.is_kernel_driver_active(0):
-            dev.detach_kernel_driver(0)
+        try:
+            if dev.is_kernel_driver_active(0):
+                dev.detach_kernel_driver(0)
+        except NotImplementedError:
+            pass
 
         dev.set_configuration()
         cfg = dev.get_active_configuration()
@@ -51,7 +55,7 @@ class USBProtocol(object):
             self._tx = usb.util.find_descriptor(
                 intf, bmAttributes=0x2,
                 custom_match=match_direction(usb.util.ENDPOINT_OUT))
-            logger.debug("USB TX/RX confirmed")
+            logger.info("Host2Host USB device opened")
             self.do_handshake()
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
@@ -81,7 +85,7 @@ class USBProtocol(object):
             # note: thread will dead lock if tiemout is 0
             return self._rx.read(length, int(timeout * 1000)).tobytes()
         except usb.core.USBError as e:
-            if e.errno == ETIMEDOUT:
+            if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 return b""
             else:
                 raise FluxUSBError(*e.args)
@@ -108,9 +112,9 @@ class USBProtocol(object):
                                unicode_errors="ignore")
         session = data.pop("session", "?")
         if self.session is None:
-            logger.debug("Get handshake session: %s", session)
+            logger.info("Get handshake session: %s", session)
         else:
-            logger.debug("Replace handshake session: %s", session)
+            logger.info("Replace handshake session: %s", session)
 
         self.endpoint_profile = data
         self.session = session
@@ -121,11 +125,19 @@ class USBProtocol(object):
         data = msgpack.unpackb(buf, use_list=False, encoding="utf8",
                                unicode_errors="ignore")
         if data["session"] == self.session:
-            logger.debug("USB handshake completed")
+            self.uuid = UUID(hex=self.endpoint_profile["uuid"])
+            self.serial = self.endpoint_profile["serial"]
+            self.version = StrictVersion(self.endpoint_profile["version"])
+            self.model_id = self.endpoint_profile["model"]
+            self.nickname = self.endpoint_profile["nickname"]
+
+            logger.info("Host2Host USB Connected")
+            logger.debug("Serial: %s {%s}\nModel: %s\nName: %s\n",
+                         self.serial, self.uuid, self.model_id, self.nickname)
             return True
         else:
-            logger.debug("USB final handshake error with wrong session "
-                         "recv=%i, except=%i", data["session"], self.session)
+            logger.info("USB final handshake error with wrong session "
+                        "recv=%i, except=%i", data["session"], self.session)
             self.session = None
             return False
 
@@ -152,20 +164,20 @@ class USBProtocol(object):
                         if self._final_handshake(buf):
                             return True
                     else:
-                        logger.debug("Recv unexcept final handshake")
+                        logger.warning("Recv unexcept final handshake")
                 elif channel_idx == -1:
-                    logger.debug("Recv 0")
+                    logger.warning("Recv 0")
                     continue
                 else:
-                    logger.debug("Recv unexcept channel idx %r and fin "
-                                 "%r in handshake", channel_idx, fin)
+                    logger.warning("Recv unexcept channel idx %r and fin "
+                                   "%r in handshake", channel_idx, fin)
                     continue
             else:
-                logger.debug("Handshake timeout, retry")
+                logger.info("Handshake timeout, retry")
 
             ttl -= 1
             self.send_object(0xfc, None)
-        raise FluxUSBError("Handshake failed.")
+        raise FluxUSBError("Handshake failed.", symbol=("TIMEOUT", ))
 
     def run_once(self):
         self._feed_buffer()
@@ -179,7 +191,8 @@ class USBProtocol(object):
             if channel is None:
                 raise FluxUSBError("Recv bad channel idx 0x%02x" % channel_idx)
             if fin == 0xf0:
-                channel.on_object(msgpack.unpackb(buf))
+                channel.on_object(msgpack.unpackb(buf, encoding="utf8",
+                                  unicode_errors="ignore"))
             elif fin == 0xff:
                 self._send_binary_ack(channel_idx)
                 channel.on_binary(buf)
@@ -192,6 +205,8 @@ class USBProtocol(object):
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
             self._on_channel_ctrl_response(msgpack.unpackb(buf))
         else:
+            self.stop()
+            self.close()
             raise FluxUSBError("Recv bad control channel 0x%02x" % channel_idx)
 
     def run(self):
@@ -208,6 +223,10 @@ class USBProtocol(object):
         self.running = False
 
     def close(self):
+        self.send_object(0xfc, None)
+        for idx, channel in self.channels.items():
+            channel.close(directly=True)
+        logger.info("Host2Host closed")
         usb.util.dispose_resources(self._usbdev)
 
     def send_object(self, channel, obj):
@@ -227,19 +246,20 @@ class USBProtocol(object):
             if status == b"ok":
                 self.channels[index] = Channel(self, index)
                 self.chl_semaphore.release()
-                logger.debug("Channel %i opened", index)
+                logger.info("Channel %i opened", index)
             else:
                 logger.error("Channel %i open failed", index)
         elif action == b"close":
             if status == b"ok":
                 self.channels.pop(index)
-                logger.debug("Channel %i closed", index)
+                logger.info("Channel %i closed", index)
             else:
                 logger.error("Channel %i close failed", index)
         else:
             logger.error("Unknown channel action: %r", action)
 
     def _close_channel(self, channel):
+        logger.info("Close channel %i", channel.index)
         self.send_object(0xf0, {"channel": channel.index, "action": "close"})
 
     def open_channel(self, channel_type="robot"):
@@ -249,7 +269,7 @@ class USBProtocol(object):
             for i in range(len(self.channels) + 1):
                 if self.channels.get(i) is None:
                     idx = i
-            logger.debug("Request channel %i", idx)
+            logger.info("Request channel %i with type %s", idx, channel_type)
             self.send_object(0xf0, {"channel": idx, "action": "open",
                                     "type": channel_type})
 
@@ -268,18 +288,25 @@ class Channel(object):
         self.index = index
         self.usbprotocol = usbprotocol
         self.obj_semaphore = Semaphore(0)
+        self.buf_semaphore = Semaphore(0)
         self.ack_semaphore = Semaphore(0)
         self.objq = deque()
+        self.bufq = deque()
 
         self.__opened = True
 
     def __del__(self):
         self.close()
 
-    def close(self):
+    @property
+    def alive(self):
+        return self.__opened
+
+    def close(self, directly=False):
         if self.__opened:
             self.__opened = False
-            self.usbprotocol._close_channel(self)
+            if directly is False:
+                self.usbprotocol._close_channel(self)
 
     def on_object(self, obj):
         self.objq.append(obj)
@@ -289,7 +316,13 @@ class Channel(object):
         if self.binary_stream:
             self.binary_stream.send(buf)
         else:
-            logger.error("Recv binary but no output direction")
+            self.bufq.append(buf)
+            self.buf_semaphore.release()
+
+    def get_buffer(self, timeout=3.0):
+        if self.buf_semaphore.acquire(timeout=timeout) is False:
+            raise SystemError("TIMEOUT")
+        return self.bufq.popleft()
 
     def on_binary_ack(self):
         self.ack_semaphore.release()

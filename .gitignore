@@ -62,6 +62,7 @@ tests/scanner/data/inso
 # file that Cython generate
 src/scanner/scanner.cpp
 src/printer/printer.cpp
+src/utils/utils.cpp
 
 #################
 ## Visual Studio
