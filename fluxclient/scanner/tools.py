@@ -125,7 +125,7 @@ def write_pcd(points, file_name="model.pcd"):
     else:
         f = file_name
 
-    # write Header
+    # Write Header
     print('# .PCD v.7 - Point Cloud Data file format', file=f)
     print('VERSION .7', file=f)
     print('FIELDS x y z rgb', file=f)
@@ -137,6 +137,31 @@ def write_pcd(points, file_name="model.pcd"):
     print('VIEWPOINT 0 0 0 10 0 0 0', file=f)
     print('POINTS %d' % len(points), file=f)
     print('DATA ascii', file=f)
+    for i in points:
+        print('%f %f %f %f' % (i[0], i[1], i[2], (int(i[3]) << 16) | (int(i[4]) << 8) | int(i[5])), file=f)
+
+    print('write', len(points), 'points', file=sys.stderr)
+
+
+
+def write_asc(points, file_name="model.pcd"):
+    """
+      write a pointclooud as .pcd file, in binary mode or ascii mode. (compact or readable)
+      points should look like this:
+                            [
+                              p1[x-coordinate, y-coord, z-coord, r, g, b],
+                              p2[x-coordinate, y-coord, z-coord, r, g, b],
+                              p3[x-coordinate, y-coord, z-coord, r, g, b],
+                                ...
+                            ]
+                            (coordinate and color data for each point, in a list of points for a pointclooud)
+    use StringsIO for output
+    """
+    if type(file_name) == str:
+        f = open(file_name, 'w')
+    else:
+        f = file_name
+
     for i in points:
         print('%f %f %f %f' % (i[0], i[1], i[2], (int(i[3]) << 16) | (int(i[4]) << 8) | int(i[5])), file=f)
 

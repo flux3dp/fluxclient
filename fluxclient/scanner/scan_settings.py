@@ -10,11 +10,11 @@ class ScanSetting(object):
         self.scan_step = 400  # steps
         self.theta_a = pi / 6  # radius between center and laser
 
-        self.img_width = 1280
-        self.img_height = 720
+        self.img_width = 720
+        self.img_height = 1280
 
-        self.sensorWidth = 3.67
-        self.sensorHeight = 2.74 + 0.08
+        self.sensorWidth = 3.57 #3.67
+        self.sensorHeight = 6.35 # 2.74 + 0.08
         self.focalLength = 3.6
 
         # ######### mockup 2, measure by solidwork###
