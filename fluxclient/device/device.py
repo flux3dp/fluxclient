@@ -5,7 +5,6 @@ import warnings
 
 from fluxclient.utils.version import StrictVersion
 from fluxclient.encryptor import KeyObject
-from fluxclient.robot import FluxCamera, FluxRobot
 
 __all__ = ["Device"]
 
@@ -163,6 +162,8 @@ to 1.0. Only vaild while running task (st_id > 0).
 
         :rtype: :class:`fluxclient.robot.robot.Robot`
         """
+
+        from fluxclient.robot import FluxRobot
         # TODO
         kw.pop("conn_callback", None)
         return FluxRobot((self.ipaddr, port), client_key, device=self, **kw)
@@ -172,6 +173,8 @@ to 1.0. Only vaild while running task (st_id > 0).
 
         :rtype: :class:`fluxclient.robot.camera.Camera`
         """
+
+        from fluxclient.robot import FluxCamera
         # TODO
         kw.pop("conn_callback", None)
         return FluxCamera((self.ipaddr, port), client_key, device=self, **kw)

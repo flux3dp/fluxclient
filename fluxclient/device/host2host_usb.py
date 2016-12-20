@@ -321,7 +321,7 @@ class Channel(object):
 
     def get_buffer(self, timeout=3.0):
         if self.buf_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
         return self.bufq.popleft()
 
     def on_binary_ack(self):
@@ -329,7 +329,7 @@ class Channel(object):
 
     def get_object(self, timeout=3.0):
         if self.obj_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
         return self.objq.popleft()
 
     def send_object(self, obj):
@@ -338,7 +338,7 @@ class Channel(object):
     def send_binary(self, buf, timeout=3.0):
         self.usbprotocol.send_binary(self.index, buf)
         if self.ack_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
 
 
 class FluxUSBError(Exception):

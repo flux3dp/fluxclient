@@ -137,6 +137,13 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
+    def maintain_diagnosis(self, option):
+        ret = self.make_cmd(option.encode() + b"_diagnosis")
+        if ret.startswith("ok "):
+            return ret[3:]
+        else:
+            raise_error(ret)
+
     def maintain_load_filament(self, instance, index, temp, process_callback):
         ret = self.make_cmd(
             ("load_filament %i %.1f" % (index, temp)).encode())
@@ -250,7 +257,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self.get_resp()
+            resp = self.get_resp(15)
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
@@ -265,7 +272,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self.get_resp()
+            resp = self.get_resp(15)
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))

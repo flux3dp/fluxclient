@@ -4,6 +4,7 @@ from time import time
 import logging
 import socket
 
+from fluxclient.device.host2host_usb import FluxUSBError
 from .robot_backend_2 import RobotBackend2, RobotError, raise_error
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,11 @@ class RobotBackendUSB(RobotBackend2):
         self.channel.send_object((cmd, ))
 
     def get_resp(self, timeout=3.0):
-        return self.channel.get_object(timeout)
+        try:
+            return self.channel.get_object(timeout)
+        except FluxUSBError:
+            self.close()
+            raise
 
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):
@@ -86,6 +91,7 @@ class RobotBackendUSB(RobotBackend2):
 
     def close(self):
         self.channel.close()
+        self.channel = None
 
 
 class USB2Stream(object):
