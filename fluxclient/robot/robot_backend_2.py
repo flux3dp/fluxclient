@@ -130,6 +130,12 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
+    def maintain_set_heater(self, index, temperature):
+        ret = self.make_cmd(
+            ("extruder_temp %i %.1f" % (index, temperature)).encode())
+        if ret != "ok":
+            raise_error(ret)
+
     def maintain_diagnosis_sensor(self):
         ret = self.make_cmd(b"diagnosis_sensor")
         if ret.startswith("ok "):
