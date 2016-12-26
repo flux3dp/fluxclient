@@ -5,7 +5,8 @@ import logging
 import socket
 
 from fluxclient.device.host2host_usb import FluxUSBError
-from .robot_backend_2 import RobotBackend2, RobotError, raise_error
+from .robot_backend_2 import (RobotBackend2, RobotError, RobotSessionError,
+                              raise_error)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class RobotBackendUSB(RobotBackend2):
     def send_cmd(self, cmd):
         self.channel.send_object((cmd, ))
 
-    def get_resp(self, timeout=3.0):
+    def get_resp(self, timeout=10.0):
         try:
             return self.channel.get_object(timeout)
         except FluxUSBError:
@@ -70,7 +71,15 @@ class RobotBackendUSB(RobotBackend2):
             left -= stream.write(buf)
             if callback:
                 callback(left, size)
-        return mimetype
+
+        # TODO
+        logger.debug("debug buffer queue: %r (%i)",
+                     self.channel.bufq,
+                     self.channel.buf_semaphore._value)
+        if left == 0:
+            return mimetype
+        else:
+            raise RobotSessionError("Recv data length mismatch.")
 
     def begin_raw(self):
         ret = self.make_cmd(b"task raw")
@@ -90,8 +99,9 @@ class RobotBackendUSB(RobotBackend2):
         del self.raw_stream
 
     def close(self):
-        self.channel.close()
-        self.channel = None
+        if self.channel:
+            self.channel.close()
+            self.channel = None
 
 
 class USB2Stream(object):
