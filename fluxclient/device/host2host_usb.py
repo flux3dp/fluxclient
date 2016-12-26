@@ -262,7 +262,7 @@ class USBProtocol(object):
         logger.info("Close channel %i", channel.index)
         self.send_object(0xf0, {"channel": channel.index, "action": "close"})
 
-    def open_channel(self, channel_type="robot"):
+    def open_channel(self, channel_type="robot", timeout=10.0):
         # Send request
         with self.chl_open_mutex:
             idx = None
@@ -273,12 +273,12 @@ class USBProtocol(object):
             self.send_object(0xf0, {"channel": idx, "action": "open",
                                     "type": channel_type})
 
-            self.chl_semaphore.acquire(timeout=3.0)
+            self.chl_semaphore.acquire(timeout=timeout)
             channel = self.channels.get(idx)
             if channel:
                 return self.channels[idx]
             else:
-                raise RuntimeError("Channel creation failed")
+                raise FluxUSBError("Channel creation failed")
 
 
 class Channel(object):
@@ -319,7 +319,7 @@ class Channel(object):
             self.bufq.append(buf)
             self.buf_semaphore.release()
 
-    def get_buffer(self, timeout=3.0):
+    def get_buffer(self, timeout=10.0):
         if self.buf_semaphore.acquire(timeout=timeout) is False:
             raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
         return self.bufq.popleft()
@@ -327,7 +327,7 @@ class Channel(object):
     def on_binary_ack(self):
         self.ack_semaphore.release()
 
-    def get_object(self, timeout=3.0):
+    def get_object(self, timeout=10.0):
         if self.obj_semaphore.acquire(timeout=timeout) is False:
             raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
         return self.objq.popleft()
@@ -335,7 +335,7 @@ class Channel(object):
     def send_object(self, obj):
         self.usbprotocol.send_object(self.index, obj)
 
-    def send_binary(self, buf, timeout=3.0):
+    def send_binary(self, buf, timeout=10.0):
         self.usbprotocol.send_binary(self.index, buf)
         if self.ack_semaphore.acquire(timeout=timeout) is False:
             raise FluxUSBError("Operation timeout", symbol="TIMEOUT")
