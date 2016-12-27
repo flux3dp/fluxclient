@@ -369,7 +369,8 @@ ini_constraint = {
     'detect_head_tilt': [binary],
     'flux_calibration': [binary],
     'pause_at_layers': False,
-    'fake_print': [int_range, 0, 9999]
+    'fake_print': [int_range, 0, 9999],
+    'geometric_error_correction_on': [binary]
 }
 
 ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']
