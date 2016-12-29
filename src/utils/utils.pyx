@@ -316,7 +316,9 @@ cdef class GcodeToFcodeCpp:
             self.md['TIME_COST'] = str(fc.time_need)
             self.md['CREATED_AT'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(time.time()))
             self.md['AUTHOR'] = getuser()  # TODO: use fluxstudio user name?
-            self.md['BACKLASH'] = 'Y' if self.config.get('geometric_error_correction_on', '0') else 'N'
+            
+            if self.config.get('geometric_error_correction_on', '0') == '1':
+                self.md['BACKLASH'] = 'Y' 
 
             logger.info("[G2FCPP] Finished parsing");
             self.write_metadata(output_stream, self.md)

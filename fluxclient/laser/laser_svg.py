@@ -24,6 +24,7 @@ class LaserSvg(LaserBase, SVGParser):
 
     def reset(self):
         self.ext_metadata['HEAD_TYPE'] = 'LASER'
+        self.ext_metadata['BACKLASH'] = 'Y'
 
         self.svgs = {}
         self.ready_svgs = {}

@@ -374,4 +374,4 @@ ini_constraint = {
     'geometric_error_correction_on': [binary]
 }
 
-ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']
+ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers', 'geometric_error_correction_on']
