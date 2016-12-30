@@ -21,7 +21,7 @@ def raise_error(ret):
         errors = ret.split(" ")[1:]
         raise RobotError(*errors, error_symbol=errors)
     else:
-        raise RobotError("UNKNOW_ERROR", ret)
+        raise RobotError(ret, error_symbol="L_UNKNOW_ERROR")
 
 
 def ok_or_error(fn, resp="ok"):
@@ -57,7 +57,7 @@ class MaintainTaskMixIn(object):
     def maintain_home(self):
         self.send_cmd(b"home")
         while True:
-            ret = self.get_resp(6.0)
+            ret = self.get_resp()
             if ret.startswith("DEBUG"):
                 logger.debug(ret[6:])
             elif ret == "ok":
@@ -246,12 +246,12 @@ class ScanTaskMixIn(object):
 
     def scan_check_camera(self):
         self.send_cmd(b"scan_check")
-        resp = self.get_resp(timeout=99999)
+        resp = self.get_resp()
         return resp
 
     def scan_calibrate(self):
         self.send_cmd(b"calibrate")
-        resp = self.get_resp(timeout=99999)
+        resp = self.get_resp()
         return resp
 
     def scan_get_calibrate(self):
@@ -263,7 +263,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self.get_resp(15)
+            resp = self.get_resp()
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
@@ -278,7 +278,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self.get_resp(15)
+            resp = self.get_resp()
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
@@ -346,7 +346,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
         return message.decode("utf8", "ignore")
 
-    def make_cmd(self, buf, timeout=30.0):
+    def make_cmd(self, buf, timeout=180.0):
         self.send_cmd(buf)
         return self.get_resp(timeout)
 
