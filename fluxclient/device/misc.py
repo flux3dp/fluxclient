@@ -36,7 +36,7 @@ def validate_identify(uuid, identify, serial=None, masterkey_doc=None):
                 ret = vk.verify(identify, doc, hashfunc=sha256,
                                 sigdecode=ecdsa.util.sigdecode_der)
             except ecdsa.BadSignatureError:
-                if serial[:4] in ("FD1A", "F1K0", "B11A", "B11B"):
+                if serial[:4] in ("FD1A", "F1K0", "B11A", "B11B", "4040"):
                     ret = vk.verify(identify, doc, hashfunc=sha1,
                                     sigdecode=ecdsa.util.sigdecode_der)
                 else:
