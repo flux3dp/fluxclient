@@ -1,6 +1,6 @@
 
 from pkg_resources import resource_string
-from hashlib import sha1
+from hashlib import sha1, sha256
 import logging
 import ecdsa
 
@@ -31,8 +31,17 @@ def validate_identify(uuid, identify, serial=None, masterkey_doc=None):
             return VALIDATE_CACHE[uuid] == masterkey_doc
         else:
             doc = serial.encode() + b"$" + uuid.bytes + b"$" + masterkey_doc
-            ret = vk.verify(identify, doc, hashfunc=sha1,
-                            sigdecode=ecdsa.util.sigdecode_der)
+
+            try:
+                ret = vk.verify(identify, doc, hashfunc=sha256,
+                                sigdecode=ecdsa.util.sigdecode_der)
+            except ecdsa.BadSignatureError:
+                if serial[:4] in ("FD1A", "F1K0", "B11A", "B11B", "4040"):
+                    ret = vk.verify(identify, doc, hashfunc=sha1,
+                                    sigdecode=ecdsa.util.sigdecode_der)
+                else:
+                    raise
+
             if ret:
                 VALIDATE_CACHE[uuid] = masterkey_doc
             return ret
