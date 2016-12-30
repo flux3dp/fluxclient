@@ -437,8 +437,17 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_head_status()
 
     @invalied_validator
+    def set_heater(self, index, temperature):
+        """Set extruder temperature"""
+        return self._backend.maintain_set_heater(index, temperature)
+
+    @invalied_validator
     def diagnosis_sensor(self):
         return self._backend.maintain_diagnosis_sensor()
+
+    @invalied_validator
+    def diagnosis(self, option):
+        return self._backend.maintain_diagnosis(option)
 
     @invalied_validator
     def load_filament(self, index=0, temperature=210.0,

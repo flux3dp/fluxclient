@@ -28,6 +28,7 @@ def match_direction(direction):
 class USBProtocol(object):
     running = False
     session = None
+    _flag = 0
     _buf = b""
 
     @classmethod
@@ -56,6 +57,10 @@ class USBProtocol(object):
                 intf, bmAttributes=0x2,
                 custom_match=match_direction(usb.util.ENDPOINT_OUT))
             logger.info("Host2Host USB device opened")
+
+            while self._recv(1024, timeout=0.05):
+                pass  # Clean all data in buffer
+
             self.do_handshake()
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
@@ -131,6 +136,7 @@ class USBProtocol(object):
             self.model_id = self.endpoint_profile["model"]
             self.nickname = self.endpoint_profile["nickname"]
 
+            self._flag |= 1
             logger.info("Host2Host USB Connected")
             logger.debug("Serial: %s {%s}\nModel: %s\nName: %s\n",
                          self.serial, self.uuid, self.model_id, self.nickname)
@@ -144,7 +150,8 @@ class USBProtocol(object):
     def do_handshake(self):
         ttl = 5
         while ttl:
-            self._feed_buffer(timeout=0.1)
+            self.send_object(0xfc, None)
+            self._feed_buffer(timeout=0.15)
             data = None
 
             while True:
@@ -176,7 +183,6 @@ class USBProtocol(object):
                 logger.info("Handshake timeout, retry")
 
             ttl -= 1
-            self.send_object(0xfc, None)
         raise FluxUSBError("Handshake failed.", symbol=("TIMEOUT", ))
 
     def run_once(self):
@@ -211,16 +217,21 @@ class USBProtocol(object):
 
     def run(self):
         try:
-            self.running = True
-            while self.running:
+            self._flag |= 2
+            while self._flag == 3:
                 self.run_once()
+        except FluxUSBError as e:
+            logger.error("USB Error: %s", e)
+            self._flag = 0
+            self.close()
         except Exception:
-            logger.error("USB run got error")
-            self.running = False
+            logger.exception("Unknown error")
+            self._flag = 0
+            self.close()
             raise
 
     def stop(self):
-        self.running = False
+        self._flag &= ~2
 
     def close(self):
         self.send_object(0xfc, None)
@@ -262,7 +273,7 @@ class USBProtocol(object):
         logger.info("Close channel %i", channel.index)
         self.send_object(0xf0, {"channel": channel.index, "action": "close"})
 
-    def open_channel(self, channel_type="robot"):
+    def open_channel(self, channel_type="robot", timeout=10.0):
         # Send request
         with self.chl_open_mutex:
             idx = None
@@ -273,12 +284,12 @@ class USBProtocol(object):
             self.send_object(0xf0, {"channel": idx, "action": "open",
                                     "type": channel_type})
 
-            self.chl_semaphore.acquire(timeout=3.0)
+            self.chl_semaphore.acquire(timeout=timeout)
             channel = self.channels.get(idx)
             if channel:
                 return self.channels[idx]
             else:
-                raise RuntimeError("Channel creation failed")
+                raise FluxUSBError("Channel creation failed")
 
 
 class Channel(object):
@@ -319,26 +330,26 @@ class Channel(object):
             self.bufq.append(buf)
             self.buf_semaphore.release()
 
-    def get_buffer(self, timeout=3.0):
+    def get_buffer(self, timeout=10.0):
         if self.buf_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
         return self.bufq.popleft()
 
     def on_binary_ack(self):
         self.ack_semaphore.release()
 
-    def get_object(self, timeout=3.0):
+    def get_object(self, timeout=10.0):
         if self.obj_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
         return self.objq.popleft()
 
     def send_object(self, obj):
         self.usbprotocol.send_object(self.index, obj)
 
-    def send_binary(self, buf, timeout=3.0):
+    def send_binary(self, buf, timeout=10.0):
         self.usbprotocol.send_binary(self.index, buf)
         if self.ack_semaphore.acquire(timeout=timeout) is False:
-            raise SystemError("TIMEOUT")
+            raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
 
 
 class FluxUSBError(Exception):

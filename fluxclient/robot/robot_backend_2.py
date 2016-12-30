@@ -130,10 +130,23 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
+    def maintain_set_heater(self, index, temperature):
+        ret = self.make_cmd(
+            ("extruder_temp %i %.1f" % (index, temperature)).encode())
+        if ret != "ok":
+            raise_error(ret)
+
     def maintain_diagnosis_sensor(self):
         ret = self.make_cmd(b"diagnosis_sensor")
         if ret.startswith("ok "):
             return dict(make_pair(item) for item in ret[3:].split("\x00"))
+        else:
+            raise_error(ret)
+
+    def maintain_diagnosis(self, option):
+        ret = self.make_cmd(option.encode() + b"_diagnosis")
+        if ret.startswith("ok "):
+            return ret[3:]
         else:
             raise_error(ret)
 
@@ -250,7 +263,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self.get_resp()
+            resp = self.get_resp(15)
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
@@ -265,7 +278,7 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self.get_resp()
+            resp = self.get_resp(15)
 
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
