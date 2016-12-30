@@ -344,12 +344,20 @@ class Channel(object):
         return self.objq.popleft()
 
     def send_object(self, obj):
-        self.usbprotocol.send_object(self.index, obj)
+        if self.__opened:
+            self.usbprotocol.send_object(self.index, obj)
+        else:
+            raise FluxUSBError("Device is closed",
+                               symbol=("DEVICE_ERROR", ))
 
     def send_binary(self, buf, timeout=10.0):
-        self.usbprotocol.send_binary(self.index, buf)
-        if self.ack_semaphore.acquire(timeout=timeout) is False:
-            raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
+        if self.__opened:
+            self.usbprotocol.send_binary(self.index, buf)
+            if self.ack_semaphore.acquire(timeout=timeout) is False:
+                raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
+        else:
+            raise FluxUSBError("Device is closed",
+                               symbol=("DEVICE_ERROR", ))
 
 
 class FluxUSBError(Exception):
