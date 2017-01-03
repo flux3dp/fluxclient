@@ -493,6 +493,22 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def resume_play(self):
         return self.make_cmd(b"player resume")
 
+    @ok_or_error
+    def set_toolhead_operating_in_play(self):
+        return self.make_cmd(b"player set_toolhead_operating")
+
+    @ok_or_error
+    def set_toolhead_standby_in_play(self):
+        return self.make_cmd(b"player set_toolhead_standby")
+
+    @ok_or_error
+    def load_filament_in_play(self, index):
+        return self.make_cmd(("player load_filament %i" % index).encode())
+
+    @ok_or_error
+    def unload_filament_in_play(self, index):
+        return self.make_cmd(("player unload_filament %i" % index).encode())
+
     def report_play(self):
         # TODO
         msg = self.make_cmd(b"player report")

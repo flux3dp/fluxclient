@@ -28,7 +28,11 @@ class RobotConsole(object):
             "kick": robot_obj.kick,
 
             "play": {
-                "quit": robot_obj.quit_play
+                "quit": robot_obj.quit_play,
+                "toolhead": {
+                    "on": robot_obj.set_toolhead_operating_in_play,
+                    "off": robot_obj.set_toolhead_standby_in_play
+                }
             },
         }
 
@@ -59,8 +63,8 @@ class RobotConsole(object):
             "calib": self.maintain_calibration,
             "zprobe": self.maintain_zprobe,
             "filament": {
-                "load": self.maintain_load_filament,
-                "unload": self.maintain_unload_filament
+                "load": self.load_filament,
+                "unload": self.unload_filament
             },
             "extruder_temp": self.maintain_extruder_temp,
             "update_hbfw": self.maintain_update_hbfw,
@@ -311,6 +315,26 @@ class RobotConsole(object):
         self.robot_obj.config_del(key)
         logger.info("ok")
 
+    def load_filament(self, index, temp):
+        if self.task:
+            def callback(instance, *nav):
+                logger.info("OPERATION: %s", nav)
+
+            self.task.load_filament(int(index), float(temp), callback)
+            logger.info("ok")
+        else:
+            self.robot_obj.load_filament_in_play(int(index))
+
+    def unload_filament(self, index, temp=None):
+        if self.task:
+            def callback(instance, *nav):
+                logger.info("OPERATION: %s", nav)
+
+            self.task.unload_filament(int(index), float(temp), callback)
+            logger.info("ok")
+        else:
+            self.robot_obj.unload_filament_in_play(int(index))
+
     def maintain_home(self):
         self.task.home()
         logger.info("ok")
@@ -345,20 +369,6 @@ class RobotConsole(object):
             ret = self.task.zprobe(process_callback=callback)
             logger.info("Data: %s", ret)
 
-        logger.info("ok")
-
-    def maintain_load_filament(self, index, temp):
-        def callback(instance, *nav):
-            logger.info("OPERATION: %s", nav)
-
-        self.task.load_filament(int(index), float(temp), callback)
-        logger.info("ok")
-
-    def maintain_unload_filament(self, index, temp):
-        def callback(instance, *nav):
-            logger.info("OPERATION: %s", nav)
-
-        self.task.unload_filament(int(index), float(temp), callback)
         logger.info("ok")
 
     def maintain_extruder_temp(self, sindex, stemp):

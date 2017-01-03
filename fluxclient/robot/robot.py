@@ -234,6 +234,26 @@ use it if and only if you have any idea about this::
         return self._backend.play_info()
 
     @blocked_validator
+    def set_toolhead_operating_in_play(self):
+        """"""
+        return self._backend.set_toolhead_operating_in_play()
+
+    @blocked_validator
+    def set_toolhead_standby_in_play(self):
+        """"""
+        return self._backend.set_toolhead_standby_in_play()
+
+    @blocked_validator
+    def load_filament_in_play(self, index):
+        """"""
+        return self._backend.load_filament_in_play(index)
+
+    @blocked_validator
+    def unload_filament_in_play(self, index):
+        """"""
+        return self._backend.unload_filament_in_play(index)
+
+    @blocked_validator
     def quit_play(self):
         """Quits from current task status."""
         return self._backend.quit_play()
