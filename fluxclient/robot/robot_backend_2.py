@@ -509,6 +509,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def unload_filament_in_play(self, index):
         return self.make_cmd(("player unload_filament %i" % index).encode())
 
+    @ok_or_error
+    def press_button_in_play(self):
+        return self.make_cmd(b"player press_button")
+
     def report_play(self):
         # TODO
         msg = self.make_cmd(b"player report")
