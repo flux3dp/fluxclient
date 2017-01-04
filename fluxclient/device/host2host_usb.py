@@ -45,6 +45,7 @@ class USBProtocol(object):
             pass
 
         dev.set_configuration()
+        dev.ctrl_transfer(0x40, 0xFD, 0, 0)
         cfg = dev.get_active_configuration()
         intf = cfg[(0, 0)]
 
