@@ -45,7 +45,6 @@ class USBProtocol(object):
             pass
 
         dev.set_configuration()
-        dev.ctrl_transfer(0x40, 0xFD, 0, 0)
         cfg = dev.get_active_configuration()
         intf = cfg[(0, 0)]
 
@@ -150,9 +149,10 @@ class USBProtocol(object):
 
     def do_handshake(self):
         ttl = 5
+        self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
+        self.send_object(0xfc, None)  # Request handshake
         while ttl:
-            self.send_object(0xfc, None)
-            self._feed_buffer(timeout=0.15)
+            self._feed_buffer(timeout=0.3)
             data = None
 
             while True:
@@ -175,14 +175,13 @@ class USBProtocol(object):
                         logger.warning("Recv unexcept final handshake")
                 elif channel_idx == -1:
                     logger.warning("Recv 0")
-                    continue
                 else:
                     logger.warning("Recv unexcept channel idx %r and fin "
                                    "%r in handshake", channel_idx, fin)
-                    continue
             else:
                 logger.info("Handshake timeout, retry")
 
+            self.send_object(0xfc, None)  # Request handshake
             ttl -= 1
         raise FluxUSBError("Handshake failed.", symbol=("TIMEOUT", ))
 
