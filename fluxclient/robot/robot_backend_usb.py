@@ -18,6 +18,14 @@ class RobotBackendUSB(RobotBackend2):
     def send_cmd(self, cmd):
         self.channel.send_object((cmd, ))
 
+    def send_binary(self, buf):
+        m = memoryview(buf)
+        l = len(buf)
+        offset = 0
+        while l > offset:
+            self.channel.send_binary(m[offset:offset + 1020])
+            offset += 1020
+
     def get_resp(self, timeout=10.0):
         try:
             return self.channel.get_object(timeout)
