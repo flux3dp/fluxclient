@@ -58,9 +58,6 @@ class USBProtocol(object):
                 custom_match=match_direction(usb.util.ENDPOINT_OUT))
             logger.info("Host2Host USB device opened")
 
-            while self._recv(1024, timeout=0.05):
-                pass  # Clean all data in buffer
-
             self.do_handshake()
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
@@ -149,6 +146,7 @@ class USBProtocol(object):
 
     def do_handshake(self):
         ttl = 5
+        # self._send(b"\x00" * 1024)
         self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
         self.send_object(0xfc, None)  # Request handshake
         while ttl:
@@ -175,6 +173,7 @@ class USBProtocol(object):
                         logger.warning("Recv unexcept final handshake")
                 elif channel_idx == -1:
                     logger.warning("Recv 0")
+                    continue
                 else:
                     logger.warning("Recv unexcept channel idx %r and fin "
                                    "%r in handshake", channel_idx, fin)
@@ -325,7 +324,13 @@ class Channel(object):
 
     def on_binary(self, buf):
         if self.binary_stream:
-            self.binary_stream.send(buf)
+            try:
+                self.binary_stream.send(buf)
+            except IOError as e:
+                self.close()
+                logger.warning("Send USB binary data to %s error (%s), "
+                               "close channel directly (channel=%i)",
+                               self.binary_stream, e, self.index)
         else:
             self.bufq.append(buf)
             self.buf_semaphore.release()
