@@ -146,13 +146,17 @@ class USBProtocol(object):
 
     def do_handshake(self):
         ttl = 5
-        # self._send(b"\x00" * 1024)
+        self._send(b"\x00" * 1024)
         self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
         self.send_object(0xfc, None)  # Request handshake
         while ttl:
-            self._feed_buffer(timeout=0.3)
-            data = None
+            bl = -1
+            self._buf = b""
+            while len(self._buf) != bl:
+                bl = len(self._buf)
+                self._feed_buffer(timeout=0.3)
 
+            data = None
             while True:
                 d = self._unpack_buffer()
                 if d[0] is None:
