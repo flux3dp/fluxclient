@@ -72,7 +72,12 @@ def simple_shell(options):
     logger.info("Use command 'help' to get available commands.")
 
     while True:
-        r = input("> ")
+        try:
+            r = input("ROBOT> ")
+        except KeyboardInterrupt:
+            logger.info("Quit")
+            return
+
         if not r:
             continue
         try:

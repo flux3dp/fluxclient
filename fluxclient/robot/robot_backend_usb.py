@@ -26,7 +26,7 @@ class RobotBackendUSB(RobotBackend2):
             self.channel.send_binary(m[offset:offset + 1020])
             offset += 1020
 
-    def get_resp(self, timeout=10.0):
+    def get_resp(self, timeout=180.0):
         try:
             return self.channel.get_object(timeout)
         except FluxUSBError:
@@ -70,7 +70,6 @@ class RobotBackendUSB(RobotBackend2):
         if mn != "binary":
             raise RobotError("Protocol Error")
         size = int(ssize)
-        logger.debug("Recv %s %i" % (mimetype, size))
         if size == 0:
             return mimetype
         left = size
@@ -80,10 +79,6 @@ class RobotBackendUSB(RobotBackend2):
             if callback:
                 callback(left, size)
 
-        # TODO
-        logger.debug("debug buffer queue: %r (%i)",
-                     self.channel.bufq,
-                     self.channel.buf_semaphore._value)
         if left == 0:
             return mimetype
         else:
