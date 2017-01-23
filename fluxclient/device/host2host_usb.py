@@ -32,6 +32,7 @@ class USBProtocol(object):
     channels = None
     running = False
     session = None
+    device_status = None
     timestamp = 0
     _flag = 0
     _buf = b""
@@ -74,6 +75,8 @@ class USBProtocol(object):
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
             self.channels = {}
+            self.device_status = {}
+            self.addr = usbdev.address
         except Exception:
             self.close()
             raise

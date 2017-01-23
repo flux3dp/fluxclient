@@ -299,10 +299,8 @@ class Version1Helper(Helper):
                 st_ts, st_id, st_prog, st_head, st_err = \
                     struct.unpack("dif16s32s", stbuf)
 
-                head_module = st_head.decode("ascii",
-                                             "ignore").strip("\x00")
-                error_label = st_err.decode("ascii",
-                                            "ignore").strip("\x00")
+                head_module = st_head.decode("ascii", "ignore").strip("\x00")
+                error_label = st_err.decode("ascii", "ignore").strip("\x00")
                 device = self.server.devices[uuid]
                 device.update_status(st_id=st_id, st_ts=st_ts, st_prog=st_prog,
                                      head_module=head_module,
