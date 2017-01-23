@@ -160,7 +160,7 @@ class UartBackend(ManagerAbstractBackend):
     def set_password(self, old_passwd, new_passwd, reset_acl):
         # TODO: API FIX!
         if not reset_acl:
-            raise NotSupportError("reset_acl can not be false")
+            raise NotSupportError(self.model_id, self.version)
 
         ret = self._make_request(
             CODE_SET_PASSWORD,

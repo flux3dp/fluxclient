@@ -88,7 +88,7 @@ class SSL1Backend(ManagerAbstractBackend):
 
         hello = s.recv(8, socket.MSG_WAITALL)
         if hello != b"FLUX0003":
-            raise NotSupportError()
+            raise NotSupportError(self.model_id, self.version)
 
         self.sock = ssl.SSLSocket(s)
 
@@ -115,7 +115,8 @@ class SSL1Backend(ManagerAbstractBackend):
         elif resp.startswith("error "):
             raise raise_error(resp)
         else:
-            raise NotSupportError("Auth method %s not support", resp)
+            # raise NotSupportError("Auth method %s not support", resp)
+            raise NotSupportError(self.model_id, self.version)
 
         resp = self.recv_text()
         if resp == "ok":
