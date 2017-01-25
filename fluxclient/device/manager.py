@@ -181,6 +181,15 @@ authorized user will be deauthorized.
         self._check_status()
         self._backend.set_password(old_password, new_password, reset_acl)
 
+    def reset_password(self, new_password):
+        """Reset device password, some of device informations will be deleted.
+
+        :param str old_password: Old device password
+        :param str new_password: New device password
+        :param bool reset_acl: Clear authorized user list in device"""
+        self._check_status()
+        self._backend.reset_password(new_password)
+
     def set_network(self, **network_options):
         """Modifies the device network, details will be revealed in future \
 documentation."""

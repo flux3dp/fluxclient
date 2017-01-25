@@ -190,6 +190,13 @@ class SSL1Backend(ManagerAbstractBackend):
         if resp != "ok":
             raise raise_error(resp)
 
+    def reset_password(self, new_passwd):
+        cmd = "\x00".join(("reset_passwd", new_passwd))
+        self.send_text(cmd.encode())
+        resp = self.recv_text()
+        if resp != "ok":
+            raise raise_error(resp)
+
     def set_password(self, old_passwd, new_passwd, reset_acl):
         clean_acl = "Y" if reset_acl else "F"
         cmd = "\x00".join(("passwd", old_passwd, new_passwd, clean_acl))

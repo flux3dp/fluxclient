@@ -54,6 +54,9 @@ class ManagerAbstractBackend(object):
     def set_password(self, old_passwd, new_passwd, reset_acl):
         raise NotSupportError(self.model_id, self.version)
 
+    def reset_password(self, new_passwd):
+        raise NotSupportError(self.model_id, self.version)
+
     def set_network(self, **network_options):
         raise NotSupportError(self.model_id, self.version)
 

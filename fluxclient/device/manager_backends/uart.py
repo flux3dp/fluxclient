@@ -27,7 +27,7 @@ CODE_CONFIG_NETWORK = 0x04
 CODE_GET_SSID = 0x05
 CODE_LIST_SSID = 0x08
 CODE_GET_IPADDR = 0x07
-CODE_SET_PASSWORD = 0x06
+CODE_RESET_PASSWD = 0x06
 
 
 def is_windows():
@@ -157,15 +157,16 @@ class UartBackend(ManagerAbstractBackend):
         ret = self._make_request(CODE_CONFIG_GENERAL, message.encode())
         return ret.decode("ascii", "ignore")
 
-    def set_password(self, old_passwd, new_passwd, reset_acl):
-        # TODO: API FIX!
-        if not reset_acl:
-            raise NotSupportError("reset_acl can not be false")
-
+    def reset_password(self, new_passwd):
         ret = self._make_request(
-            CODE_SET_PASSWORD,
+            CODE_RESET_PASSWD,
             new_passwd.encode() + b"\x00" + self.client_key.public_key_pem)
         return ret.decode("utf8", "ignore")
+
+    def set_password(self, old_passwd, new_passwd, reset_acl):
+        if not reset_acl:
+            raise NotSupportError("reset_acl can not be false")
+        return self.reset_password(new_passwd)
 
     def add_trust(self, label, pem, timeout=6.0):
         ret = self._make_request(CODE_AUTH, pem.encode(),

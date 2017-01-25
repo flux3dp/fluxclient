@@ -71,6 +71,10 @@ class Host2HostBackend1(ManagerAbstractBackend):
         if ret.get("status") != "ok":
             raise build_error(ret.get("error"))
 
+    def reset_password(self, new_passwd):
+        self.channel.send_object({"cmd": "reset_password",
+                                  "options": {"password": new_passwd}})
+
     def set_password(self, old_passwd, new_passwd, reset_acl):
         self.channel.send_object({"cmd": "set_password",
                                   "options": {"oldpasswd": old_passwd,
