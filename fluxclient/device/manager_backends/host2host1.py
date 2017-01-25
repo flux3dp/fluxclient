@@ -19,7 +19,7 @@ class Host2HostBackend1(ManagerAbstractBackend):
     def __init__(self, client_key, usbprotocol):
         super(Host2HostBackend1, self).__init__(
             client_key, usbprotocol.uuid, usbprotocol.serial,
-            usbprotocol.model_id, usbprotocol.version)
+            usbprotocol.model_id, usbprotocol.version, usbprotocol.nickname)
         self.usbprotocol = usbprotocol
 
     def connect(self):

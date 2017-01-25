@@ -98,6 +98,10 @@ password or RSA key. If the connection is not authorized, you must call \
         return self._backend.model_id
 
     @property
+    def nickname(self):
+        return self._backend.nickname
+
+    @property
     def endpoint(self):
         return self._backend.endpoint
 

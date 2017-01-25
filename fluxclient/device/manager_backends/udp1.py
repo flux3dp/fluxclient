@@ -38,9 +38,10 @@ class Udp1Backend(ManagerAbstractBackend):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
     def __init__(self, client_key, device):
+        # TODO: name -> nickname
         super(Udp1Backend, self).__init__(
             client_key, device.uuid, device.serial, device.model_id,
-            device.version)
+            device.version, device.name)
 
         self.endpoint = device.discover_endpoint
         self.timedelta = device.timedelta

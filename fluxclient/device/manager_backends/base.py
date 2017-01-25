@@ -8,12 +8,14 @@ class ManagerAbstractBackend(object):
     __metaclass__ = abc.ABCMeta
     _authorized = False
 
-    def __init__(self, client_key, uuid, serial, model_id, version):
+    def __init__(self, client_key, uuid, serial, model_id, version,
+                 nickname=None):
         self.client_key = client_key
         self.uuid = uuid
         self.serial = serial
         self.model_id = model_id
         self.version = version
+        self.nickname = nickname
 
     @classmethod
     def support_device(cls, model_id, version):
