@@ -7,10 +7,10 @@ import struct
 import json
 
 from fluxclient.utils.version import StrictVersion
-from .abstract_backend import (UpnpAbstractBackend, TimeoutError, AuthError,
-                               NotSupportError, UpnpError)
+from .base import (ManagerAbstractBackend, TimeoutError, AuthError,
+                   NotSupportError, ManagerError)
 
-__all__ = ["UpnpUdp1Backend"]
+__all__ = ["Udp1Backend"]
 
 
 CODE_NOPWD_ACCESS = 0x04
@@ -28,7 +28,7 @@ CODE_RESPONSE_SET_NETWORK = 0xa3
 SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b1"))
 
 
-class UpnpUdp1Backend(UpnpAbstractBackend):
+class Udp1Backend(ManagerAbstractBackend):
     sock = None
     _access_id = None
     _authorized = False
@@ -37,19 +37,16 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
     def support_device(cls, model_id, version):
         return version >= SUPPORT_VERSION[0] and version < SUPPORT_VERSION[1]
 
-    def __init__(self, client_key, uuid, version, model_id, ipaddr,
-                 metadata=None, options={}):
-        super(UpnpUdp1Backend, self).__init__(
-            client_key, uuid, version, model_id, ipaddr, metadata, options)
+    def __init__(self, client_key, device):
+        # TODO: name -> nickname
+        super(Udp1Backend, self).__init__(
+            client_key, device.uuid, device.serial, device.model_id,
+            device.version, device.name)
 
-        self.endpoint = metadata["endpoint"] if metadata else (ipaddr, 1901)
-        self.timedelta = metadata["timedelta"]
-        self.has_password = metadata["has_password"]
-        self.master_key = metadata["master_key"]
-        self.slave_key = metadata["slave_key"]
-        self.options = options
-
-        self.connect()
+        self.endpoint = device.discover_endpoint
+        self.timedelta = device.timedelta
+        self.master_key = device.master_key
+        self.slave_key = device.slave_key
 
     @property
     def publickey_der(self):
@@ -127,7 +124,7 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
         if self.slave_key.verify(body, signature):
             message = body.decode("utf8")
             if message[0] == "E":
-                raise UpnpError(message[1:])
+                raise ManagerError(message[1:])
             else:
                 return json.loads(message)
 
@@ -144,11 +141,13 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
                     return
 
                 elif resp.get("status") == "padding":
-                    raise UpnpError("Can not auth because device does not has "
-                                    "password", err_symbol=("NOT_SUPPORT", ))
+                    raise ManagerError(
+                        "Can not auth because device does not has password",
+                        err_symbol=("NOT_SUPPORT", ))
 
                 else:
-                    raise UpnpError("Unknown status '%s'" % resp.get("status"))
+                    raise ManagerError(
+                        "Unknown status '%s'" % resp.get("status"))
 
         raise TimeoutError()
 
@@ -189,26 +188,26 @@ class UpnpUdp1Backend(UpnpAbstractBackend):
     def remove_trust(self, access_id):
         raise NotSupportError(self.model_id, self.version)
 
-    def rename(self, new_name):
+    def set_nickname(self, nickname):
         raise NotSupportError(self.model_id, self.version)
 
-    def modify_password(self, old_password, new_password, reset_acl):
+    def set_password(self, old_passwd, new_passwd, reset_acl):
         if reset_acl is False:
             raise NotSupportError("Reset ACL can not be false on this version")
 
         req_code = CODE_CHANGE_PWD
         resp_code = CODE_RESPONSE_CHANGE_PWD
 
-        message = "\x00".join((new_password, old_password))
+        message = "\x00".join((new_passwd, old_passwd))
         request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)
 
-    def modify_network(self, options):
+    def set_network(self, **network_options):
         req_code = CODE_SET_NETWORK
         resp_code = CODE_RESPONSE_SET_NETWORK
 
-        message = "\x00".join(("%s=%s" % i for i in options.items()))
+        message = "\x00".join(("%s=%s" % i for i in network_options.items()))
         request = self.sign_request(message.encode())
 
         return self.make_request(req_code, resp_code, request)

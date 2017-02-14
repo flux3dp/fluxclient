@@ -130,6 +130,7 @@ gap_fill_speed = 20
 gcode_arcs = 0
 gcode_comments = 0
 gcode_flavor = reprap
+geometric_error_correction_on = 1
 infill_acceleration = 0
 infill_every_layers = 1
 infill_extruder = 1
@@ -224,7 +225,7 @@ detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
 flux_calibration = 1
-pause_at_layers = 
+pause_at_layers =
 support_everywhere = 0"""
 
 ini_constraint = {
@@ -369,7 +370,8 @@ ini_constraint = {
     'detect_head_tilt': [binary],
     'flux_calibration': [binary],
     'pause_at_layers': False,
-    'fake_print': [int_range, 0, 9999]
+    'fake_print': [int_range, 0, 9999],
+    'geometric_error_correction_on': [binary]
 }
 
-ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers']
+ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers', 'geometric_error_correction_on']

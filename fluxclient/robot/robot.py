@@ -234,6 +234,26 @@ use it if and only if you have any idea about this::
         return self._backend.play_info()
 
     @blocked_validator
+    def set_toolhead_operating_in_play(self):
+        return self._backend.set_toolhead_operating_in_play()
+
+    @blocked_validator
+    def set_toolhead_standby_in_play(self):
+        return self._backend.set_toolhead_standby_in_play()
+
+    @blocked_validator
+    def load_filament_in_play(self, index):
+        return self._backend.load_filament_in_play(index)
+
+    @blocked_validator
+    def unload_filament_in_play(self, index):
+        return self._backend.unload_filament_in_play(index)
+
+    @blocked_validator
+    def press_button_in_play(self):
+        return self._backend.press_button_in_play()
+
+    @blocked_validator
     def quit_play(self):
         """Quits from current task status."""
         return self._backend.quit_play()
@@ -435,6 +455,19 @@ class MaintainTasks(SubTasks):
     def head_status(self):
         """Gets the toolhead status"""
         return self._backend.maintain_head_status()
+
+    @invalied_validator
+    def set_heater(self, index, temperature):
+        """Set extruder temperature"""
+        return self._backend.maintain_set_heater(index, temperature)
+
+    @invalied_validator
+    def diagnosis_sensor(self):
+        return self._backend.maintain_diagnosis_sensor()
+
+    @invalied_validator
+    def diagnosis(self, option):
+        return self._backend.maintain_diagnosis(option)
 
     @invalied_validator
     def load_filament(self, index=0, temperature=210.0,

@@ -7,18 +7,17 @@ import sys
 import os
 
 try:
-    from Cython.Distutils import build_ext
-    from Cython.Build import cythonize
+    from Cython.Distutils import build_ext  # noqa
 except ImportError:
-    print("""
+    sys.stderr.write("""
  ******************************************************
  * Cython must be installed before install fluxclient *
  * Use command `pip install cython` to fix it         *
  ******************************************************
-""", file=sys.stderr)
+""")
     raise
 
-from fluxclient import __version__ as _VERSION
+from fluxclient import __version__ as _VERSION  # noqa
 
 windows_program_files_sources = None
 
@@ -31,6 +30,16 @@ def has_package(package_name):
 # Base method to find library include files in system
 def locate_includes(package_name):
     proc = subprocess.Popen(["pkg-config", "--cflags-only-I", package_name],
+                            stdout=subprocess.PIPE)
+    if proc.wait() == 0:
+        buf = proc.stdout.read().decode("utf8")
+        return buf[2:].rstrip()
+    else:
+        raise RuntimeError("Looking for package error: %s" % package_name)
+
+
+def locate_library(package_name):
+    proc = subprocess.Popen(["pkg-config", "--libs-only-L", package_name],
                             stdout=subprocess.PIPE)
     if proc.wait() == 0:
         buf = proc.stdout.read().decode("utf8")
@@ -57,8 +66,8 @@ def is_darwin():
 
 def prepare_setup():
     if not sys.version_info >= (3, 3):
-        print("ERROR: fluxclient require Python version grather then 3.3\n",
-              file=sys.stderr)
+        sys.stderr.write(
+            "ERROR: fluxclient require Python version grather then 3.3\n")
         sys.exit(1)
 
     # Ensure at correct working directory
@@ -88,10 +97,9 @@ def get_entry_points():
         "console_scripts": [
             "flux_discover=fluxclient.commands.discover:main",
             "flux_robot=fluxclient.commands.robot:main",
-            "flux_upnp=fluxclient.commands.upnp:main",
+            "flux_manager=fluxclient.commands.manager:main",
             "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
-            "flux_usb=fluxclient.commands.usb:main",
             "flux_laser=fluxclient.commands.laser:main",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",
@@ -139,8 +147,10 @@ def create_pcl_extentions():
                           "pcl_registration", "pcl_keypoints"]
             if has_package("pcl_common-1.8"):
                 include_dirs += [locate_includes("pcl_common-1.8")]
+                library_dirs += [locate_library("pcl_common-1.8")]
             elif has_package("pcl_common-1.7"):
                 include_dirs += [locate_includes("pcl_common-1.7")]
+                library_dirs += [locate_library("pcl_common-1.7")]
             else:
                 raise RuntimeError("Can not locate pcl includes.")
         elif is_windows():
@@ -199,11 +209,11 @@ def create_pcl_extentions():
         else:
             raise RuntimeError("Unknow platform!!")
 
-    except (RuntimeError, FileNotFoundError) as e:
+    except (RuntimeError, FileNotFoundError):
         import traceback
-        print("\033[93m", file=sys.stderr)
+        sys.stderr.write("\033[93m")
         traceback.print_exc(file=sys.stderr)
-        print("""\033[93m
+        sys.stderr("""\033[93m
 *****************************************************************************
 * Can not find pcl libraries, `fluxclient.scanner` and `fluxclient.printer` *
 * will not work properly.                                                   *

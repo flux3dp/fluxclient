@@ -3,7 +3,7 @@ from ipaddress import IPv4Interface, IPv4Address
 
 
 def run():
-    from fluxclient.upnp.misc import parse_network_config
+    from fluxclient.utils.network_config import parse_network_config
 
     kw = {}
     ret = input("Wifi Mode (0=host,1=client)[1]: ").strip("\n")
@@ -41,4 +41,5 @@ def run():
     else:
         kw["method"] = "dhcp"
 
+    print(">>", kw)
     return parse_network_config(**kw)

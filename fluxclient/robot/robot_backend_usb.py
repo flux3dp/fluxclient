@@ -4,7 +4,9 @@ from time import time
 import logging
 import socket
 
-from .robot_backend_2 import RobotBackend2, RobotError, raise_error
+from fluxclient.device.host2host_usb import FluxUSBError
+from .robot_backend_2 import (RobotBackend2, RobotError, RobotSessionError,
+                              raise_error)
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +18,25 @@ class RobotBackendUSB(RobotBackend2):
     def send_cmd(self, cmd):
         self.channel.send_object((cmd, ))
 
-    def get_resp(self, timeout=3.0):
-        return self.channel.get_object(timeout)
+    def send_binary(self, buf):
+        m = memoryview(buf)
+        l = len(buf)
+        offset = 0
+        while l > offset:
+            self.channel.send_binary(m[offset:offset + 1020])
+            offset += 1020
+
+    def get_resp(self, timeout=180.0):
+        try:
+            return self.channel.get_object(timeout)
+        except FluxUSBError:
+            self.close()
+            raise
 
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):
         if cmd:
-            upload_ret = self.make_cmd(cmd.encode()).decode("ascii", "ignore")
+            upload_ret = self.make_cmd(cmd.encode())
 
             if upload_ret == "continue":
                 logger.info(upload_ret)
@@ -56,7 +70,6 @@ class RobotBackendUSB(RobotBackend2):
         if mn != "binary":
             raise RobotError("Protocol Error")
         size = int(ssize)
-        logger.debug("Recv %s %i" % (mimetype, size))
         if size == 0:
             return mimetype
         left = size
@@ -65,19 +78,23 @@ class RobotBackendUSB(RobotBackend2):
             left -= stream.write(buf)
             if callback:
                 callback(left, size)
-        return mimetype
+
+        if left == 0:
+            return mimetype
+        else:
+            raise RobotSessionError("Recv data length mismatch.")
 
     def begin_raw(self):
         ret = self.make_cmd(b"task raw")
-        if ret == b"continue":
+        if ret == "continue":
             self.raw_stream = USB2Stream(self.channel)
             return self.raw_stream.public
         else:
-            raise_error(ret.decode("ascii", "ignore"))
+            raise_error(ret)
 
     def quit_raw_mode(self):
         self.channel.send_binary(b"quit")
-        ret = self.get_resp().decode("ascii", "ignore")
+        ret = self.get_resp()
         if ret != "ok":
             raise_error(ret)
 
@@ -85,7 +102,9 @@ class RobotBackendUSB(RobotBackend2):
         del self.raw_stream
 
     def close(self):
-        self.channel.close()
+        if self.channel:
+            self.channel.close()
+            self.channel = None
 
 
 class USB2Stream(object):

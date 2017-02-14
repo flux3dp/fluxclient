@@ -90,6 +90,7 @@ class image_to_pc():
 
         indices_L = [[p[0], p[1] + l_cab]for p in indices_L]
         # indices_L = [[i, step] for i in range(self.settings.img_height)]
+        logger.info("End fs_L subProcess")
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', l_cab, clock=True)
         self.points_L.extend(point_L_this)
         # return [self.points_to_bytes(point_L_this), []]

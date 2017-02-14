@@ -23,12 +23,12 @@ def raise_error(ret):
         errors = ret.split(" ")[1:]
         raise RobotError(*errors, error_symbol=errors)
     else:
-        raise RobotError("UNKNOW_ERROR", ret)
+        raise RobotError(ret, error_symbol="L_UNKNOW_ERROR")
 
 
 def ok_or_error(fn, resp="ok"):
     def wrap(self, *args, **kw):
-        ret = fn(self, *args, **kw).decode("utf8", "ignore")
+        ret = fn(self, *args, **kw)
         if ret != resp:
             raise_error(ret)
     return wrap
@@ -44,6 +44,13 @@ def split_path(rawpath):
     return entry, path
 
 
+def make_pair(item):
+    if "=" in item:
+        return item.split("=", 1)
+    else:
+        return item, None
+
+
 class MaintainTaskMixIn(object):
     @ok_or_error
     def begin_maintain(self):
@@ -52,7 +59,7 @@ class MaintainTaskMixIn(object):
     def maintain_home(self):
         self.send_cmd(b"home")
         while True:
-            ret = self.get_resp(6.0).decode("ascii", "ignore")
+            ret = self.get_resp()
             if ret.startswith("DEBUG"):
                 logger.debug(ret[6:])
             elif ret == "ok":
@@ -72,7 +79,7 @@ class MaintainTaskMixIn(object):
         if clean:
             cmd.append("clean")
 
-        nav = self.make_cmd(" ".join(cmd).encode()).decode("ascii", "ignore")
+        nav = self.make_cmd(" ".join(cmd).encode())
         while True:
             if nav.startswith("ok "):
                 return [float(item) for item in nav.split(" ")[1:]]
@@ -80,12 +87,12 @@ class MaintainTaskMixIn(object):
                 raise_error(nav)
             elif process_callback:
                 process_callback(instance, *nav.split(" "))
-            nav = self.get_resp().decode("ascii", "ignore")
+            nav = self.get_resp()
 
     def maintain_zprobe(self, instance, process_callback=None):
         ret = self.make_cmd(b"zprobe")
 
-        if ret == b"continue":
+        if ret == "continue":
             nav = "continue"
             while True:
                 if nav.startswith("ok "):
@@ -94,12 +101,12 @@ class MaintainTaskMixIn(object):
                     raise_error(nav)
                 elif process_callback:
                     process_callback(instance, *nav.split(" "))
-                nav = self.get_resp().decode("ascii", "ignore")
+                nav = self.get_resp()
         else:
-            raise_error(ret.decode("ascii", "ignore"))
+            raise_error(ret)
 
     def maintain_manual_level(self, h):
-        ret = self.make_cmd(("zprobe %.4f" % h).encode()).decode("ascii")
+        ret = self.make_cmd(("zprobe %.4f" % h).encode())
         if ret == "continue":
             nav = "continue"
             while True:
@@ -107,21 +114,41 @@ class MaintainTaskMixIn(object):
                     return float(nav[3:])
                 elif nav.startswith("error "):
                     raise_error(nav)
-                nav = self.get_resp().decode("ascii", "ignore")
+                nav = self.get_resp()
         else:
             raise_error(ret)
 
     def maintain_head_info(self):
-        ret = self.make_cmd(b"headinfo").decode("ascii", "ignore")
+        ret = self.make_cmd(b"headinfo")
         if ret.startswith("ok "):
             return json.loads(ret[3:])
         else:
             raise_error(ret)
 
     def maintain_head_status(self):
-        ret = self.make_cmd(b"headstatus").decode("ascii", "ignore")
+        ret = self.make_cmd(b"headstatus")
         if ret.startswith("ok "):
             return json.loads(ret[3:])
+        else:
+            raise_error(ret)
+
+    def maintain_set_heater(self, index, temperature):
+        ret = self.make_cmd(
+            ("extruder_temp %i %.1f" % (index, temperature)).encode())
+        if ret != "ok":
+            raise_error(ret)
+
+    def maintain_diagnosis_sensor(self):
+        ret = self.make_cmd(b"diagnosis_sensor")
+        if ret.startswith("ok "):
+            return dict(make_pair(item) for item in ret[3:].split("\x00"))
+        else:
+            raise_error(ret)
+
+    def maintain_diagnosis(self, option):
+        ret = self.make_cmd(option.encode() + b"_diagnosis")
+        if ret.startswith("ok "):
+            return ret[3:]
         else:
             raise_error(ret)
 
@@ -129,10 +156,10 @@ class MaintainTaskMixIn(object):
         ret = self.make_cmd(
             ("load_filament %i %.1f" % (index, temp)).encode())
 
-        if ret == b"continue":
+        if ret == "continue":
             while True:
                 try:
-                    ret = self.get_resp().decode("ascii", "ignore")
+                    ret = self.get_resp()
                     if ret.startswith("CTRL ") and process_callback:
                         process_callback(instance, *(ret.split(" ")[1:]))
                     elif ret == "ok":
@@ -143,17 +170,17 @@ class MaintainTaskMixIn(object):
                     self.send_cmd(b"stop_load_filament")
                     logger.info("Interrupt load filament")
         else:
-            raise_error(ret.decode("ascii", "utf8"))
+            raise_error(ret)
 
     def maintain_unload_filament(self, instance, index, temp,
                                  process_callback):
         ret = self.make_cmd(
             ("unload_filament %i %.1f" % (index, temp)).encode())
 
-        if ret == b"continue":
+        if ret == "continue":
             while True:
                 try:
-                    ret = self.get_resp().decode("ascii", "ignore")
+                    ret = self.get_resp()
                     if ret.startswith("CTRL ") and process_callback:
                         process_callback(instance, *(ret.split(" ")[1:]))
                     elif ret == "ok":
@@ -164,7 +191,7 @@ class MaintainTaskMixIn(object):
                     self.send_cmd(b"stop_load_filament")
                     logger.info("Interrupt load filament")
         else:
-            raise_error(ret.decode("ascii", "utf8"))
+            raise_error(ret)
 
     def maintain_interrupt_load_filament(self):
         self.send_cmd("stop_load_filament")
@@ -185,12 +212,12 @@ class MaintainTaskMixIn(object):
         cmd = "update_head binary %i" % (size)
         self._upload_stream(instance, cmd, stream, size, upload_process_cb)
 
-        ret = self.get_resp().decode("utf8", "ignore")
+        ret = self.get_resp()
         if ret != "ok":
             raise_error(ret)
 
         while True:
-            ret = self.get_resp().decode("utf8", "ignore")
+            ret = self.get_resp()
             if ret == "ok":
                 return
             elif ret.startswith("CTRL ") and process_callback:
@@ -221,30 +248,30 @@ class ScanTaskMixIn(object):
 
     def scan_check_camera(self):
         self.send_cmd(b"scan_check")
-        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        resp = self.get_resp()
         return resp
 
     def scan_calibrate(self):
         self.send_cmd(b"calibrate")
-        resp = self.get_resp(timeout=99999).decode("ascii", "ignore")
+        resp = self.get_resp()
         return resp
 
     def scan_get_calibrate(self):
         self.send_cmd(b"get_cab")
-        resp = self.get_resp().decode("ascii", "ignore")
+        resp = self.get_resp()
         return resp
 
     def scan_oneshot(self):
         self.send_cmd(b"oneshot")
         images = []
         while True:
-            resp = self.get_resp().decode("ascii", "ignore")
+            resp = self.get_resp()
 
             if resp.startswith("binary "):
                 mime, img = self.recv_binary_buff(resp)
                 img.seek(0)
                 img = Image.open(img)
-                img = img.transpose(Image.ROTATE_270)
+                img = img.transpose(Image.ROTATE_90)
                 fake_file = BytesIO()
                 img.save(fake_file, "jpeg")
                 logger.info("Save jpeg")
@@ -260,15 +287,14 @@ class ScanTaskMixIn(object):
         self.send_cmd(b"scanimages")
         images = []
         while True:
-            resp = self.get_resp().decode("ascii", "ignore")
-            logger.info("receive %s" % resp)
-            
+            resp = self.get_resp()
+           
             if resp.startswith("binary "):
                 mime, img = self.recv_binary_buff(resp)
                 logger.info("scanimmages %s" % mime)
                 img.seek(0)
                 img = Image.open(img)
-                img = img.transpose(Image.ROTATE_270)
+                img = img.transpose(Image.ROTATE_90)
                 fake_file = BytesIO()
                 img.save(fake_file, "jpeg")
                 logger.info("Save jpeg")
@@ -338,9 +364,9 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 raise socket.error(EPIPE, "Broken pipe")
             message += buf
 
-        return message
+        return message.decode("utf8", "ignore")
 
-    def make_cmd(self, buf, timeout=30.0):
+    def make_cmd(self, buf, timeout=180.0):
         self.send_cmd(buf)
         return self.get_resp(timeout)
 
@@ -373,7 +399,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
     # Command Tasks
     def position(self):
-        ret = self.make_cmd(b"position").decode("ascii", "ignore")
+        ret = self.make_cmd(b"position")
         if ret.startswith("error "):
             raise RobotError(*(ret.split(" ")[1:]))
         else:
@@ -384,10 +410,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         entry, path = split_path(path)
 
         self.send_cmd(b"file ls " + entry.encode() + b" " + path.encode())
-        resp = self.get_resp().decode("ascii", "ignore")
+        resp = self.get_resp()
         if resp == "continue":
-            files = self.get_resp().decode("utf8", "ignore")
-            last_resp = self.get_resp().decode("ascii", "ignore")
+            files = self.get_resp()
+            last_resp = self.get_resp()
             if last_resp != "ok":
                 raise_error("error PROTOCOL_ERROR NOT_OK")
 
@@ -402,11 +428,11 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
         self.send_cmd(b"file info " + entry.encode() + b" " + path.encode())
 
-        resp = self.get_resp().decode("utf8", "ignore")
+        resp = self.get_resp()
         images = []
         while resp.startswith("binary "):
             images.append(self.recv_binary(resp))
-            resp = self.get_resp().decode("utf8", "ignore")
+            resp = self.get_resp()
         info[1] = images
 
         def fixmeta(key, value=None):
@@ -448,7 +474,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         entry, path = split_path(path)
         bresp = self.make_cmd(b"file md5 " + entry.encode() + b" " +
                               path.encode())
-        resp = bresp.decode("ascii", "ignore")
+        resp = bresp
         if resp.startswith("md5 "):
             return resp[4:]
         else:
@@ -457,10 +483,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def download_file(self, path, stream, callback=None):
         entry, path = split_path(path)
         self.send_cmd(("file download %s %s" % (entry, path)).encode())
-        resp = self.get_resp().decode("utf8", "ignore")
+        resp = self.get_resp()
         if resp.startswith("binary "):
             mimetype = self.recv_binary_into(resp, stream, callback)
-            ret = self.get_resp().decode("utf8", "ignore")
+            ret = self.get_resp()
             if ret == "ok":
                 return mimetype
             else:
@@ -492,9 +518,29 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def resume_play(self):
         return self.make_cmd(b"player resume")
 
+    @ok_or_error
+    def set_toolhead_operating_in_play(self):
+        return self.make_cmd(b"player set_toolhead_operating")
+
+    @ok_or_error
+    def set_toolhead_standby_in_play(self):
+        return self.make_cmd(b"player set_toolhead_standby")
+
+    @ok_or_error
+    def load_filament_in_play(self, index):
+        return self.make_cmd(("player load_filament %i" % index).encode())
+
+    @ok_or_error
+    def unload_filament_in_play(self, index):
+        return self.make_cmd(("player unload_filament %i" % index).encode())
+
+    @ok_or_error
+    def press_button_in_play(self):
+        return self.make_cmd(b"player press_button")
+
     def report_play(self):
         # TODO
-        msg = self.make_cmd(b"player report").decode("utf8", "ignore")
+        msg = self.make_cmd(b"player report")
         if msg.startswith("{"):
             return json.loads(msg, "ignore")
         else:
@@ -504,16 +550,16 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         self.send_cmd(b"player info")
         metadata = None
 
-        resp = self.get_resp().decode("ascii", "ignore")
+        resp = self.get_resp()
         if resp.startswith("binary text/json"):
             _, bm = self.recv_binary(resp)
-            metadata = json.loads(bm.decode("utf8", "ignore"))
+            metadata = json.loads(bm.decode("utf8", "ascii"))
         else:
             raise_error(resp)
 
         images = []
         while True:
-            resp = self.get_resp().decode("ascii", "ignore")
+            resp = self.get_resp()
             if resp.startswith("binary "):
                 images.append(self.recv_binary(resp))
             elif resp == "ok":
@@ -528,7 +574,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def _upload_stream(self, instance, cmd, stream, size,
                        process_callback=None):
         if cmd:
-            upload_ret = self.make_cmd(cmd.encode()).decode("ascii", "ignore")
+            upload_ret = self.make_cmd(cmd.encode())
 
             if upload_ret == "continue":
                 logger.info(upload_ret)
@@ -574,8 +620,8 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
         self._upload_stream(instance, cmd, stream, size, process_callback)
         final_ret = self.get_resp()
-        if final_ret != b"ok":
-            raise_error(final_ret.decode("ascii", "ignore"))
+        if final_ret != "ok":
+            raise_error(final_ret)
 
     def yihniwimda_upload_stream(self, mimetype, length, upload_to=None):
         if upload_to == "#":
@@ -591,7 +637,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         else:
             cmd = "file upload %s %i" % (mimetype, length)
 
-        upload_ret = self.make_cmd(cmd.encode()).decode("ascii", "ignore")
+        upload_ret = self.make_cmd(cmd.encode())
         if upload_ret == "continue":
             logger.info(upload_ret)
         if upload_ret != "continue":
@@ -612,25 +658,25 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
         final_ret = self.get_resp()
         logger.debug("File uploaded")
-        if final_ret != b"ok":
-            raise_error(final_ret.decode("ascii", "ignore"))
+        if final_ret != "ok":
+            raise_error(final_ret)
 
     def update_firmware(self, instance, stream, size, process_callback=None):
         cmd = "update_fw binary/flux-firmware %i #" % (size)
         self._upload_stream(instance, cmd, stream, size, process_callback)
-        final_ret = self.get_resp()
-        if final_ret != b"ok":
-            raise_error(final_ret.decode("ascii", "ignore"))
+        final_ret = self.get_resp(timeout=45.0)
+        if final_ret != "ok":
+            raise_error(final_ret)
 
     def update_atmel(self, instance, stream, size, process_callback=None):
         cmd = "update_mbfw binary/flux-firmware %i #" % (size)
         self._upload_stream(instance, cmd, stream, size, process_callback)
         final_ret = self.get_resp()
-        if final_ret != b"ok":
-            raise_error(final_ret.decode("ascii", "ignore"))
+        if final_ret != "ok":
+            raise_error(final_ret)
 
     def begin_icontrol(self):
-        ret = self.make_cmd(b"task icontrol").decode("ascii", "ignore")
+        ret = self.make_cmd(b"task icontrol")
         if ret == "ok":
             return self.sock
         else:
@@ -646,10 +692,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
     def begin_raw(self):
         ret = self.make_cmd(b"task raw")
-        if ret == b"continue":
+        if ret == "continue":
             return self.sock
         else:
-            raise_error(ret.decode("ascii", "ignore"))
+            raise_error(ret)
 
     @ok_or_error
     def quit_raw_mode(self):
@@ -671,8 +717,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                              value.encode())
 
     def config_get(self, key):
-        ret = self.make_cmd(b"config get " + key.encode()).decode("utf8",
-                                                                  "ignore")
+        ret = self.make_cmd(b"config get " + key.encode())
         if ret.startswith("ok VAL "):
             return ret[7:]
         elif ret.startswith("ok EMPTY"):
@@ -685,7 +730,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         return self.make_cmd(b"config del " + key.encode())
 
     def deviceinfo(self):
-        ret = self.make_cmd(b"deviceinfo").decode("utf8", "ignore")
+        ret = self.make_cmd(b"deviceinfo")
         if ret.startswith("ok\n"):
             info = {}
             for raw in ret[3:].split("\n"):
@@ -704,10 +749,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
 
     def fetch_log(self, path, stream, callback=None):
         self.send_cmd(("fetch_log %s" % path).encode())
-        resp = self.get_resp().decode("utf8", "ignore")
+        resp = self.get_resp()
         if resp.startswith("binary "):
             mimetype = self.recv_binary_into(resp, stream, callback)
-            ret = self.get_resp().decode("utf8", "ignore")
+            ret = self.get_resp()
             if ret == "ok":
                 return mimetype
             else:
@@ -716,7 +761,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             raise_error(resp)
 
     def get_cloud_validation_code(self):
-        ret = self.make_cmd(b"cloud_validation_code").decode("utf8", "ignore")
+        ret = self.make_cmd(b"cloud_validation_code")
         if ret.startswith("ok "):
             token, validate_b64_hash = ret[3:].split(" ")
             return token, a2b_base64(validate_b64_hash)

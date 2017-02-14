@@ -23,7 +23,7 @@ You can get the IP address of your FLUX Delta by running utility program *flux_d
 	                   192.168.18.33 1.1.7      delta-1   
 
 The IP of FLUX Delta is **192.168.18.33**. 
-To know how to fetch device IP programmatically, kindly check `the guide of discovering devices </tutorial/upnp/discovering_devices.html>`_.
+To know how to fetch device IP programmatically, kindly check `the guide of discovering devices </tutorial/device/discovering_devices.html>`_.
 
 Establishing a connection in SDK mode
 ++++++++++

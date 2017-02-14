@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from fluxclient.upnp import UpnpDiscover
+from fluxclient.device import DeviceDiscover
 from .misc import CharacterRenderHelper
 
 
@@ -83,7 +83,7 @@ class FluxDeviceDiscover(object):
         try:
             self.formatter.print_head()
 
-            discover = UpnpDiscover(uuid=self.specific_uuid)
+            discover = DeviceDiscover(uuid=self.specific_uuid)
             discover.discover(self.result_callback, self.loop_callback,
                               timeout)
         finally:
