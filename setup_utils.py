@@ -110,15 +110,26 @@ def get_entry_points():
 
 def get_default_extra_compile_args():
     if is_darwin():
-        return ["--stdlib=libc++", "-mmacosx-version-min=10.9"]
+        return ["--stdlib=libc++", "-std=c++11", "-mmacosx-version-min=10.9"]
     elif is_linux():
-        return ["-lstdc++"]
+        return ["-lstdc++", "-std=c++11"]
     elif is_windows():
         return []
 
 
 def create_utils_extentions():
     return [
+        Extension(
+            'fluxclient.toolpath._toolpath',
+            sources=[
+                "src/toolpath/gcode_parser.cpp",
+                "src/toolpath/gcode_writer.cpp",
+                "src/toolpath/fcode_v1_writer.cpp",
+                "src/toolpath/py_processor.cpp",
+                "src/toolpath/_toolpath.pyx"
+            ],
+            language="c++",
+            extra_compile_args=get_default_extra_compile_args()),
         Extension(
             'fluxclient.utils._utils',
             sources=[
