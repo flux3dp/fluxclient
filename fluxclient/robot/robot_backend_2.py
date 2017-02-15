@@ -517,7 +517,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         # TODO
         msg = self.make_cmd(b"player report")
         if msg.startswith("{"):
-            return json.loads(msg, "ignore")
+            return json.loads(msg)
         else:
             raise_error(msg)
 
