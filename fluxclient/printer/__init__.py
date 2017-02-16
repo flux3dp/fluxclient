@@ -227,8 +227,7 @@ detect_head_tilt = 1
 flux_calibration = 1
 pause_at_layers =
 support_everywhere = 0
-cura2 = 0
-"""
+cura2 = 0"""
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],
