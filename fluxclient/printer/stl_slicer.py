@@ -811,7 +811,7 @@ class StlSlicerCura(StlSlicer):
         if cura2:
             self.cura2_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
             # Call CuraEngine in command line
-            command = [self.slicer.replace("CuraEngine", "CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
+            command = [self.slicer.replace("CuraEngine.exe", "v2/CuraEngine.exe").replace("CuraEngine", "CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
         else:
             self.cura_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
             # Call CuraEngine in command line
