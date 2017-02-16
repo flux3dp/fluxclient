@@ -93,6 +93,9 @@ class StlSlicer(object):
         else:
             return True
 
+    def is_aborted(self, p_index):
+        return self.working_p[p_index][3]
+
     def duplicate(self, name_in, name_out):
         """
         name_in[in]: name for the original one
@@ -312,7 +315,7 @@ class StlSlicer(object):
                 slic3r_out = [5, line]  # errorcode 5
         
         subp_returned = subp.poll()
-        if self.working_p[p_index][3]:
+        if self.is_aborted(p_index):
             return logger.info('Worker #%d aborted' % p_index)
         if subp_returned!= 0:
             logger.info('#%d Slic3r returned abnormal %d ' % (p_index, subp_returned))
@@ -673,27 +676,26 @@ class StlSlicer(object):
         print("Faces[0] type %s " % type(faces).__name__)
         return _printer.MeshCloud(points_list), faces
 
-
 class StlSlicerCura(StlSlicer):
-    def __init__(self, slic3r):
-        super(StlSlicerCura, self).__init__(slic3r)
-        self.slic3r = slic3r
+    def __init__(self, slicer):
+        super(StlSlicerCura, self).__init__(slicer)
+        self.slicer = slicer
         self.now_type = 3
 
+    """
+    :param list names: names of stl that need to be sliced
+
+    :return:
+        if success:
+            gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
+        else:
+            False, [error message]
+    """
     def begin_slicing(self, names, ws, output_type):
         # End other slicing process once called
         self.end_slicing('cura next slicing')
 
-        logger.info('Begin slicing');
-        """
-        :param list names: names of stl that need to be sliced
-
-        :return:
-            if success:
-                gcode (binary in bytes), metadata([TIME_COST, FILAMENT_USED])
-            else:
-                False, [error message]
-        """
+        logger.info('Begin slicing (CuraEngine)');
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
@@ -711,7 +713,7 @@ class StlSlicerCura(StlSlicer):
 
     def slicing_worker(self, config, image, ext_metadata, output_type, status_list, names, ws, p_index):
 
-        # tmp files
+        # Generate temp files
         if platform().startswith("Windows"):
             if not os.path.isdir('C:\Temp'):
                 os.mkdir('C:\Temp')
@@ -726,49 +728,47 @@ class StlSlicerCura(StlSlicer):
         tmp_gcode_file = tmp.name  # store gcode
 
         tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
-        tmp_slic3r_setting_file = tmp.name  # store gcode
+        tmp_slicer_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = None
 
-        # Open up old transform to confirm
-        oldTransform = ""
+        # Read old transform to see if we need to regenerate the stl
+        old_transform = ""
         if os.path.exists('temp.transform'): 
             f = open('temp.transform', 'r+')
-            oldTransform = f.read();
+            old_transform = f.read();
             f.close();
 
         params = {}
         for n in names:
             params[n] = self.parameter[n]
-        currentTransform = json.dumps({'p': params, 'sink': float(self.config['cut_bottom'])})
+        current_transform = json.dumps({'p': params, 'sink': float(self.config['cut_bottom'])})
 
         status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
         
-        if self.working_p[p_index][3]:
+        if self.is_aborted(p_index):
             return logger.info('Worker #%d aborted' % p_index)
 
-        if oldTransform != currentTransform:
-            logger.info('Generating new transformed stl');
+        if old_transform != current_transform: # Need to regenerate new stl
+            logger.info('Generating transformed stl');
+            # Applying transform to each mesh object, and merge to m_mesh_merge
             for n in names:
-                logger.info('Creating MeshObj %s' % n)
                 m_mesh = _printer.MeshObj(self.models[n][0], self.models[n][1])
 
-                if self.working_p[p_index][3]:
+                if self.is_aborted(p_index):
                     return logger.info('Worker #%d aborted' % p_index)
 
-                logger.info('Applying transform %s' % n)
-                m_mesh.apply_transform(self.parameter[n])
+                m_mesh.apply_transform(self.parameter[n]) 
 
-                if self.working_p[p_index][3]:
+                if self.is_aborted(p_index):
                     return logger.info('Worker #%d aborted' % p_index)
 
                 if m_mesh_merge is None:
                     m_mesh_merge = m_mesh
                 else:
-                    logger.info('Merging %s' % n)
                     m_mesh_merge.add_on(m_mesh)
             
-            if self.working_p[p_index][3]:
+            if self.is_aborted(p_index):
                 return logger.info('Worker #%d aborted' % p_index)
 
             if float(self.config['cut_bottom']) > 0:
@@ -780,7 +780,7 @@ class StlSlicerCura(StlSlicer):
             m_mesh_merge.write_stl(tmp_stl_file)
             # Save new file name for same transform
 
-            # Read old file name
+            # Remove old file
             if os.path.exists('stl.cache'): 
                 f = open('stl.cache', 'r+')
                 old_stl = f.read();
@@ -794,45 +794,53 @@ class StlSlicerCura(StlSlicer):
             f.close();
 
             f = open('temp.transform', 'w+')
-            f.write(currentTransform)
+            f.write(current_transform)
             f.close();
-        else:
-            # Read old file name
+        else: # Read old stl
             f = open('stl.cache', 'r+')
             tmp_stl_file = f.read();
             logger.info('Using last stl %s' % tmp_stl_file);
             f.close();
 
-        logger.info('Writing ini to %s' % tmp_slic3r_setting_file);
+        logger.info('Writing ini to %s' % tmp_slicer_setting_file);
 
-        self.cura_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
+        cura2 = int(self.config['cura2']) > 0
+        
+        command = []
 
-        command = [self.slic3r]
-        command += ['-o', tmp_gcode_file]
-        command += ['-c', tmp_slic3r_setting_file]
-        command.append(tmp_stl_file)
-        command.append('-v')
+        if cura2:
+            self.cura2_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
+            # Call CuraEngine in command line
+            command = [self.slicer.replace("CuraEngine", "CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
+        else:
+            self.cura_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
+            # Call CuraEngine in command line
+            command = [self.slicer, '-o', tmp_gcode_file, '-c', tmp_slicer_setting_file]
+            command.append(tmp_stl_file)
+            command.append('-v')
 
-        logger.debug('command: ' + ' '.join(command))
+        logger.info('command: ' + ' '.join(command))
 
-        if self.working_p[p_index][3]:
+        if self.is_aborted(p_index):
             fail_flag = True
             logger.info('Worker #%d aborted' % p_index)
 
         status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
-        logger.info('Starting slicing engine');
+        logger.info('Starting CuraEngine');
 
-        tmp_gcode_file = command[2]
-        tmp_slic3r_setting_file = command[4]
+        # tmp_gcode_file = command[2]
+        # tmp_slicer_setting_file = command[4]
         fail_flag = False
         try:
-            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0)
+            my_env = os.environ.copy()
+            my_env["CURA_ENGINE_SEARCH_PATH"] = "/Users/simon/Dev/fluxclient-dev/resources"
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0, env=my_env)
             self.working_p[p_index].append(subp)
             logger.info("#%d Real slicing started" % (p_index));
             
             progress = 0.2
-            slic3r_error = False
-            slic3r_out = [None, None]
+            slicer_error = False
+            slicer_out = [None, None]
             while subp.poll() is None:
                 chunck = subp.stdout.readline()
                 for line in chunck.split('\n'):
@@ -843,25 +851,25 @@ class StlSlicerCura(StlSlicer):
                             progress += 0.12
                             status_list.append('{"slice_status": "computing", "message": "%s", "percentage": %.2f}' % (line, progress))
                         elif "Unable to close this loop" in line:
-                            slic3r_error = True
-                        slic3r_out = [5, line]  # errorcode 5
+                            slicer_error = True
+                        slicer_out = [5, line]  # errorcode 5
                     # break
             cura_result = subp.poll()
-            if self.working_p[p_index][3]:
+            if self.is_aborted(p_index):
                 fail_flag = True
                 logger.info('Worker #%d aborted' % p_index)
             if cura_result != 0:
-                logger.info("#%d CuraEngine returned abnormal %d" % (p_index, cura_result));
+                logger.info("#%d CuraEngine: Exited abnormally %d" % (p_index, cura_result));
                 fail_flag = True
         except Exception as ex:
             fail_flag = True
-            logger.info("CuraEngine init failed %s" % str(type(ex)));
+            logger.info("CuraEngine: initialization failed %s" % str(type(ex)));
             exc_type, exc_value, exc_traceback = sys.exc_info()
             logger.info("*** print_exception:")
             traceback.print_exception(exc_type, exc_value, exc_traceback,
                                     limit=10, file=sys.stdout)
 
-            slic3r_out = [5, 'CuraEngine fail']  # errorcode 5
+            slicer_out = [5, 'CuraEngine: Failed']  # errorcode 5
 
         if not fail_flag:
             # analying gcode(even transform)
@@ -883,10 +891,6 @@ class StlSlicerCura(StlSlicer):
                 tmp -= 16
             ext_metadata['HEAD_ERROR_LEVEL'] = str(tmp)
 
-            # with open('output.gcode', 'wb') as f:
-            #         with open(tmp_gcode_file, 'rb') as f2:
-            #             f.write(f2.read())
-
             with open(tmp_gcode_file, 'r') as f:
                 m_GcodeToFcode = GcodeToFcodeCpp(ext_metadata=ext_metadata)
                 m_GcodeToFcode.engine = 'cura'
@@ -897,13 +901,13 @@ class StlSlicerCura(StlSlicer):
                 path = m_GcodeToFcode.trim_ends(m_GcodeToFcode.path)
                 metadata = m_GcodeToFcode.md
                 metadata = [float(metadata['TIME_COST']), float(metadata['FILAMENT_USED'].split(',')[0])]
-                if slic3r_error or len(m_GcodeToFcode.empty_layer) > 0:
+                if slicer_error or len(m_GcodeToFcode.empty_layer) > 0:
                     status_list.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
-                    logger.info("CuraEngine gcode area too big");
+                    logger.info("CuraEngine: gcode out of range");
                     fail_flag = True
-                    slic3r_out = [6, "gcode area too big"]  # errorcode 6
+                    slicer_out = [6, "gcode area too big"]  # errorcode 6
 
                 del m_GcodeToFcode
 
@@ -915,7 +919,7 @@ class StlSlicerCura(StlSlicer):
             else:
                 raise('wrong output type, only support gcode and fcode')
 
-            ##################### fake code ###########################
+            ##################### debug code ###########################
             if os.environ.get("flux_debug") == '1':
                 with open('output.gcode', 'wb') as f:
                     with open(tmp_gcode_file, 'rb') as f2:
@@ -929,7 +933,7 @@ class StlSlicerCura(StlSlicer):
                 with open('output.fc', 'wb') as f:
                     f.write(fcode_output.getvalue())
 
-                with open(tmp_slic3r_setting_file, 'rb') as f:
+                with open(tmp_slicer_setting_file, 'rb') as f:
                     with open('output.ini', 'wb') as f2:
                         f2.write(f.read())
             ###########################################################
@@ -941,18 +945,133 @@ class StlSlicerCura(StlSlicer):
                 path
             except:
                 path = None
-            status_list.append([False, slic3r_out, path])
-            logger.info("[cura] Appended path to status_list, but failed")
-            ###########################################################
-
-            # with open(tmp_slic3r_setting_file, 'rb') as f:
-            #         with open('output.ini', 'wb') as f2:
-            #             f2.write(f.read())
-            
-            ###########################################################
+            status_list.append([False, slicer_out, path])
+            logger.info("CuraEngine: Appended path to status_list (failed)")
         else:
-            logger.info("Appended path to status_list")
+            logger.info("CuraEngine: Appended path to status_list")
             status_list.append([output, metadata, path])
+
+    @classmethod
+    def cura2_ini_writer(cls, file_path, content, delete=None):
+        """
+        file_path[in]: str, output file_path
+        content[in]: dict
+        write a .json file
+        specify delete not to write some key in content
+        ref: https://github.com/Ultimaker/Cura/blob/master/resources/definitions/fdmprinter.def.json
+        """
+
+        add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
+
+        definition = {
+            "id": "fdp1",
+            "version": 2,
+            "name": "FLUX Delta+",
+            "inherits": "fdmprinter",
+            "metadata": {
+                "visible": True,
+                "author": "Jim Yu",
+                "manufacturer": "FLUX",
+                "category": "Other",
+                "file_formats": "text/x-gcode",
+                "icon": "icon_ultimaker2",
+                "platform": "kossel_pro_build_platform.stl",
+                "platform_offset": [0, 0, 0]
+            },
+            "overrides": {
+                "machine_heated_bed": {
+                    "default_value": True
+                },
+                "machine_width": {
+                    "default_value": 170
+                },
+                "machine_height": {
+                    "default_value": 170
+                },
+                "machine_depth": {
+                    "default_value": 210
+                },
+                "machine_center_is_zero": {
+                    "default_value": True
+                },
+                "machine_nozzle_size": {
+                    "default_value": 0.40
+                },
+                "material_diameter": {
+                    "default_value": 1.75
+                },
+                "machine_nozzle_heat_up_speed": {
+                    "default_value": 2
+                },
+                "machine_nozzle_cool_down_speed": {
+                    "default_value": 2
+                },
+                "machine_gcode_flavor": {
+                    "default_value": "RepRap (Marlin/Sprinter)"
+                },
+                "machine_start_gcode": {
+                    "default_value": add_multi_line('M109 S{}\n'.format(content['first_layer_temperature']) + content['start_gcode'])
+                },
+                "machine_end_gcode": {
+                    "default_value": add_multi_line(content['end_gcode'])
+                },
+                "machine_name": { "default_value": "DeltaBot style" },
+                "machine_shape": {
+                    "default_value": "elliptic"
+                }, # "raft_speed": int(content['first_layer_speed']),
+                "raft_surface_speed": { 'default_value': int(content['first_layer_speed']) },
+                "layer_height": { 'default_value': float(content['layer_height']) },
+                "layer_height_0": { 'default_value': float(content['first_layer_height']) },
+                "wall_line_count": { 'default_value': int(content['perimeters']) },
+                "support_enable": { 'default_value': content['support_material'] != '0' },
+                "support_angle": { 'default_value': (90 - int(content['support_material_threshold'])) } , # 0 -> No support 90 -> Many support ( For Cura 0 = All supported, 90 = No support })
+                "support_top_distance": { 'default_value': float(content['support_material_contact_distance']) },
+                "support_xy_distance": { 'default_value': float(content['support_material_spacing']) },
+                "support_pattern": { 'default_value': {'GRID': 'grid', 'LINES': 'lines', 'ZIGZAG': 'zigzag'}.get(content['support_material_pattern'], 'lines') },
+                "support_type": { 'default_value': {1: 'everywhere', 0: 'buildplate'}.get(int(content['support_everywhere']), 1) },
+                "infill_pattern": { 'default_value' : {'AUTOMATIC': 'grid', 'GRID': 'grid', 'LINES': 'lines', 'CONCENTRIC': 'concentric'}.get(content['fill_pattern'], 'grid') },
+                "skirt_line_count": { 'default_value': int(content['skirts']) },
+                "skirt_gap": { 'default_value': float(content['skirt_distance']) },
+                "brim_line_count": { 'default_value': int(content['brim_width']) },
+                "top_layers": { 'default_value': int(content['top_solid_layers']) },
+                "bottom_layers": { 'default_value': int(content['bottom_solid_layers']) },
+                "infill_line_distance": { 'default_value': 0.4 * 100 * 2 / float(content['fill_density'].rstrip('%')) },
+                "speed_travel": { 'default_value': float(content['travel_speed']) },
+                "speed_infill": { 'default_value': float(content['infill_speed']) },
+                "speed_support_infill": { 'default_value': float(content['support_material_speed']) },
+                "speed_support_interface": { 'default_value': float(content['support_material_speed']) / 1.5 },
+                "speed_wall_x": { 'default_value': float(content['perimeter_speed']) },
+		        "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
+                "infill_overlap_mm": { 'default_value': 0.4 * float(content['infill_overlap'].rstrip('%')) / 100 },
+                "speed_topbottom": { 'default_value': float(content['solid_infill_speed']) },
+                "speed_print_layer_0": { 'default_value': float(content['infill_speed']) },
+                "speed_travel_layer_0": { 'default_value': float(content['infill_speed'])  * float(content['travel_speed']) / float(content['first_layer_speed']) },
+                "cool_min_layer_time": { 'default_value': int(content['slowdown_below_layer_time']) },
+                "retraction_hop": { 'default_value': float(content['retract_lift']) },
+                "retraction_amount": { 'default_value': float(content['retract_length']) },
+                "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
+                "adhesion_type": { 'default_value': 'none' },
+                "xy_offset": { 'default_value': float(content(['xy_size_compensation'])) }
+            }
+        }
+
+        # TODO FIX Raft layers
+        if int(content.get('raft','1')) == 1:
+            definition['overrides']['adhesion_type']['default_value'] = 'raft'
+        elif int(content['brim_width']) == 0:  # skirt
+            definition['overrides']['adhesion_type']['default_value'] = 'skirt'
+        else:
+            definition['overrides']['adhesion_type']['default_value'] = 'brim'
+
+        # TODO FIX Skirt, Brim, Raft for adhesion type
+
+        # TODO Support fan speed
+
+        logger.info(json.dumps(definition))
+        with open(file_path, 'w') as f:
+            f.write(json.dumps(definition))
+
+        return
 
     @classmethod
     def cura_ini_writer(cls, file_path, content, delete=None):
@@ -1085,7 +1204,7 @@ class StlSlicerCura(StlSlicer):
         add_multi_line = lambda x: '"""\n' + x.replace('\\n', '\n') + '\n"""\n'
         # special function for cura's setting file
         # replace '\\n' by '\n', add two lines of '""" indicating multiple lines of settings
-        # in slic3r's setting file:
+        # in slicer's setting file:
         # startCode=aaa\nbbb\nccc
         #
         # in cura's setting file:
