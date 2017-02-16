@@ -833,7 +833,7 @@ class StlSlicerCura(StlSlicer):
         fail_flag = False
         try:
             my_env = os.environ.copy()
-            my_env["CURA_ENGINE_SEARCH_PATH"] = os.getcwd() + "/assets/resources"
+            my_env["CURA_ENGINE_SEARCH_PATH"] = os.path.dirname(self.slicer) + "/resources"
             subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0, env=my_env)
             self.working_p[p_index].append(subp)
             logger.info("#%d Real slicing started" % (p_index));
@@ -1051,7 +1051,7 @@ class StlSlicerCura(StlSlicer):
                 "retraction_amount": { 'default_value': float(content['retract_length']) },
                 "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
                 "adhesion_type": { 'default_value': 'none' },
-                "xy_offset": { 'default_value': float(content(['xy_size_compensation'])) }
+                "xy_offset": { 'default_value': float(content['xy_size_compensation']) }
             }
         }
 
