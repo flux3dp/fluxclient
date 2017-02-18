@@ -354,7 +354,7 @@ ini_constraint = {
     'top_infill_extrusion_width': False,
     'top_solid_infill_speed': [int_range, 1, 150],
     'top_solid_layers': [int_range, 0, 20],
-    'travel_speed': [int_range, 1, 150],
+    'travel_speed': [int_range, 1, 200],
     'use_firmware_retraction': [binary],
     'use_relative_e_distances': [binary],
     'use_volumetric_e': [binary],

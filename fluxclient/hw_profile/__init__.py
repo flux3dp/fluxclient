@@ -1,6 +1,6 @@
 HW_PROFILE = {
     'model-1': {
-        'radius': 85.,
+        'radius': 86.,
         'scan_full_len': 360.,
         'height': 240.,
         'nozzle_height': 4.45,

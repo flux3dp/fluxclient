@@ -907,7 +907,7 @@ class StlSlicerCura(StlSlicer):
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
                     logger.info("CuraEngine: gcode out of range");
                     fail_flag = True
-                    slicer_out = [6, "gcode area too big"]  # errorcode 6
+                    slicer_out = [6, "Gcode area too big MAX_R=%s" % str(m_GcodeToFcode.md['MAX_R'])]  # errorcode 6
 
                 del m_GcodeToFcode
 

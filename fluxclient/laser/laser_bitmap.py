@@ -6,6 +6,7 @@ from os import environ
 
 import numpy as np
 from PIL import Image
+from math import sqrt
 
 from fluxclient.laser.laser_base import LaserBase
 
@@ -43,6 +44,7 @@ class LaserBitmap(LaserBase):
         gcode += self.header('FLUX. Laser Bitmap.')
 
         abs_shift = len(self.image_map) / 2
+        rsquare = (self.pixel_per_mm * self.radius) * (self.pixel_per_mm * self.radius)
 
         # apply threshold in a efficient way
         t = np.vectorize(lambda x: x if x <= self.thres else 255)
@@ -81,13 +83,23 @@ class LaserBitmap(LaserBase):
                     if back:
                         back = False
                         # gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, speed=8000)
-                        gcode += self.moveTo(itera[w_record] - abs_shift_x - 40, abs_shift - h, speed=5000)
+                        # calculate minimum x for speicifc h
+                        min_x = - sqrt(rsquare - (abs_shift - h) * (abs_shift - h))
+                        # print("min x %d" % min_x)
+                        # this step compensates for backlash issues
+                        gcode += self.moveTo(max(min_x, itera[w_record] - abs_shift_x - 40), abs_shift - h, speed=5000)
                         gcode += self.turnOff()
                         gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
 
                     else:
                         gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
-                    gcode += self.turnTo(255 - this)
+
+                    if self.focus_by_color and this < 255:
+                        offset = float((this - 64.0) / 5.0) * 0.2
+                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, None, self.focal_l + self.obj_height + self.height_offset + offset)
+                        gcode += self.turnTo(255)
+                    else:
+                        gcode += self.turnTo(255 - this)
                     gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)
                     gcode += self.turnOff()
 
