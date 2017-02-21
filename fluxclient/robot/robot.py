@@ -242,6 +242,10 @@ use it if and only if you have any idea about this::
         return self._backend.set_toolhead_standby_in_play()
 
     @blocked_validator
+    def set_toolhead_heater_in_play(self, temp, index=0):
+        return self._backend.set_toolhead_heater_in_play(temp, index)
+
+    @blocked_validator
     def load_filament_in_play(self, index):
         return self._backend.load_filament_in_play(index)
 
