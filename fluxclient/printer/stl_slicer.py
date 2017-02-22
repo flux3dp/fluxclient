@@ -1051,7 +1051,12 @@ class StlSlicerCura(StlSlicer):
                 "retraction_amount": { 'default_value': float(content['retract_length']) },
                 "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
                 "adhesion_type": { 'default_value': 'none' },
-                "xy_offset": { 'default_value': float(content['xy_size_compensation']) }
+                "xy_offset": { 'default_value': float(content['xy_size_compensation']) },
+                "raft_margin": { 'default_value': 5 },
+                "raft_airgap": { 'default_value': 0.3 },
+                "raft_base_line_width": { 'default_value': 1.0 },
+                "raft_surface_line_width": { 'default_value': 0.4 },
+                "raft_interface_thickness": { 'default_value': 0.27 }
             }
         }
 
