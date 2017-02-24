@@ -8,6 +8,8 @@ import logging
 import socket
 import struct
 import json
+from PIL import Image
+from io import StringIO
 
 from .aes_socket import AESSocket
 from .errors import RobotError, RobotSessionError
@@ -266,7 +268,16 @@ class ScanTaskMixIn(object):
             resp = self.get_resp()
 
             if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
+                mime, img_buff = self.recv_binary_buff(resp)
+                img_buff.seek(0)
+                img = Image.open(img_buff)
+                if img.size[0] >= 720:
+                    img = img.transpose(Image.ROTATE_90)
+                    fake_file = BytesIO()
+                    img.save(fake_file, "jpeg")
+                    images.append((mime, fake_file.getvalue()))
+                else:
+                    images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
                 return images
@@ -274,20 +285,45 @@ class ScanTaskMixIn(object):
             else:
                 raise RobotError(resp)
 
-    def scan_images(self):
+    def scan_images(self, stackResult = None, iterations = 0):
         self.send_cmd(b"scanimages")
         images = []
+        is_hd_camera = False
+        img_idx = 0
         while True:
             resp = self.get_resp()
-
             if resp.startswith("binary "):
-                images.append(self.recv_binary(resp))
+                mime, img_buff = self.recv_binary_buff(resp)
+                logger.info("scanimmages %s", (mime))
+                img_buff.seek(0)
+                img = Image.open(img_buff)
+                if img.size[0] >= 720:
+                    img = img.transpose(Image.ROTATE_90)
+                    is_hd_camera = True
+                    if iterations < 1:
+                        # save sample image
+                        images.append(img)
+                    else:
+                        old_img = stackResult[img_idx]
+                        img = Image.blend(old_img, img, 0.5)
+                        fake_file = BytesIO()
+                        img.save(fake_file, "jpeg")
+                        images.append((mime, fake_file.getvalue()))
+                    img_idx = img_idx + 1
+                else:
+                    images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
+                logger.info("return images")
+                if is_hd_camera and iterations < 1:
+                    return self.scan_images(images, iterations + 1)
+
                 return images
 
             else:
+                logger.info("robot error")
                 raise RobotError(resp)
+        logger.info("exit loop")
 
     @ok_or_error
     def scan_forward(self):
@@ -371,6 +407,11 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         buf = BytesIO()
         mimetype = self.recv_binary_into(binary_header, buf, callback)
         return (mimetype, buf.getvalue())
+
+    def recv_binary_buff(self, binary_header, callback=None):
+        buf = BytesIO()
+        mimetype = self.recv_binary_into(binary_header, buf, callback)
+        return (mimetype, buf)
 
     # Command Tasks
     def position(self):

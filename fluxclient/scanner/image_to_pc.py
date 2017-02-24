@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import struct
 from io import BytesIO
-import sys
+import sys, os
 
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+
+from PIL import ImageChops
 from PIL import Image
 
 try:
@@ -24,6 +29,7 @@ except:
 class image_to_pc():
     """docstring for image_to_pc"""
     def __init__(self, steps, scan_settings):
+        logger.info('init image2pc')
         self.reset(steps, scan_settings)
 
     def reset(self, steps, scan_settings):
@@ -56,17 +62,51 @@ class image_to_pc():
             p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y]
         """
 
+        logger.info("Feed start")
+
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
 
+        logger.info("Feed to imaged")
+
+        path = ""
+        if os.path.exists("C:\\DeltaScanResult"):
+            path = "C:\\DeltaScanResult"
+        if os.path.exists("DeltaScanResult"):
+            path = "DeltaScanResult"
+        if os.path.exists("/Users/simon/Dev/ScanResult"):
+            path = "/Users/simon/Dev/ScanResult"
+        
+        # Check Domain
+        if path != "":
+            im1 = Image.fromarray(img_O)
+            b, g, r = im1.split()
+            im1 = Image.merge("RGB", (r, g, b))
+            im1.save("/Users/simon/Dev/ScanResult/%03d_O.png" % (step))
+            im2 = Image.fromarray(img_L)
+            b, g, r = im2.split()
+            im2 = Image.merge("RGB", (r, g, b))
+            im2.save("/Users/simon/Dev/ScanResult/%03d_L.png" % (step))
+            im3 = Image.fromarray(img_R)
+            b, g, r = im3.split()
+            im3 = Image.merge("RGB", (r, g, b))
+            im3.save("/Users/simon/Dev/ScanResult/%03d_R.png" % (step))
+            im = ImageChops.difference(im2, im1)
+            im.save("/Users/simon/Dev/ScanResult/%03d_D.png" % (step))
+
         indices_L = self.fs_L.subProcess(img_O, img_L, self.settings.img_height)
+
+        logger.info("Subp")
 
         indices_L = [[p[0], p[1] + l_cab]for p in indices_L]
         # indices_L = [[i, step] for i in range(self.settings.img_height)]
+        logger.info("End fs_L subProcess")
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', l_cab, clock=True)
         self.points_L.extend(point_L_this)
         # return [self.points_to_bytes(point_L_this), []]
+
+        logger.info("End subp")
 
         indices_R = self.fs_R.subProcess(img_O, img_R, self.settings.img_height)
         indices_R = [[p[0], p[1] + r_cab]for p in indices_R]
