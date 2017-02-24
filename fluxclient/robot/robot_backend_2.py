@@ -527,6 +527,11 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         return self.make_cmd(b"player set_toolhead_standby")
 
     @ok_or_error
+    def set_toolhead_heater_in_play(self, temp, index=0):
+        return self.make_cmd(
+            ("player set_toolhead_header %i %.1f" % (index, temp)).encode())
+
+    @ok_or_error
     def load_filament_in_play(self, index):
         return self.make_cmd(("player load_filament %i" % index).encode())
 
@@ -542,7 +547,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         # TODO
         msg = self.make_cmd(b"player report")
         if msg.startswith("{"):
-            return json.loads(msg, "ignore")
+            return json.loads(msg)
         else:
             raise_error(msg)
 

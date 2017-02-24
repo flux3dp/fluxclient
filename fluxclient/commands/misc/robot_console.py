@@ -69,7 +69,12 @@ class RobotConsole(object):
             "extruder_temp": self.maintain_extruder_temp,
             "update_hbfw": self.maintain_update_hbfw,
             "play": {
-                "info": self.play_info
+                "info": self.play_info,
+                "toolhead": {
+                    "enable": self.play_enable_toolhead,
+                    "disable": self.play_disable_toolhead,
+                    "heater": self.play_set_toolhead_heater
+                }
             },
 
             # Maintain Tasks
@@ -405,6 +410,15 @@ class RobotConsole(object):
         for key, value in self.task.diagnosis_sensor().items():
             logger.info("    :%s => %s", key, value)
         logger.info("ok")
+
+    def play_enable_toolhead(self):
+        self.robot_obj.set_toolhead_operating_in_play()
+
+    def play_disable_toolhead(self):
+        self.robot_obj.set_toolhead_standby_in_play()
+
+    def play_set_toolhead_heater(self, temp, index="0"):
+        self.robot_obj.set_toolhead_heater_in_play(float(temp), int(index))
 
     def begin_scan(self):
         self.task = self.robot_obj.scan()

@@ -82,13 +82,17 @@ class USBProtocol(object):
             raise
 
     def __del__(self):
-        self.close()
+        try:
+            self.close()
+        except Exception as e:
+            logger.error("%s", e)
 
     def _send(self, buf):
         # Low level send
         try:
             self._tx.write(buf)
         except usb.core.USBError as e:
+            self._close_usbdev()
             if e.errno == ETIMEDOUT:
                 raise FluxUSBError(*e.args, symbol=("TIMEOUT", ))
             else:
@@ -109,6 +113,7 @@ class USBProtocol(object):
             if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 return b""
             else:
+                self._close_usbdev()
                 raise FluxUSBError(*e.args)
 
     def _feed_buffer(self, timeout=0.05):
@@ -268,15 +273,19 @@ class USBProtocol(object):
     def stop(self):
         self._flag &= ~2
 
-    def close(self):
+    def _close_usbdev(self):
         if self._usbdev:
-            self.send_object(0xfc, None)
             if self.channels:
                 for idx, channel in self.channels.items():
                     channel.close(directly=True)
-            logger.info("Host2Host closed")
             usb.util.dispose_resources(self._usbdev)
             self._usbdev = self._tx = self._rx = None
+            logger.info("Host2Host dev closed")
+
+    def close(self):
+        if self._usbdev:
+            self.send_object(0xfc, None)
+            self._close_usbdev()
 
     def ping(self):
         if self._disable_ping is True:

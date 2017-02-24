@@ -2,7 +2,7 @@
 
 import sys
 from io import BytesIO, StringIO
-from math import pi, sin, cos, sqrt, degrees
+from math import sin, cos, degrees
 from time import time
 from datetime import datetime
 
@@ -17,6 +17,7 @@ class LaserBase(object):
     def __init__(self):
         self.laser_on = False
         self.focal_l = 6.4  # focal z coordinate
+        self.focus_by_color = False
 
         self.laser_speed = 300  # speed F= mm/minute
         self.travel_speed = 1000
@@ -26,6 +27,8 @@ class LaserBase(object):
         self.obj_height = 10.9  # rubber
         self.obj_height = 3.21  # wood
         self.obj_height = 1.7  # pcb
+        self.height_offset = 0
+        self.current_power = 0
         # self.obj_height = 2.56  # wood?
         # self.obj_height = 0.0  # plate
 
@@ -68,7 +71,7 @@ class LaserBase(object):
         # gcode += ["X3F3", "X3F2", "X3F1"]
 
         # move to proper height
-        gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height))
+        gcode.append("G1 F5000 Z%.5f" % (self.focal_l + self.obj_height + self.height_offset))
 
         return gcode
 
@@ -76,28 +79,44 @@ class LaserBase(object):
         if self.laser_on is True:
             return []
         self.laser_on = True
+        self.current_power = 255
         return ["X2O%d;turnOn" % self.draw_power, "G4 P20"]
 
     def turnOff(self):
         if self.laser_on is False:
             return []
         self.laser_on = False
+        self.current_power = 0
         return ["X2O0;turnOff", "G4 P20"]
 
-    def turnTo(self, power=None):
+    def turnTo(self, power=None, wait_sec=20):
         """
         set laser power
         """
         if power is None:
             self.laser_on = True
-            return ["X2O%d;turnTo %d" % (self.fram_power, self.fram_power), "G4 P20"]
+            if self.current_power == power:
+                return []
+            self.current_power = self.fram_power
+            return ["X2O%d" % self.fram_power, "G4 P20"]
 
         elif power != 0:
+            if self.current_power == power:
+                return []
+            self.current_power = power
             self.laser_on = True
-            return ["X2O%d;turnTo %d" % (power, power), "G4 P20"]
+            return ["X2O%d" % round(power * self.draw_power / 255.0), "G4 P%d" % wait_sec]
 
         elif power == 0:
+            if self.current_power == 0:
+                return []
+            self.current_power = 0
             return self.turnOff()
+
+    def moveZ(self, z):
+        """Generate gcode for moving to z (pos_z)"""
+        return ["G1 F%.5f Z%.5f" % (self.laser_speed, z)]
+
 
     def moveTo(self, x, y, speed=None, z=None, ending=None):
         """
@@ -180,18 +199,18 @@ class LaserBase(object):
         """
         if key == 'object_height':
             self.obj_height = float(value)
-
+        elif key == 'height_offset':
+            self.height_offset = float(value)
         elif key == 'laser_speed':
             self.laser_speed = float(value) * 60  # mm/s -> mm/min
-
         elif key == 'power':
             self.draw_power = (round(float(value) * 255))  # pwm, int
-
         elif key == 'shading':
-            self.shading = int(value) == 1
-
+            self.shading = (int(value) == 1)
+        elif key == 'focus_by_color':
+            self.focus_by_color = (int(value) == 1)
         elif key == 'one_way':
-            self.one_way = int(value) == 1
+            self.one_way = (int(value) == 1)
         else:
             raise ValueError('undefine setting key')
 
@@ -282,7 +301,7 @@ class LaserBase(object):
                 for w in range(find_s, find_e):
                     if (gx1_on_map + h - len(self.image_map) / 2.) ** 2 + (gy1_on_map + w - len(self.image_map) / 2.) ** 2 < (len(self.image_map) / 2.) ** 2:
                         if new_pix.getpixel((w, h)) <= thres:
-                            if self.shading:
+                            if self.shading or self.focus_by_color:
                                 self.image_map[gx1_on_map + h][gy1_on_map + w] = new_pix.getpixel((w, h))
                             else:
                                 self.image_map[gx1_on_map + h][gy1_on_map + w] = 0
@@ -320,6 +339,7 @@ class LaserBase(object):
         m_GcodeToFcode = GcodeToFcode(ext_metadata=self.ext_metadata)
         m_GcodeToFcode.image = self.dump(mode='preview')
         m_GcodeToFcode.md['OBJECT_HEIGHT'] = str(self.obj_height)
+        m_GcodeToFcode.md['HEIGHT_OFFSET'] = str(self.height_offset)
 
         m_GcodeToFcode.process(f, fcode_output)
         return fcode_output.getvalue(), m_GcodeToFcode
