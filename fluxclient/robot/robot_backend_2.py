@@ -271,11 +271,13 @@ class ScanTaskMixIn(object):
                 mime, img = self.recv_binary_buff(resp)
                 img.seek(0)
                 img = Image.open(img)
-                img = img.transpose(Image.ROTATE_90)
-                fake_file = BytesIO()
-                img.save(fake_file, "jpeg")
-                logger.info("Save jpeg")
-                images.append((mime,fake_file.getvalue()))
+                if img.size[0] >= 720:
+                    img = img.transpose(Image.ROTATE_90)
+                    fake_file = BytesIO()
+                    img.save(fake_file, "jpeg")
+                    images.append((mime, fake_file.getvalue()))
+                else:
+                    images.append(self.recv_binary(resp))
 
             elif resp == "ok":
                 return images
@@ -283,25 +285,39 @@ class ScanTaskMixIn(object):
             else:
                 raise RobotError(resp)
 
-    def scan_images(self):
+    def scan_images(self, stackResult = None, iterations = 0):
         self.send_cmd(b"scanimages")
         images = []
+        is_hd_camera = False
+        img_idx = 0
         while True:
             resp = self.get_resp()
-           
             if resp.startswith("binary "):
                 mime, img = self.recv_binary_buff(resp)
-                logger.info("scanimmages %s" % mime)
+                logger.info("scanimmages %s", (mime))
                 img.seek(0)
                 img = Image.open(img)
-                img = img.transpose(Image.ROTATE_90)
-                fake_file = BytesIO()
-                img.save(fake_file, "jpeg")
-                logger.info("Save jpeg")
-                images.append((mime,fake_file.getvalue()))
+                if img.size[0] >= 720:
+                    img = img.transpose(Image.ROTATE_90)
+                    is_hd_camera = True
+                    if iterations < 1:
+                        # save sample image
+                        images.append(img)
+                    else:
+                        old_img = stackResult[img_idx]
+                        img = Image.blend(old_img, img, 0.5)
+                        fake_file = BytesIO()
+                        img.save(fake_file, "jpeg")
+                        images.append((mime, fake_file.getvalue()))
+                    img_idx = img_idx + 1
+                else:
+                    images.append(self.recv_binary(resp))
 
             elif resp == "ok":
                 logger.info("return images")
+                if is_hd_camera and iterations < 1:
+                    return self.scan_images(images, iterations + 1)
+
                 return images
 
             else:

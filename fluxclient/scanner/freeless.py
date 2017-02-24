@@ -77,10 +77,10 @@ class freeless():
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)
             f, point = self.intersectLaserPlane(ray)
-            logger.info("F %s" % str(f))
+            #logger.info("F %s" % str(f))
 
             if f:
-                logger.info("%d %d pttest" % (y, x))
+                # logger.info("%d %d pttest" % (y, x))
                 if point[0][0] ** 2 + point[0][2] ** 2 < MAX_DIST_XZ_SQ and point[0][1] >= PLATE_Y and point[0][1] < MAX_DIST_Y:
                     int_x = int(x - cab_offset)
                     int_x_origin = int(x)
@@ -89,15 +89,15 @@ class freeless():
                     # point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])
                     point.append([int_x_origin, y])
 
-                    logger.info("%d %d instance append" % (y, x))
+                    #logger.info("%d %d instance append" % (y, x))
                     points.append(point)
                     
                 else:  # points that out of bounding cylinder
                     pass
                     # print point[0][1] >= 0.0, point[0][0] ** 2 + point[0][2] ** 2 < MAX_DIST_XZ_SQ,
                     # point[0][1] < MAX_DIST_Y, step
-            logger.info("%d %d point calced" % (x,y))
-        logger.info("calc points add")
+            #logger.info("%d %d point calced" % (x,y))
+        #logger.info("calc points add")
         # rotate
         clock = True
         if clock:
@@ -113,7 +113,7 @@ class freeless():
             # [WARNING] change here
             new_points.append([p[0][0] * c + p[0][2] * (-s), p[0][0] * s + p[0][2] * c, p[0][1], p[2][2], p[2][1], p[2][0], _step, p[3][0], p[3][1]])
             # new_points.append([p[0][0] * c + p[0][2] * (-s), p[0][0] * s + p[0][2] * c, p[0][1], (step % 2) * 255, 255 - step / 400. * 255, 255 - step / 400. * 255, step, p[3][0], p[3][1]])
-        logger.info("3d points add")
+        #logger.info("3d points add")
 
         return new_points
 
@@ -147,7 +147,7 @@ class freeless():
         point.append([self.settings.laserX_L - point[0][0], self.settings.laserY_L - point[0][1], self.settings.laserZ_L - point[0][2]])
         # print point
 
-        logger.info("end intersect calc")
+        #logger.info("end intersect calc")
         return True, point
 
     def calculateCameraRay(self, x, y):
@@ -173,7 +173,7 @@ class freeless():
         ray = [[x, y, z], normalize([x - self.settings.cameraX, y - self.settings.cameraY, z - self.settings.cameraZ])]
         # self.place[(x, y)] = ray
 
-        logger.info("end raay calc")
+        # logger.info("end raay calc")
         return ray
 
     def writeTrianglesForColumn(self, lastFrame, currentFrame, tri):

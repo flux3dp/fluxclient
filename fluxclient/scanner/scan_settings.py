@@ -9,12 +9,12 @@ class ScanSetting(object):
         # for scan
         self.scan_step = 400  # steps
         self.theta_a = pi / 6  # radius between center and laser
+        
+        self.img_width = 640
+        self.img_height = 480
 
-        self.img_width = 720
-        self.img_height = 1280
-
-        self.sensorWidth = 3.57 #3.67
-        self.sensorHeight = 6.35 # 2.74 + 0.08
+        self.sensorWidth = 3.67
+        self.sensorHeight = 2.74 + 0.08
         self.focalLength = 3.6
 
         # ######### mockup 2, measure by solidwork###
@@ -49,3 +49,18 @@ class ScanSetting(object):
         self.SegmentationDistance = 2
         self.CloseBottom = -1000
         self.CloseTop = 1000
+
+    def set_camera(self, width=720, height=1280):
+        """Set camera parameters"""
+        self.img_width = width
+        self.img_height = height
+        self.cab_m = self.img_width / 2
+        self.cab_l = self.img_width / 2
+        self.cab_r = self.img_width / 2
+
+        if self.img_width >= 720:
+            self.sensorWidth = 3.57 #3.67
+            self.sensorHeight = 6.35 # 2.74 + 0.08
+        else:
+            self.sensorWidth = 3.67
+            self.sensorHeight = 2.74 + 0.08

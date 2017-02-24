@@ -69,20 +69,31 @@ class image_to_pc():
         img_R = self.to_image(buffer_R)
 
         logger.info("Feed to imaged")
-        im1 = Image.fromarray(img_O)
-        b, g, r = im1.split()
-        im1 = Image.merge("RGB", (r, g, b))
-        im1.save("/Users/simon/Dev/ScanResult/%03d_O.png" % (step))
-        im2 = Image.fromarray(img_L)
-        b, g, r = im2.split()
-        im2 = Image.merge("RGB", (r, g, b))
-        im2.save("/Users/simon/Dev/ScanResult/%03d_L.png" % (step))
-        im3 = Image.fromarray(img_R)
-        b, g, r = im3.split()
-        im3 = Image.merge("RGB", (r, g, b))
-        im3.save("/Users/simon/Dev/ScanResult/%03d_R.png" % (step))
-        im = ImageChops.difference(im2, im1)
-        im.save("/Users/simon/Dev/ScanResult/%03d_D.png" % (step))
+
+        path = ""
+        if os.path.exists("C:\\DeltaScanResult"):
+            path = "C:\\DeltaScanResult"
+        if os.path.exists("DeltaScanResult"):
+            path = "DeltaScanResult"
+        if os.path.exists("/Users/simon/Dev/ScanResult"):
+            path = "/Users/simon/Dev/ScanResult"
+        
+        # Check Domain
+        if path != "":
+            im1 = Image.fromarray(img_O)
+            b, g, r = im1.split()
+            im1 = Image.merge("RGB", (r, g, b))
+            im1.save("/Users/simon/Dev/ScanResult/%03d_O.png" % (step))
+            im2 = Image.fromarray(img_L)
+            b, g, r = im2.split()
+            im2 = Image.merge("RGB", (r, g, b))
+            im2.save("/Users/simon/Dev/ScanResult/%03d_L.png" % (step))
+            im3 = Image.fromarray(img_R)
+            b, g, r = im3.split()
+            im3 = Image.merge("RGB", (r, g, b))
+            im3.save("/Users/simon/Dev/ScanResult/%03d_R.png" % (step))
+            im = ImageChops.difference(im2, im1)
+            im.save("/Users/simon/Dev/ScanResult/%03d_D.png" % (step))
 
         indices_L = self.fs_L.subProcess(img_O, img_L, self.settings.img_height)
 
