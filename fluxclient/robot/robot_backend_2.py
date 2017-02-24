@@ -268,16 +268,16 @@ class ScanTaskMixIn(object):
             resp = self.get_resp()
 
             if resp.startswith("binary "):
-                mime, img = self.recv_binary_buff(resp)
-                img.seek(0)
-                img = Image.open(img)
+                mime, img_buff = self.recv_binary_buff(resp)
+                img_buff.seek(0)
+                img = Image.open(img_buff)
                 if img.size[0] >= 720:
                     img = img.transpose(Image.ROTATE_90)
                     fake_file = BytesIO()
                     img.save(fake_file, "jpeg")
                     images.append((mime, fake_file.getvalue()))
                 else:
-                    images.append(self.recv_binary(resp))
+                    images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
                 return images
@@ -293,10 +293,10 @@ class ScanTaskMixIn(object):
         while True:
             resp = self.get_resp()
             if resp.startswith("binary "):
-                mime, img = self.recv_binary_buff(resp)
+                mime, img_buff = self.recv_binary_buff(resp)
                 logger.info("scanimmages %s", (mime))
-                img.seek(0)
-                img = Image.open(img)
+                img_buff.seek(0)
+                img = Image.open(img_buff)
                 if img.size[0] >= 720:
                     img = img.transpose(Image.ROTATE_90)
                     is_hd_camera = True
@@ -311,7 +311,7 @@ class ScanTaskMixIn(object):
                         images.append((mime, fake_file.getvalue()))
                     img_idx = img_idx + 1
                 else:
-                    images.append(self.recv_binary(resp))
+                    images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
                 logger.info("return images")

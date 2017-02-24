@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import struct
 from io import BytesIO
-import sys
+import sys, os
 
 import numpy as np
 import logging
