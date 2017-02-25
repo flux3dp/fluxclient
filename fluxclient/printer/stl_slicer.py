@@ -1027,9 +1027,9 @@ class StlSlicerCura(StlSlicer):
                 "support_angle": { 'default_value': (90 - int(content['support_material_threshold'])) } , # 0 -> No support 90 -> Many support ( For Cura 0 = All supported, 90 = No support })
                 "support_top_distance": { 'default_value': float(content['support_material_contact_distance']) },
                 "support_xy_distance": { 'default_value': float(content['support_material_spacing']) },
-                "support_pattern": { 'default_value': {'GRID': 'grid', 'LINES': 'lines', 'ZIGZAG': 'zigzag'}.get(content['support_material_pattern'], 'lines') },
+                "support_pattern": { 'default_value': {'GRID': 'grid', 'LINES': 'lines', 'ZIGZAG': 'zigzag'}.get(content['support_material_pattern'], 'zigzag') },
                 "support_type": { 'default_value': {1: 'everywhere', 0: 'buildplate'}.get(int(content['support_everywhere']), 1) },
-                "infill_pattern": { 'default_value' : {'AUTOMATIC': 'grid', 'GRID': 'grid', 'LINES': 'lines', 'CONCENTRIC': 'concentric'}.get(content['fill_pattern'], 'grid') },
+                "infill_pattern": { 'default_value' : {'AUTOMATIC': 'zigzag', 'ZIGZAG': 'zigzag', 'GRID': 'grid', 'LINES': 'lines', 'CONCENTRIC': 'concentric'}.get(content['fill_pattern'], 'zigzag') },
                 "skirt_line_count": { 'default_value': int(content['skirts']) },
                 "skirt_gap": { 'default_value': float(content['skirt_distance']) },
                 "brim_line_count": { 'default_value': int(content['brim_width']) },
