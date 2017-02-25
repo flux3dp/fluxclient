@@ -1044,11 +1044,12 @@ class StlSlicerCura(StlSlicer):
 		        "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
                 "infill_overlap_mm": { 'default_value': 0.4 * float(content['infill_overlap'].rstrip('%')) / 100 },
                 "speed_topbottom": { 'default_value': float(content['solid_infill_speed']) },
-                "speed_print_layer_0": { 'default_value': float(content['infill_speed']) },
+                "speed_print_layer_0": { 'default_value': float(content['first_layer_speed']) },
                 "speed_travel_layer_0": { 'default_value': float(content['infill_speed'])  * float(content['travel_speed']) / float(content['first_layer_speed']) },
                 "cool_min_layer_time": { 'default_value': int(content['slowdown_below_layer_time']) },
                 "retraction_hop": { 'default_value': float(content['retract_lift']) },
                 "retraction_amount": { 'default_value': float(content['retract_length']) },
+                "retraction_prime_speed": { 'default_value': int(content['retract_speed']) },
                 "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
                 "adhesion_type": { 'default_value': 'none' },
                 "xy_offset": { 'default_value': float(content['xy_size_compensation']) },
@@ -1056,6 +1057,7 @@ class StlSlicerCura(StlSlicer):
                 "raft_airgap": { 'default_value': 0.3 },
                 "raft_base_line_width": { 'default_value': 1.0 },
                 "raft_surface_line_width": { 'default_value': 0.4 },
+                "raft_surface_layers" : { 'default_value': int(content['raft_layers']) },
                 "raft_interface_thickness": { 'default_value': 0.27 }
             }
         }
