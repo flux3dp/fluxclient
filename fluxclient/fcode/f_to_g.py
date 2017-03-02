@@ -122,7 +122,7 @@ class FcodeToGcode(FcodeBase):
             return False
 
     def writeStr(self, o, s):
-        o.write(bytes(s, "UTF-8"));
+        o.write(s);
 
     def get_metadata(self):
         """
