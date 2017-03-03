@@ -145,7 +145,7 @@ cdef class FCodeV1FileWriter(ToolpathProcessor):
         self.filename = filename.encode()
         self.headtype = head_type.encode()
         self.metadata = ((k.encode(), v.encode()) for k, v in metadata.items())
-        self.preview = previews
+        self.previews = previews
         self._proc = <_ToolpathProcessor*>new _FCodeV1FileWriter(self.filename.c_str(), &self.headtype,
             &self.metadata, &self.previews)
 
