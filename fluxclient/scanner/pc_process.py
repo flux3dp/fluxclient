@@ -6,7 +6,7 @@ from io import BytesIO, StringIO
 from bisect import bisect
 import copy
 from os import environ
-from math import sqrt, asin, pi, radians, cos, sin
+from math import sqrt, asin, pi, radians, cos, sin, isnan
 import uuid
 import threading
 import sys
@@ -67,9 +67,9 @@ class PcProcess():
         pc = []
         for p in range(int(len(buffer_data) / 24)):
             tmp_point = list(struct.unpack('<ffffff', buffer_data[p * 24:p * 24 + 24]))
-            tmp_point[3] = round(tmp_point[3] * 255)
-            tmp_point[4] = round(tmp_point[4] * 255)
-            tmp_point[5] = round(tmp_point[5] * 255)
+            tmp_point[3] = round(0 if isnan(tmp_point[3] * 255) else tmp_point[5] * 255)
+            tmp_point[4] = round(0 if isnan(tmp_point[4] * 255) else tmp_point[5] * 255)
+            tmp_point[5] = round(0 if isnan(tmp_point[5] * 255) else tmp_point[5] * 255)
             pc.append(tmp_point)
         return pc
 

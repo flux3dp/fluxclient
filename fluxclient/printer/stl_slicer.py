@@ -21,7 +21,7 @@ from fluxclient.printer import _printer
 from fluxclient.fcode.g_to_f import GcodeToFcode
 from fluxclient.utils._utils import GcodeToFcodeCpp
 from fluxclient.scanner.tools import dot, normal, normalize, dotX, normalX
-from fluxclient.printer import ini_string, ini_constraint, ignore, ini_flux_params
+from fluxclient.printer import ini_string, ini_string_cura2, ini_constraint, ignore, ini_flux_params
 from fluxclient.printer.flux_raft import Raft
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,7 @@ class StlSlicer(object):
 
         # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
         self.config = self.my_ini_parser(ini_string.split('\n'))
+        self.configCura2 = self.my_ini_parser(ini_string_cura2.split('\n'))
         # self.config = self.my_ini_parser(self.slic3r_setting)
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
@@ -63,6 +64,8 @@ class StlSlicer(object):
         self.image = b''
         self.ext_metadata = {'CORRECTION': 'A'}
         self.path_js = None
+        self.setting_slicer = "slic3r"
+        self.version = 0
         self.T = None
 
     def from_other(self, other):
@@ -173,29 +176,45 @@ class StlSlicer(object):
         # TODO: close 'ignore' flag when changing some key back
         counter = 1
         lines = lines.split('\n')
+
+        if self.version == 2:
+            setting_slicer = "cura2"
+            self.setting_slicer = "cura2"
+        else:
+            setting_slicer = "slic3r"
+
         bad_lines = []
         for line in lines:
             if '#' in line:  # clean up comement
                 line = line[:line.index('#')].strip()
             if '=' in line:
                 key, value = map(lambda x: x.strip(), line.split('=', 1))
-                result = self.ini_value_check(key, value)
+
+                if setting_slicer == "cura2":
+                    result = self.ini_value_check_cura2(key, value)
+                else:
+                    result = self.ini_value_check(key, value)
+
                 if result == 'ok':
-                    self.config[key] = value
-                    #if key == 'temperature':
-                    #    self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-                    # elif key == 'overhangs' and value == '0':
-                    #     self.config['support_material'] = '0'
-                    #     ini_constraint['support_material'] = [ignore]
-                    if key == 'spiral_vase' and value == '1':
-                        self.config['support_material'] = '0'
-                        ini_constraint['support_material'] = [ignore]
-                        self.config['fill_density'] = '0%'
-                        ini_constraint['fill_density'] = [ignore]
-                        self.config['perimeters'] = '1'
-                        ini_constraint['perimeters'] = [ignore]
-                        self.config['top_solid_layers'] = '0'
-                        ini_constraint['top_solid_layers'] = [ignore]
+                    if setting_slicer == "cura2":
+                        logger.info("Setting cura2 %s = %s" % (key, value))
+                        self.configCura2[key] = value
+                    else:
+                        self.config[key] = value
+                        #if key == 'temperature':
+                        #    self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
+                        # elif key == 'overhangs' and value == '0':
+                        #     self.config['support_material'] = '0'
+                        #     ini_constraint['support_material'] = [ignore]
+                        if key == 'spiral_vase' and value == '1':
+                            self.config['support_material'] = '0'
+                            ini_constraint['support_material'] = [ignore]
+                            self.config['fill_density'] = '0%'
+                            ini_constraint['fill_density'] = [ignore]
+                            self.config['perimeters'] = '1'
+                            ini_constraint['perimeters'] = [ignore]
+                            self.config['top_solid_layers'] = '0'
+                            ini_constraint['top_solid_layers'] = [ignore]
 
                 elif result == 'ignore':
                     # ignore this config key anyway
@@ -503,7 +522,18 @@ class StlSlicer(object):
             else:
                 return 'ok'
         else:
-            return 'key not exist: %s' % key
+            return 'Key not exists: %s' % key
+
+    def ini_value_check_cura2(self, key, value):
+        """
+        key[in]: str
+        value[out]: str
+        return: 'ok' or [error message]
+        check whether (key, value) pair is valid according to the constraint
+        """
+        if key in self.configCura2:
+            return 'ok'
+        return 'Key not exists: %s' % key
 
     @classmethod
     def my_ini_writer(cls, file_path, content, delete=None):
@@ -677,9 +707,10 @@ class StlSlicer(object):
         return _printer.MeshCloud(points_list), faces
 
 class StlSlicerCura(StlSlicer):
-    def __init__(self, slicer):
+    def __init__(self, slicer, version = 1):
         super(StlSlicerCura, self).__init__(slicer)
         self.slicer = slicer
+        self.version = version
         self.now_type = 3
 
     """
@@ -804,12 +835,12 @@ class StlSlicerCura(StlSlicer):
 
         logger.info('Writing ini to %s' % tmp_slicer_setting_file);
 
-        cura2 = int(self.config['cura2']) > 0
+        cura2 = self.version == 2
         
         command = []
 
         if cura2:
-            self.cura2_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
+            self.cura2_ini_writer(tmp_slicer_setting_file, self.configCura2, delete=ini_flux_params)
             # Call CuraEngine in command line
             command = [self.slicer.replace("CuraEngine.exe", "v2/CuraEngine.exe").replace("CuraEngine", "CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
         else:
@@ -1010,67 +1041,77 @@ class StlSlicerCura(StlSlicer):
                     "default_value": "RepRap (Marlin/Sprinter)"
                 },
                 "machine_start_gcode": {
-                    "default_value": add_multi_line('M109 S{}\n'.format(content['first_layer_temperature']) + content['start_gcode'])
+                    "default_value": add_multi_line('M109 S{}\n'.format(content['material_print_temperature_layer_0']) + content['machine_start_gcode'])
                 },
                 "machine_end_gcode": {
-                    "default_value": add_multi_line(content['end_gcode'])
+                    "default_value": add_multi_line(content['machine_end_gcode'])
                 },
                 "machine_name": { "default_value": "DeltaBot style" },
                 "machine_shape": {
                     "default_value": "elliptic"
-                }, # "raft_speed": int(content['first_layer_speed']),
-                "raft_surface_speed": { 'default_value': int(content['first_layer_speed']) },
-                "layer_height": { 'default_value': float(content['layer_height']) },
-                "layer_height_0": { 'default_value': float(content['first_layer_height']) },
-                "wall_line_count": { 'default_value': int(content['perimeters']) },
-                "support_enable": { 'default_value': content['support_material'] != '0' },
-                "support_angle": { 'default_value': (90 - int(content['support_material_threshold'])) } , # 0 -> No support 90 -> Many support ( For Cura 0 = All supported, 90 = No support })
-                "support_top_distance": { 'default_value': float(content['support_material_contact_distance']) },
-                "support_xy_distance": { 'default_value': float(content['support_material_spacing']) },
-                "support_pattern": { 'default_value': {'GRID': 'grid', 'LINES': 'lines', 'ZIGZAG': 'zigzag'}.get(content['support_material_pattern'], 'lines') },
-                "support_type": { 'default_value': {1: 'everywhere', 0: 'buildplate'}.get(int(content['support_everywhere']), 1) },
-                "infill_pattern": { 'default_value' : {'AUTOMATIC': 'grid', 'GRID': 'grid', 'LINES': 'lines', 'CONCENTRIC': 'concentric'}.get(content['fill_pattern'], 'grid') },
-                "skirt_line_count": { 'default_value': int(content['skirts']) },
-                "skirt_gap": { 'default_value': float(content['skirt_distance']) },
-                "brim_line_count": { 'default_value': int(content['brim_width']) },
-                "top_layers": { 'default_value': int(content['top_solid_layers']) },
-                "bottom_layers": { 'default_value': int(content['bottom_solid_layers']) },
-                "infill_line_distance": { 'default_value': 0.4 * 100 * 2 / float(content['fill_density'].rstrip('%')) },
-                "speed_travel": { 'default_value': float(content['travel_speed']) },
-                "speed_infill": { 'default_value': float(content['infill_speed']) },
-                "speed_support_infill": { 'default_value': float(content['support_material_speed']) },
-                "speed_support_interface": { 'default_value': float(content['support_material_speed']) / 1.5 },
-                "speed_wall_x": { 'default_value': float(content['perimeter_speed']) },
-		        "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
-                "infill_overlap_mm": { 'default_value': 0.4 * float(content['infill_overlap'].rstrip('%')) / 100 },
-                "speed_topbottom": { 'default_value': float(content['solid_infill_speed']) },
-                "speed_print_layer_0": { 'default_value': float(content['infill_speed']) },
-                "speed_travel_layer_0": { 'default_value': float(content['infill_speed'])  * float(content['travel_speed']) / float(content['first_layer_speed']) },
-                "cool_min_layer_time": { 'default_value': int(content['slowdown_below_layer_time']) },
-                "retraction_hop": { 'default_value': float(content['retract_lift']) },
-                "retraction_amount": { 'default_value': float(content['retract_length']) },
-                "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
-                "adhesion_type": { 'default_value': 'none' },
-                "xy_offset": { 'default_value': float(content['xy_size_compensation']) },
-                "raft_margin": { 'default_value': 5 },
-                "raft_airgap": { 'default_value': 0.3 },
-                "raft_base_line_width": { 'default_value': 1.0 },
-                "raft_surface_line_width": { 'default_value': 0.4 },
-                "raft_interface_thickness": { 'default_value': 0.27 }
+                },
+                "adhesion_type": { 'default_value': 'none' }
+                # "raft_speed": int(content['first_layer_speed']),
+                # "raft_surface_speed": { 'default_value': int(content['first_layer_speed']) },
+                # "layer_height": { 'default_value': float(content['layer_height']) },
+                # "layer_height_0": { 'default_value': float(content['first_layer_height']) },
+                # "wall_line_count": { 'default_value': int(content['perimeters']) },
+                # "support_enable": { 'default_value': content['support_material'] != '0' },
+                # "support_angle": { 'default_value': (90 - int(content['support_material_threshold'])) } , # 0 -> No support 90 -> Many support ( For Cura 0 = All supported, 90 = No support })
+                # "support_top_distance": { 'default_value': float(content['support_material_contact_distance']) },
+                # "support_xy_distance": { 'default_value': float(content['support_material_spacing']) },
+                # "support_pattern": { 'default_value': {'GRID': 'grid', 'LINES': 'lines', 'ZIGZAG': 'zigzag'}.get(content['support_material_pattern'], 'zigzag') },
+                # "support_type": { 'default_value': {1: 'everywhere', 0: 'buildplate'}.get(int(content['support_everywhere']), 1) },
+                # "support_infill_rate": { 'default_value': 20},
+                # "support_line_distance": { 'default_value': 1.75},
+                # "infill_pattern": { 'default_value' : {'AUTOMATIC': 'zigzag', 'ZIGZAG': 'zigzag', 'GRID': 'grid', 'LINES': 'lines', 'CONCENTRIC': 'concentric'}.get(content['fill_pattern'], 'zigzag') },
+                # "skirt_line_count": { 'default_value': int(content['skirts']) },
+                # "skirt_gap": { 'default_value': float(content['skirt_distance']) },
+                # "brim_line_count": { 'default_value': int(content['brim_width']) },
+                # "top_layers": { 'default_value': int(content['top_solid_layers']) },
+                # "bottom_layers": { 'default_value': int(content['bottom_solid_layers']) },
+                # "infill_line_distance": { 'default_value': 0.4 * 100 * 2 / float(content['fill_density'].rstrip('%')) },
+                # "speed_travel": { 'default_value': float(content['travel_speed']) },
+                # "speed_infill": { 'default_value': float(content['infill_speed']) },
+                # "speed_support_infill": { 'default_value': float(content['support_material_speed']) },
+                # "speed_support_interface": { 'default_value': float(content['support_material_speed']) / 1.5 },
+                # "speed_wall_x": { 'default_value': float(content['perimeter_speed']) },
+		        # "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
+                # "infill_overlap_mm": { 'default_value': 0.4 * float(content['infill_overlap'].rstrip('%')) / 100 },
+                # "speed_topbottom": { 'default_value': float(content['solid_infill_speed']) },
+                # "speed_print_layer_0": { 'default_value': float(content['first_layer_speed']) },
+                # "speed_travel_layer_0": { 'default_value': float(content['infill_speed'])  * float(content['travel_speed']) / float(content['first_layer_speed']) },
+                # "cool_min_layer_time": { 'default_value': int(content['slowdown_below_layer_time']) },
+                # "retraction_hop": { 'default_value': float(content['retract_lift']) },
+                # "retraction_hop_enabled": { 'default_value': True },
+                # "retraction_amount": { 'default_value': float(content['retract_length']) },
+                # "retraction_prime_speed": { 'default_value': int(content['retract_speed']) },
+                # "retraction_retract_speed": { 'default_value': int(content['retract_speed']) },
+                # "adhesion_type": { 'default_value': 'none' },
+                # "xy_offset": { 'default_value': float(content['xy_size_compensation']) },
+                # "raft_margin": { 'default_value': 5 },
+                # "raft_airgap": { 'default_value': 0.3 },
+                # "raft_base_line_width": { 'default_value': 1.0 },
+                # "raft_surface_line_width": { 'default_value': 0.4 },
+                # "raft_surface_layers" : { 'default_value': int(content['raft_layers']) },
+                # "raft_interface_thickness": { 'default_value': 0.27 }
             }
         }
+
+        for key in content:
+            # if str(float(content[key])) == content[key]:
+            #     content[key] = float(content[key])
+            if delete and any(j in key for j in delete):
+                pass
+            definition['overrides'][key] = { 'default_value': content[key] }
 
         # TODO FIX Raft layers
         if int(content.get('raft','1')) == 1:
             definition['overrides']['adhesion_type']['default_value'] = 'raft'
-        elif int(content['brim_width']) == 0:  # skirt
+        elif int(content['brim_line_count']) == 0:  # skirt
             definition['overrides']['adhesion_type']['default_value'] = 'skirt'
         else:
             definition['overrides']['adhesion_type']['default_value'] = 'brim'
-
-        # TODO FIX Skirt, Brim, Raft for adhesion type
-
-        # TODO Support fan speed
 
         logger.info(json.dumps(definition))
         with open(file_path, 'w') as f:
