@@ -494,6 +494,7 @@ wireframe_roof_drag_along = 0.8
 wireframe_roof_outer_delay = 0.2
 wireframe_nozzle_clearance = 1
 temperature = 200
+z_offset = 0
 cut_bottom = 0
 detect_filament_runout = 1
 detect_head_shake = 1
@@ -648,4 +649,4 @@ ini_constraint = {
     'geometric_error_correction_on': [binary]
 }
 
-ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers', 'geometric_error_correction_on', 'cura2']
+ini_flux_params = ['cut_bottom' ,'flux_', 'detect_', 'pause_at_layers', 'geometric_error_correction_on', 'cura2', 'z_offset', 'detect_filament_runout', 'detect_head_shake', 'flux_calibration']
