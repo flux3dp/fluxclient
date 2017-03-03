@@ -60,6 +60,7 @@ src/scanner/PoissonRecon/vbfile
 tests/scanner/data/inso
 
 # file that Cython generate
+src/toolpath/_toolpath.cpp
 src/scanner/scanner.cpp
 src/printer/printer.cpp
 src/utils/utils.cpp
