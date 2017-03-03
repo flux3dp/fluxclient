@@ -48,10 +48,14 @@ cdef extern from "fcode.h" namespace "FLUX":
     cdef cppclass FCodeV1MemoryWriter:
         FCodeV1MemoryWriter(string*, vector[pair[string, string]]*, vector[string]*) nogil
         string get_buffer() nogil
+        vector[pair[string, string]] *metadata
+        vector[string] *previews
         vector[string] errors
 
     cdef cppclass FCodeV1FileWriter:
         FCodeV1FileWriter(const char*, string*, vector[pair[string, string]]*, vector[string]*) nogil
+        vector[pair[string, string]] *metadata
+        vector[string] *previews
         vector[string] errors
 
 

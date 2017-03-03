@@ -105,14 +105,14 @@ cdef class GCodeFileWriter(ToolpathProcessor):
 cdef class FCodeV1MemoryWriter(ToolpathProcessor):
     cdef string headtype
     cdef vector[pair[string, string]] metadata
-    cdef vector[string] preview
+    cdef vector[string] previews
 
-    def __init__(self, head_type, metadata, preview):
+    def __init__(self, head_type, metadata, previews):
         self.headtype = head_type.encode()
         self.metadata = ((k.encode(), v.encode()) for k, v in metadata.items())
-        self.preview = preview
+        self.previews = previews
         self._proc = <_ToolpathProcessor*>new _FCodeV1MemoryWriter(&self.headtype,
-            &self.metadata, &self.preview)
+            &self.metadata, &self.previews)
 
     def get_buffer(self):
         # TODO
@@ -120,6 +120,14 @@ cdef class FCodeV1MemoryWriter(ToolpathProcessor):
         # return swap.c_str()[:swap.size()]
         cdef string swap = (<_FCodeV1MemoryWriter*>self._proc).get_buffer()
         return swap.c_str()[:swap.size()]
+
+    def set_metadata(self, metadata):
+        self.metadata = ((k.encode(), v.encode()) for k, v in metadata.items())
+        (<_FCodeV1MemoryWriter*>self._proc).metadata = &self.metadata
+
+    def set_previews(self, previews):
+        self.previews = previews
+        (<_FCodeV1MemoryWriter*>self._proc).previews = &self.previews
 
     def get_metadata(self):
         return dict(self.metadata)
@@ -131,15 +139,23 @@ cdef class FCodeV1MemoryWriter(ToolpathProcessor):
 cdef class FCodeV1FileWriter(ToolpathProcessor):
     cdef string filename, headtype
     cdef vector[pair[string, string]] metadata
-    cdef vector[string] preview
+    cdef vector[string] previews
 
-    def __init__(self, filename, head_type, metadata, preview):
+    def __init__(self, filename, head_type, metadata, previews):
         self.filename = filename.encode()
         self.headtype = head_type.encode()
         self.metadata = ((k.encode(), v.encode()) for k, v in metadata.items())
-        self.preview = preview
+        self.preview = previews
         self._proc = <_ToolpathProcessor*>new _FCodeV1FileWriter(self.filename.c_str(), &self.headtype,
-            &self.metadata, &self.preview)
+            &self.metadata, &self.previews)
+
+    def set_metadata(self, metadata):
+        self.metadata = ((k.encode(), v.encode()) for k, v in metadata.items())
+        (<_FCodeV1FileWriter*>self._proc).metadata = &self.metadata
+
+    def set_previews(self, previews):
+        self.previews = previews
+        (<_FCodeV1FileWriter*>self._proc).previews = &self.previews
 
     def get_metadata(self):
         return dict(self.metadata)

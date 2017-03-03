@@ -45,7 +45,7 @@ void FLUX::FCodeV1Base::moveto(int flags, float feedrate, float x, float y, floa
 }
 
 void FLUX::FCodeV1Base::sleep(float seconds) {
-    write_command(10, &script_crc32);
+    write_command(4, &script_crc32);
     write(seconds, &script_crc32);
 }
 
