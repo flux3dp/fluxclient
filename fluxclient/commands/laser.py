@@ -32,12 +32,11 @@ default
 logger = None
 
 
-def process_svg(options, stream):
+def process_svg(options):
     from fluxclient.laser.laser_svg import LaserSvg
     m_laser_svg = LaserSvg()
     count = 0
     for arg in options.images:
-        name = str(count)
         if arg.startswith('@'):
             try:
                 w, h, x1, y1, x2, y2, rotation, filename = arg[1:].split(",")
@@ -50,25 +49,26 @@ def process_svg(options, stream):
                 logger.error("""SVG Image argument error, syntax:
     '@width,height,x1,y1,x2,y2,r,/your/image/file/path'
     Example: 50.2,40.2,-40.2,-30.2,3.1415,/home/flux/myimage.jpg""")
-                logger.exception("Argument Error")
+                raise
         else:
             filename = os.path.expanduser(arg)
             w, h = 100., 100.
             x1, y1 = -50., 50.
             x2, y2 = 50., -50.
             rotation = 0.
+
         with open(filename, 'rb') as f:
             buf = f.read()
 
-        m_laser_svg.svgs[name] = m_laser_svg.preprocess(buf)
-        tmp_buf, tmp_w, tmp_h = m_laser_svg.svgs[name][1]
+        m_laser_svg.svgs[filename] = m_laser_svg.preprocess(buf)
+        tmp_buf, tmp_w, tmp_h = m_laser_svg.svgs[filename][1]
 
         m_laser_svg.compute(
-            name + '_ready',
+            filename,
             [tmp_buf, w, h, x1, y1, x2, y2, rotation, 0, 0, b''])
         count += 1
 
-    m_laser_svg.export_to_stream(stream, [name + '_ready'])
+    return m_laser_svg
 
 
 def process_to_gray_bitmap(image):
@@ -77,7 +77,7 @@ def process_to_gray_bitmap(image):
     return image.tobytes()
 
 
-def process_bitmaps(options, stream):
+def process_bitmaps(options):
     from fluxclient.laser.laser_bitmap import LaserBitmap
     from fluxclient.hw_profile import HW_PROFILE
 
@@ -98,7 +98,7 @@ def process_bitmaps(options, stream):
                 logger.error("'@x1,y1,x2,y2,r,/your/image/file/path'")
                 logger.error("Example: 50.2,40.2,-40.2,-30.2,3.1415,"
                              "/home/flux/myimage.jpg")
-                logger.exception("Argument Error")
+                raise
         else:
             filename = os.path.expanduser(arg)
             i = Image.open(arg)
@@ -119,7 +119,8 @@ def process_bitmaps(options, stream):
             lb.add_image(buf,
                          w, h, wh_realworld[0] / -2, wh_realworld[1] / 2, wh_realworld[0] / 2, wh_realworld[1] / -2, .0,
                          thres=options.threshold)
-    lb.export_to_stream(stream)
+
+    return lb
 
 
 def main(params=sys.argv[1:]):
@@ -137,6 +138,8 @@ def main(params=sys.argv[1:]):
                            const="svg", help='Svg mode')
     parser.add_argument('-t', dest='threshold', type=int, default=128,
                         help='Threshold for bitmap, default: 128')
+    parser.add_argument('--gcode', dest='gcode', action='store_const',
+                        const=True, default=False, help='Output gcode')
     parser.add_argument('--verbose', dest='verbose', action='store_const',
                         const=True, default=False, help='Verbose output')
     parser.add_argument('-o', dest='output', type=str, default=None,
@@ -147,18 +150,20 @@ def main(params=sys.argv[1:]):
     options = parser.parse_args(params)
     logger = setup_logger(__name__, debug=options.verbose)
 
-    if options.mode == "bitmap":
-        logger.debug("Use bitmap processor")
-        processer = process_bitmaps
-    elif options.mode == "svg":
-        logger.debug("Use svg processor")
-        processer = process_svg
-    else:
-        logger.debug("Use bitmap processor")
-        processer = process_bitmaps
+    from fluxclient.toolpath import FCodeV1FileWriter, GCodeFileWriter
 
-    if options.output:
-        with open(options.output, "w") as f:
-            processer(options, f)
+    if options.output is None:
+        raise RuntimeError("TODO: stdout not implement")
+
+    if options.mode == "svg":
+        logger.debug("Use svg processor")
+        laser_processor = process_svg(options)
     else:
-        processer(options, sys.stdout)
+        logger.debug("Use bitmap processor")
+        laser_processor = process_bitmaps(options)
+
+    previews = (laser_processor.dump(mode="preview"), )
+    writer = GCodeFileWriter(options.output) if options.gcode else \
+        FCodeV1FileWriter(options.output, "LASER", {}, previews)
+    laser_processor.process(writer)
+    writer.terminated()
