@@ -121,6 +121,9 @@ class FcodeToGcode(FcodeBase):
         else:
             return False
 
+    def writeStr(self, o, s):
+        o.write(s);
+
     def get_metadata(self):
         """
         get the metadata
@@ -143,42 +146,43 @@ class FcodeToGcode(FcodeBase):
         if include_meta:
             meta = self.get_metadata()
             for key, value in meta.items():
-                outstream.write(";%s=%s\n" % (key, value))
-            outstream.write("\n")
+                #print(bytes("WELL.. %s=%s\n" % (key, value)), file=sys.stderr)
+                outstream.write(bytes(";%s=%s\n" % (key, value), "UTF-8"))
+            outstream.write(bytes("\n", "UTF-8"))
 
         index = 12
         while index < 12 + self.script_size:
             command = uchar_unpacker(self.data[index:index + 1])
             index += 1
             if command == 1:
-                outstream.write('G28\n')
+                self.writeStr(outstream, 'G28\n')
             elif command == 2:
-                outstream.write('G90\n')
+                self.writeStr(outstream, 'G90\n')
             elif command == 3:
-                outstream.write('G91\n')
+                self.writeStr(outstream, 'G91\n')
             elif command == 4:
-                outstream.write('G4 P{}\n'.format(float_unpacker(self.data[index:index + 4])))
+                self.writeStr(outstream, 'G4 P{}\n'.format(float_unpacker(self.data[index:index + 4])))
                 index += 4
             elif command == 5:
                 print('find pause fcode', file=sys.stderr)
 
             elif command == 6:
-                outstream.write('; raw command to mb\n')
+                self.writeStr(outstream, '; raw command to mb\n')
                 start = index
                 while self.data[index: index + 1] != b'\n':
                     index += 1
                 index += 1
-                outstream.write(self.data[start:index])
-                outstream.write('; raw command to mb end.\n')
+                self.writeStr(outstream, elf.data[start:index])
+                self.writeStr(outstream, '; raw command to mb end.\n')
 
             elif command == 7:
-                outstream.write('; raw command to print head\n')
+                self.writeStr(outstream, '; raw command to print head\n')
                 start = index
                 while self.data[index] != '\n':
                     index += 1
                 index += 1
-                outstream.write(self.data[start:index])
-                outstream.write('; raw command to print head end.\n')
+                self.writeStr(outstream, elf.data[start:index])
+                self.writeStr(outstream, '; raw command to print head end.\n')
 
             elif command >= 16 and command <= 31:  # temperature
                 if command & 8:
@@ -188,7 +192,7 @@ class FcodeToGcode(FcodeBase):
                 temp = float_unpacker(self.data[index:index + 4])
                 if temp == float('-inf'):
                     temp = 0
-                outstream.write('{} T{} S{}\n'.format(c, command & 7, temp))  # not T but P????
+                self.writeStr(outstream, '{} T{} S{}\n'.format(c, command & 7, temp))  # not T but P????
                 index += 4
             elif command >= 32 and command <= 39:  # laser
                 strength = float_unpacker(self.data[index:index + 4])
@@ -197,7 +201,7 @@ class FcodeToGcode(FcodeBase):
                     self.laserflag = True
                 else:
                     self.laserflag = False
-                outstream.write('X2O{} T{}\n'.format(strength, command & 7))
+                self.writeStr(outstream, 'X2O{} T{}\n'.format(strength, command & 7))
                 index += 4
             elif command >= 48 and command <= 63:  # fan speed
                 speed = float_unpacker(self.data[index:index + 4])
@@ -206,7 +210,7 @@ class FcodeToGcode(FcodeBase):
                     c = 'M107'
                 else:
                     c = 'M106'
-                outstream.write('{} S{} T{}\n'.format(c, speed, command & 15))
+                self.writeStr(outstream, '{} S{} T{}\n'.format(c, speed, command & 15))
                 index += 4
             elif command >= 64 and command <= 127:  # set position
                 tmp = num_to_XYZE(command)
@@ -217,16 +221,16 @@ class FcodeToGcode(FcodeBase):
                         index += 4
                         s.append('{}{} '.format(c, value))
                 s.append('\n')
-                outstream.write(''.join(s))
+                self.writeStr(outstream, ''.join(s))
 
                 for i in range(4, 6):
                     if tmp[i]:
                         if self.current_T != i - 4:
-                            outstream.write('T{}\n'.format(i - 4))
+                            self.writeStr(outstream, 'T{}\n'.format(i - 4))
                             self.current_T = i - 4
                         value = float_unpacker(self.data[index:index + 4])
                         index += 4
-                        outstream.write('G92 E{}\n'.format(value))
+                        self.writeStr(outstream, 'G92 E{}\n'.format(value))
 
             elif command >= 128 and command <= 255:  # moving
                 line_segment = num_to_XYZE(command)
@@ -242,7 +246,7 @@ class FcodeToGcode(FcodeBase):
                         if i >= 1:
                             self.current_pos[i - 1] = value
                 s.append('\n')
-                outstream.write(''.join(s))
+                self.writeStr(outstream, ''.join(s))
 
                 if any(i is not None for i in line_segment[4:6]):
                     self.extrudeflag = True

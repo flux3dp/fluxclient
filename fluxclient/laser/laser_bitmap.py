@@ -35,6 +35,9 @@ class LaserBitmap(LaserBase):
         self.ratio *= 1 / self.pixel_per_mm
 
     def gcode_generate(self, res=1):
+
+        if self.focus_by_color:
+            self.laser_speed = 8 * 60
         """
         return gcode in string type
         res: resolution
@@ -58,6 +61,10 @@ class LaserBitmap(LaserBase):
             #column iteration
             if h % res != 0:
                 continue
+
+            
+            h_calibration_offset = ((h - abs_shift) * self.ratio) * 0.2 / 2.5 
+            gcode += self.moveZ(self.focal_l + self.obj_height + self.height_offset + h_calibration_offset)
 
             if self.one_way or h & 1 == 0:
                 itera = itera_o
@@ -94,10 +101,8 @@ class LaserBitmap(LaserBase):
                     else:
                         gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h)
 
-                    if self.focus_by_color and this < 255:
-                        offset = float((this - 64.0) / 5.0) * 0.2
-                        gcode += self.moveTo(itera[w_record] - abs_shift_x, abs_shift - h, None, self.focal_l + self.obj_height + self.height_offset + offset)
-                        gcode += self.turnTo(255)
+                    if self.focus_by_color:
+                        gcode += self.turnTo(255 - this, wait_sec = 1)
                     else:
                         gcode += self.turnTo(255 - this)
                     gcode += self.moveTo(itera[w] - abs_shift_x, abs_shift - h)

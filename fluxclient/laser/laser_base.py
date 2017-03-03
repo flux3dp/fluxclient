@@ -2,7 +2,7 @@
 
 import sys
 from io import BytesIO, StringIO
-from math import pi, sin, cos, sqrt, degrees
+from math import sin, cos, degrees
 from time import time
 from datetime import datetime
 
@@ -89,7 +89,7 @@ class LaserBase(object):
         self.current_power = 0
         return ["X2O0;turnOff", "G4 P20"]
 
-    def turnTo(self, power=None):
+    def turnTo(self, power=None, wait_sec=20):
         """
         set laser power
         """
@@ -105,13 +105,18 @@ class LaserBase(object):
                 return []
             self.current_power = power
             self.laser_on = True
-            return ["X2O%d" % round(power * self.draw_power / 255.0), "G4 P20"]
+            return ["X2O%d" % round(power * self.draw_power / 255.0), "G4 P%d" % wait_sec]
 
         elif power == 0:
             if self.current_power == 0:
                 return []
             self.current_power = 0
             return self.turnOff()
+
+    def moveZ(self, z):
+        """Generate gcode for moving to z (pos_z)"""
+        return ["G1 F%.5f Z%.5f" % (self.laser_speed, z)]
+
 
     def moveTo(self, x, y, speed=None, z=None, ending=None):
         """
