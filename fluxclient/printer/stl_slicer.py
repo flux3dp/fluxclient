@@ -285,7 +285,7 @@ class StlSlicer(object):
                 m_mesh_merge = m_mesh
             else:
                 m_mesh_merge.add_on(m_mesh)
-
+        
         if float(self.config['cut_bottom']) > 0:
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
@@ -740,10 +740,11 @@ class StlSlicerCura(StlSlicer):
                 return False, 'id:%s is not setted yet' % (n)
 
         status_list = []
+        mergedConfig = self.configCura2 if self.version == 2 else self.config
 
         self.end_slicing()
         from threading import Thread  # Do not expose thrading in module level
-        p = Thread(target=self.slicing_worker, args=(dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
+        p = Thread(target=self.slicing_worker, args=(dict(mergedConfig), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
         # thread, files, status_list
         self.working_p.append([p, [], status_list, False, len(self.working_p)])
         p.start()
@@ -778,9 +779,10 @@ class StlSlicerCura(StlSlicer):
             f.close();
 
         params = {}
+
         for n in names:
             params[n] = self.parameter[n]
-        current_transform = json.dumps({'p': params, 'sink': float(self.config['cut_bottom'])})
+        current_transform = json.dumps({'p': params, 'sink': float(config['cut_bottom'])})
 
         status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
         
@@ -809,9 +811,10 @@ class StlSlicerCura(StlSlicer):
             if self.is_aborted(p_index):
                 return logger.info('Worker #%d aborted' % p_index)
 
-            if float(self.config['cut_bottom']) > 0:
+
+            if float(config['cut_bottom']) > 0:
                 status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}');
-                m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
+                m_mesh_merge = m_mesh_merge.cut(float(config['cut_bottom']))
             
             logger.info('Writing new stl');
             status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}');
@@ -847,7 +850,7 @@ class StlSlicerCura(StlSlicer):
         command = []
 
         if cura2:
-            self.cura2_ini_writer(tmp_slicer_setting_file, self.configCura2, delete=ini_flux_params)
+            self.cura2_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             binary_path = self.slicer
             if platform().startswith("Windows"):
@@ -858,7 +861,7 @@ class StlSlicerCura(StlSlicer):
             command = [binary_path, 'slice', '-v', '-j',
                        tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
         else:
-            self.cura_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
+            self.cura_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             command = [self.slicer, '-o', tmp_gcode_file, '-c', tmp_slicer_setting_file]
             command.append(tmp_stl_file)
