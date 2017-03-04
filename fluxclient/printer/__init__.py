@@ -496,6 +496,7 @@ wireframe_nozzle_clearance = 1
 temperature = 200
 z_offset = 0
 cut_bottom = 0
+geometric_error_correction_on = 1
 detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
