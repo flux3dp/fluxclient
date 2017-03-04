@@ -501,7 +501,8 @@ detect_filament_runout = 1
 detect_head_shake = 1
 detect_head_tilt = 1
 flux_calibration = 1
-pause_at_layers ="""
+pause_at_layers =
+before_layer_gcode ="""
 
 ini_constraint = {
     'avoid_crossing_perimeters': [binary],

@@ -27,6 +27,10 @@ from fluxclient.printer.flux_raft import Raft
 logger = logging.getLogger(__name__)
 
 
+def rreplace(s, old, new, occurrence):
+    li = s.rsplit(old, occurrence)
+    return new.join(li)
+
 def read_until(f):
     """
     eat all the empty line
@@ -734,7 +738,7 @@ class StlSlicerCura(StlSlicer):
         for n in names:
             if not (n in self.models and n in self.parameter):
                 return False, 'id:%s is not setted yet' % (n)
-        
+
         status_list = []
 
         self.end_slicing()
@@ -845,7 +849,14 @@ class StlSlicerCura(StlSlicer):
         if cura2:
             self.cura2_ini_writer(tmp_slicer_setting_file, self.configCura2, delete=ini_flux_params)
             # Call CuraEngine in command line
-            command = [self.slicer.replace("CuraEngine.exe", "v2/CuraEngine2.exe").replace("lib/CuraEngine", "lib/CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
+            binary_path = self.slicer
+            if platform().startswith("Windows"):
+                binary_path = binary_path.replace("CuraEngine.exe", "v2/CuraEngine2.exe")
+            else:
+                binary_path = binary_path.replace("lib/CuraEngine", "lib/CuraEngine2")
+
+            command = [binary_path, 'slice', '-v', '-j',
+                       tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
         else:
             self.cura_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
             # Call CuraEngine in command line
@@ -859,8 +870,8 @@ class StlSlicerCura(StlSlicer):
             fail_flag = True
             logger.info('Worker #%d aborted' % p_index)
 
-        status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
-        logger.info('Starting CuraEngine');
+        status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}')
+        logger.info('Starting CuraEngine')
 
         # tmp_gcode_file = command[2]
         # tmp_slicer_setting_file = command[4]
@@ -869,10 +880,11 @@ class StlSlicerCura(StlSlicer):
             my_env = os.environ.copy()
             my_env["CURA_ENGINE_SEARCH_PATH"] = os.path.dirname(self.slicer) + "/resources"
             my_env["LD_LIBRARY_PATH"] = os.path.dirname(self.slicer) + "/resources"
-            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0, env=my_env)
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+                                    universal_newlines=True, bufsize=0, env=my_env)
             self.working_p[p_index].append(subp)
-            logger.info("#%d Real slicing started" % (p_index));
-            
+            logger.info("#%d Real slicing started" % (p_index))
+
             progress = 0.2
             slicer_error = False
             slicer_out = [None, None]
