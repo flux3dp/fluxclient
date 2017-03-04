@@ -547,6 +547,9 @@ class StlSlicer(object):
         if int(content.get('raft','1')) == 0:
             logger.info("Raft off, remove raft_layers")
             content['raft_layers'] = '0';
+        
+        if content.get('start_gcode','') != "":
+            content['start_gcode'] = 'M109 S[first_layer_temperature]\n' + content.get('start_gcode','') 
 
         with open(file_path, 'w') as f:
             for i in content:
@@ -1104,6 +1107,9 @@ class StlSlicerCura(StlSlicer):
             if delete and any(j in key for j in delete):
                 pass
             definition['overrides'][key] = { 'default_value': content[key] }
+
+        definition['overrides']['machine_start_gcode']['default_value'] = add_multi_line('M109 S{}\n'.format(content['material_print_temperature_layer_0']) + content['machine_start_gcode'])
+        definition['overrides']['machine_end_gcode']['default_value'] = add_multi_line(content['machine_end_gcode'])
 
         # TODO FIX Raft layers
         if int(content.get('raft','1')) == 1:
