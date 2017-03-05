@@ -300,7 +300,7 @@ class StlSlicer(object):
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--load', tmp_slic3r_setting_file]
 
-        logger.debug('command: ' + ' '.join(command))
+        logger.info('command: ' + ' '.join(command))
         self.end_slicing('slic3r begin next slicing')
 
         status_list = []
@@ -553,7 +553,7 @@ class StlSlicer(object):
             content['raft_layers'] = '0';
         
         if content.get('start_gcode','') != "":
-            content['start_gcode'] = 'M109 S[first_layer_temperature]\n' + content.get('start_gcode','') 
+            content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode','') 
 
         with open(file_path, 'w') as f:
             for i in content:
