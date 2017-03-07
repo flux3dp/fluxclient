@@ -12,6 +12,7 @@ from PIL import Image
 from io import StringIO
 
 from .aes_socket import AESSocket
+from .ssl_socket import SSLSocket
 from .errors import RobotError, RobotSessionError
 from .misc import msg_waitall
 
@@ -341,7 +342,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             sock, client_key=client_key, device=device,
             ignore_key_validation=False)
 
-        while not aessock.do_handshake():
+        while aessock.do_handshake() > 0:
             pass
 
     def fileno(self):
@@ -788,3 +789,14 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             return token, a2b_base64(validate_b64_hash)
         else:
             raise_error(ret)
+
+
+class RobotBackend3(RobotBackend2):
+    def __init__(self, sock, client_key, device=None,
+                 ignore_key_validation=False):
+        self.sock = sslsock = SSLSocket(
+            sock, client_key=client_key, device=device,
+            ignore_key_validation=False)
+
+        while sslsock.do_handshake() > 0:
+            pass

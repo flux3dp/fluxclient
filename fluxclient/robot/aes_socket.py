@@ -52,15 +52,15 @@ class AESSocket(object):
 
     def do_handshake(self):
         if self.__handshake_flag == __READY__:
-            return True
+            return 0
         elif self.__handshake_flag == __WAIT_IDENTIFY__:
             # Stage 1
             self._do_handshake_validate_remote()
-            return False
+            return 1
         elif self.__handshake_flag == __WAIT_RESPONSE__:
             # Stage 2
             self._do_handshake_wait_validate()
-            return False
+            return 2
         elif self.__handshake_flag == __WAIT_AESKEY__:
             # Stage 3
             return self._do_handshake_wait_aeskey()
@@ -118,7 +118,9 @@ class AESSocket(object):
             key, iv = aes_init[:32], aes_init[32:48]
             self._encoder = AES.new(key, AES.MODE_CFB, iv)
             self._decoder = AES.new(key, AES.MODE_CFB, iv)
-            return True
+            return 0
+        else:
+            return 3
 
     def recv(self, size, flag=0):
         if flag & socket.MSG_PEEK > 0:
