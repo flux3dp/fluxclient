@@ -27,6 +27,10 @@ from fluxclient.printer.flux_raft import Raft
 logger = logging.getLogger(__name__)
 
 
+def rreplace(s, old, new, occurrence):
+    li = s.rsplit(old, occurrence)
+    return new.join(li)
+
 def read_until(f):
     """
     eat all the empty line
@@ -281,7 +285,7 @@ class StlSlicer(object):
                 m_mesh_merge = m_mesh
             else:
                 m_mesh_merge.add_on(m_mesh)
-
+        
         if float(self.config['cut_bottom']) > 0:
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
@@ -296,7 +300,7 @@ class StlSlicer(object):
         command += ['--print-center', '%f,%f' % (cx, cy)]
         command += ['--load', tmp_slic3r_setting_file]
 
-        logger.debug('command: ' + ' '.join(command))
+        logger.info('command: ' + ' '.join(command))
         self.end_slicing('slic3r begin next slicing')
 
         status_list = []
@@ -547,6 +551,9 @@ class StlSlicer(object):
         if int(content.get('raft','1')) == 0:
             logger.info("Raft off, remove raft_layers")
             content['raft_layers'] = '0';
+        
+        if content.get('start_gcode','') != "":
+            content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode','') 
 
         with open(file_path, 'w') as f:
             for i in content:
@@ -731,12 +738,13 @@ class StlSlicerCura(StlSlicer):
         for n in names:
             if not (n in self.models and n in self.parameter):
                 return False, 'id:%s is not setted yet' % (n)
-        
+
         status_list = []
+        mergedConfig = self.configCura2 if self.version == 2 else self.config
 
         self.end_slicing()
         from threading import Thread  # Do not expose thrading in module level
-        p = Thread(target=self.slicing_worker, args=(dict(self.config), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
+        p = Thread(target=self.slicing_worker, args=(dict(mergedConfig), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
         # thread, files, status_list
         self.working_p.append([p, [], status_list, False, len(self.working_p)])
         p.start()
@@ -771,9 +779,10 @@ class StlSlicerCura(StlSlicer):
             f.close();
 
         params = {}
+
         for n in names:
             params[n] = self.parameter[n]
-        current_transform = json.dumps({'p': params, 'sink': float(self.config['cut_bottom'])})
+        current_transform = json.dumps({'p': params, 'sink': float(config['cut_bottom'])})
 
         status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
         
@@ -802,9 +811,10 @@ class StlSlicerCura(StlSlicer):
             if self.is_aborted(p_index):
                 return logger.info('Worker #%d aborted' % p_index)
 
-            if float(self.config['cut_bottom']) > 0:
+
+            if float(config['cut_bottom']) > 0:
                 status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}');
-                m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
+                m_mesh_merge = m_mesh_merge.cut(float(config['cut_bottom']))
             
             logger.info('Writing new stl');
             status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}');
@@ -840,11 +850,18 @@ class StlSlicerCura(StlSlicer):
         command = []
 
         if cura2:
-            self.cura2_ini_writer(tmp_slicer_setting_file, self.configCura2, delete=ini_flux_params)
+            self.cura2_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
-            command = [self.slicer.replace("CuraEngine.exe", "v2/CuraEngine.exe").replace("CuraEngine", "CuraEngine2"), 'slice', '-v', '-j', tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
+            binary_path = self.slicer
+            if platform().startswith("Windows"):
+                binary_path = binary_path.replace("CuraEngine.exe", "v2/CuraEngine2.exe")
+            else:
+                binary_path = binary_path.replace("lib/CuraEngine", "lib/CuraEngine2")
+
+            command = [binary_path, 'slice', '-v', '-j',
+                       tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
         else:
-            self.cura_ini_writer(tmp_slicer_setting_file, self.config, delete=ini_flux_params)
+            self.cura_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             command = [self.slicer, '-o', tmp_gcode_file, '-c', tmp_slicer_setting_file]
             command.append(tmp_stl_file)
@@ -856,8 +873,8 @@ class StlSlicerCura(StlSlicer):
             fail_flag = True
             logger.info('Worker #%d aborted' % p_index)
 
-        status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}');
-        logger.info('Starting CuraEngine');
+        status_list.append('{"slice_status": "computing", "message": "Submitting model to slicing engine", "percentage": 0.10}')
+        logger.info('Starting CuraEngine')
 
         # tmp_gcode_file = command[2]
         # tmp_slicer_setting_file = command[4]
@@ -865,10 +882,12 @@ class StlSlicerCura(StlSlicer):
         try:
             my_env = os.environ.copy()
             my_env["CURA_ENGINE_SEARCH_PATH"] = os.path.dirname(self.slicer) + "/resources"
-            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, bufsize=0, env=my_env)
+            my_env["LD_LIBRARY_PATH"] = os.path.dirname(self.slicer) + "/resources"
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+                                    universal_newlines=True, bufsize=0, env=my_env)
             self.working_p[p_index].append(subp)
-            logger.info("#%d Real slicing started" % (p_index));
-            
+            logger.info("#%d Real slicing started" % (p_index))
+
             progress = 0.2
             slicer_error = False
             slicer_out = [None, None]
@@ -1104,6 +1123,9 @@ class StlSlicerCura(StlSlicer):
             if delete and any(j in key for j in delete):
                 pass
             definition['overrides'][key] = { 'default_value': content[key] }
+
+        definition['overrides']['machine_start_gcode']['default_value'] = add_multi_line('M109 S{}\n'.format(content['material_print_temperature_layer_0']) + content['machine_start_gcode'])
+        definition['overrides']['machine_end_gcode']['default_value'] = add_multi_line(content['machine_end_gcode'])
 
         # TODO FIX Raft layers
         if int(content.get('raft','1')) == 1:
