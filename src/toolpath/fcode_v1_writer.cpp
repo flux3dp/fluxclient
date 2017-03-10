@@ -204,7 +204,7 @@ unsigned long FLUX::FCodeV1::write_metadata(void) {
 
     metasize = snprintf(metabuf, 32, "%.2f", time_cost);
     metadata->insert(metadata->begin(),
-        std::pair<std::string, std::string>("MAX_TIME_COSTR", std::string(metabuf, metasize)));
+        std::pair<std::string, std::string>("TIME_COST", std::string(metabuf, metasize)));
 
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("HEAD_TYPE", *head_type));
