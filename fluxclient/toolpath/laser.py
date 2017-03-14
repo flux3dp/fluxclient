@@ -3,13 +3,45 @@ from math import pow
 
 
 def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
-              engraving_speed=400):
-    pass
+              engraving_speed=400, engraving_strength=1.0,
+              focal_length=6.4, progress_callback=lambda p: None):
+    proc.append_comment("FLUX Laser Svg Tool")
+    proc.set_toolhead_pwm(0)
+    proc.moveto(feedrate=5000, x=0, y=0, z=z_height + focal_length)
+    pwm_on = False
+    current_xy = None
+
+    for src_xy, dist_xy in svg_factory.walk(progress_callback):
+        if src_xy:
+            # engraving from src_xy to dist_xy
+            if current_xy != src_xy:
+                if pwm_on:
+                    pwm_on = False
+                    proc.set_toolhead_pwm(0)
+                src_x, src_y = src_xy
+                proc.moveto(feedrate=travel_speed, x=src_x, y=src_y)
+
+            dist_x, dist_y = dist_xy
+            if pwm_on:
+                proc.moveto(x=dist_x, y=dist_y)
+            else:
+                pwm_on = True
+                proc.set_toolhead_pwm(engraving_strength)
+                proc.moveto(feedrate=engraving_speed, x=dist_x, y=dist_y)
+
+            current_xy = dist_xy
+        else:
+            # Only dist_xy, move to dist
+            pass
+
+    if pwm_on:
+        proc.set_toolhead_pwm(0)
+        proc.moveto(feedrate=travel_speed, x=0, y=0)
 
 
 def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
                  vertical=False, travel_speed=2400, engraving_speed=400,
-                 focal_length=6.4, shading=True, max_engraving_strength=1.0,
+                 shading=True, max_engraving_strength=1.0, focal_length=6.4,
                  progress_callback=lambda p: None):
     val255 = 0
     proc.append_comment("FLUX Laser Bitmap Tool")
