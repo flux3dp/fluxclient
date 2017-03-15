@@ -294,6 +294,7 @@ class USBProtocol(object):
         if self._wait_ping:
             raise FluxUSBError("PING/PONG timeout")
         else:
+            self.timestamp = time()
             self._wait_ping = True
             self._send(PING_PACKER.pack(4, 0xfa, 0x00))
 
