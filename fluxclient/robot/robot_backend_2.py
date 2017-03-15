@@ -1,15 +1,13 @@
 
 from binascii import a2b_base64
 from select import select
-from errno import EPIPE
 from io import BytesIO
 from time import time
 import logging
-import socket
 import struct
 import json
+
 from PIL import Image
-from io import StringIO
 
 from .aes_socket import AESSocket
 from .errors import RobotError, RobotSessionError
@@ -21,7 +19,10 @@ logger = logging.getLogger(__name__)
 def raise_error(ret):
     if ret.startswith("error ") or ret.startswith("er "):
         errors = ret.split(" ")[1:]
-        raise RobotError(*errors, error_symbol=errors)
+        if errors and errors[0] == "KICKED":
+            raise RobotSessionError(*errors, error_symbol=errors)
+        else:
+            raise RobotError(*errors, error_symbol=errors)
     else:
         raise RobotError(ret, error_symbol="L_UNKNOW_ERROR")
 
@@ -283,9 +284,9 @@ class ScanTaskMixIn(object):
                 return images
 
             else:
-                raise RobotError(resp)
+                raise_error(resp)
 
-    def scan_images(self, stackResult = None, iterations = 0):
+    def scan_images(self, stack_result=None, iterations=0):
         self.send_cmd(b"scanimages")
         images = []
         is_hd_camera = False
@@ -304,7 +305,7 @@ class ScanTaskMixIn(object):
                         # save sample image
                         images.append(img)
                     else:
-                        old_img = stackResult[img_idx]
+                        old_img = stack_result[img_idx]
                         img = Image.blend(old_img, img, 0.5)
                         fake_file = BytesIO()
                         img.save(fake_file, "jpeg")
@@ -321,8 +322,7 @@ class ScanTaskMixIn(object):
                 return images
 
             else:
-                logger.info("robot error")
-                raise RobotError(resp)
+                raise_error(resp)
         logger.info("exit loop")
 
     @ok_or_error
@@ -362,11 +362,13 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def get_resp(self, timeout=180.0):
         rl = select((self.sock, ), (), (), timeout)[0]
         if not rl:
-            raise RobotError("get resp timeout")
+            self.close()
+            raise RobotSessionError("Get remote response timeout",
+                                    error_symbol=["TIMEOUT"])
         bml = msg_waitall(self.sock, 2, timeout)
         if not bml:
-            logger.error("Message payload recv error")
-            raise socket.error(EPIPE, "Broken pipe")
+            self.close()
+            raise RobotSessionError("Message payload recv error")
 
         message_length = struct.unpack("<H", bml)[0]
 
@@ -376,8 +378,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             buf = self.sock.recv(message_length - len(message))
 
             if not buf:
-                logger.error("Recv empty message")
-                raise socket.error(EPIPE, "Broken pipe")
+                raise RobotSessionError("Recv empty message")
             message += buf
 
         return message.decode("utf8", "ignore")
@@ -391,7 +392,9 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
     def recv_binary_into(self, binary_header, stream, callback=None):
         mn, mimetype, ssize = binary_header.split(" ")
         if mn != "binary":
-            raise RobotError("Protocol Error")
+            raise RobotSessionError(
+                "Binary recv error, payload broken: %r" % binary_header,
+                error_symbol=["PROTOCOL_ERROR"])
         size = int(ssize)
         logger.debug("Receiving %s, length: %i", mimetype, size)
         if size == 0:
@@ -413,14 +416,6 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         mimetype = self.recv_binary_into(binary_header, buf, callback)
         return (mimetype, buf)
 
-    # Command Tasks
-    def position(self):
-        ret = self.make_cmd(b"position")
-        if ret.startswith("error "):
-            raise RobotError(*(ret.split(" ")[1:]))
-        else:
-            return ret
-
     # file commands
     def list_files(self, path):
         entry, path = split_path(path)
@@ -431,7 +426,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             files = self.get_resp()
             last_resp = self.get_resp()
             if last_resp != "ok":
-                raise_error("error PROTOCOL_ERROR NOT_OK")
+                raise_error(last_resp)
 
             return [(node.startswith("D"), node[1:])
                     for node in files.split("\x00") if node]
@@ -586,7 +581,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             elif resp == "ok":
                 return metadata, images
             else:
-                raise RobotError(resp)
+                raise_error(resp)
 
     @ok_or_error
     def quit_play(self):
@@ -662,7 +657,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
         if upload_ret == "continue":
             logger.info(upload_ret)
         if upload_ret != "continue":
-            raise RobotError(upload_ret)
+            raise_error(upload_ret)
 
         self._sent = 0
 
