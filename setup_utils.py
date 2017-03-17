@@ -100,7 +100,7 @@ def get_entry_points():
             "flux_manager=fluxclient.commands.manager:main",
             "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
-            "flux_laser=fluxclient.commands.laser:main",
+            "flux_toolpath=fluxclient.commands.toolpath:main",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",
             "flux_exp=fluxclient.commands.experiment_tool:main",

@@ -90,7 +90,6 @@ class SvgFactory(object):
                         if move_to:
                             src_xy = (x, y)
                             move_to = False
-                            yield None, src_xy
                         else:
                             next_xy = (x, y)
                             yield src_xy, next_xy
