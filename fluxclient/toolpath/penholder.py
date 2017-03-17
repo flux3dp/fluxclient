@@ -26,6 +26,7 @@ def svg2drawing(proc, svg_factory, travel_speed=2400, drawing_speed=1200,
 
 def svg2vinyl(proc, svg_factory, travel_speed=2400, cutting_speed=800,
               travel_zheight=13, cutting_zheight=11.4,
+              blade_radius=0.24, overcut=2.0,
               precut_at=None, progress_callback=lambda p: None):
     proc.append_comment("FLUX Vinyl Svg Tool")
     proc.moveto(feedrate=5000, x=0, y=0, z=travel_zheight)
@@ -45,7 +46,7 @@ def svg2vinyl(proc, svg_factory, travel_speed=2400, cutting_speed=800,
         proc.moveto(feedrate=5000, z=cutting_zheight)
 
         fix_x, fix_y = vinyl_utils.get_knife_compensation(
-            current_xy, current_vector)
+            current_xy, current_vector, radius=blade_radius)
         proc.moveto(feedrate=cutting_speed, x=fix_x, y=fix_y)
 
     else:
@@ -68,18 +69,18 @@ def svg2vinyl(proc, svg_factory, travel_speed=2400, cutting_speed=800,
     for src_xy, dist_xy in g:
         vector = dist_xy[0] - src_xy[0], dist_xy[1] - src_xy[1]
         for fix_x, fix_y in vinyl_utils.fix_knife_direction(
-                current_xy, current_vector, vector):
+                current_xy, current_vector, vector, radius=blade_radius):
             proc.moveto(feedrate=400, x=fix_x, y=fix_y)
 
         if current_xy != src_xy:
             # Travel from current_xy to src_xy and start cut
             proc.moveto(feedrate=5000, z=travel_zheight)
             fix_x, fix_y = vinyl_utils.get_knife_compensation(
-                src_xy, (-vector[0], -vector[1]))
+                src_xy, (-vector[0], -vector[1]), radius=blade_radius)
             proc.moveto(feedrate=travel_speed, x=fix_x, y=fix_y)
             proc.moveto(feedrate=5000, z=cutting_zheight)
 
-        fix_x, fix_y = vinyl_utils.get_knife_compensation(dist_xy, vector)
+        fix_x, fix_y = vinyl_utils.get_knife_compensation(dist_xy, vector, radius=blade_radius)
         proc.moveto(feedrate=cutting_speed, x=fix_x, y=fix_y)
         current_vector = vector
         current_xy = dist_xy
