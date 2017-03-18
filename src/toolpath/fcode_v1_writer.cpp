@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <zlib.h>
+#include <stdexcept>
 #include <sstream>
 #include "fcode.h"
-
 
 void FLUX::FCodeV1Base::write(const char* buf, size_t size, unsigned long *crc32_ptr) {
     stream->write(buf, size);
