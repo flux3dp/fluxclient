@@ -88,7 +88,7 @@ FLUX::FCodeV1::FCodeV1(std::string *type, std::vector<std::pair<std::string, std
     home_x = 0; home_y = 0, home_z = 240;
     current_feedrate = 0;
     current_x = 0; current_y = 0; current_z = 0;
-    max_x = max_y = max_z = filament[0] = filament[1] = filament[2] = 0;
+    max_x = max_y = max_z = max_r = filament[0] = filament[1] = filament[2] = 0;
 
     head_type = type;
     metadata = file_metadata;
@@ -255,8 +255,8 @@ FLUX::FCodeV1MemoryWriter::FCodeV1MemoryWriter(
         std::string *type, std::vector<std::pair<std::string, std::string>> *file_metadata,
         std::vector<std::string> *image_previews) : FCodeV1(type, file_metadata, image_previews) {
     stream = new std::stringstream();
-    begin();
     opened = true;
+    begin();
 }
 
 FLUX::FCodeV1MemoryWriter::~FCodeV1MemoryWriter(void) {
