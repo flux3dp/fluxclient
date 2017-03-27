@@ -1,6 +1,8 @@
 
 from math import pow
 
+R2 = 85 ** 2  # temp
+
 
 def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
               engraving_speed=400, engraving_strength=1.0,
@@ -29,7 +31,7 @@ def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
                  vertical=False, travel_speed=2400, engraving_speed=400,
                  shading=True, max_engraving_strength=1.0, focal_length=6.4,
                  progress_callback=lambda p: None):
-    val255 = 0
+    current_pwm = 0
     proc.append_comment("FLUX Laser Bitmap Tool")
     proc.set_toolhead_pwm(0)
     proc.moveto(feedrate=5000, x=0, y=0, z=z_height + focal_length)
@@ -45,23 +47,42 @@ def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
 
     for progress, y, enum in bitmap_factory.walk_horizon():
         progress_callback(progress)
-        y_axis_moved = False
+        x_bound = (R2 - y * y) ** 0.5
+
+        # Find first engrave point in row
         for x, val in enum:
-            if val == 0:
-                if val255:
-                    val255 = 0
-                    proc.moveto(x=x - ptr_width)
+            if x > -x_bound and val:
+                proc.moveto(y=y)
+
+                if x - ptr_width > -x_bound:
+                    proc.moveto(feedrate=travel_speed, x=max(x - 3 - ptr_width,
+                                                             -x_bound))
+                proc.moveto(feedrate=travel_speed, x=max(x - ptr_width,
+                                                         -x_bound))
+                proc.set_toolhead_pwm(val2pwm[val])
+                current_pwm = val
+                break
+
+        # Draw until x over limit
+        for x, val in enum:
+            if x + ptr_width > x_bound:
+                if val != current_pwm:
+                    proc.moveto(feedrate=engraving_speed, x=(x - ptr_width))
+                    proc.set_toolhead_pwm(val)
+
+                if val:
+                    proc.moveto(feedrate=engraving_speed, x=x_bound)
                     proc.set_toolhead_pwm(0)
+                current_pwm = 0
+                break
+
             else:
-                if y_axis_moved is False:
-                    proc.moveto(feedrate=travel_speed, x=(x - 3))
-                    proc.moveto(y=y)
-                    y_axis_moved = True
-                if val != val255:
-                    if val255:
-                        proc.moveto(feedrate=engraving_speed,
-                                    x=(x - ptr_width))
-                    else:
-                        proc.moveto(feedrate=travel_speed, x=(x - ptr_width))
-                    val255 = val
-                    proc.set_toolhead_pwm(val2pwm[val255])
+                if val != current_pwm:
+                    feedrate = engraving_speed if current_pwm else travel_speed
+                    proc.moveto(feedrate=feedrate, x=x - ptr_width)
+                current_pwm = val
+                proc.set_toolhead_pwm(val2pwm[current_pwm])
+
+        if current_pwm:
+            proc.set_toolhead_pwm(0)
+            current_pwm = 0
