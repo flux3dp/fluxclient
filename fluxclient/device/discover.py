@@ -465,6 +465,7 @@ class Version2Helper(Helper):
             device.ipaddr = endpoint[0]
 
             self.session_cache[uuid] = self.session_swap.pop(uuid, None)
+            return uuid
         else:
             logger.error("Validate identify failed (uuid=%s, serial=%s)",
                          uuid, sn)
