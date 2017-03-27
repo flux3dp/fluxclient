@@ -150,8 +150,20 @@ def create_pcl_extentions():
     library_dirs = []
 
     try:
+        if is_darwin():
+            try:
+                include_dirs += [locate_includes("flann")]
+            except RuntimeError:
+                sys.stderr.write("library flann not found, its may cause "
+                                 "compile issue in some environ.")
+
+            if not os.path.exists("/usr/local/include/boost"):
+                raise RuntimeError("boost lib include not found at "
+                                   "/usr/local/include/boost/")
+
         if is_posix():
-            include_dirs += [locate_includes("eigen3"), '/usr/local/Cellar/boost/1.62.0/include', '/usr/local/Cellar/flann/1.8.4/include']
+            include_dirs += [locate_includes("eigen3")]
+
             libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
                           "pcl_search", "pcl_sample_consensus", "pcl_filters",
                           "pcl_features", "pcl_segmentation", "pcl_surface",
