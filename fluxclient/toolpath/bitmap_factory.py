@@ -1,4 +1,5 @@
 
+from math import sin, cos
 from fluxclient.laser.laser_base import LaserBase
 
 
@@ -10,6 +11,22 @@ class BitmapImage(object):
         self.x2, self.y2 = point2
         self.rotation = rotation
         self.threshold = threshold
+
+    def get_bound(self):
+        cx, cy = (self.x1 + self.x2) / 2.0, (self.y1 + self.y2) / 2.0
+        r = self.rotation
+        s, c = sin(-r), cos(-r)
+
+        x1, y1 = self.x1 - cx, self.y1 - cy
+        x2, y2 = self.x2 - cx, self.y2 - cy
+
+        x1, y1 = c * x1 - s * y1, s * x1 + c * y1
+        x2, y2 = c * x2 - s * y2, s * x2 + c * y2
+
+        orig_bounds = ((x1, y1), (x2, y1), (x2, y2), (x1, y2))
+        s, c = sin(r), cos(r)
+        return tuple(((c * x - s * y + cx, s * x + c * y + cy)
+                      for x, y in orig_bounds))
 
 
 class BitmapFactory(object):
