@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import sys
+import logging
 import time
 import math
+import sys
 
 import numpy as np
 from PIL import Image
@@ -14,7 +15,6 @@ except:
 NUM_LASER_RANGE_THRESHOLD = 3
 RED_HUE_UPPER_THRESHOLD = 5
 
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,6 @@ class freeless():
         self.place = {}
 
     def img_to_points(self, img_o, img_red, indices, step, side, cab_offset, clock=False):
-        logger.info("imp start")
         """
         convert indices on the image into x-y-z-rgb points
         return  [
@@ -77,10 +76,8 @@ class freeless():
         for y, x in indices:
             ray = self.calculateCameraRay(x, y)
             f, point = self.intersectLaserPlane(ray)
-            #logger.info("F %s" % str(f))
 
             if f:
-                # logger.info("%d %d pttest" % (y, x))
                 if point[0][0] ** 2 + point[0][2] ** 2 < MAX_DIST_XZ_SQ and point[0][1] >= PLATE_Y and point[0][1] < MAX_DIST_Y:
                     int_x = int(x - cab_offset)
                     int_x_origin = int(x)
@@ -89,7 +86,6 @@ class freeless():
                     # point.append([img_o[y][x][0], img_o[y][x][1], img_o[y][x][2]])
                     point.append([int_x_origin, y])
 
-                    #logger.info("%d %d instance append" % (y, x))
                     points.append(point)
                     
                 else:  # points that out of bounding cylinder
@@ -145,9 +141,7 @@ class freeless():
 
         point = [[ray[0][0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
         point.append([self.settings.laserX_L - point[0][0], self.settings.laserY_L - point[0][1], self.settings.laserZ_L - point[0][2]])
-        # print point
 
-        #logger.info("end intersect calc")
         return True, point
 
     def calculateCameraRay(self, x, y):
@@ -173,7 +167,6 @@ class freeless():
         ray = [[x, y, z], normalize([x - self.settings.cameraX, y - self.settings.cameraY, z - self.settings.cameraZ])]
         # self.place[(x, y)] = ray
 
-        # logger.info("end raay calc")
         return ray
 
     def writeTrianglesForColumn(self, lastFrame, currentFrame, tri):
@@ -240,7 +233,6 @@ class freeless():
           find out the location of the laser dots
           return a list of indices [[x,y], [x,y], [x,y]]
         """
-        logger.info("subprocess start")
         laserLocations = []
         numMerged = 0
         prevLaserCol = self.firstRowLaserCol
@@ -270,8 +262,6 @@ class freeless():
         # print(mag, np.amax(mag), file=sys.stderr)
         # self.m_laserMagnitudeThreshold = .3
 
-        logger.info("subprocess inited")
-        logger.info("subprocess row %d col %d" %(self.settings.img_height, self.settings.img_width))
         for row in range(self.settings.img_height):
             m_laserRanges = []
             # candidates, [ [starting index, ending index, middle point], ... ]
@@ -333,8 +323,6 @@ class freeless():
                 # suspect bad laser
                 if len(m_laserRanges) > NUM_LASER_RANGE_THRESHOLD:
                     self.numSuspectedBadLaserLocations += 1
-
-        logger.info("subprocess end")
 
         return laserLocations
 
