@@ -296,7 +296,6 @@ class ScanTaskMixIn(object):
             resp = self.get_resp()
             if resp.startswith("binary "):
                 mime, img_buff = self.recv_binary_buff(resp)
-                logger.info("scanimmages %s", (mime))
                 img_buff.seek(0)
                 img = Image.open(img_buff)
                 if img.size[0] >= 720:
@@ -316,7 +315,6 @@ class ScanTaskMixIn(object):
                     images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
-                logger.info("return images")
                 if is_hd_camera and iterations < 1:
                     return self.scan_images(images, iterations + 1)
 
