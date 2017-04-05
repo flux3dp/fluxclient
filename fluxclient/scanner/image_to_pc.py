@@ -1,29 +1,23 @@
 #!/usr/bin/env python3
-import struct
+
 from io import BytesIO
-import sys, os
+import logging
+import struct
+import sys
+import os
 
 import numpy as np
-import logging
+from PIL import ImageChops, Image
 
-logger = logging.getLogger(__name__)
+from fluxclient.scanner.tools import write_pcd
+from fluxclient.scanner import freeless
 
-from PIL import ImageChops
-from PIL import Image
-
-try:
-    from fluxclient.scanner import freeless
-    from fluxclient.scanner.tools import write_pcd
-except:
-    import freeless
-    from tools import write_pcd
-
-
-from fluxclient.hw_profile import HW_PROFILE
 try:
     from fluxclient.scanner import _scanner
 except:
     pass
+
+logger = logging.getLogger(__name__)
 
 
 class image_to_pc():
@@ -73,7 +67,7 @@ class image_to_pc():
             path = "DeltaScanResult"
         if os.path.exists("/Users/simon/Dev/ScanResult"):
             path = "/Users/simon/Dev/ScanResult"
-        
+
         # Check Domain
         if path != "":
             im1 = Image.fromarray(img_O)
@@ -131,12 +125,10 @@ class image_to_pc():
         s_L = sum(int(p[3]) + p[4] + p[5] for p in self.points_L)
 
         if s_R > s_L:
-            print('R', file=sys.stderr)
             base = self.points_R
             add_on = self.points_L
             delta = round(60 / (360 / self.steps))
         else:
-            print('L', file=sys.stderr)
             base = self.points_L
             add_on = self.points_R
             delta = -round(60 / (360 / self.steps))
@@ -146,8 +138,7 @@ class image_to_pc():
             record[(base[p][6], base[p][8])] = p
 
         self.points_M = base[:]
-
-        print('merging base {}, add_on {}'.format(len(base), len(add_on)), file=sys.stderr)
+        logger.debug("merging base %s, add_on %s", len(base), len(add_on))
 
         for p in add_on:
             t = (p[6] + delta) % 400, p[8]
