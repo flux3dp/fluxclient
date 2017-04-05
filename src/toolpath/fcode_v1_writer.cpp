@@ -46,7 +46,7 @@ void FLUX::FCodeV1Base::moveto(int flags, float feedrate, float x, float y, floa
 
 void FLUX::FCodeV1Base::sleep(float seconds) {
     write_command(4, &script_crc32);
-    write(seconds, &script_crc32);
+    write(seconds * 1000, &script_crc32);
 }
 
 void FLUX::FCodeV1Base::enable_motor(void) { errors.push_back(std::string("NOT_SUPPORT ENABLE_MOTOR")); }
