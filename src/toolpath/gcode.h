@@ -44,7 +44,7 @@ namespace FLUX {
         int handle_g92(const char* linep, int offset, int size);
         int handle_m17(const char* linep, int offset, int size);
         int handle_m18m84(const char* linep, int offset, int size);
-        int handle_m24m25m226(const char* linep, int offset, int size, bool to_standby_position);
+        int handle_m24m25m226(const char* linep, int offset, int size);
         int handle_m104m109(const char* linep, int offset, int size, bool wait);
         int handle_m106(const char* linep, int offset, int size);
         int handle_m107(const char* linep, int offset, int size);

@@ -128,10 +128,8 @@ void FLUX::GCodeParser::parse_command(const char* linep, size_t size) {
                     break;
                 case 24:
                 case 25:
-                    cmd_offset = handle_m24m25m226(linep, cmd_offset, size, false);
-                    break;
                 case 226:
-                    cmd_offset = handle_m24m25m226(linep, cmd_offset, size, true);
+                    cmd_offset = handle_m24m25m226(linep, cmd_offset, size);
                     break;
                 case 104:
                     cmd_offset = handle_m104m109(linep, cmd_offset, size, false);
@@ -322,8 +320,22 @@ int FLUX::GCodeParser::handle_m18m84(const char* linep, int offset, int size) {
     return offset;
 }
 
-int FLUX::GCodeParser::handle_m24m25m226(const char* linep, int offset, int size, bool to_standby_position) {
-    handler->pause(to_standby_position);
+int FLUX::GCodeParser::handle_m24m25m226(const char* linep, int offset, int size) {
+    if(move_to_next_char(linep, offset, size, &offset)) {
+        char cmdchar = linep[offset];
+        int val;
+        offset = parse_command_int(linep, offset, size, &val);
+        if(cmdchar == 'Z') {
+            handler->pause(val != 0);
+            return offset;
+        } else {
+            handler->pause(true);
+            return offset;
+        }
+    } else {
+        handler->pause(true);
+        return offset;
+    }
     return offset;
 }
 

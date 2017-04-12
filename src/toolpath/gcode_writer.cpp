@@ -90,9 +90,9 @@ void FLUX::GCodeWriterBase::disable_motor(void) {
 
 void FLUX::GCodeWriterBase::pause(bool to_standby_position) {
     if(to_standby_position) {
-        write("M226\n", 5);
+        write("M25\n", 5);
     } else {
-        write("M25\n", 4);
+        write("M25 Z0\n", 4);
     }
 }
 
