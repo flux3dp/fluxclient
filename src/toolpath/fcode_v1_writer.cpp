@@ -14,16 +14,10 @@ void FLUX::FCodeV1Base::write(const char* buf, size_t size, unsigned long *crc32
 }
 
 void FLUX::FCodeV1Base::write(float value, unsigned long *crc32) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    #error need implement byte order!
-#endif
     write((const char *)&value, 4, crc32);
 }
 
 void FLUX::FCodeV1Base::write(uint32_t value, unsigned long *crc32) {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    #error need implement byte order!
-#endif
     write((const char *)&value, sizeof(uint32_t), crc32);
 }
 
