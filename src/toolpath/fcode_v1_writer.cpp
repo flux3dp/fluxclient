@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <math.h>
-#include <zlib.h>
 #include <stdexcept>
 #include <sstream>
+#include "crc32.c"
 #include "fcode.h"
 
 void FLUX::FCodeV1Base::write(const char* buf, size_t size, unsigned long *crc32_ptr) {
     stream->write(buf, size);
     if(crc32_ptr) {
-        *crc32_ptr = crc32(*crc32_ptr, (const Bytef*)buf, size);
+        *crc32_ptr = xcrc32((const unsigned char *)buf, size, *crc32_ptr);
+        // *crc32_ptr = crc32(*crc32_ptr, (const Bytef*)buf, size);
     }
 }
 
