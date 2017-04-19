@@ -178,19 +178,19 @@ unsigned long FLUX::FCodeV1::write_metadata(void) {
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("FILAMENT_USED", std::string(metabuf, metasize)));
 
-    metasize = snprintf(metabuf, 32, "%.2f", max_r);
+    metasize = snprintf(metabuf, 32, "%.2f", max_r + 0.2);
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("MAX_R", std::string(metabuf, metasize)));
 
-    metasize = snprintf(metabuf, 32, "%.2f", max_z);
+    metasize = snprintf(metabuf, 32, "%.2f", max_z + 0.2);
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("MAX_Z", std::string(metabuf, metasize)));
 
-    metasize = snprintf(metabuf, 32, "%.2f", max_y);
+    metasize = snprintf(metabuf, 32, "%.2f", max_y + 0.2);
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("MAX_Y", std::string(metabuf, metasize)));
 
-    metasize = snprintf(metabuf, 32, "%.2f", max_x);
+    metasize = snprintf(metabuf, 32, "%.2f", max_x + 0.2);
     metadata->insert(metadata->begin(),
         std::pair<std::string, std::string>("MAX_X", std::string(metabuf, metasize)));
 
