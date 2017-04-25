@@ -2,7 +2,7 @@
 from collections import deque
 from threading import Semaphore, Lock
 from struct import Struct
-from errno import errorcode, ETIMEDOUT
+from errno import errorcode, ETIMEDOUT, ENODEV
 from uuid import UUID
 from time import time, sleep
 import logging
@@ -40,6 +40,7 @@ class USBProtocol(object):
     _buf = b""
 
     _usbdev = None
+    _tx = _rx = None
     _enable_ping = False
     _enable_padding = False
     _wait_ping = False
@@ -59,9 +60,16 @@ class USBProtocol(object):
         except NotImplementedError:
             pass
 
-        dev.set_configuration()
-        cfg = dev.get_active_configuration()
-        intf = cfg[(0, 0)]
+        try:
+            dev.set_configuration()
+            cfg = dev.get_active_configuration()
+            intf = cfg[(0, 0)]
+        except usb.core.USBError as e:
+            if e.errno == ENODEV:
+                raise FluxUSBError("USB not available.",
+                                   symbol=("UNAVAILABLE", ))
+            else:
+                raise
 
         try:
             self._rx = usb.util.find_descriptor(
@@ -73,8 +81,6 @@ class USBProtocol(object):
                 custom_match=match_direction(usb.util.ENDPOINT_OUT))
             logger.info("Host2Host USB device opened")
 
-            import IPython
-            IPython.embed()
             self.tx_mutex = Lock()
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
@@ -83,7 +89,6 @@ class USBProtocol(object):
             self.addr = usbdev.address
 
             self.do_handshake()
-
         except Exception:
             self.close()
             raise
@@ -306,7 +311,8 @@ class USBProtocol(object):
 
     def close(self):
         if self._usbdev:
-            self.send_object(0xfc, None)
+            if self._tx:
+                self.send_object(0xfc, None)
             self._close_usbdev()
 
     def ping(self):
