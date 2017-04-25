@@ -342,7 +342,7 @@ class USBProtocol(object):
     def send_binary(self, chl_idx, data):
         l = len(data) + 4
         # buf = HEAD_PACKER.pack(len(data) + 4, chl_idx) + data + b"\xbf"
-        if l < 508 and self._enable_padding and self._proto_handshake:
+        if l < 508 and self._enable_padding and self.uuid:
             padding = 512 - l
             buf = b"".join((
                 HEAD_PACKER.pack(l, chl_idx), data, b"\xbf",
