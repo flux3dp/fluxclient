@@ -102,10 +102,11 @@ class USBProtocol(object):
     def _send(self, buf):
         # Low level send
         try:
+            l = len(buf)
             with self.tx_mutex:
-                ret = self._tx.write(buf)
-                while ret < len(buf):
-                    ret += self._tx.write(buf)
+                ret = self._tx.write(buf[:512])
+                while ret < l:
+                    ret += self._tx.write(buf[ret:ret + 512])
 
         except usb.core.USBError as e:
             self._close_usbdev()
@@ -123,7 +124,8 @@ class USBProtocol(object):
         # Low level recv
         try:
             # note: thread will dead lock if tiemout is 0
-            b = self._rx.read(length, timeout).tobytes()
+            with self.tx_mutex:
+                b = self._rx.read(length, timeout).tobytes()
             self.timestamp = time()
             return b
         except usb.core.USBError as e:
@@ -134,7 +136,7 @@ class USBProtocol(object):
                 raise FluxUSBError(*e.args)
 
     def _feed_buffer(self, timeout=50):
-        self._buf += self._recv(1024, timeout)
+        self._buf += self._recv(512, timeout)
 
     def _unpack_buffer(self):
         l = len(self._buf)
@@ -165,7 +167,7 @@ class USBProtocol(object):
         self.endpoint_profile = data
         self.session = session
         self.send_object(0xfe, {"session": self.session,
-                                "protocol_level": 1,
+                                # "protocol_level": 1,
                                 "client": "fluxclient-%s" % __version__})
 
     def _final_handshake(self, buf):
@@ -202,7 +204,7 @@ class USBProtocol(object):
 
     def do_handshake(self):
         ttl = 3
-        self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
+        # self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
 
         self._send(b"\x00" * 1024)
         self.send_object(0xfc, None)  # Request handshake
@@ -454,7 +456,7 @@ class Channel(object):
             self.bufq.append(buf)
             self.buf_semaphore.release()
 
-    def get_buffer(self, timeout=60.0):
+    def get_buffer(self, timeout=20.0):
         if self.buf_semaphore.acquire(timeout=timeout) is False:
             raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
         return self.bufq.popleft()
