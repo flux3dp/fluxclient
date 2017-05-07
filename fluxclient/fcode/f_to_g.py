@@ -7,6 +7,9 @@ from threading import Thread
 
 from fluxclient.fcode.fcode_base import FcodeBase
 from fluxclient.hw_profile import HW_PROFILE
+import logging
+
+logger = logging.getLogger("F_TO_G")
 
 FILE_BROKEN = "FILE_BROKEN"
 FCODE_FAIL = "FCODE_FAIL"
@@ -81,24 +84,25 @@ class FcodeToGcode(FcodeBase):
         raise error if any error occur
         """
         try:
+            logger.info("Start Checking CRC %s" % str(self.data[:8]));
             assert self.data[:8] == b"FCx0001\n"
-            print("Passed Header Check");
+            logger.info("Passed Header Check");
             self.script_size = uint_unpacker(self.data[8:12])
-            print("Script size = " + str(self.script_size))
+            logger.info("Script size = " + str(self.script_size))
             assert crc32(self.data[12:12 + self.script_size]) == uint_unpacker(self.data[12 + self.script_size:16 + self.script_size])
-            print("Passed CRC32 -1 ");
+            logger.info("Passed CRC32 -1 ");
             index = 16 + self.script_size
             self.meta_size = uint_unpacker(self.data[index:index + 4])
             index += 4
             assert crc32(self.data[index:index + self.meta_size]) == uint_unpacker(self.data[index + self.meta_size:index + self.meta_size + 4])
-            print("Passed CRC32 -2 ");
+            logger.info("Passed CRC32 -2 ");
             index = index + self.meta_size + 4
             self.image_size = uint_unpacker(self.data[index:index + 4])
             index += 4
-            print("Passed full check");
+            logger.info("Passed full check");
             return True
         except AssertionError as e:
-            print(str(e));
+            logger.info(str(e));
             return False
 
     def get_img(self):

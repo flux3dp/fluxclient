@@ -2,9 +2,9 @@
 from collections import deque
 from threading import Semaphore, Lock
 from struct import Struct
-from errno import errorcode, ETIMEDOUT
+from errno import errorcode, ETIMEDOUT, ENODEV
 from uuid import UUID
-from time import time
+from time import time, sleep
 import logging
 import msgpack
 
@@ -20,6 +20,7 @@ PING_PACKER = Struct("<HBB")
 DEVST_PACKER = Struct("<dif16s32s")
 ID_VENDOR = 0xffff
 ID_PRODUCT = 0xfd00
+USBTIMEOUT = 1.5
 
 
 def match_direction(direction):
@@ -32,13 +33,16 @@ class USBProtocol(object):
     channels = None
     running = False
     session = None
+    uuid = None
     device_status = None
     timestamp = 0
     _flag = 0
     _buf = b""
 
     _usbdev = None
-    _disable_ping = False
+    _tx = _rx = None
+    _enable_ping = False
+    _enable_padding = False
     _wait_ping = False
 
     @classmethod
@@ -56,9 +60,16 @@ class USBProtocol(object):
         except NotImplementedError:
             pass
 
-        dev.set_configuration()
-        cfg = dev.get_active_configuration()
-        intf = cfg[(0, 0)]
+        try:
+            dev.set_configuration()
+            cfg = dev.get_active_configuration()
+            intf = cfg[(0, 0)]
+        except usb.core.USBError as e:
+            if e.errno == ENODEV:
+                raise FluxUSBError("USB not available.",
+                                   symbol=("UNAVAILABLE", ))
+            else:
+                raise
 
         try:
             self._rx = usb.util.find_descriptor(
@@ -70,13 +81,14 @@ class USBProtocol(object):
                 custom_match=match_direction(usb.util.ENDPOINT_OUT))
             logger.info("Host2Host USB device opened")
 
-            self.do_handshake()
-
+            self.tx_mutex = Lock()
             self.chl_semaphore = Semaphore(0)
             self.chl_open_mutex = Lock()
             self.channels = {}
             self.device_status = {}
             self.addr = usbdev.address
+
+            self.do_handshake()
         except Exception:
             self.close()
             raise
@@ -90,7 +102,12 @@ class USBProtocol(object):
     def _send(self, buf):
         # Low level send
         try:
-            self._tx.write(buf)
+            l = len(buf)
+            with self.tx_mutex:
+                ret = self._tx.write(buf[:512])
+                while ret < l:
+                    ret += self._tx.write(buf[ret:ret + 512])
+
         except usb.core.USBError as e:
             self._close_usbdev()
             if e.errno == ETIMEDOUT:
@@ -103,11 +120,13 @@ class USBProtocol(object):
     def _send_binary_ack(self, channel_idx):
         self._send(HEAD_PACKER.pack(4, channel_idx) + b"\x80")
 
-    def _recv(self, length, timeout=0.001):
+    def _recv(self, length, timeout):
         # Low level recv
         try:
             # note: thread will dead lock if tiemout is 0
-            b = self._rx.read(length, int(timeout * 1000)).tobytes()
+            with self.tx_mutex:
+                b = self._rx.read(length, timeout).tobytes()
+            self.timestamp = time()
             return b
         except usb.core.USBError as e:
             if e.errno == ETIMEDOUT or e.backend_error_code == -116:
@@ -116,8 +135,8 @@ class USBProtocol(object):
                 self._close_usbdev()
                 raise FluxUSBError(*e.args)
 
-    def _feed_buffer(self, timeout=0.05):
-        self._buf += self._recv(1024, timeout=0.05)
+    def _feed_buffer(self, timeout=50):
+        self._buf += self._recv(512, timeout)
 
     def _unpack_buffer(self):
         l = len(self._buf)
@@ -133,7 +152,6 @@ class USBProtocol(object):
                 fin = self._buf[size - 1]
                 buf = self._buf[3:size - 1]
                 self._buf = self._buf[size:]
-                self.timestamp = time()
                 return channel_idx, buf, fin
         return None, None, None
 
@@ -149,6 +167,7 @@ class USBProtocol(object):
         self.endpoint_profile = data
         self.session = session
         self.send_object(0xfe, {"session": self.session,
+                                # "protocol_level": 1,
                                 "client": "fluxclient-%s" % __version__})
 
     def _final_handshake(self, buf):
@@ -161,10 +180,7 @@ class USBProtocol(object):
             self.model_id = self.endpoint_profile["model"]
             self.nickname = self.endpoint_profile["nickname"]
 
-            if self.version < StrictVersion("1.6.3"):
-                logger.debug("Disable usb ping/pong.")
-                self._disable_ping = True
-
+            self._apply_protocol_compatibility(data)
             self._flag |= 1
             logger.info("Host2Host USB Connected")
             logger.debug("Serial: %s {%s}\nModel: %s\nName: %s\n",
@@ -176,18 +192,28 @@ class USBProtocol(object):
             self.session = None
             return False
 
+    def _apply_protocol_compatibility(self, resp):
+        self._enable_ping = self.version >= StrictVersion("1.6.3")
+
+        pl = resp.get("protocol_level", 0)
+        if pl > 0:
+            self._enable_padding = True
+
+        logger.debug("Apply usb protocol enable_ping=%s, enable_padding=%s",
+                     self._enable_ping, self._enable_padding)
+
     def do_handshake(self):
         ttl = 3
-        self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
+        # self._usbdev.ctrl_transfer(0x40, 0xFD, 0, 0)
 
-        self._send(b"\x00" * 1023)
+        self._send(b"\x00" * 1024)
         self.send_object(0xfc, None)  # Request handshake
         while ttl:
             bl = -1
             self._buf = b""
             while len(self._buf) != bl:
                 bl = len(self._buf)
-                self._feed_buffer(timeout=0.3)
+                self._feed_buffer(timeout=300)
 
             data = None
             while True:
@@ -218,6 +244,7 @@ class USBProtocol(object):
                 logger.info("Handshake timeout, retry")
 
             self.send_object(0xfc, None)  # Request handshake
+            sleep(1.0)
             ttl -= 1
         raise FluxUSBError("Handshake failed.", symbol=("TIMEOUT", ))
 
@@ -242,6 +269,8 @@ class USBProtocol(object):
                 channel.on_binary_ack()
             else:
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
+        elif channel_idx == 0xa0 and fin == 0xff:
+            logger.debug("Recv padding")
         elif channel_idx == 0xf1:
             if fin != 0xf0:
                 raise FluxUSBError("Recv bad fin 0x%02x" % fin)
@@ -258,7 +287,7 @@ class USBProtocol(object):
             self._flag |= 2
             while self._flag == 3:
                 self.run_once()
-                if time() - self.timestamp > 1.0:
+                if time() - self.timestamp > USBTIMEOUT:
                     self.ping()
         except FluxUSBError as e:
             logger.error("USB Error: %s", e)
@@ -284,11 +313,12 @@ class USBProtocol(object):
 
     def close(self):
         if self._usbdev:
-            self.send_object(0xfc, None)
+            if self._tx:
+                self.send_object(0xfc, None)
             self._close_usbdev()
 
     def ping(self):
-        if self._disable_ping is True:
+        if self._enable_ping is False:
             return
 
         if self._wait_ping:
@@ -298,13 +328,30 @@ class USBProtocol(object):
             self._wait_ping = True
             self._send(PING_PACKER.pack(4, 0xfa, 0x00))
 
-    def send_object(self, channel, obj):
-        payload = msgpack.packb(obj)
-        buf = HEAD_PACKER.pack(len(payload) + 4, channel) + payload + b"\xb0"
+    def send_object(self, chl_idx, obj):
+        data = msgpack.packb(obj)
+        l = len(data) + 4
+        if l < 508 and self._enable_padding and self.uuid:
+            padding = 512 - l
+            buf = b"".join((
+                HEAD_PACKER.pack(l, chl_idx), data, b"\xb0",
+                HEAD_PACKER.pack(padding, 0xa0), b"\x00" * (padding - 4), b"\xff"))  # noqa
+        else:
+            buf = b"".join((HEAD_PACKER.pack(l, chl_idx), data, b"\xb0"))
+
+        # buf = HEAD_PACKER.pack(len(data) + 4, chl_idx) + data + b"\xb0"
         self._send(buf)
 
-    def send_binary(self, channel, buf):
-        buf = HEAD_PACKER.pack(len(buf) + 4, channel) + buf + b"\xbf"
+    def send_binary(self, chl_idx, data):
+        l = len(data) + 4
+        # buf = HEAD_PACKER.pack(len(data) + 4, chl_idx) + data + b"\xbf"
+        if l < 508 and self._enable_padding and self.uuid:
+            padding = 512 - l
+            buf = b"".join((
+                HEAD_PACKER.pack(l, chl_idx), data, b"\xbf",
+                HEAD_PACKER.pack(padding, 0xa0), b"\x00" * (padding - 4), b"\xff"))  # noqa
+        else:
+            buf = b"".join((HEAD_PACKER.pack(l, chl_idx), data, b"\xbf"))
         self._send(buf)
 
     def _on_pong(self, buf):
@@ -320,7 +367,7 @@ class USBProtocol(object):
                     "st_head": st_th.decode("ascii").rstrip("\x00"),
                     "st_err": st_er.decode("ascii").rstrip("\x00")}
         else:
-            logger.error("Recv pong but did not ping")
+            logger.debug("Recv pong but did not ping")
             raise FluxUSBError("Protocol error")
 
     def _on_channel_ctrl_response(self, obj):
@@ -410,7 +457,7 @@ class Channel(object):
             self.bufq.append(buf)
             self.buf_semaphore.release()
 
-    def get_buffer(self, timeout=60.0):
+    def get_buffer(self, timeout=20.0):
         if self.buf_semaphore.acquire(timeout=timeout) is False:
             raise FluxUSBError("Operation timeout", symbol=("TIMEOUT", ))
         return self.bufq.popleft()

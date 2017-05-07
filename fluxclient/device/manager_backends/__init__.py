@@ -17,6 +17,7 @@ def get_backend_via_network(device):
     for klass in (SSL1Backend, Udp1Backend):
         if klass.support_device(device.model_id, device.version):
             return klass
+    raise RuntimeError("NOT_SUPPORT", device.model_id, device.version)
 
 
 def get_backend_via_uuid(uuid, lookup_callback=None,

@@ -10,6 +10,7 @@ import json
 from PIL import Image
 
 from .aes_socket import AESSocket
+from .ssl_socket import SSLSocket
 from .errors import RobotError, RobotSessionError
 from .misc import msg_waitall
 
@@ -295,7 +296,6 @@ class ScanTaskMixIn(object):
             resp = self.get_resp()
             if resp.startswith("binary "):
                 mime, img_buff = self.recv_binary_buff(resp)
-                logger.info("scanimmages %s", (mime))
                 img_buff.seek(0)
                 img = Image.open(img_buff)
                 if img.size[0] >= 720:
@@ -315,7 +315,6 @@ class ScanTaskMixIn(object):
                     images.append((mime, img_buff.getvalue()))
 
             elif resp == "ok":
-                logger.info("return images")
                 if is_hd_camera and iterations < 1:
                     return self.scan_images(images, iterations + 1)
 
@@ -341,7 +340,7 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             sock, client_key=client_key, device=device,
             ignore_key_validation=False)
 
-        while not aessock.do_handshake():
+        while aessock.do_handshake() > 0:
             pass
 
     def fileno(self):
@@ -783,3 +782,14 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
             return token, a2b_base64(validate_b64_hash)
         else:
             raise_error(ret)
+
+
+class RobotBackend3(RobotBackend2):
+    def __init__(self, sock, client_key, device=None,
+                 ignore_key_validation=False):
+        self.sock = sslsock = SSLSocket(
+            sock, client_key=client_key, device=device,
+            ignore_key_validation=False)
+
+        while sslsock.do_handshake() > 0:
+            pass

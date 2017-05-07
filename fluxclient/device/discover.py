@@ -92,7 +92,8 @@ only.
         self.uuid = uuid
         self.device_ipaddr = device_ipaddr
 
-        self.handlers = (BroadcastHelper(self), Version1Helper(self))
+        self.handlers = (BroadcastHelper(self), Version1Helper(self),
+                         Version2Helper(self))
 
         self.socks = self.create_sockets(mcst_ipaddr, mcst_port) + tuple(
             (h.sock for h in self.handlers if hasattr(h, "sock")))
@@ -183,6 +184,10 @@ has been found or the computer recived a new status from a device.
                 # Bad magic number
                 return
 
+            if proto_ver > 2:
+                logger.debug("Protocol %i not support", proto_ver)
+                return
+
             ret = self.handlers[proto_ver].handle_message(endpoint, action_id,
                                                           buf[6:])
             return ret
@@ -200,10 +205,12 @@ has been found or the computer recived a new status from a device.
             if device.serial != serial:
                 raise Exception("Device %s got vart master keys",
                                 device.serial, serial)
+            return device
         else:
             d = Device(uuid, serial, master_key, disc_ver)
             d.update_status()
             self.devices[uuid] = d
+            return d
 
     def get_master_key(self, uuid):
         return self.devices[uuid].master_key
@@ -362,3 +369,103 @@ class Version1Helper(Helper):
                 logger.error("Slave key signuture error (V1)")
         else:
             logger.error("Master key signuture error (V1)")
+
+
+class Version2Helper(Helper):
+    session_cache = None
+    session_swap = None
+
+    def __init__(self, server):
+        super(Version2Helper, self).__init__(server)
+        self.session_cache = {}
+        self.session_swap = {}
+
+    def _need_touch(self, uuid, session):
+        device = self.server.devices.get(uuid)
+        if device and uuid in self.session_cache and \
+                self.session_cache[uuid] == session:
+            return False
+        else:
+            return True
+
+    def handle_message(self, endpoint, action_id, payload):
+        if action_id == 0:
+            return self._handle_discover(endpoint, payload)
+        elif action_id == 3:
+            return self._handle_touch(endpoint, payload)
+        else:
+            logger.error("Can not handle proto_ver=1, action_id=%s", action_id)
+
+    def _handle_discover(self, endpoint, payload):
+        args = struct.unpack("<16s8s", payload[:24])
+        uuid_bytes, session = args[:3]
+
+        uuid = UUID(bytes=uuid_bytes)
+        if not self.server.source_filter(uuid, endpoint):
+            return
+
+        if self._need_touch(uuid, session):
+            payload = struct.pack("<4sBB16s", b"FLUX", 2, 2, uuid.bytes)
+            try:
+                self.session_swap[uuid] = session
+                self.sock.sendto(payload, endpoint)
+            except Exception:
+                logger.exception("Error while poke %s", endpoint)
+        else:
+            try:
+                st_ts, st_id, st_prog, st_head, st_err = \
+                    struct.unpack("dif16s32s", payload[24:88])
+
+                head_module = st_head.decode("ascii", "ignore").strip("\x00")
+                error_label = st_err.decode("ascii", "ignore").strip("\x00")
+                device = self.server.devices[uuid]
+                device.update_status(st_id=st_id, st_ts=st_ts, st_prog=st_prog,
+                                     head_module=head_module,
+                                     error_label=error_label)
+                device.discover_endpoint = endpoint
+                device.ipaddr = endpoint[0]
+
+                return uuid
+            except Exception:
+                basic_info = self.server.devices[uuid]
+                if basic_info.version > StrictVersion("0.13a"):
+                    logger.exception("Unpack status failed")
+
+    def _handle_touch(self, endpoint, payload):
+        f = BytesIO(payload)
+
+        buuid, l1, l2 = struct.unpack("<16sHH", f.read(20))
+        uuid = UUID(bytes=buuid)
+
+        if not self.server.source_filter(uuid, endpoint):
+            # Ingore this uuid
+            return
+
+        pubkey_der = f.read(l1)
+        pubkey_signuture = f.read(l2)
+        dev_pubkey = KeyObject.load_keyobj(pubkey_der)
+
+        bmeta = f.read(struct.unpack("<H", f.read(2))[0])
+        smeta = bmeta.decode("utf8")
+        rawdata = {}
+        for item in smeta.split("\x00"):
+            if "=" in item:
+                k, v = item.split("=", 1)
+                rawdata[k] = v
+
+        sn = rawdata.get("serial", None)
+        if sn and validate_identify(uuid, pubkey_signuture, serial=sn,
+                                    masterkey_doc=pubkey_der):
+            device = self.server.add_master_key(uuid, sn, dev_pubkey, 2)
+            device.model_id = rawdata.get("model", "UNKNOW_MODEL")
+            device.has_password = rawdata.get("pwd") == "T"
+            device.version = StrictVersion(rawdata["ver"])
+            device.name = rawdata.get("name", "NONAME")
+            device.discover_endpoint = endpoint
+            device.ipaddr = endpoint[0]
+
+            self.session_cache[uuid] = self.session_swap.pop(uuid, None)
+            return uuid
+        else:
+            logger.error("Validate identify failed (uuid=%s, serial=%s)",
+                         uuid, sn)

@@ -1,19 +1,17 @@
 # !/usr/bin/env python3
 
-import sys
 import logging
-from os import environ
 
-from lxml import etree as ET
+from lxml import etree as ET  # noqa
 
-from .laser_base import LaserBase
+from .laser_middleware import LaserMiddleware
 from fluxclient.utils.svg_parser import SVGParser
 
 
 logger = logging.getLogger(__name__)
 
 
-class LaserSvg(LaserBase, SVGParser):
+class LaserSvg(LaserMiddleware, SVGParser):
     """
     LaserSvg class:
       generate gcode base on given svg files
@@ -36,10 +34,15 @@ class LaserSvg(LaserBase, SVGParser):
         """
         self.ready_svgs[name] = data
 
-    def gcode_generate(self, names, ws=None):
+    def process(self, processor, names=None, ws=None):
         self.reset_image()
-        gcode = []
-        gcode += self.header('FLUX. Laser SVG.')
+
+        if not names:
+            names = self.ready_svgs.keys()
+
+        processor.append_comment("FLUX Laser SVG Tool")
+        self.moveTo(processor, x=0, y=0, speed=5000,
+                    z=self.focal_l + self.obj_height)
         progress = 0.1
         offset = 4 * len(names) / 0.98
         name_index = offset
@@ -49,7 +52,9 @@ class LaserSvg(LaserBase, SVGParser):
             ready_svg = self.ready_svgs[name]
             svg_data = ready_svg[0].decode('utf8')
             root = ET.fromstring(svg_data)
-            viewBox = list(map(float, root.attrib['viewBox'].replace(',', ' ').split()))
+            view_box = list(
+                map(float, root.attrib['viewBox'].replace(',', ' ').split())
+            )
 
             progress += offset
             if ws:
@@ -61,44 +66,28 @@ class LaserSvg(LaserBase, SVGParser):
             if ws:
                 ws.send_progress('processing svg', progress)
 
-            path_data = self.process(path_data, ready_svg[1:-3], viewBox, self.radius)
+            path_data = SVGParser.process(path_data, ready_svg[1:-3], view_box,
+                                          self.radius)
 
             progress += offset
             if ws:
                 ws.send_progress('generating fcode on svg', progress)
             for each_path in path_data:
-                moveTo = True  # flag that means extruder should move to rather than drawto
+                # flag that means extruder should move to rather than drawto
+                move_to = True
                 for x, y in each_path:
                     if x != '\n':
-                        if not moveTo:
-                            gcode += self.drawTo(x, y, speed=self.laser_speed)
+                        if not move_to:
+                            self.drawTo(processor, x, y, speed=self.laser_speed)
                         else:
-                            gcode += self.closeTo(x, y, self.travel_speed)
-                            moveTo = False
+                            self.closeTo(processor, x, y, self.travel_speed)
+                            move_to = False
                     else:
-                        moveTo = True
+                        move_to = True
                         continue
             progress += offset
             if ws:
                 ws.send_progress('preparing image', progress)
             if ready_svg[-1]:
                 self.add_image(ready_svg[-1], ready_svg[-3], ready_svg[-2], *ready_svg[3:-3], thres=100)
-        gcode += self.turnOff()
-
-        gcode = "\n".join(gcode) + "\n"
-        logger.debug("generate gcode done:%d bytes" % len(gcode))
-
-        ################ fake code ##############
-        if environ.get("flux_debug") == '1':
-            self.dump('./preview.png')
-            with open('output.gcode', 'w') as f:
-                print(gcode, file=f)
-        ##########################################
-
-        return gcode
-
-if __name__ == '__main__':
-    m_laser_svg = LaserSvg()
-    filename = sys.argv[1]
-    with open(filename, 'rb') as f:
-        m_laser_svg.preprocess(f.read())
+        self.turnOff(processor)
