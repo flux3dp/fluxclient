@@ -23,8 +23,8 @@ class RobotBackendUSB(RobotBackend2):
         l = len(buf)
         offset = 0
         while l > offset:
-            self.channel.send_binary(m[offset:offset + 1020])
-            offset += 1020
+            self.channel.send_binary(m[offset:offset + 506])
+            offset += 506
 
     def get_resp(self, timeout=180.0):
         try:
@@ -51,7 +51,7 @@ class RobotBackendUSB(RobotBackend2):
             process_callback(instance, sent, size)
 
         while sent < size:
-            buf = stream.read(1020)
+            buf = stream.read(506)
             lbuf = len(buf)
             if lbuf == 0:
                 raise RobotError("Upload file error")

@@ -25,7 +25,7 @@ class Host2HostBackend1(ManagerAbstractBackend):
     def connect(self):
         self.channel = self.usbprotocol.open_channel("config")
         self._authorized = True
-        self.endpoint = "USB:%i@%i" % (self.usbprotocol._usbdev.address,
+        self.endpoint = "USB:%i@%i" % (self.usbprotocol._dev.address,
                                        self.channel.index)
 
     def connected(self):
