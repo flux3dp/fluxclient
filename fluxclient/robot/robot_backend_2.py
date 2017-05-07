@@ -272,7 +272,13 @@ class ScanTaskMixIn(object):
             if resp.startswith("binary "):
                 mime, img_buff = self.recv_binary_buff(resp)
                 img_buff.seek(0)
-                img = Image.open(img_buff)
+
+                try:
+                    img = Image.open(img_buff)
+                except OSError:
+                    raise RobotError("Image broken",
+                                     error_symbol=("FILE_BROKEN", ))
+
                 if img.size[0] >= 720:
                     img = img.transpose(Image.ROTATE_90)
                     fake_file = BytesIO()
@@ -297,7 +303,13 @@ class ScanTaskMixIn(object):
             if resp.startswith("binary "):
                 mime, img_buff = self.recv_binary_buff(resp)
                 img_buff.seek(0)
-                img = Image.open(img_buff)
+
+                try:
+                    img = Image.open(img_buff)
+                except OSError:
+                    raise RobotError("Image broken",
+                                     error_symbol=("FILE_BROKEN", ))
+
                 if img.size[0] >= 720:
                     img = img.transpose(Image.ROTATE_90)
                     is_hd_camera = True
