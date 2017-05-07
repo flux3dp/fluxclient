@@ -18,5 +18,5 @@ def check_platform():
         p = "OSX"
     return (p, platform.architecture()[0])
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 SUPPORT_PCL = check_pcl()
