@@ -138,8 +138,7 @@ class PcProcess():
         pc0_size = len(pc[0])
         output = (pc[0].add(pc[1])).Euclidean_Cluster(thres)
         output = sorted(output, key=lambda x: len(x))
-        # for i in output:
-        #     print(len(i))
+
         tmp_pc = self.to_cpp([[], []])
         for j in output[-1:]:
             for i in j:
@@ -458,7 +457,7 @@ class PcProcess():
         x = np.array([p[0] for p in plane])
         y = np.array([p[1] for p in plane])
         z = np.array([p[2] for p in plane])
-        print('plane len', len(plane), file=sys.stderr)
+        logger.debug('plane len %i', len(plane))
         try:
 
             rbf = Rbf(x, y, z, function='thin_plate', smooth=0)
@@ -491,8 +490,7 @@ class PcProcess():
                         tmp.append(p)
             del rbf
         except Exception as e:
-            print('rbf error', file=sys.stderr)
-            print(e.args, file=sys.stderr)
+            logger.exception("rbf error")
 
         plane += tmp
         for p in plane:

@@ -50,7 +50,6 @@ class FcodeToGcode(FcodeBase):
             self.upload_content(buf)
 
     def upload_content(self, buf):
-        print("Start upload");
         """
         upload fcode content in this object,
         buf[in]: could be string indicating the path to .fcode or bytes
@@ -141,7 +140,6 @@ class FcodeToGcode(FcodeBase):
                     itme = item.split(b"=", 1)
                     if len(itme) == 2:
                         metadata[itme[0].decode()] = itme[1].decode()
-                        print(itme[0].decode() + " = " + itme[1].decode());
                 self.metadata = metadata
         return self.metadata
 
@@ -150,7 +148,6 @@ class FcodeToGcode(FcodeBase):
         if include_meta:
             meta = self.get_metadata()
             for key, value in meta.items():
-                #print(bytes("WELL.. %s=%s\n" % (key, value)), file=sys.stderr)
                 outstream.write(bytes(";%s=%s\n" % (key, value), "UTF-8"))
             outstream.write(bytes("\n", "UTF-8"))
 
@@ -168,7 +165,7 @@ class FcodeToGcode(FcodeBase):
                 self.writeStr(outstream, 'G4 P{}\n'.format(float_unpacker(self.data[index:index + 4])))
                 index += 4
             elif command == 5:
-                print('find pause fcode', file=sys.stderr)
+                pass
 
             elif command == 6:
                 self.writeStr(outstream, '; raw command to mb\n')

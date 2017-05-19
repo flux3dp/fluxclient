@@ -60,12 +60,10 @@ cdef class Tools:
     cpdef path_to_js(self, path):
         cdef vector[vector[vector [float]]] origin;
         cdef NativePath native = NativePath();
-        print("path_type "+str(type(path)));
         if(type(path) is type(native)):
             native = path
             return path_to_js_cpp(native.ptr)
         else:
-            print("path_to_js origin called")
             return path_to_js(path)
 
 cdef extern from "g2f_module.h":
@@ -171,7 +169,6 @@ cdef class GcodeToFcodeCpp:
 
     cpdef extract_vector(self, obj):
         cdef PathVector v = <PathVector> obj
-        print("{" + str(v.x) + "," + str(v.y) + "}")
 
     cpdef sub_convert_path(self):
         # self.path_js = FcodeBase.path_to_js(self.path)
@@ -184,7 +181,6 @@ cdef class GcodeToFcodeCpp:
         self.G92_delta[2] += z
 
     cpdef get_path(self, path_type='js'):
-        print("warning: get_path of g2fcpp function deprecated")
         if path_type == 'js':
             self.T.join()
             if self.path_js is None:
@@ -325,10 +321,7 @@ cdef class GcodeToFcodeCpp:
 
 
         except Exception as e:
-            import traceback
-            logger.info('G_to_F fail')
-            print("[G2FCPP] G2fcpp failed");
-            traceback.print_exc(file=sys.stdout)
+            logger.exception("G_to_F fail")
             return 'broken'
 
     def __dealloc__(self):

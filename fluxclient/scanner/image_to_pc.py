@@ -12,10 +12,6 @@ from PIL import ImageChops, Image
 from fluxclient.scanner.tools import write_pcd
 from fluxclient.scanner import freeless
 
-try:
-    from fluxclient.scanner import _scanner
-except:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +146,7 @@ class image_to_pc():
             else:
                 self.points_M.append(p)
 
-        print('merge done: output self.mpoints_M:{}'.format(len(self.points_M)), file=sys.stderr)
+        logger.warning('merge done: output self.mpoints_M:%s', len(self.points_M))
 
 
 def print_progress(step, total):

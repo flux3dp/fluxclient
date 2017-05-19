@@ -242,7 +242,7 @@ class StlSlicer(object):
         """
         if self.T:
             self.T.join()
-        print("Returning get path")
+        logger.debug("Returning get path")
         return self.path_js
 
     def begin_slicing(self, names, ws, output_type):
@@ -424,17 +424,17 @@ class StlSlicer(object):
         when being called, end every working slic3r process
         but couldn't kill the thread
         """
-        print("Abort slicing:: %s" % exit_reason)
+        logger.debug("Abort slicing:: %s", exit_reason)
         for p in self.working_p:
             if type(p[-1]) == (subprocess.Popen):
                 if p[-1].poll() is None:
-                    print("Aborting 'process' managed by worker:: #%d " % p[4])
+                    logger.debug("Aborting 'process' managed by worker:: #%d ", p[4])
                     p[-1].terminate()
                     p[3] = True
             else:
                 # Turn on abort tag
                 if not p[3]:
-                    print("Aborting 'thread' managed by worker:: #%d " % p[4])
+                    logger.debug("Aborting 'thread' managed by worker:: #%d ", p[4])
                     p[3] = True
                 pass
             for filename in p[1]:
@@ -551,7 +551,7 @@ class StlSlicer(object):
         if int(content.get('raft','1')) == 0:
             logger.info("Raft off, remove raft_layers")
             content['raft_layers'] = '0';
-        
+
         if content.get('start_gcode','') != "":
             content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode','') 
 
@@ -673,7 +673,7 @@ class StlSlicer(object):
                 index += 50
             logger.info("np array convert (bin) %d" % faces.size)
         
-        print("Faces[0] type %s " % type(faces).__name__)
+        logger.debug("Faces[0] type %s ", type(faces).__name__)
         return _printer.MeshCloud(points_list), faces
 
     @classmethod
@@ -709,8 +709,8 @@ class StlSlicer(object):
                     faces[i][j] -= 1
                 else:
                     faces[i][j] = len(points_list) + faces[i][j]
-        
-        print("Faces[0] type %s " % type(faces).__name__)
+
+        logger.debug("Faces[0] type %s ", type(faces).__name__)
         return _printer.MeshCloud(points_list), faces
 
 class StlSlicerCura(StlSlicer):
@@ -1283,9 +1283,6 @@ class StlSlicerCura(StlSlicer):
 
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])
-
-        import pprint
-        pprint.pprint(new_content)
 
         cls.my_ini_writer(file_path, new_content, delete)
         return

@@ -126,7 +126,7 @@ class freeless():
         # print denominator
 
         if abs(denominator) < 0.0000001:
-            print('warning: < 0.0000001:', denominator, file=sys.stderr)
+            logger.warning('warning: < 0.0000001: %s', denominator)
             return False, None
 
         v = [self.laser_plane[0][0] - ray[0][0], self.laser_plane[0]
@@ -136,7 +136,7 @@ class freeless():
         numerator = dot(v, self.laser_plane[1])
         d = float(numerator) / denominator
         if d < 0:
-            print('warning: d < 0:', file=sys.stderr)
+            logger.warning('warning: d < 0')
             return False, None
 
         point = [[ray[0][0] + (ray[1][0] * d), ray[0][1] + (ray[1][1] * d), ray[0][2] + (ray[1][2] * d)]]
@@ -367,16 +367,12 @@ if __name__ == '__main__':
 
     tmp = freeless(self.settings.laserX_L, self.settings.laserZ_L)
     im = np.array(Image.open('../../../rule.jpg'))
-    print(im.shape)
     # self, img_o, img_red, indices, step, side, cab_offset, clock=False
     # a = tmp.img_to_points(im, None, [(i, 325) for i in range(200, 352)], 0, 'L', -10)
     a = tmp.img_to_points(im, None, [(i, 325) for i in range(84, 350)], 0, 'L', 10)
     a = tmp.img_to_points(im, None, [(i, 325) for i in range(149, 350)], 0, 'L', 10)
     # a += tmp.img_to_points(im, None, [(i, 325) for i in range(0, 352)], 0, 'L', -10)
     output = '../../../tmp.pcd'
-    print(a[0])
-    print(a[-1])
-    print(a[0][2] - a[-1][2])
     write_pcd(a, '../../../tmp.pcd')
     subprocess.call(['python', '../../../3ds/3ds/PCDViewer/pcd_to_js.py', output], stdout=open('../../../3ds/3ds/PCDViewer/model.js', 'w'))
 
