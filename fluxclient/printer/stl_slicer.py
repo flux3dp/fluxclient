@@ -550,7 +550,10 @@ class StlSlicer(object):
 
         if int(content.get('raft','1')) == 0:
             logger.info("Raft off, remove raft_layers")
+            content['temp_raft_layers'] = content['raft_layers'];
             content['raft_layers'] = '0';
+        else:
+            content['raft_layers'] = content.get('temp_raft_layers', 4);
 
         if content.get('start_gcode','') != "":
             content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode','') 

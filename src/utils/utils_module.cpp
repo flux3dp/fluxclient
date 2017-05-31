@@ -75,6 +75,6 @@ std::string path_to_js_cpp(vector< vector< PathVector > >* path){
     }
   }
   builder.append("]");
-  fprintf(stderr, "path_to_js_cpp end, size = %d\n", builder.length());
+  // fprintf(stderr, "path_to_js_cpp end, size = %d\n", builder.length());
   return builder.toString();
 }
