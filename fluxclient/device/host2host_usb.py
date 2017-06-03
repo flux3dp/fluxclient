@@ -190,7 +190,7 @@ class USBProtocol(object):
                 ret += tx.write(buf[ret:ret + 512])
 
         except usb.core.USBError as e:
-            if e.errno == ETIMEDOUT:
+            if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 raise FluxUSBError(*e.args, symbol=("TIMEOUT", ))
             else:
                 raise FluxUSBError(*e.args,
