@@ -193,6 +193,7 @@ class USBProtocol(object):
             if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 raise FluxUSBError(*e.args, symbol=("TIMEOUT", ))
             else:
+                logger.error("unhandle libusb error: %s", e)
                 raise FluxUSBError(*e.args,
                                    symbol=("UNKNOWN_ERROR",
                                            errorcode.get(e.errno, e.errno)))
@@ -208,6 +209,7 @@ class USBProtocol(object):
             if e.errno == ETIMEDOUT or e.backend_error_code == -116:
                 return b""
             else:
+                logger.error("unhandle libusb error: %s", e)
                 raise FluxUSBError(*e.args)
 
     @classmethod
