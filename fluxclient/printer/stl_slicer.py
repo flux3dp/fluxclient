@@ -308,7 +308,14 @@ class StlSlicer(object):
     def slicing_worker(self, command, config, image, ext_metadata, output_type, status_list, p_index):
         tmp_gcode_file = command[3]
         fail_flag = False
-        subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+
+        try:
+            subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
+        except Exception:
+            logger.exception("Slic3r start failed")
+            status_list.append([False, [None, None], None])
+            return
+
         path = None
         self.working_p[p_index].append(subp)
         logger.info("#%d Real slicing started", p_index)
@@ -319,9 +326,6 @@ class StlSlicer(object):
 
         while subp.poll() is None:
             line = subp.stdout.readline().strip()
-            # subp.stdout.read()
-            # for line in chunck.split('\n'):
-            #     logger.debug(line.rstrip())
             if line:
                 logger.info(line)
                 if line.startswith('=> ') and not line.startswith('=> Exporting'):
