@@ -1,28 +1,28 @@
 # !/usr/bin/env python3
 
+from platform import platform
 from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
 import traceback
-import numpy as np
-import gc
 import subprocess
 import tempfile
-import os, sys
-from platform import platform
 import logging
-import copy
 import json
-from fluxclient.utils._utils import Tools
+import copy
+import sys
+import gc
+import os
 
 from PIL import Image
+import numpy as np
 
-from fluxclient.hw_profile import HW_PROFILE
-from fluxclient.printer import _printer
-from fluxclient.fcode.g_to_f import GcodeToFcode
-from fluxclient.utils._utils import GcodeToFcodeCpp
 from fluxclient.scanner.tools import dot, normal, normalize, dotX, normalX
-from fluxclient.printer import ini_string, ini_string_cura2, ini_constraint, ignore, ini_flux_params
+from fluxclient.utils._utils import GcodeToFcodeCpp, Tools
+from fluxclient.fcode.g_to_f import GcodeToFcode
+from fluxclient.hw_profile import HW_PROFILE
 from fluxclient.printer.flux_raft import Raft
+from fluxclient.printer import ini_string, ini_string_cura2, ini_constraint, ignore, ini_flux_params
+from fluxclient.printer import _printer
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 def rreplace(s, old, new, occurrence):
     li = s.rsplit(old, occurrence)
     return new.join(li)
+
 
 def read_until(f):
     """
@@ -285,7 +286,7 @@ class StlSlicer(object):
                 m_mesh_merge = m_mesh
             else:
                 m_mesh_merge.add_on(m_mesh)
-        
+
         if float(self.config['cut_bottom']) > 0:
             m_mesh_merge = m_mesh_merge.cut(float(self.config['cut_bottom']))
 
@@ -317,7 +318,7 @@ class StlSlicer(object):
         subp = subprocess.Popen(command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True)
         path = None
         self.working_p[p_index].append(subp)
-        logger.info("#%d Real slicing started" % (p_index));
+        logger.info("#%d Real slicing started", p_index)
 
         progress = 0.2
         slic3r_error = False
@@ -336,11 +337,11 @@ class StlSlicer(object):
                 elif "Unable to close this loop" in line:
                     slic3r_error = True
                 slic3r_out = [5, line]  # errorcode 5
-        
+
         subp_returned = subp.poll()
         if self.is_aborted(p_index):
             return logger.info('Worker #%d aborted' % p_index)
-        if subp_returned!= 0:
+        if subp_returned != 0:
             logger.info('#%d Slic3r returned abnormal %d ' % (p_index, subp_returned))
             fail_flag = True
 
@@ -716,6 +717,7 @@ class StlSlicer(object):
         logger.debug("Faces[0] type %s ", type(faces).__name__)
         return _printer.MeshCloud(points_list), faces
 
+
 class StlSlicerCura(StlSlicer):
     def __init__(self, slicer, version = 1):
         super(StlSlicerCura, self).__init__(slicer)
@@ -754,22 +756,13 @@ class StlSlicerCura(StlSlicer):
         return True, ''
 
     def slicing_worker(self, config, image, ext_metadata, output_type, status_list, names, ws, p_index):
-
-        # Generate temp files
-        if platform().startswith("Windows"):
-            if not os.path.isdir('C:\Temp'):
-                os.mkdir('C:\Temp')
-            temp_dir = 'C:\Temp'
-        else:
-            temp_dir = None
-
-        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.stl', delete=False)
+        tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
         tmp_stl_file = tmp.name  # store gcode
 
-        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.gcode', delete=False)
+        tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
-        tmp = tempfile.NamedTemporaryFile(dir=temp_dir, suffix='.ini', delete=False)
+        tmp = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
         tmp_slicer_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = None
@@ -1098,7 +1091,7 @@ class StlSlicerCura(StlSlicer):
                 # "speed_support_infill": { 'default_value': float(content['support_material_speed']) },
                 # "speed_support_interface": { 'default_value': float(content['support_material_speed']) / 1.5 },
                 # "speed_wall_x": { 'default_value': float(content['perimeter_speed']) },
-		        # "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
+                # "speed_wall_0": { 'default_value': float(content['external_perimeter_speed']) },
                 # "infill_overlap_mm": { 'default_value': 0.4 * float(content['infill_overlap'].rstrip('%')) / 100 },
                 # "speed_topbottom": { 'default_value': float(content['solid_infill_speed']) },
                 # "speed_print_layer_0": { 'default_value': float(content['first_layer_speed']) },
