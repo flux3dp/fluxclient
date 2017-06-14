@@ -3,7 +3,6 @@
 from platform import platform
 from struct import unpack, Struct, pack
 from io import BytesIO, StringIO
-import traceback
 import subprocess
 import tempfile
 import logging
@@ -95,8 +94,7 @@ class StlSlicer(object):
             else:
                 raise('unknown file type')
         except:
-            logger.info("oops");
-            traceback.print_exc(file=sys.stdout)
+            logger.exception("oops")
             return False
         else:
             return True
@@ -206,11 +204,6 @@ class StlSlicer(object):
                         self.configCura2[key] = value
                     else:
                         self.config[key] = value
-                        #if key == 'temperature':
-                        #    self.config['first_layer_temperature'] = str(min(230, float(value) + 5))
-                        # elif key == 'overhangs' and value == '0':
-                        #     self.config['support_material'] = '0'
-                        #     ini_constraint['support_material'] = [ignore]
                         if key == 'spiral_vase' and value == '1':
                             self.config['support_material'] = '0'
                             ini_constraint['support_material'] = [ignore]
@@ -440,7 +433,7 @@ class StlSlicer(object):
                 pass
             for filename in p[1]:
                 try:
-                    if not ".stl" in filename:
+                    if ".stl" not in filename:
                         os.remove(filename)
                 except:
                     pass
@@ -549,15 +542,15 @@ class StlSlicer(object):
         specify delete not to write some key in content
         """
 
-        if int(content.get('raft','1')) == 0:
+        if int(content.get('raft', '1')) == 0:
             logger.info("Raft off, remove raft_layers")
-            content['temp_raft_layers'] = content['raft_layers'];
-            content['raft_layers'] = '0';
+            content['temp_raft_layers'] = content['raft_layers']
+            content['raft_layers'] = '0'
         else:
-            content['raft_layers'] = content.get('temp_raft_layers', 4);
+            content['raft_layers'] = content.get('temp_raft_layers', 4)
 
-        if content.get('start_gcode','') != "":
-            content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode','') 
+        if content.get('start_gcode', '') != "":
+            content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode', '')
 
         with open(file_path, 'w') as f:
             for i in content:
@@ -565,7 +558,6 @@ class StlSlicer(object):
                     pass
                 else:
                     print("%s=%s" % (i, content[i]), file=f)
-        return
 
     @classmethod
     def ascii_or_binary(cls, data, byte_order):
@@ -637,7 +629,7 @@ class StlSlicer(object):
                     if pIdx is None:
                         points_map[v] = counter
                         pIdx = counter
-                        points_list.append(v);
+                        points_list.append(v)
                         counter += 1
                     tFaces.append(pIdx)
             # Compact python list to nparray
@@ -670,13 +662,13 @@ class StlSlicer(object):
                     if pIdx is None:
                         points_map[v] = counter
                         pIdx = counter
-                        points_list.append(v);
+                        points_list.append(v)
                         counter += 1
                     faces[fptr] = pIdx
                     fptr = fptr + 1
                 index += 50
             logger.info("np array convert (bin) %d" % faces.size)
-        
+
         logger.debug("Faces[0] type %s ", type(faces).__name__)
         return _printer.MeshCloud(points_list), faces
 
@@ -719,7 +711,7 @@ class StlSlicer(object):
 
 
 class StlSlicerCura(StlSlicer):
-    def __init__(self, slicer, version = 1):
+    def __init__(self, slicer, version=1):
         super(StlSlicerCura, self).__init__(slicer)
         self.slicer = slicer
         self.version = version
@@ -738,7 +730,7 @@ class StlSlicerCura(StlSlicer):
         # End other slicing process once called
         self.end_slicing('cura next slicing')
 
-        logger.info('Begin slicing (CuraEngine)');
+        logger.info('Begin slicing (CuraEngine)')
         # check if names are all seted
         for n in names:
             if not (n in self.models and n in self.parameter):
@@ -769,10 +761,10 @@ class StlSlicerCura(StlSlicer):
 
         # Read old transform to see if we need to regenerate the stl
         old_transform = ""
-        if os.path.exists('temp.transform'): 
+        if os.path.exists('temp.transform'):
             f = open('temp.transform', 'r+')
-            old_transform = f.read();
-            f.close();
+            old_transform = f.read()
+            f.close()
 
         params = {}
 
@@ -780,13 +772,13 @@ class StlSlicerCura(StlSlicer):
             params[n] = self.parameter[n]
         current_transform = json.dumps({'p': params, 'sink': float(config['cut_bottom'])})
 
-        status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}');
-        
+        status_list.append('{"slice_status": "computing", "message": "Comparing Transformation", "percentage": 0.025}')
+
         if self.is_aborted(p_index):
             return logger.info('Worker #%d aborted' % p_index)
 
-        if old_transform != current_transform: # Need to regenerate new stl
-            logger.info('Generating transformed stl');
+        if old_transform != current_transform:  # Need to regenerate new stl
+            logger.info('Generating transformed stl')
             # Applying transform to each mesh object, and merge to m_mesh_merge
             for n in names:
                 m_mesh = _printer.MeshObj(self.models[n][0], self.models[n][1])
@@ -794,7 +786,7 @@ class StlSlicerCura(StlSlicer):
                 if self.is_aborted(p_index):
                     return logger.info('Worker #%d aborted' % p_index)
 
-                m_mesh.apply_transform(self.parameter[n]) 
+                m_mesh.apply_transform(self.parameter[n])
 
                 if self.is_aborted(p_index):
                     return logger.info('Worker #%d aborted' % p_index)
@@ -803,46 +795,45 @@ class StlSlicerCura(StlSlicer):
                     m_mesh_merge = m_mesh
                 else:
                     m_mesh_merge.add_on(m_mesh)
-            
+
             if self.is_aborted(p_index):
                 return logger.info('Worker #%d aborted' % p_index)
 
-
             if float(config['cut_bottom']) > 0:
-                status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}');
+                status_list.append('{"slice_status": "computing", "message": "Performing cut_bottom", "percentage": 0.04}')
                 m_mesh_merge = m_mesh_merge.cut(float(config['cut_bottom']))
-            
-            logger.info('Writing new stl');
-            status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}');
+
+            logger.info('Writing new stl')
+            status_list.append('{"slice_status": "computing", "message": "Writing new stl", "percentage": 0.05}')
             m_mesh_merge.write_stl(tmp_stl_file)
             # Save new file name for same transform
 
             # Remove old file
-            if os.path.exists('stl.cache'): 
+            if os.path.exists('stl.cache'):
                 f = open('stl.cache', 'r+')
-                old_stl = f.read();
-                f.close();
+                old_stl = f.read()
+                f.close()
                 if os.path.exists(old_stl):
                     os.remove(old_stl)
 
-
             f = open('stl.cache', 'w+')
             f.write(tmp_stl_file)
-            f.close();
+            f.close()
 
             f = open('temp.transform', 'w+')
             f.write(current_transform)
-            f.close();
-        else: # Read old stl
+            f.close()
+        else:
+            # Read old stl
             f = open('stl.cache', 'r+')
-            tmp_stl_file = f.read();
-            logger.info('Using last stl %s' % tmp_stl_file);
-            f.close();
+            tmp_stl_file = f.read()
+            logger.info('Using last stl %s' % tmp_stl_file)
+            f.close()
 
-        logger.info('Writing ini to %s' % tmp_slicer_setting_file);
+        logger.info('Writing ini to %s' % tmp_slicer_setting_file)
 
         cura2 = self.version == 2
-        
+
         command = []
 
         if cura2:
@@ -905,16 +896,12 @@ class StlSlicerCura(StlSlicer):
                 fail_flag = True
                 logger.info('Worker #%d aborted' % p_index)
             if cura_result != 0:
-                logger.info("#%d CuraEngine: Exited abnormally %d" % (p_index, cura_result));
+                logger.info("#%d CuraEngine: Exited abnormally %d" % (p_index, cura_result))
                 fail_flag = True
         except Exception as ex:
             fail_flag = True
-            logger.info("CuraEngine: initialization failed %s" % str(type(ex)));
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            logger.info("*** print_exception:")
-            traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                    limit=10, file=sys.stdout)
-
+            logger.info("CuraEngine: initialization failed %s" % str(type(ex)))
+            logger.exception("CuraEngine: initialization failed %s", ex)
             slicer_out = [5, 'CuraEngine: Failed']  # errorcode 5
 
         if not fail_flag:
@@ -951,7 +938,7 @@ class StlSlicerCura(StlSlicer):
                     status_list.append('{"slice_status": "warning", "message" : "%s"}' % ("{} empty layers, might be error when slicing {}".format(len(m_GcodeToFcode.empty_layer), repr(m_GcodeToFcode.empty_layer))))
 
                 if float(m_GcodeToFcode.md['MAX_R']) >= HW_PROFILE['model-1']['radius']:
-                    logger.info("CuraEngine: gcode out of range");
+                    logger.info("CuraEngine: gcode out of range")
                     fail_flag = True
                     slicer_out = [6, "Gcode area too big MAX_R=%s" % str(m_GcodeToFcode.md['MAX_R'])]  # errorcode 6
 
@@ -1061,11 +1048,11 @@ class StlSlicerCura(StlSlicer):
                 "machine_end_gcode": {
                     "default_value": add_multi_line(content['machine_end_gcode'])
                 },
-                "machine_name": { "default_value": "DeltaBot style" },
+                "machine_name": {"default_value": "DeltaBot style"},
                 "machine_shape": {
                     "default_value": "elliptic"
                 },
-                "adhesion_type": { 'default_value': 'none' }
+                "adhesion_type": {'default_value': 'none'}
                 # "raft_speed": int(content['first_layer_speed']),
                 # "raft_surface_speed": { 'default_value': int(content['first_layer_speed']) },
                 # "layer_height": { 'default_value': float(content['layer_height']) },
@@ -1118,13 +1105,13 @@ class StlSlicerCura(StlSlicer):
             #     content[key] = float(content[key])
             if delete and any(j in key for j in delete):
                 pass
-            definition['overrides'][key] = { 'default_value': content[key] }
+            definition['overrides'][key] = {'default_value': content[key]}
 
         definition['overrides']['machine_start_gcode']['default_value'] = add_multi_line('M109 S{}\n'.format(content['material_print_temperature_layer_0']) + content['machine_start_gcode'])
         definition['overrides']['machine_end_gcode']['default_value'] = add_multi_line(content['machine_end_gcode'])
 
         # TODO FIX Raft layers
-        if int(content.get('raft','1')) == 1:
+        if int(content.get('raft', '1')) == 1:
             definition['overrides']['adhesion_type']['default_value'] = 'raft'
         elif int(content['brim_line_count']) == 0:  # skirt
             definition['overrides']['adhesion_type']['default_value'] = 'skirt'
@@ -1189,7 +1176,7 @@ class StlSlicerCura(StlSlicer):
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
         new_content['supportEverywhere'] = int(content['support_everywhere'])
 
-        if int(content.get('raft','1')) == 0:
+        if int(content.get('raft', '1')) == 0:
             logger.info("Raft off, remove raft_layers")
             new_content['raftSurfaceLayers'] = 0
         else:
@@ -1226,7 +1213,7 @@ class StlSlicerCura(StlSlicer):
         # speed
         new_content['moveSpeed'] = content['travel_speed']
 
-        #support speed
+        # support speed
         new_content['printSpeed'] = content['support_material_speed']
 
         new_content['inset0Speed'] = content['external_perimeter_speed']  # WALL-OUTER
@@ -1238,7 +1225,7 @@ class StlSlicerCura(StlSlicer):
         new_content['fanSpeedMin'] = content['min_fan_speed'].rstrip('%')
         new_content['fanSpeedMax'] = content['max_fan_speed'].rstrip('%')
 
-        #speed top bottom
+        # speed top bottom
         if fill_density == 100:
             new_content['skinSpeed'] = max(int(content['solid_infill_speed']), 4)
         else:
@@ -1251,7 +1238,7 @@ class StlSlicerCura(StlSlicer):
 
         new_content['retractionSpeed'] = content['retract_speed']
         new_content['retractionAmount'] = thousand(content['retract_length'])
-        new_content['retractionZHop'] = thousand(content['retract_lift']) 
+        new_content['retractionZHop'] = thousand(content['retract_lift'])
 
         new_content['minimalExtrusionBeforeRetraction'] = 200
 
