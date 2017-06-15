@@ -550,10 +550,10 @@ class StlSlicer(object):
             logger.info("Raft off, remove raft_layers")
             content['temp_raft_layers'] = content['raft_layers']
             content['raft_layers'] = '0'
-        else:
+        elif not content.get('raftMargin'):
             content['raft_layers'] = content.get('temp_raft_layers', 4)
 
-        if content.get('start_gcode', '') != "":
+        if content.get('start_gcode'):
             content['start_gcode'] = "M109 S[first_layer_temperature]\\n" + content.get('start_gcode', '')
 
         with open(file_path, 'w') as f:
@@ -717,6 +717,9 @@ class StlSlicer(object):
 class StlSlicerCura(StlSlicer):
     def __init__(self, slicer, version=1):
         super(StlSlicerCura, self).__init__(slicer)
+        self._working_dir = tempfile.mkdtemp()
+        self.transform_file = os.path.join(self._working_dir, "temp.transform")
+        self.stl_cache_file = os.path.join(self._working_dir, "stl.cache")
         self.slicer = slicer
         self.version = version
         self.now_type = 3
@@ -745,28 +748,35 @@ class StlSlicerCura(StlSlicer):
 
         self.end_slicing()
         from threading import Thread  # Do not expose thrading in module level
-        p = Thread(target=self.slicing_worker, args=(dict(mergedConfig), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
+        p = Thread(target=self._slicing_worker, args=(dict(mergedConfig), self.image, dict(self.ext_metadata), output_type, status_list, names, ws, len(self.working_p)))
         # thread, files, status_list
         self.working_p.append([p, [], status_list, False, len(self.working_p)])
         p.start()
         return True, ''
 
+    def _slicing_worker(self, *args, **kw):
+        try:
+            self.slicing_worker(*args, **kw)
+        except Exception:
+            logger.exception("slicing error")
+
     def slicing_worker(self, config, image, ext_metadata, output_type, status_list, names, ws, p_index):
-        tmp = tempfile.NamedTemporaryFile(suffix='.stl', delete=False)
+        tmp = tempfile.NamedTemporaryFile(dir=self._working_dir, suffix='.stl', delete=False)
         tmp_stl_file = tmp.name  # store gcode
 
-        tmp = tempfile.NamedTemporaryFile(suffix='.gcode', delete=False)
+        tmp = tempfile.NamedTemporaryFile(dir=self._working_dir, suffix='.gcode', delete=False)
         tmp_gcode_file = tmp.name  # store gcode
 
-        tmp = tempfile.NamedTemporaryFile(suffix='.ini', delete=False)
+        tmp = tempfile.NamedTemporaryFile(dir=self._working_dir, suffix='.ini', delete=False)
         tmp_slicer_setting_file = tmp.name  # store gcode
 
         m_mesh_merge = None
 
         # Read old transform to see if we need to regenerate the stl
         old_transform = ""
-        if os.path.exists('temp.transform'):
-            f = open('temp.transform', 'r+')
+
+        if os.path.exists(self.transform_file):
+            f = open(self.transform_file, 'r+')
             old_transform = f.read()
             f.close()
 
@@ -813,23 +823,23 @@ class StlSlicerCura(StlSlicer):
             # Save new file name for same transform
 
             # Remove old file
-            if os.path.exists('stl.cache'):
-                f = open('stl.cache', 'r+')
+            if os.path.exists(self.stl_cache_file):
+                f = open(self.stl_cache_file, 'r+')
                 old_stl = f.read()
                 f.close()
                 if os.path.exists(old_stl):
                     os.remove(old_stl)
 
-            f = open('stl.cache', 'w+')
+            f = open(self.stl_cache_file, 'w+')
             f.write(tmp_stl_file)
             f.close()
 
-            f = open('temp.transform', 'w+')
+            f = open(self.transform_file, 'w+')
             f.write(current_transform)
             f.close()
         else:
             # Read old stl
-            f = open('stl.cache', 'r+')
+            f = open(this.stl_cache_file, 'r+')
             tmp_stl_file = f.read()
             logger.info('Using last stl %s' % tmp_stl_file)
             f.close()
