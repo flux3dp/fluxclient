@@ -854,10 +854,6 @@ class StlSlicerCura(StlSlicer):
             self.cura2_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             binary_path = self.slicer
-            if platform().startswith("Windows"):
-                binary_path = binary_path.replace("CuraEngine.exe", "v2/CuraEngine2.exe")
-            else:
-                binary_path = binary_path.replace("lib/CuraEngine", "lib/CuraEngine2")
 
             command = [binary_path, 'slice', '-v', '-j',
                        tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
