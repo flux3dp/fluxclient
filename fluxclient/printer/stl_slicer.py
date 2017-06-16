@@ -856,8 +856,11 @@ class StlSlicerCura(StlSlicer):
             # Call CuraEngine in command line
             binary_path = self.slicer
 
-            config_src = os.path.join(os.path.dirname(binary_path), "fdmprinter.def.json")
-            shutil.copy(config_src, os.path.dirname(tmp_slicer_setting_file))
+            src_dir = os.path.dirname(binary_path)
+            target_dir = os.path.dirname(tmp_slicer_setting_file)
+            for fn in ("fd1p.def.json", "fdmprinter.def.json", "fdmextruder.def.json"):
+                config_src = os.path.join(src_dir, fn)
+                shutil.copy(config_src, target_dir)
 
             command = [binary_path, 'slice', '-v', '-j',
                        tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
