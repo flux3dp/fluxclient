@@ -6,6 +6,7 @@ from io import BytesIO, StringIO
 import subprocess
 import tempfile
 import logging
+import shutil
 import json
 import copy
 import sys
@@ -854,6 +855,9 @@ class StlSlicerCura(StlSlicer):
             self.cura2_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             binary_path = self.slicer
+
+            config_src = os.path.join(os.path.dirname(binary_path), "fdmprinter.def.json")
+            shutil.copy(config_src, os.path.dirname(tmp_slicer_setting_file))
 
             command = [binary_path, 'slice', '-v', '-j',
                        tmp_slicer_setting_file, '-o', tmp_gcode_file, '-l', tmp_stl_file]
