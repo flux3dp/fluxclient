@@ -530,6 +530,7 @@ class USBProtocol2(USBProtocol1):
             return
 
         if seq != self._remote_idx:  # index not match
+            self._send_ack()
             logger.debug("Remote seq error, Drop. (%s != %s)", seq, self._remote_idx)
             return
         else:
