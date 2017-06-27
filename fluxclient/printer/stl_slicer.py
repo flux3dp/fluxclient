@@ -840,7 +840,7 @@ class StlSlicerCura(StlSlicer):
             f.close()
         else:
             # Read old stl
-            f = open(this.stl_cache_file, 'r+')
+            f = open(self.stl_cache_file, 'r+')
             tmp_stl_file = f.read()
             logger.info('Using last stl %s' % tmp_stl_file)
             f.close()
