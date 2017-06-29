@@ -1,6 +1,39 @@
 
 from fluxclient.toolpath import vinyl_utils
 
+R2 = 85 ** 2  # temp
+
+
+def bmp2drawing(proc, bitmap_factory, travel_speed=2400, travel_zheight=5.0,
+                drawing_zheight=(0.0, 0.2), progress_callback=lambda p: None):
+    proc.append_comment("FLUX Bitmap Drawing Tool")
+    proc.moveto(feedrate=5000, x=0, y=0, z=travel_zheight)
+
+    base = drawing_zheight[0]
+    delta = drawing_zheight[1] - drawing_zheight[0]
+    working_zheight = tuple((base + ((255 - i) / 255 * delta) for i in range(255)))
+
+    for progress, y, enum in bitmap_factory.walk_horizon():
+        progress_callback(progress)
+
+        y_sync = False
+        x_bound = (R2 - y * y) ** 0.5
+
+        for x, val in enum:
+            if -x > x_bound:
+                pass
+            elif x > x_bound:
+                continue
+
+            if not y_sync:
+                y_sync = True
+                proc.moveto(feedrate=travel_speed, x=x, y=y)
+            else:
+                proc.moveto(feedrate=travel_speed, x=x)
+
+            proc.moveto(feedrate=5000, z=working_zheight[val])
+            proc.moveto(feedrate=5000, z=travel_zheight)
+
 
 def svg2drawing(proc, svg_factory, travel_speed=2400, drawing_speed=1200,
                 travel_zheight=5.0, drawing_zheight=0.0,
