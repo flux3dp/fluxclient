@@ -3,7 +3,7 @@ from lxml import etree as ET  # noqa
 
 from fluxclient.laser.laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
-
+from fluxclient.parser._parser import get_all_points
 
 class SvgImage(object):
     _preview_buf = None
@@ -72,10 +72,30 @@ class SvgFactory(object):
                 map(float, root.attrib['viewBox'].replace(',', ' ').split())
             )
 
+            keys = root.attrib.keys()
+            for key in keys:
+                root.attrib.pop(key)
+            modify_svg_data = ET.tostring(root)
+
+
+
+
+            svg_byte_data = str.encode(svg_data)
+
+            path_lst = get_all_points(svg_byte_data)
+
+
+
+
+
             path_data = SVGParser.elements_to_list(root)
             progress_callback(index / images_length)
 
-            for each_path in SVGParser.process(path_data, (None, None,
+            print("path data")
+            print (path_data)
+            print("path lst")
+            print(path_lst)
+            for each_path in SVGParser.process(path_lst, (None, None,
                                                            image.x1, image.y1,
                                                            image.x2, image.y2,
                                                            image.rotation),
@@ -92,5 +112,20 @@ class SvgFactory(object):
                             move_to = False
                         else:
                             next_xy = (x, y)
+                            print("points")
+                            print((src_xy,next_xy))
                             yield src_xy, next_xy
                             src_xy = next_xy
+
+
+            '''for each_path in path_lst:
+
+                for index in range(len(each_path)-1):
+                    src_xy = each_path[index]
+                    next_xy = each_path[index+1]
+                    print ((src_xy,next_xy))
+                    yield src_xy, next_xy'''
+
+
+
+
