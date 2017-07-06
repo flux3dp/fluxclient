@@ -20,6 +20,9 @@ def validate_identify(uuid, identify, serial=None, masterkey_doc=None):
     if serial == "X" * 10 and uuid.hex.startswith("f" * 16):
         return True
 
+    if serial.startswith("FL") and uuid.hex.startswith("3010"):
+        return True
+
     if "delta-1" in VK_CACHE:
         vk = VK_CACHE["delta-1"]
     else:
