@@ -144,7 +144,7 @@ class Delta(object):
                 raise RuntimeError("Authorize error")
 
         if manager.authorized:
-            robot = FluxRobot(("192.168.18.135", 23811), client_key)
+            robot = FluxRobot((ip, 23811), client_key)
 
             st_id = robot.report_play()["st_id"]
             if st_id > 0:
