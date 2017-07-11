@@ -1,6 +1,7 @@
 
 from argparse import ArgumentParser
 from datetime import datetime
+from PIL import Image
 import getpass
 import sys
 import os
@@ -10,6 +11,11 @@ from fluxclient.commands.misc import setup_logger
 PROG_DESCRIPTION = "Create very toolpath"
 PROG_EPILOG = ""
 logger = None
+
+
+def process_to_gray_bitmap(filename):
+    pil_image = Image.open(filename).convert('L')
+    return pil_image.size[0], pil_image.size[1], pil_image.tobytes()
 
 
 def prepare_bitmap_factory(options):
