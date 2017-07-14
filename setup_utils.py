@@ -284,4 +284,13 @@ def create_pcl_extentions():
         include_dirs=["src/printer/"]
     ))
 
+    extensions.append(Extension(
+        'fluxclient.parser._parser',
+        sources = [
+            "src/svg_parser/nanosvg.c",
+            "src/svg_parser/svg_parser.pyx"
+        ]
+
+    ))
+
     return extensions
