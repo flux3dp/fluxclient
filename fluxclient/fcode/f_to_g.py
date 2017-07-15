@@ -49,7 +49,7 @@ class FcodeToGcode(FcodeBase):
         if buf:
             self.upload_content(buf)
 
-    def upload_content(self, buf):
+    def upload_content(self, buf, model='model-1'):
         """
         upload fcode content in this object,
         buf[in]: could be string indicating the path to .fcode or bytes
@@ -60,13 +60,13 @@ class FcodeToGcode(FcodeBase):
             self.data = buf
             if self.full_check():
                 md = self.get_metadata()
-                if float(md.get('MAX_X', 0)) > HW_PROFILE['model-1']['radius']:
+                if float(md.get('MAX_X', 0)) > HW_PROFILE[model]['radius']:
                     return 'out_of_bound'
-                elif float(md.get('MAX_Y', 0)) > HW_PROFILE['model-1']['radius']:
+                elif float(md.get('MAX_Y', 0)) > HW_PROFILE[model]['radius']:
                     return 'out_of_bound'
-                elif float(md.get('MAX_R', 0)) > HW_PROFILE['model-1']['radius']:
+                elif float(md.get('MAX_R', 0)) > HW_PROFILE[model]['radius']:
                     return 'out_of_bound'
-                elif float(md.get('MAX_Z', 0)) > HW_PROFILE['model-1']['height'] or float(md.get('MAX_Z', 0)) < 0:
+                elif float(md.get('MAX_Z', 0)) > HW_PROFILE[model]['height'] or float(md.get('MAX_Z', 0)) < 0:
                     return 'out_of_bound'
                 else:
                     return 'ok'

@@ -30,7 +30,7 @@ class BitmapImage(object):
 
 
 class BitmapFactory(object):
-    def __init__(self, radius=85, pixel_per_mm=10):
+    def __init__(self, radius=150, pixel_per_mm=10):
         self._magic = LaserBase()
         self._magic.pixel_per_mm = pixel_per_mm
         self._magic.radius = radius
@@ -45,6 +45,7 @@ class BitmapFactory(object):
         return self._magic.radius
 
     def add_image(self, bitmap_image):
+        print('add_image', bitmap_image)
         self._magic.add_image(bitmap_image.buf,
                               bitmap_image.width, bitmap_image.height,
                               bitmap_image.x1, bitmap_image.y1,

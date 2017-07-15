@@ -665,6 +665,7 @@ class SVGParser(object):
                     new_path.append([x2, y2])
                     continue
                 out = 0  # flag show how the point's are out of viewBox, using binary encoding
+
                 if x1 < viewBox[0] or x1 > viewBox[0] + viewBox[2] or y1 < viewBox[1] or y1 > viewBox[1] + viewBox[3]:
                     out += 1
                 if x2 < viewBox[0] or x2 > viewBox[0] + viewBox[2] or y2 < viewBox[1] or y2 > viewBox[1] + viewBox[3]:
@@ -790,72 +791,77 @@ class SVGParser(object):
                 else:
                     pass
 
+            path_data[path] = new_path
+
             # make every points inside the boundary circle -> (cx, cy, r) = (0, 0, radius)
-            in_path = []
-            for i in range(1, len(new_path)):
-                if new_path[i - 1][0] == '\n':
-                    fake_x, fake_y = new_path[i]
-                else:
-                    fake_x, fake_y = new_path[i - 1]  # record where head should be as if there's no boundary
-                if new_path[i][0] != '\n':
-                    flag = 0
-                    if new_path[i][0] ** 2 + new_path[i][1] ** 2 > radius ** 2:
-                        flag += 1
-                    if fake_x ** 2 + fake_y ** 2 > radius ** 2:
-                        flag += 2
+        #    in_path = []
+        #    for i in range(1, len(new_path)):
+        #        if new_path[i - 1][0] == '\n':
+        #            fake_x, fake_y = new_path[i]
+        #        else:
+        #            fake_x, fake_y = new_path[i - 1]  # record where head should be as if there's no boundary
+        #        if new_path[i][0] != '\n':
+        #            flag = 0
+        #            if new_path[i][0] ** 2 + new_path[i][1] ** 2 > radius ** 2:
+        #                flag += 1
+        #            if fake_x ** 2 + fake_y ** 2 > radius ** 2:
+        #                flag += 2
+#
+        #            if flag == 0:  # both inside the circle
+        #                in_path.append(new_path[i - 1])
+        #                in_path.append(new_path[i])
+        #            else:
+        #                # find the intersection point between vector a->b and circle
+        #                # a = (x1, y1), b = (x2, y2), circle = (0, 0, r)
+        #                # (x1 + t*(x2-x1))^2 + (y1 + t(y2-y1))^2 = r^2
+        #                # solve t, and find the proper sign for it
+        #                x1, y1 = fake_x, fake_y
+        #                x2, y2 = new_path[i]
+        #                if x1 == x2 and y1 == y2:
+        #                    continue
+        #                # (-b +- sqrt(b^2-4ac)) / 2a
+        #                a = (x2 - x1) ** 2 + (y2 - y1) ** 2
+        #                b = 2 * ((x1 * x2) - (x1 ** 2) + (y1 * y2) - (y1 ** 2))
+        #                c = (x1 ** 2) + (y1 ** 2) - (radius ** 2)
+#
+        #                if (b ** 2) - (4 * a * c) >= 0:  # solvable
+        #                    t_p = (-b + sqrt((b ** 2) - (4 * a * c))) / (2 * a)
+        #                    t_n = (-b - sqrt((b ** 2) - (4 * a * c))) / (2 * a)
+        #                    v = [x2 - x1, y2 - y1]
+        #                    if flag == 1:  # in to out
+        #                        in_path.append([fake_x, fake_y])
+        #                        t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
+        #                        in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
+        #                        in_path.append(['\n', '\n'])
+        #                    elif flag == 2:  # out to in
+        #                        t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
+        #                        in_path.append(['\n', '\n'])
+        #                        in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
+        #                        in_path.append([new_path[i][0], new_path[i][1]])
+        #                    elif flag == 3:  # both out
+        #                        if abs(t_p) < 1 and abs(t_n) < 1:  # must be inner division point
+        #                            in_path.append(['\n', '\n'])
+        #                            in_path.append([fake_x + t_n * v[0], fake_y + t_n * v[1]])
+        #                            in_path.append([fake_x + t_p * v[0], fake_y + t_p * v[1]])
+        #                            in_path.append(['\n', '\n'])
+        #                else:  # insoluble
+        #                    pass
+        #        else:
+        #            in_path.append(new_path[i])
+#
+        #    # delete redundant points
+        #    if len(in_path) > 0:
+        #        tmp = [in_path[0]]
+        #        for i in in_path:
+        #            if tmp[-1] != i:
+        #                tmp.append(i)
+        #        in_path = tmp
+#
+        #    path_data[path] = in_path
 
-                    if flag == 0:  # both inside the circle
-                        in_path.append(new_path[i - 1])
-                        in_path.append(new_path[i])
-                    else:
-                        # find the intersection point between vector a->b and circle
-                        # a = (x1, y1), b = (x2, y2), circle = (0, 0, r)
-                        # (x1 + t*(x2-x1))^2 + (y1 + t(y2-y1))^2 = r^2
-                        # solve t, and find the proper sign for it
-                        x1, y1 = fake_x, fake_y
-                        x2, y2 = new_path[i]
-                        if x1 == x2 and y1 == y2:
-                            continue
-                        # (-b +- sqrt(b^2-4ac)) / 2a
-                        a = (x2 - x1) ** 2 + (y2 - y1) ** 2
-                        b = 2 * ((x1 * x2) - (x1 ** 2) + (y1 * y2) - (y1 ** 2))
-                        c = (x1 ** 2) + (y1 ** 2) - (radius ** 2)
-
-                        if (b ** 2) - (4 * a * c) >= 0:  # solvable
-                            t_p = (-b + sqrt((b ** 2) - (4 * a * c))) / (2 * a)
-                            t_n = (-b - sqrt((b ** 2) - (4 * a * c))) / (2 * a)
-                            v = [x2 - x1, y2 - y1]
-                            if flag == 1:  # in to out
-                                in_path.append([fake_x, fake_y])
-                                t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
-                                in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
-                                in_path.append(['\n', '\n'])
-                            elif flag == 2:  # out to in
-                                t = t_p if abs(t_p) < 1 else t_n  # must be inner division point
-                                in_path.append(['\n', '\n'])
-                                in_path.append([fake_x + t * v[0], fake_y + t * v[1]])
-                                in_path.append([new_path[i][0], new_path[i][1]])
-                            elif flag == 3:  # both out
-                                if abs(t_p) < 1 and abs(t_n) < 1:  # must be inner division point
-                                    in_path.append(['\n', '\n'])
-                                    in_path.append([fake_x + t_n * v[0], fake_y + t_n * v[1]])
-                                    in_path.append([fake_x + t_p * v[0], fake_y + t_p * v[1]])
-                                    in_path.append(['\n', '\n'])
-                        else:  # insoluble
-                            pass
-                else:
-                    in_path.append(new_path[i])
-
-            # delete redundant points
-            if len(in_path) > 0:
-                tmp = [in_path[0]]
-                for i in in_path:
-                    if tmp[-1] != i:
-                        tmp.append(i)
-                in_path = tmp
-
-            path_data[path] = in_path
+        print('path_data', path_data)
         return path_data
+
 
 if __name__ == '__main__':
     import sys
@@ -863,7 +869,7 @@ if __name__ == '__main__':
         buf = f.read()
         parser = ET.XMLParser(encoding="utf-8")
         root = ET.fromstring(buf, parser=parser)
-        print(ET.tostring(root, pretty_print=True).decode('utf8'))
+        #print(ET.tostring(root, pretty_print=True).decode('utf8'))
 
     # # with open(sys.argv[1], 'rb') as f:
     # with open(sys.argv[1], 'rb') as f:
