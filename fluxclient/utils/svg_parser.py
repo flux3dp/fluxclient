@@ -859,7 +859,6 @@ class SVGParser(object):
 #
         #    path_data[path] = in_path
 
-        print('path_data', path_data)
         return path_data
 
 

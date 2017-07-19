@@ -251,8 +251,7 @@ class LaserBase(object):
         ox2, oy2 = ox1, oy3
         ox4, oy4 = ox3, oy1
 
-        print('laser_base', ox3, ox1, oy1, oy3)
-        pix = pix.resize(tuple(map(lambda x: int(x * self.pixel_per_mm), ((ox3 - ox1), (oy1 - oy3)))))
+        pix = pix.resize(tuple(map(lambda x: int(x * self.pixel_per_mm), ((ox3 - ox1), (oy3 - oy1)))))
 
         # rotate four corner
         ox1, oy1 = rotate(ox1, oy1, rotation, cx, cy)
