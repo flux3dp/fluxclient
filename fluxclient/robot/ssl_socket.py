@@ -112,7 +112,7 @@ class SSLSocket(ssl.SSLSocket):
                 # TODO: check cert
 
                 binuuid = from_hex(cert["uuid"])
-                tosign = HMAC(binuuid, self.__bufferv.tobytes(), sha1).digest()
+                tosign = HMAC(binuuid, self.__bufferv[:64].tobytes(), sha1).digest()
                 access_id = self.client_key.get_access_id(binary=True)
 
                 self.__buffered = 0
