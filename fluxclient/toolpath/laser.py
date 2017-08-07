@@ -28,74 +28,51 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
 
 
 def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
-                 vertical=False, travel_speed=2400, engraving_speed=400,
+                 vertical=False, travel_speed=6000, engraving_speed=400,
                  shading=True, max_engraving_strength=1.0, focal_length=6.4,
                  progress_callback=lambda p: None):
+    def gen_val2pwm():
+        if shading:
+            val2pwm = tuple(max_engraving_strength * pow(((i / 255.0)), 0.7)
+                            for i in range(256))
+        else:
+            val2pwm = tuple(0 if i == 0 else max_engraving_strength
+                            for i in range(256))
+        return val2pwm
+
+    def moveto_first_enter_point(y, enum):
+        nonlocal current_pwm
+        for x, val in enum:
+            if val:
+                proc.set_toolhead_pwm(0)
+                proc.moveto(feedrate=travel_speed, x=x, y=y)
+                proc.set_toolhead_pwm(val2pwm[val])
+                current_pwm = val
+                break
+
+    def draw_until_endpoint(y, enum):
+        nonlocal current_pwm
+        for x, val in enum:
+            if val != current_pwm:
+                proc.set_toolhead_pwm(val2pwm[current_pwm])
+                feedrate = engraving_speed if current_pwm else travel_speed
+                proc.moveto(feedrate=feedrate, x=x)
+            current_pwm = val
+
     current_pwm = 0
     proc.append_comment("FLUX Laser Bitmap Tool")
     proc.set_toolhead_pwm(0)
     proc.moveto(feedrate=5000, x=0, y=0, z=z_height + focal_length)
 
-    ptr_width = 0.5 / bitmap_factory.pixel_per_mm
+    val2pwm = gen_val2pwm()
+    #walk_method = bitmap_factory.walk_horizon
+    walk_method = bitmap_factory.walk_spath
 
-    if shading:
-        val2pwm = tuple(max_engraving_strength * pow(((i / 255.0)), 0.7)
-                        for i in range(256))
-    else:
-        val2pwm = tuple(0 if i == 0 else max_engraving_strength
-                        for i in range(256))
-
-    for progress, y, enum in bitmap_factory.walk_horizon():
+    for progress, y, enum in walk_method():
         progress_callback(progress)
-        # x_bound = (R2 - y * y) ** 0.5
 
-        # Find first engrave point in row
-        for x, val in enum:
-            # if x > -x_bound and val:
-            if val:
-                proc.moveto(y=y)
-
-                # if x - ptr_width > -x_bound:
-                #    proc.moveto(feedrate=travel_speed, x=max(x - 3 - ptr_width,
-                #                                             -x_bound))
-                # proc.moveto(feedrate=travel_speed, x=max(x - ptr_width,
-                #                                          -x_bound))
-                proc.moveto(feedrate=travel_speed, x=x - 3 - ptr_width)
-                proc.moveto(feedrate=travel_speed, x=x - ptr_width)
-                proc.set_toolhead_pwm(val2pwm[val])
-                current_pwm = val
-                break
-
-        # Draw until x over limit
-        for x, val in enum:
-        #    if x + ptr_width > x_bound:
-        #        if val != current_pwm:
-        #            proc.moveto(feedrate=engraving_speed, x=(x - ptr_width))
-        #            proc.set_toolhead_pwm(val)
-#
-        #        if val:
-        #            proc.moveto(feedrate=engraving_speed, x=x_bound)
-        #            proc.set_toolhead_pwm(0)
-        #        current_pwm = 0
-        #        break
-
-        #    else:
-        #        if val != current_pwm:
-        #            feedrate = engraving_speed if current_pwm else travel_speed
-        #            proc.moveto(feedrate=feedrate, x=x - ptr_width)
-        #        current_pwm = val
-        #        proc.set_toolhead_pwm(val2pwm[current_pwm])
-
-            if val != current_pwm:
-                feedrate = engraving_speed if current_pwm else travel_speed
-                proc.moveto(feedrate=feedrate, x=x - ptr_width)
-
-            current_pwm = val
-            proc.set_toolhead_pwm(val2pwm[current_pwm])
-
-        if current_pwm:
-            proc.set_toolhead_pwm(0)
-            current_pwm = 0
+        moveto_first_enter_point(y, enum)
+        draw_until_endpoint(y, enum)
 
 
 def laserCalibration(proc, bitmap_factory, z_height, one_way=True,

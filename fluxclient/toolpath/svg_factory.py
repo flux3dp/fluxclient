@@ -51,6 +51,7 @@ class SvgFactory(object):
         return self._magic.radius
 
     def add_image(self, svg_image):
+        print('svg_image :', svg_image)
         self._svg_images.append(svg_image)
 
     def generate_preview(self):
@@ -73,6 +74,7 @@ class SvgFactory(object):
 
     def walk(self, progress_callback=lambda p: None):
         images_length = len(self._svg_images)
+        print('_svg_images :', self._svg_images)
 
         for index, image in enumerate(self._svg_images, start=1):
             progress_callback((index - 0.5) / images_length)
