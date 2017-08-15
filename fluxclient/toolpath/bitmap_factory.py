@@ -227,14 +227,18 @@ class BitmapFactory(object):
             rotated_img.save("rotated.jpg", "JPEG")
 
             corner = self._cal_corner(img, rotated_img)
-            workspace.paste(rotated_img, box=corner)
+            #workspace.paste(rotated_img, box=corner)
+            mirror_image = ImageOps.mirror(rotated_img)
+            workspace.paste(mirror_image, box=corner)
+
 
 
         #========mirror test
         mirror = ImageOps.mirror(workspace)
-        mirror.save("mirror.jpg", "JPEG")
+        #mirror.save("mirror.jpg", "JPEG")
         #============
-        workspace.save("workspace.jpg", "JPEG")
+        #workspace.save("workspace.jpg", "JPEG")
+        mirror.save("workspace.jpg", "JPEG")
         self._workspace = workspace
         return workspace
 

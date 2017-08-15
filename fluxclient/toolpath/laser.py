@@ -27,6 +27,29 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
     proc.moveto(feedrate=travel_speed, x=0, y=0)
 
 
+def svgeditor2laser(proc, svg_factory, z_height, travel_speed=2400,
+                    engraving_speed=400, engraving_strength=1.0,
+                        focal_length=6.4, progress_callback=lambda p: None):
+    proc.append_comment("FLUX Laser Svgeditor Tool")
+    proc.set_toolhead_pwm(0)
+    proc.moveto(feedrate=5000, x=0, y=0, z=z_height + focal_length)
+    current_xy = None
+
+    for src_xy, dist_xy in svg_factory.walk(progress_callback):
+        if current_xy != src_xy:
+            proc.set_toolhead_pwm(0)
+            src_x, src_y = src_xy
+            proc.moveto(feedrate=travel_speed, x=src_x, y=src_y)
+            proc.set_toolhead_pwm(engraving_strength)
+
+        dist_x, dist_y = dist_xy
+        proc.moveto(feedrate=engraving_speed, x=dist_x, y=dist_y)
+        current_xy = dist_xy
+
+    proc.set_toolhead_pwm(0)
+    proc.moveto(feedrate=travel_speed, x=0, y=0)
+
+
 def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
                  vertical=False, travel_speed=6000, engraving_speed=400,
                  shading=True, max_engraving_strength=1.0, focal_length=6.4,
@@ -45,7 +68,8 @@ def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
         for x, val in enum:
             if val:
                 proc.set_toolhead_pwm(0)
-                proc.moveto(feedrate=travel_speed, x=x, y=y)
+                #proc.moveto(feedrate=travel_speed, x=x, y=y)
+                proc.moveto(feedrate=engraving_speed, x=x, y=y)
                 proc.set_toolhead_pwm(val2pwm[val])
                 current_pwm = val
                 break
@@ -56,7 +80,8 @@ def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
             if val != current_pwm:
                 proc.set_toolhead_pwm(val2pwm[current_pwm])
                 feedrate = engraving_speed if current_pwm else travel_speed
-                proc.moveto(feedrate=feedrate, x=x)
+                #proc.moveto(feedrate=feedrate, x=x)
+                proc.moveto(x=x)
             current_pwm = val
 
     current_pwm = 0
