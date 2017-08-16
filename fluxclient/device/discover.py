@@ -200,10 +200,10 @@ has been found or the computer recived a new status from a device.
         if uuid in self.devices:
             device = self.devices[uuid]
             if device.master_key != master_key:
-                raise Exception("Device %s got vart master keys",
+                raise Exception("Device %s got vart master keys" % device,
                                 device.master_key, master_key)
             if device.serial != serial:
-                raise Exception("Device %s got vart master keys",
+                raise Exception("Device %s got vart master keys" % device,
                                 device.serial, serial)
             return device
         else:
@@ -398,7 +398,7 @@ class Version2Helper(Helper):
 
     def _handle_discover(self, endpoint, payload):
         args = struct.unpack("<16s8s", payload[:24])
-        uuid_bytes, session = args[:3]
+        uuid_bytes, session = args[:2]
 
         uuid = UUID(bytes=uuid_bytes)
         if not self.server.source_filter(uuid, endpoint):
@@ -454,8 +454,8 @@ class Version2Helper(Helper):
                 rawdata[k] = v
 
         sn = rawdata.get("serial", None)
-        if sn and validate_identify(uuid, pubkey_signuture, serial=sn,
-                                    masterkey_doc=pubkey_der):
+        if sn and uuid in self.session_swap and \
+                validate_identify(uuid, pubkey_signuture, serial=sn, masterkey_doc=pubkey_der):
             device = self.server.add_master_key(uuid, sn, dev_pubkey, 2)
             device.model_id = rawdata.get("model", "UNKNOW_MODEL")
             device.has_password = rawdata.get("pwd") == "T"
@@ -464,7 +464,7 @@ class Version2Helper(Helper):
             device.discover_endpoint = endpoint
             device.ipaddr = endpoint[0]
 
-            self.session_cache[uuid] = self.session_swap.pop(uuid, None)
+            self.session_cache[uuid] = self.session_swap.pop(uuid)
             return uuid
         else:
             logger.error("Validate identify failed (uuid=%s, serial=%s)",

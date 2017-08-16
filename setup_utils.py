@@ -83,7 +83,7 @@ def get_version():
 
 def get_install_requires():
     return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy',
-            'ecdsa', 'lxml', 'pyasn1']
+            'ecdsa', 'lxml', 'pyasn1==0.1.9']
 
 
 def get_packages():
