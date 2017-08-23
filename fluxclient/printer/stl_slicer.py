@@ -1134,7 +1134,7 @@ class StlSlicerCura(StlSlicer):
             definition['overrides']['adhesion_type']['default_value'] = 'brim'
 
         # Compatible with old keyword
-        if definition['overrides'].get('support_type', '') == 'touching_build_plate':
+        if definition['overrides']['support_type']['default_value'] == 'touching_build_plate':
             definition['overrides']['support_type'] = {'default_value': 'buildplate'}
 
         logger.info(json.dumps(definition))
@@ -1191,7 +1191,7 @@ class StlSlicerCura(StlSlicer):
         else:
             new_content['supportAngle'] = 90 - int(content['support_material_threshold'])
         new_content['supportZDistance'] = thousand(content['support_material_contact_distance'])
-        new_content['supportXYDistance'] = thousand(content['support_material_spacing'])
+        new_content['supportLineDistance'] = thousand(content['support_material_spacing'])
         new_content['supportType'] = {'GRID': 0, 'LINES': 1}.get(content['support_material_pattern'], 0)
         new_content['supportEverywhere'] = int(content['support_everywhere'])
 
