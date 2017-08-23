@@ -294,6 +294,7 @@ material_bed_temperature = 60
 material_bed_temperature_layer_0 = 60
 material_diameter = 1.75
 material_flow = 100
+mesh_position_z = 0
 retraction_enable = true
 retract_at_layer_change = false
 retraction_amount = 8

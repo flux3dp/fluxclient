@@ -59,10 +59,8 @@ class StlSlicer(object):
         # self.slic3r = '/Applications/Slic3r.app/Contents/MacOS/slic3r'
         self.slic3r = slic3r
 
-        # self.slic3r_setting = './fluxghost/assets/flux_slicing.ini'
-        self.config = self.my_ini_parser(ini_string.split('\n'))
-        self.configCura2 = self.my_ini_parser(ini_string_cura2.split('\n'))
-        # self.config = self.my_ini_parser(self.slic3r_setting)
+        self.config = self.parse_config(ini_string.split('\n'))
+        self.configCura2 = self.parse_config(ini_string_cura2.split('\n'))
         self.config['gcode_comments'] = '1'  # force open comment in gcode generated
         self.path = None
         self.output = None
@@ -288,7 +286,7 @@ class StlSlicer(object):
         cx, cy = (bounding_box[0][0] + bounding_box[1][0]) / 2., (bounding_box[0][1] + bounding_box[1][1]) / 2.
         m_mesh_merge.write_stl(tmp_stl_file)
 
-        self.my_ini_writer(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
+        self.generate_slicer_config(tmp_slic3r_setting_file, self.config, delete=ini_flux_params)
 
         command = [self.slic3r, tmp_stl_file]
         command += ['--output', tmp_gcode_file]
@@ -403,7 +401,7 @@ class StlSlicer(object):
                 with open('output.fc', 'wb') as f:
                     f.write(fcode_output.getvalue())
 
-                StlSlicer.my_ini_writer("output.ini", config)
+                StlSlicer.generate_slicer_config("output.ini", config)
             ###########################################################
 
             # # clean up tmp files
@@ -485,7 +483,7 @@ class StlSlicer(object):
         return ret
 
     @classmethod
-    def my_ini_parser(cls, data):
+    def parse_config(cls, data):
         """
         data[in]: [str] indicating a file path or [list of str] indicating lines of ini file
         read-in .ini file setting file as default settings
@@ -539,7 +537,7 @@ class StlSlicer(object):
         return 'Key not exists: %s' % key
 
     @classmethod
-    def my_ini_writer(cls, file_path, content, delete=None):
+    def generate_slicer_config(cls, file_path, content, delete=None):
         """
         file_path[in]: str, output file_path
         content[in]: dict
@@ -773,6 +771,8 @@ class StlSlicerCura(StlSlicer):
 
         m_mesh_merge = None
 
+        cura2 = self.version == 2
+
         # Read old transform to see if we need to regenerate the stl
         old_transform = ""
 
@@ -846,13 +846,10 @@ class StlSlicerCura(StlSlicer):
             f.close()
 
         logger.info('Writing ini to %s' % tmp_slicer_setting_file)
-
-        cura2 = self.version == 2
-
         command = []
 
         if cura2:
-            self.cura2_ini_writer(tmp_slicer_setting_file, config, delete=ini_flux_params)
+            self.generate_cura2_config(tmp_slicer_setting_file, config, delete=ini_flux_params)
             # Call CuraEngine in command line
             binary_path = self.slicer
 
@@ -1002,7 +999,7 @@ class StlSlicerCura(StlSlicer):
             status_list.append([output, metadata, path])
 
     @classmethod
-    def cura2_ini_writer(cls, file_path, content, delete=None):
+    def generate_cura2_config(cls, file_path, content, delete=None):
         """
         file_path[in]: str, output file_path
         content[in]: dict
@@ -1118,8 +1115,6 @@ class StlSlicerCura(StlSlicer):
         }
 
         for key in content:
-            # if str(float(content[key])) == content[key]:
-            #     content[key] = float(content[key])
             if delete and any(j in key for j in delete):
                 pass
             definition['overrides'][key] = {'default_value': content[key]}
@@ -1127,13 +1122,20 @@ class StlSlicerCura(StlSlicer):
         definition['overrides']['machine_start_gcode']['default_value'] = add_multi_line('M109 S{}\n'.format(content['material_print_temperature_layer_0']) + content['machine_start_gcode'])
         definition['overrides']['machine_end_gcode']['default_value'] = add_multi_line(content['machine_end_gcode'])
 
-        # TODO FIX Raft layers
+        # Override cut_bottom
+        definition['overrides']["mesh_position_z"] = {'default_value' : str(-float(content['cut_bottom']))}
+
+        # Override raft and skirt over brim
         if int(content.get('raft', '1')) == 1:
             definition['overrides']['adhesion_type']['default_value'] = 'raft'
         elif int(content['brim_line_count']) == 0:  # skirt
             definition['overrides']['adhesion_type']['default_value'] = 'skirt'
         else:
             definition['overrides']['adhesion_type']['default_value'] = 'brim'
+
+        # Compatible with old keyword
+        if definition['overrides'].get('support_type', '') == 'touching_build_plate':
+            definition['overrides']['support_type'] = {'default_value': 'buildplate'}
 
         logger.info(json.dumps(definition))
         with open(file_path, 'w') as f:
@@ -1284,5 +1286,5 @@ class StlSlicerCura(StlSlicer):
         new_content['startCode'] = add_multi_line(new_content['startCode'])
         new_content['endCode'] = add_multi_line(new_content['endCode'])
 
-        cls.my_ini_writer(file_path, new_content, delete)
+        cls.generate_slicer_config(file_path, new_content, delete)
         return
