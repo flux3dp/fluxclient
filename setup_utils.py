@@ -100,7 +100,7 @@ def get_entry_points():
             "flux_manager=fluxclient.commands.manager:main",
             "flux_camera=fluxclient.commands.camera:main",
             "flux_scan=fluxclient.commands.scan:main",
-            "flux_laser=fluxclient.commands.laser:main",
+            "flux_toolpath=fluxclient.commands.toolpath:main",
             "flux_g2f=fluxclient.commands.fcode:gcode_2_fcode",
             "flux_f2g=fluxclient.commands.fcode:fcode_2_gcode",
             "flux_exp=fluxclient.commands.experiment_tool:main",
@@ -110,15 +110,26 @@ def get_entry_points():
 
 def get_default_extra_compile_args():
     if is_darwin():
-        return ["--stdlib=libc++", "-mmacosx-version-min=10.9"]
+        return ["--stdlib=libc++", "-std=c++11", "-mmacosx-version-min=10.9"]
     elif is_linux():
-        return ["-lstdc++"]
+        return ["-lstdc++", "-std=c++11"]
     elif is_windows():
         return []
 
 
 def create_utils_extentions():
     return [
+        Extension(
+            'fluxclient.toolpath._toolpath',
+            sources=[
+                "src/toolpath/gcode_parser.cpp",
+                "src/toolpath/gcode_writer.cpp",
+                "src/toolpath/fcode_v1_writer.cpp",
+                "src/toolpath/py_processor.cpp",
+                "src/toolpath/_toolpath.pyx"
+            ],
+            language="c++",
+            extra_compile_args=get_default_extra_compile_args()),
         Extension(
             'fluxclient.utils._utils',
             sources=[
@@ -139,8 +150,20 @@ def create_pcl_extentions():
     library_dirs = []
 
     try:
+        if is_darwin():
+            try:
+                include_dirs += [locate_includes("flann")]
+            except RuntimeError:
+                sys.stderr.write("library flann not found, its may cause "
+                                 "compile issue in some environ.")
+
+            if not os.path.exists("/usr/local/include/boost"):
+                raise RuntimeError("boost lib include not found at "
+                                   "/usr/local/include/boost/")
+
         if is_posix():
             include_dirs += [locate_includes("eigen3")]
+
             libraries += ["pcl_common", "pcl_octree", "pcl_io", "pcl_kdtree",
                           "pcl_search", "pcl_sample_consensus", "pcl_filters",
                           "pcl_features", "pcl_segmentation", "pcl_surface",

@@ -182,9 +182,6 @@ int SCP(PointXYZRGBNormalPtr scene, FeatureCloudTPtr scene_features, PointXYZRGB
   downsample(scene, scene_clone, leaf);
   downsample(object, object_clone, leaf);
 
-  // pcl::console::print_info (" before-> cloud size:%d, cloud2 size:%d \n",object->points.size(), scene->points.size());
-  // pcl::console::print_info (" after-> cloud size:%d, cloud2 size:%d \n",object_clone->points.size(), scene_clone->points.size());
-
   FE(scene_clone, scene_features, 10);
   FE(object_clone, object_features, 10);
 

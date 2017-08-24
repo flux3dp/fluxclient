@@ -80,7 +80,7 @@ def start_usb_daemon(logstream):
     else:
         raise RuntimeError("Multi usb devices found")
 
-    usbprotocol = USBProtocol(usbdev)
+    usbprotocol = USBProtocol.connect(usbdev)
     t = threading.Thread(target=usbprotocol.run)
     t.daemon = True
     t.start()

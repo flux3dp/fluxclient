@@ -8,7 +8,7 @@ from fluxclient.utils import mimetypes
 from .backends import InitBackend
 from .errors import RobotError, RobotSessionError
 from .robot_backend_usb import RobotBackendUSB
-from .robot_backend_2 import RobotBackend2
+from .robot_backend_2 import RobotBackend2, RobotBackend3
 
 
 def blocked_validator(fn):
@@ -72,6 +72,9 @@ different definition in different version.
 
             if proto_ver == 2:
                 self._backend = RobotBackend2(init_backend.sock, client_key,
+                                              device, ignore_key_validation)
+            elif proto_ver == 3:
+                self._backend = RobotBackend3(init_backend.sock, client_key,
                                               device, ignore_key_validation)
             else:
                 raise RobotSessionError("Protocol not support")

@@ -1,29 +1,19 @@
 #!/usr/bin/env python3
-import struct
+
 from io import BytesIO
-import sys, os
+import logging
+import struct
+import sys
+import os
 
 import numpy as np
-import logging
+from PIL import ImageChops, Image
+
+from fluxclient.scanner.tools import write_pcd
+from fluxclient.scanner import freeless
+
 
 logger = logging.getLogger(__name__)
-
-from PIL import ImageChops
-from PIL import Image
-
-try:
-    from fluxclient.scanner import freeless
-    from fluxclient.scanner.tools import write_pcd
-except:
-    import freeless
-    from tools import write_pcd
-
-
-from fluxclient.hw_profile import HW_PROFILE
-try:
-    from fluxclient.scanner import _scanner
-except:
-    pass
 
 
 class image_to_pc():
@@ -62,13 +52,9 @@ class image_to_pc():
             p1[x-coordinate, y-coord, z-coord, r, g, b, step, x, y]
         """
 
-        logger.info("Feed start")
-
         img_O = self.to_image(buffer_O)
         img_L = self.to_image(buffer_L)
         img_R = self.to_image(buffer_R)
-
-        logger.info("Feed to imaged")
 
         path = ""
         if os.path.exists("C:\\DeltaScanResult"):
@@ -77,7 +63,7 @@ class image_to_pc():
             path = "DeltaScanResult"
         if os.path.exists("/Users/simon/Dev/ScanResult"):
             path = "/Users/simon/Dev/ScanResult"
-        
+
         # Check Domain
         if path != "":
             im1 = Image.fromarray(img_O)
@@ -97,16 +83,12 @@ class image_to_pc():
 
         indices_L = self.fs_L.subProcess(img_O, img_L, self.settings.img_height)
 
-        logger.info("Subp")
-
         indices_L = [[p[0], p[1] + l_cab]for p in indices_L]
         # indices_L = [[i, step] for i in range(self.settings.img_height)]
-        logger.info("End fs_L subProcess")
+
         point_L_this = self.fs_L.img_to_points(img_O, img_L, indices_L, step, 'L', l_cab, clock=True)
         self.points_L.extend(point_L_this)
         # return [self.points_to_bytes(point_L_this), []]
-
-        logger.info("End subp")
 
         indices_R = self.fs_R.subProcess(img_O, img_R, self.settings.img_height)
         indices_R = [[p[0], p[1] + r_cab]for p in indices_R]
@@ -139,12 +121,10 @@ class image_to_pc():
         s_L = sum(int(p[3]) + p[4] + p[5] for p in self.points_L)
 
         if s_R > s_L:
-            print('R', file=sys.stderr)
             base = self.points_R
             add_on = self.points_L
             delta = round(60 / (360 / self.steps))
         else:
-            print('L', file=sys.stderr)
             base = self.points_L
             add_on = self.points_R
             delta = -round(60 / (360 / self.steps))
@@ -154,8 +134,7 @@ class image_to_pc():
             record[(base[p][6], base[p][8])] = p
 
         self.points_M = base[:]
-
-        print('merging base {}, add_on {}'.format(len(base), len(add_on)), file=sys.stderr)
+        logger.debug("merging base %s, add_on %s", len(base), len(add_on))
 
         for p in add_on:
             t = (p[6] + delta) % 400, p[8]
@@ -167,7 +146,7 @@ class image_to_pc():
             else:
                 self.points_M.append(p)
 
-        print('merge done: output self.mpoints_M:{}'.format(len(self.points_M)), file=sys.stderr)
+        logger.warning('merge done: output self.mpoints_M:%s', len(self.points_M))
 
 
 def print_progress(step, total):

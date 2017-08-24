@@ -10,7 +10,6 @@ from uuid import UUID
 import socket
 from time import sleep, time
 import threading
-import sys
 
 from msgpack import packb, unpackb, Unpacker
 from PIL import Image
@@ -131,23 +130,21 @@ class Delta(object):
         if password:
             type_check(password, str, 'password')
 
-        options = {'uuid': UUID(int=0)}
-        for i, name in [(target, 'uuid'), (ip, 'ipaddr'), (client_key, 'client_key')]:
-            if i:
-                options[name] = i
-        if password:
-            options['backend_options'] = {'password': password}
-
-        manager = DeviceManager(**options)
+        if target:
+            manager = DeviceManager.from_uuid(client_key, target)
+        elif ip:
+            manager = DeviceManager.from_ipaddr(client_key, ip)
 
         if not manager.authorized:
-            if password:
-                manager.authorize_with_password(password)
-                if manager.authorized:
-                    manager.add_trust('sdk key', client_key.public_key_pem.decode())
-                    logger.warning('[Warning]: adding new key into flux delta')
+            manager.authorize_with_password(password)
+            if manager.authorized:
+                manager.add_trust('sdk key', client_key.public_key_pem.decode())
+                logger.warning('[Warning]: adding new key into flux delta')
+            else:
+                raise RuntimeError("Authorize error")
+
         if manager.authorized:
-            robot = FluxRobot((manager.ipaddr, 23811), client_key)
+            robot = FluxRobot((ip, 23811), client_key)
 
             st_id = robot.report_play()["st_id"]
             if st_id > 0:
