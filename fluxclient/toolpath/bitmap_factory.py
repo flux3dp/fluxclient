@@ -220,25 +220,25 @@ class BitmapFactory(object):
             #======
 
             resized_img = self._resize_img(img)
-            resized_img.save("resized.jpg", "JPEG")
+            #resized_img.save("resized.jpg", "JPEG")
 
             rotate = img.rotation * 180 / pi
             rotated_img = self._rotate_img(resized_img, rotate)
-            rotated_img.save("rotated.jpg", "JPEG")
+            #rotated_img.save("rotated.jpg", "JPEG")
 
             corner = self._cal_corner(img, rotated_img)
-            #workspace.paste(rotated_img, box=corner)
+            workspace.paste(rotated_img, box=corner)
             mirror_image = ImageOps.mirror(rotated_img)
-            workspace.paste(mirror_image, box=corner)
+            #workspace.paste(mirror_image, box=corner)
 
 
 
         #========mirror test
-        mirror = ImageOps.mirror(workspace)
+        #mirror = ImageOps.mirror(workspace)
         #mirror.save("mirror.jpg", "JPEG")
         #============
-        #workspace.save("workspace.jpg", "JPEG")
-        mirror.save("workspace.jpg", "JPEG")
+        workspace.save("workspace.jpg", "JPEG")
+        #mirror.save("workspace.jpg", "JPEG")
         self._workspace = workspace
         return workspace
 
@@ -256,17 +256,19 @@ class BitmapFactory(object):
                 for pixelX in range(workspace.width - 1 , -1, -1 ):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
-                    yield x, val
+                    #yield x, val
+                    yield x - 300, val
 
             else:
                 for pixelX in range(workspace.width):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
-                    yield x, val
+                    #yield x, val
+                    yield x - 300, val
 
         ratio = 1 / self.pixel_per_mm
         workspace = self._get_workspace().convert("L")
-        workspace.save("workspaceL.jpg", "JPEG")
+        #workspace.save("workspaceL.jpg", "JPEG")
 
         for ptr_y in range(workspace.height):
             progress = ptr_y / workspace.height

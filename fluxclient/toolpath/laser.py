@@ -16,7 +16,8 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
         if current_xy != src_xy:
             proc.set_toolhead_pwm(0)
             src_x, src_y = src_xy
-            proc.moveto(feedrate=travel_speed, x=src_x, y=src_y)
+            #proc.moveto(feedrate=travel_speed, x=src_x, y=src_y)
+            proc.moveto(feedrate=engraving_speed, x=src_x, y=src_y)
             proc.set_toolhead_pwm(engraving_strength)
 
         dist_x, dist_y = dist_xy
@@ -30,25 +31,54 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
 def svgeditor2laser(proc, svg_factory, z_height, travel_speed=2400,
                     engraving_speed=400, engraving_strength=1.0,
                         focal_length=6.4, progress_callback=lambda p: None):
+    def cal_pwm(strength):
+        def cal():
+            base = strength / 100 * 256
+            pwm = pow(base / 255.0, 0.7)
+            return pwm
+
+        pwm = 0 if strength is 0 else cal()
+        return pwm
+
+    def gen_val2pwm(shading, strength):
+        if shading:
+            val2pwm = tuple(strength * pow(((i / 255.0)), 0.7) for i in range(256))
+        else:
+            val2pwm = tuple(0 if i == 0 else strength for i in range(256))
+        return val2pwm
+
+    def change_pwm_if_needed(pwm):
+        nonlocal current_pwm
+        if current_pwm == pwm:
+            return False
+        else:
+            current_pwm = pwm
+            return True
+
     proc.append_comment("FLUX Laser Svgeditor Tool")
     proc.set_toolhead_pwm(0)
-    proc.moveto(feedrate=5000, x=0, y=0, z=z_height + focal_length)
-    current_xy = None
+    proc.moveto(feedrate=12000, x=0, y=0, z=z_height + focal_length)
+    val2pwm = gen_val2pwm(shading=False, strength=1.0)
 
-    for src_xy, dist_xy in svg_factory.walk(progress_callback):
-        if current_xy != src_xy:
+    current_pwm = 0
+    for strength, speed, shading, dist_xy in svg_factory.walk(progress_callback):
+        pwm = cal_pwm(strength)
+        speed = speed * 60
+        need_to_change = change_pwm_if_needed(pwm)
+
+        print('result :', strength, speed, shading, dist_xy)
+
+        if dist_xy is 'done':
             proc.set_toolhead_pwm(0)
-            src_x, src_y = src_xy
-            proc.moveto(feedrate=travel_speed, x=src_x, y=src_y)
-            proc.set_toolhead_pwm(engraving_strength)
+        elif dist_xy is 'image':
+            continue
 
-        dist_x, dist_y = dist_xy
-        proc.moveto(feedrate=engraving_speed, x=dist_x, y=dist_y)
-        current_xy = dist_xy
+        else:
+            dist_x, dist_y = dist_xy
 
-    proc.set_toolhead_pwm(0)
-    proc.moveto(feedrate=travel_speed, x=0, y=0)
-
+            proc.moveto(feedrate=speed, x=dist_x, y=dist_y)
+            if need_to_change:
+                proc.set_toolhead_pwm(pwm)
 
 def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
                  vertical=False, travel_speed=6000, engraving_speed=400,
