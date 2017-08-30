@@ -595,6 +595,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 raise_error(resp)
 
     @ok_or_error
+    def restart_play(self):
+        return self.make_cmd(b"player restart")
+
+    @ok_or_error
     def quit_play(self):
         return self.make_cmd(b"player quit")
 
