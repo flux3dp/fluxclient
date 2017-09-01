@@ -16,7 +16,7 @@ HW_PROFILE = {
         'plate_shape': 'rectangular',
         'width': 300.,
         'length': 200.,
-        'height': 100.,
+        'height': 10.,
         'radius': 400.
         # 'nozzle_height': 4.45,
         # 'step_setting': {400: (3, 2.7), 800: (7, 3.15)}
