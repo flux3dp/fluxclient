@@ -154,9 +154,8 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
-    def maintain_load_filament(self, instance, index, temp, process_callback):
-        ret = self.make_cmd(
-            ("load_filament %i %.1f" % (index, temp)).encode())
+    def __load_filament(self, instance, cmd, process_callback):
+        ret = self.make_cmd(cmd)
 
         if ret == "continue":
             while True:
@@ -173,6 +172,14 @@ class MaintainTaskMixIn(object):
                     logger.info("Interrupt load filament")
         else:
             raise_error(ret)
+
+    def maintain_load_filament(self, instance, index, temp, process_callback):
+        cmd = ("load_filament %i %.1f" % (index, temp)).encode()
+        self.__load_filament(instance, cmd, process_callback)
+
+    def maintain_load_flexible_filament(self, instance, index, temp, process_callback):
+        cmd = ("load_flexible_filament %i %.1f" % (index, temp)).encode()
+        self.__load_filament(instance, cmd, process_callback)
 
     def maintain_unload_filament(self, instance, index, temp,
                                  process_callback):

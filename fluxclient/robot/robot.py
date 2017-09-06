@@ -488,6 +488,13 @@ class MaintainTasks(SubTasks):
                                                     process_callback)
 
     @invalied_validator
+    def load_flexible_filament(self, index=0, temperature=210.0,
+                               process_callback=None):
+        """Loads the filament"""
+        return self._backend.maintain_load_flexible_filament(
+            self, index, temperature, process_callback)
+
+    @invalied_validator
     def unload_filament(self, index=0, temperature=210.0,
                         process_callback=None):
         """Unloads the filament"""
