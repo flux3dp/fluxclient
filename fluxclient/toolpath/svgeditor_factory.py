@@ -9,7 +9,7 @@ from fluxclient.parser._parser import get_all_points
 from fluxclient.hw_profile import HardwareData
 
 class SvgeditorImage(object):
-    def __init__(self, buf, pixel_per_mm=10, hardware='beambox'):
+    def __init__(self, buf, pixel_per_mm=20, hardware='beambox'):
         self._preview_buf = None
         self.hardware = HardwareData(hardware)
         self.pixel_per_mm = pixel_per_mm
@@ -18,15 +18,16 @@ class SvgeditorImage(object):
         self.errors = list()
         self._groups = list()
         self._params = list()
-        self.tags = dict()
+        self._tags = dict()
+        self._definitions = dict()
 
         self.name_space = 'http://www.w3.org/2000/svg'
-        self.xlink_name_space = 'http://www.w3.org/1999/xlink'
+        self.xlink = 'http://www.w3.org/1999/xlink'
         self.svg_init = '<svg width="{width}" height="{height}" xmlns="{ns}" xmlns:svg="{ns}" xmlns:xlink="{xlink_ns}"/>'.format(
-                            width=round(self.hardware.width * self.pixel_per_mm),
-                            height=round(self.hardware.length * self.pixel_per_mm),
+                            width=self.hardware.width,
+                            height=self.hardware.length,
                             ns=self.name_space,
-                            xlink_ns=self.xlink_name_space
+                            xlink_ns=self.xlink
                             )
 
         self._gen_tags()
@@ -47,11 +48,12 @@ class SvgeditorImage(object):
                     'image',
                     'defs',
                     'path',
+                    'symbol',
                     'use'
                    ]
 
         for tag in tag_list:
-            self.tags[tag] = "{%s}%s" % (self.name_space, tag)
+            self._tags[tag] = "{%s}%s" % (self.name_space, tag)
 
     def _element_check(self, element, tags):
         if isinstance(tags, list):
@@ -63,28 +65,25 @@ class SvgeditorImage(object):
             return element.tag == tags
 
     def _tag_check(self, element):
-        for key, value in self.tags.items():
+        for key, value in self._tags.items():
             if element.tag == value:
                 return str(key)
         return False
 
-
-
     def _analysis_group(self, group):
         def process_transform_group(element):
             nonlocal elements, processedList
-            #el = ET.XML('<svg width="3000" height="2000" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"/>')
             el = ET.XML(self.svg_init)
             el.append(element)
             for elem in el.iter():
                 ta = self._tag_check(elem)
                 processedList.insert(0, ta)
             processedList.pop()
+            return el
 
         def ignore_processed_element():
             nonlocal processedList
             processedList.pop()
-
 
         elements = list()
         processedList = list()
@@ -96,20 +95,45 @@ class SvgeditorImage(object):
             tag = self._tag_check(element)
             if tag is 'g' or tag is 'title':
                 if element.attrib.get('transform'):
-                    process_transform_group(element)
+                    el = process_transform_group(element)
                 else:
                     continue
 
             elif tag is 'image':
                 el = self._gen_image_data(element)
+
+            elif tag is 'use':
+                use_data = self._gen_use_data(element)
+                el = ET.XML(self.svg_init)
+                el.append(use_data)
+
             else:
                 el = ET.XML(self.svg_init)
                 el.append(element)
+
             elements.append(el)
         return elements
 
+    def _put_into_definitions_space(self, symbol):
+        _id = symbol.attrib.get('id', None)
+        if not _id:
+            return
+        self._definitions[_id] = symbol
+
+    def _gen_definitions_from_defs(self, tree):
+        defs_group = tree.findall(".//{%s}defs" % self.name_space)
+        for defs in defs_group:
+            for element in defs:
+                tag = self._tag_check(element)
+                if tag is 'symbol':
+                    self._put_into_definitions_space(element)
+            tree.remove(defs)
+        return tree
+
     def run(self):
         svg_tree = ET.XML(self.buf)
+        svg_tree = self._gen_definitions_from_defs(svg_tree)
+
         for elements in svg_tree:
             tag = self._tag_check(elements)
             if tag is 'g':
@@ -119,7 +143,7 @@ class SvgeditorImage(object):
                 self._put_into_group_space(group)
 
     def _get_buf_and_mimetype(self, dic):
-        buf_with_mimetype = dic.pop("{%s}href" % self.xlink_name_space, "")
+        buf_with_mimetype = dic.pop("{%s}href" % self.xlink, "")
         dic['mimetype'], dic['buf'] = buf_with_mimetype.split(',')
         return dic
 
@@ -129,10 +153,52 @@ class SvgeditorImage(object):
     def _put_into_params_space(self, params):
         self._params.append(params)
 
+    def _analysis_matrix_attrib(self, matrix):
+        a,b,c,d,e,f = re.findall("\(.*?\)", matrix[0])[0].strip("()").split(",")
+        a,b,c,d,e,f = map(float, (a,b,c,d,e,f))
+        return a,b,c,d,e,f
+
+    def _analysis_transform(self, x, y, transform):
+        another = list()
+        matrix = list()
+        params = re.findall("^.*?\)| .*\)", transform)
+        for param in params:
+            param = param.strip()
+            lis = matrix if re.match("^matrix", param) else another
+            lis.append(param)
+        a,b,c,d,e,f = self._analysis_matrix_attrib(matrix)
+        translate = "matrix(1, 0, 0, 1, {tx}, {ty})".format(tx=x * a, ty=y * d)
+        transform = "{} {} {}".format(' '.join(another), translate, ' '.join(matrix))
+        return transform
+
+    def _cal_transform(self, element):
+        transform = element.attrib.pop('transform', None)
+        x = float(element.attrib.pop('x', 0))
+        y = float(element.attrib.pop('y', 0))
+        transform = self._analysis_transform(x, y, transform)
+        element.attrib['transform'] = transform
+        return element
+
+    def _parser_symbol_to_g(self, use, symbol):
+        use.tag = "{%s}g" % self.name_space
+        for element in symbol:
+            use.append(element)
+        return use
+
+    def _gen_use_data(self, use):
+        _id = use.attrib.pop("{%s}href" % self.xlink, None)
+        if _id is None: return
+        _id = _id.strip('#')
+        symbol = self._definitions.get(_id, None)
+        if symbol is None: return
+        use = self._cal_transform(use)
+        use  = self._parser_symbol_to_g(use, symbol)
+        return use
+
     def _gen_image_data(self, image):
         dic = dict(zip(image.keys(), image.values()))
         dic = self._get_buf_and_mimetype(dic)
-        bitmap = BitmapImage(dic)
+        bitmap = BitmapImage(dic, self.pixel_per_mm)
         return bitmap
 
     def _get_params(self, group):
@@ -167,13 +233,15 @@ class SvgeditorFactory(object):
         pwm = (255 / 100) * strength
         svg_data = ET.tostring(image)
         paths = get_all_points(svg_data)
+        print(paths)
         for path in paths:
             for dist_xy in path:
+                dist_x, dist_y = dist_xy
+                dist_x = dist_x / 10
                 #====================
-                #dist_x, dist_y = dist_xy
                 #dist_x = (dist_x - 3000) / 10
-                #dist_y = dist_y / 10
                 #====================
+                dist_y = dist_y / 10
                 yield pwm, (dist_x, dist_y)
             yield 0.0, (dist_x, dist_y)
 
@@ -190,8 +258,9 @@ class SvgeditorFactory(object):
                 return True
             return False
 
-        factory = BitmapFactory()
+        factory = BitmapFactory(pixel_per_mm=20)
         factory.add_image(image)
+
         for y, enum in factory.walk_spath():
             current_val = 0
             for x, val in enum:
@@ -208,7 +277,7 @@ class SvgeditorFactory(object):
                     yield val, (x, y)
             yield 0, 'line'
 
-    def _gen_walk_paths(self, group, strength, speed, shading):
+    def _gen_walk_paths(self, group, strength, speed, shading, progress_callback):
         for image in group:
             if self._is_bitmapImage(image):
                 walk_path_method = self._gen_bitmap_walk_path
@@ -227,11 +296,22 @@ class SvgeditorFactory(object):
             strength, speed, shading = params
             group.reverse()
             for strength, speed, dist_xy in self._gen_walk_paths(
-                                               group, strength, speed, shading):
+                            group, strength, speed, shading, progress_callback):
                 yield strength, speed, shading, dist_xy
 
+    def walk_cal(self):
+        ratio = 1 / 20
+        for ptr_y in range(200, 220):
+            y = round(ptr_y * ratio, 2)
+            for ptr_x in range(100, 5200):
+                x = round(ptr_x * ratio, 2)
+                yield x, y
+            yield 'line', 'line'
+
 class BitmapImage(object):
-    def __init__(self, image):
+    def __init__(self, image, pixel_per_mm=10):
+        self.pixel_per_mm = pixel_per_mm
+        self.ratio = self.pixel_per_mm / 10
         self._setAttrs(image)
         self._convertToInt()
         self.pil_image = Image.open(BytesIO(base64.b64decode(image['buf'])))
@@ -245,10 +325,10 @@ class BitmapImage(object):
             self.__setattr__(key, value)
 
     def _convertToInt(self):
-        self.width = int(round(float(self.width)))
-        self.height = int(round(float(self.height)))
-        self.x = int(round(float(self.x)))
-        self.y = int(round(float(self.y)))
+        self.width = round(int(round(float(self.width))) * self.ratio)
+        self.height = round(int(round(float(self.height))) * self.ratio)
+        self.x = round(int(round(float(self.x))) * self.ratio)
+        self.y = round(int(round(float(self.y))) * self.ratio)
 
     def _convertTransform(self):
         if not hasattr(self, 'transform'):
@@ -267,6 +347,8 @@ class BitmapImage(object):
             rotate = self.rotate.strip('()')
             ro, ro_x, ro_y = re.split(" |,", rotate)
             self.rotate, self.rotate_cx, self.rotate_cy = map(float, (ro, ro_x, ro_y))
+            self.rotate_cx, self.rotate_cy = map(
+                    lambda x: x * self.ratio, (self.rotate_cx, self.rotate_cy))
         else:
             self.rotate = self.rotate_cx = self.rotate_cy = 0
 
@@ -310,8 +392,9 @@ class BitmapFactory(object):
     def _cal_corner(self, img, rotated_img):
         img_center = (img.x + img.width / 2, img.y + img.height / 2)
         center = tuple(map(lambda x: x/2, rotated_img.getbbox()[2:]))
-        corner = (round(img_center[0] - center[0]), round(img_center[1] - center[1]))
-        return corner
+        bbox = (round(img_center[0] - center[0]), round(img_center[1] - center[1]))
+        bbox += (round(img_center[0] + center[0]), round(img_center[1] + center[1]))
+        return bbox
 
     def _get_workspace(self):
         if self._workspace:
@@ -322,33 +405,42 @@ class BitmapFactory(object):
 
         resized_img = img.pil_image.resize((img.width, img.height))
         rotated_img = self._rotate_img(resized_img, -img.rotate)
-        corner = self._cal_corner(img, rotated_img)
-        workspace.paste(rotated_img, box=corner)
+        workspace.imgbbox = self._cal_corner(img, rotated_img)
+        workspace.paste(rotated_img, box=workspace.imgbbox[:2])
+        workspace.save('workspace.png', 'JPEG')
 
         self._workspace = workspace
         return workspace
 
+
     def walk_spath(self):
+        fromLeft = True
         def x_enum(row):
-            if row % 2 == 0 :
-                for pixelX in range(workspace.width - 1 , -1, -1 ):
+            nonlocal fromLeft
+            if not fromLeft:
+                fromLeft = True
+                #for pixelX in range(workspace.width - 1 , -1, -1 ):
+                for pixelX in range(right , left, -1 ):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
                     yield x, val
 
             else:
-                for pixelX in range(workspace.width):
+                fromLeft = False
+                #for pixelX in range(workspace.width):
+                for pixelX in range(left, right):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
                     yield x, val
 
         ratio = 1 / self.pixel_per_mm
         workspace = self._get_workspace().convert("L")
+        left, upper, right, lower = self._get_workspace().imgbbox
         workspace.save("workspaceL.jpg", "JPEG")
 
-        for ptr_y in range(workspace.height):
+        for ptr_y in range(upper, lower):
             #progress = ptr_y / workspace.height
-            y = round((ptr_y + 1) * ratio, 2)
+            y = round(ptr_y * ratio, 2)
             #yield progress, y, x_enum(ptr_y)
             yield y, x_enum(ptr_y)
 
@@ -364,7 +456,7 @@ class BitmapFactory(object):
 
         for ptr_y in range(workspace.height):
             #progress = ptr_y / workspace.height
-            y = (ptr_y + 1) * ratio
+            y = round(ptr_y * ratio, 2)
             #yield progress, y, x_enum(ptr_y)
             yield y, x_enum(ptr_y)
 

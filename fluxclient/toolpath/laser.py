@@ -27,13 +27,13 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
     proc.set_toolhead_pwm(0)
     proc.moveto(feedrate=travel_speed, x=0, y=0)
 
-
 def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
                     engraving_strength=1.0, focal_length=6.4,
                     progress_callback=lambda p: None):
     def cal_pwm(strength):
         def cal():
-            pwm = engraving_strength * pow(strength / 255.0, 0.7)
+            #pwm = engraving_strength * pow(strength / 255.0, 0.7)
+            pwm = engraving_strength * pow(strength / 255.0, 0.5)
             return pwm
         pwm = 0 if strength is 0 else cal()
         return pwm
@@ -67,7 +67,18 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
             proc.moveto(feedrate=speed, x=dist_x, y=dist_y)
             if need_to_change:
                 proc.set_toolhead_pwm(pwm)
-
+#================for testing============================================
+#    pwm = 0
+#    for dist_x, dist_y in svg_factory.walk_cal():
+#        if dist_x == 'line':
+#            pwm = 0
+#        elif dist_x % 1 == 0:
+#            pwm += 1
+#            cpwm = cal_pwm(pwm)
+#            proc.set_toolhead_pwm(cpwm)
+#            print('result :', cpwm, dist_x, dist_y)
+#            proc.moveto(feedrate=12000, x=dist_x, y=dist_y)
+#=======================================================================
 
 def bitmap2laser(proc, bitmap_factory, z_height, one_way=True,
                  vertical=False, travel_speed=6000, engraving_speed=400,
