@@ -264,7 +264,11 @@ class SvgeditorFactory(object):
         for y, enum in factory.walk_spath():
             current_val = 0
             for x, val in enum:
-                if not val:
+                if not val and current_val != 0:
+                    current_val = 0
+                    yield val, (x, y)
+
+                elif not val:
                     continue
                 #===============
                 # x = x - 300
