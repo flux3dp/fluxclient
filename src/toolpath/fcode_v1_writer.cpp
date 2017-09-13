@@ -83,7 +83,7 @@ FLUX::FCodeV1::FCodeV1(std::string *type, std::vector<std::pair<std::string, std
     home_x = 0; home_y = 0, home_z = 240;
     current_feedrate = 0;
     current_x = 0; current_y = 0; current_z = 0;
-    time_cost = 0;
+    travled = time_cost = 0;
     max_x = max_y = max_z = max_r = filament[0] = filament[1] = filament[2] = 0;
 
     head_type = type;
