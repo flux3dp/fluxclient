@@ -141,11 +141,11 @@ void FLUX::FCodeV1::moveto(int flags, float feedrate, float x, float y, float z,
         float dist = sqrtf(pow(mv[0], 2) + pow(mv[1], 2) + pow(mv[2], 2));
         if(!isnan(dist)) {
             travled += dist;
-            if(feedrate > 0) {
-                float tc = (dist / feedrate) * 60.0;
+            if(current_feedrate > 0) {
+                float tc = (dist / current_feedrate) * 60.0;
                 if(!isnan(tc)) time_cost += tc;
             } else {
-                on_error(false, "UNDEF_FEEDRATE", 14);
+                on_error(false, "BAD_FEEDRATE", 14);
             }
         }
     } else {
