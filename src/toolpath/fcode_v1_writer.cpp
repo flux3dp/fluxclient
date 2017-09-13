@@ -138,7 +138,7 @@ void FLUX::FCodeV1::moveto(int flags, float feedrate, float x, float y, float z,
     if(flags & FLAG_HAS_E(2)) { fm[2] = filament[2] - e2; filament[2] = e2; }
 
     if(has_move) {
-        float dist = sqrtf(pow(mv[0], 2) + pow(mv[1], 2) + pow(mv[2], 2));
+        double dist = sqrt(pow(mv[0], 2) + pow(mv[1], 2) + pow(mv[2], 2));
         if(!isnan(dist)) {
             travled += dist;
             if(current_feedrate > 0) {

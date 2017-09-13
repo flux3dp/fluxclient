@@ -42,8 +42,8 @@ namespace FLUX {
         void begin(void);
     public:
         std::string *head_type;
-        float travled;
-        float time_cost;
+        double travled;
+        double time_cost;
         float home_x, home_y, home_z;
         float current_feedrate, current_x, current_y, current_z;
         float max_x, max_y, max_z, max_r, filament[3];
