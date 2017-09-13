@@ -261,6 +261,10 @@ use it if and only if you have any idea about this::
         return self._backend.press_button_in_play()
 
     @blocked_validator
+    def restart_play(self):
+        return self._backend.restart_play()
+
+    @blocked_validator
     def quit_play(self):
         """Quits from current task status."""
         return self._backend.quit_play()
@@ -482,6 +486,13 @@ class MaintainTasks(SubTasks):
         """Loads the filament"""
         return self._backend.maintain_load_filament(self, index, temperature,
                                                     process_callback)
+
+    @invalied_validator
+    def load_flexible_filament(self, index=0, temperature=210.0,
+                               process_callback=None):
+        """Loads the filament"""
+        return self._backend.maintain_load_flexible_filament(
+            self, index, temperature, process_callback)
 
     @invalied_validator
     def unload_filament(self, index=0, temperature=210.0,
