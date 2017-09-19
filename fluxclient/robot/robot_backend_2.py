@@ -154,6 +154,14 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
+    def maintain_move(self, *ignore, **commands):
+        params = tuple(' %s:%f' % (k, v) for k, v in commands.items() if k in 'fxyze')
+        if not params:
+            raise TypeError('maintain_move need at least 1 keyword argumens of f, x, y, z, e')
+        ret = self.make_cmd(('move' + ''.join(params)).encode())
+        if ret != "ok":
+            raise_error(ret)
+
     def __load_filament(self, instance, cmd, process_callback):
         ret = self.make_cmd(cmd)
 
