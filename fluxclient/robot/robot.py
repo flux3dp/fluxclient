@@ -442,6 +442,7 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_calibration(self, threshold, clean,
                                                   process_callback)
 
+    @invalied_validator
     def calibration(self, threshold=None, clean=False, process_callback=None):
         warnings.warn("Use 'calibrate' method instead", DeprecationWarning)
         return self.calibrate(threshold=threshold, clean=clean,
@@ -479,6 +480,10 @@ class MaintainTasks(SubTasks):
     @invalied_validator
     def diagnosis(self, option):
         return self._backend.maintain_diagnosis(option)
+
+    @invalied_validator
+    def move(self, *ignore, **commands):
+        return self._backend.maintain_move(**commands)
 
     @invalied_validator
     def load_filament(self, index=0, temperature=210.0,
