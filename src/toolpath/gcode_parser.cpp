@@ -290,12 +290,12 @@ int FLUX::GCodeParser::handle_g92(const char* linep, int offset, int size) {
                 case 'Z':
                     if(from_inch) { val = inch2mm(val); }
                     axis = param - 'X';
-                    position_offset[axis] = val - position[axis];
+                    position_offset[axis] = position[axis] - val;
                     break;
                 case 'E':
                     if(from_inch) { val = inch2mm(val); }
                     axis = T;
-                    filaments_offset[axis] = val - filaments[axis];
+                    filaments_offset[axis] = filaments[axis] - val;
                     break;
                 default:
                     has_param_error = true;

@@ -51,6 +51,8 @@ cdef extern from "fcode.h" namespace "FLUX":
         vector[pair[string, string]] *metadata
         vector[string] *previews
         vector[string] errors
+        double travled
+        double time_cost
 
     cdef cppclass FCodeV1FileWriter:
         FCodeV1FileWriter(const char*, string*, vector[pair[string, string]]*, vector[string]*) nogil

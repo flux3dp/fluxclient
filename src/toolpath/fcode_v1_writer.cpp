@@ -83,7 +83,7 @@ FLUX::FCodeV1::FCodeV1(std::string *type, std::vector<std::pair<std::string, std
     home_x = 0; home_y = 0, home_z = 240;
     current_feedrate = 0;
     current_x = 0; current_y = 0; current_z = 0;
-    time_cost = 0;
+    travled = time_cost = 0;
     max_x = max_y = max_z = max_r = filament[0] = filament[1] = filament[2] = 0;
 
     head_type = type;
@@ -138,14 +138,14 @@ void FLUX::FCodeV1::moveto(int flags, float feedrate, float x, float y, float z,
     if(flags & FLAG_HAS_E(2)) { fm[2] = filament[2] - e2; filament[2] = e2; }
 
     if(has_move) {
-        float dist = sqrtf(pow(mv[0], 2) + pow(mv[1], 2) + pow(mv[2], 2));
+        double dist = sqrt(pow(mv[0], 2) + pow(mv[1], 2) + pow(mv[2], 2));
         if(!isnan(dist)) {
             travled += dist;
-            if(feedrate > 0) {
-                float tc = (dist / feedrate) * 60.0;
+            if(current_feedrate > 0) {
+                float tc = (dist / current_feedrate) * 60.0;
                 if(!isnan(tc)) time_cost += tc;
             } else {
-                on_error(false, "UNDEF_FEEDRATE", 14);
+                on_error(false, "BAD_FEEDRATE", 14);
             }
         }
     } else {

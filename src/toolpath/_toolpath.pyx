@@ -132,6 +132,12 @@ cdef class FCodeV1MemoryWriter(ToolpathProcessor):
     def get_metadata(self):
         return dict(self.metadata)
 
+    def get_travled(self):
+        return (<_FCodeV1MemoryWriter*>self._proc).travled
+
+    def get_time_cost(self):
+        return (<_FCodeV1MemoryWriter*>self._proc).time_cost
+
     def errors(self):
         return (<_FCodeV1MemoryWriter*>self._proc).errors
 

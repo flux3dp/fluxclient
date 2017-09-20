@@ -154,9 +154,16 @@ class MaintainTaskMixIn(object):
         else:
             raise_error(ret)
 
-    def maintain_load_filament(self, instance, index, temp, process_callback):
-        ret = self.make_cmd(
-            ("load_filament %i %.1f" % (index, temp)).encode())
+    def maintain_move(self, *ignore, **commands):
+        params = tuple(' %s:%f' % (k, v) for k, v in commands.items() if k in 'fxyze')
+        if not params:
+            raise TypeError('maintain_move need at least 1 keyword argumens of f, x, y, z, e')
+        ret = self.make_cmd(('move' + ''.join(params)).encode())
+        if ret != "ok":
+            raise_error(ret)
+
+    def __load_filament(self, instance, cmd, process_callback):
+        ret = self.make_cmd(cmd)
 
         if ret == "continue":
             while True:
@@ -173,6 +180,14 @@ class MaintainTaskMixIn(object):
                     logger.info("Interrupt load filament")
         else:
             raise_error(ret)
+
+    def maintain_load_filament(self, instance, index, temp, process_callback):
+        cmd = ("load_filament %i %.1f" % (index, temp)).encode()
+        self.__load_filament(instance, cmd, process_callback)
+
+    def maintain_load_flexible_filament(self, instance, index, temp, process_callback):
+        cmd = ("load_flexible_filament %i %.1f" % (index, temp)).encode()
+        self.__load_filament(instance, cmd, process_callback)
 
     def maintain_unload_filament(self, instance, index, temp,
                                  process_callback):
@@ -593,6 +608,10 @@ class RobotBackend2(ScanTaskMixIn, MaintainTaskMixIn):
                 return metadata, images
             else:
                 raise_error(resp)
+
+    @ok_or_error
+    def restart_play(self):
+        return self.make_cmd(b"player restart")
 
     @ok_or_error
     def quit_play(self):

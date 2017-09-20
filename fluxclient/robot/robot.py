@@ -261,6 +261,10 @@ use it if and only if you have any idea about this::
         return self._backend.press_button_in_play()
 
     @blocked_validator
+    def restart_play(self):
+        return self._backend.restart_play()
+
+    @blocked_validator
     def quit_play(self):
         """Quits from current task status."""
         return self._backend.quit_play()
@@ -438,6 +442,7 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_calibration(self, threshold, clean,
                                                   process_callback)
 
+    @invalied_validator
     def calibration(self, threshold=None, clean=False, process_callback=None):
         warnings.warn("Use 'calibrate' method instead", DeprecationWarning)
         return self.calibrate(threshold=threshold, clean=clean,
@@ -477,11 +482,22 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_diagnosis(option)
 
     @invalied_validator
+    def move(self, *ignore, **commands):
+        return self._backend.maintain_move(**commands)
+
+    @invalied_validator
     def load_filament(self, index=0, temperature=210.0,
                       process_callback=None):
         """Loads the filament"""
         return self._backend.maintain_load_filament(self, index, temperature,
                                                     process_callback)
+
+    @invalied_validator
+    def load_flexible_filament(self, index=0, temperature=210.0,
+                               process_callback=None):
+        """Loads the filament"""
+        return self._backend.maintain_load_flexible_filament(
+            self, index, temperature, process_callback)
 
     @invalied_validator
     def unload_filament(self, index=0, temperature=210.0,
