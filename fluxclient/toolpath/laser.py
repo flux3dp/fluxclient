@@ -33,7 +33,7 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
     def cal_pwm(strength):
         def cal():
             #pwm = engraving_strength * pow(strength / 255.0, 0.7)
-            pwm = engraving_strength * pow(strength / 255.0, 0.5)
+            pwm = engraving_strength * pow(strength / 255.0, 0.4)
             return pwm
         pwm = 0 if strength is 0 else cal()
         return pwm
@@ -51,13 +51,13 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
     #proc.moveto(feedrate=12000, x=0, y=0, z=z_height + focal_length)
     current_pwm = 0
 
-    for strength, speed, shading, dist_xy in svg_factory.walk(progress_callback):
+    for strength, speed, dist_xy in svg_factory.walk(progress_callback):
         pwm = cal_pwm(strength)
         speed = speed * 60
         speed = travel_speed if current_pwm == 0 else speed
         need_to_change = change_pwm_if_needed(pwm)
 
-        print('result :', pwm, strength, speed, shading, dist_xy)
+        print('result :', pwm, strength, speed, dist_xy)
 
         if dist_xy == 'done' or dist_xy == 'line':
             proc.set_toolhead_pwm(0)

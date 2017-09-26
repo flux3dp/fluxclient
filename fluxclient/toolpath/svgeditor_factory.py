@@ -1,3 +1,4 @@
+#import cairosvg
 import base64
 import re
 
@@ -9,12 +10,11 @@ from fluxclient.parser._parser import get_all_points
 from fluxclient.hw_profile import HardwareData
 
 class SvgeditorImage(object):
-    def __init__(self, buf, pixel_per_mm=20, hardware='beambox'):
-        self._preview_buf = None
+    def __init__(self, thumbnail, svg_data, pixel_per_mm=10, hardware='beambox'):
         self.hardware = HardwareData(hardware)
         self.pixel_per_mm = pixel_per_mm
 
-        self.buf = buf
+        self.buf = svg_data
         self.errors = list()
         self._groups = list()
         self._params = list()
@@ -24,14 +24,22 @@ class SvgeditorImage(object):
         self.name_space = 'http://www.w3.org/2000/svg'
         self.xlink = 'http://www.w3.org/1999/xlink'
         self.svg_init = '<svg width="{width}" height="{height}" xmlns="{ns}" xmlns:svg="{ns}" xmlns:xlink="{xlink_ns}"/>'.format(
-                            width=self.hardware.width,
-                            height=self.hardware.length,
+                            width=self.hardware.width * 10,
+                            height=self.hardware.length * 10,
                             ns=self.name_space,
                             xlink_ns=self.xlink
                             )
 
         self._gen_tags()
+        self._gen_thumbnail(thumbnail)
+        #self._gen_thumbnail(svg_data)
         self.run()
+
+    @property
+    def thumbnail(self):
+        if not self._thumbnail:
+            self.thumbnail = None
+        return self._thumbnail
 
     @property
     def groups(self):
@@ -120,6 +128,12 @@ class SvgeditorImage(object):
             return
         self._definitions[_id] = symbol
 
+    def _gen_thumbnail(self, thumbnail):
+        mimetype, data = thumbnail.split(b',')
+        self._thumbnail = Image.open(BytesIO(base64.b64decode(data)))
+        #output = cairosvg.svg2png(bytestring=thumbnail)
+        #self._thumbnail = Image.open(BytesIO(output))
+
     def _gen_definitions_from_defs(self, tree):
         defs_group = tree.findall(".//{%s}defs" % self.name_space)
         for defs in defs_group:
@@ -204,24 +218,22 @@ class SvgeditorImage(object):
     def _get_params(self, group):
         strength = group.attrib.get('data-strength', 0.0)
         speed = group.attrib.get('data-speed', 200.0)
-        shading = group.attrib.get('data-shading', False)
         strength, speed = map(float, (strength, speed))
-        shading = False if shading == 'false' else True
-        return strength, speed, shading
+        return strength, speed
 
 
 class SvgeditorFactory(object):
+    def __init__ (self, pixel_per_mm=10):
+        self.pixel_per_mm =pixel_per_mm
     def add_image(self, images, params):
         self.groups = list(zip(params, images))
 
-    def generate_preview(self):
-        #TODO
-        img = Image.new('RGBA', (100,100))
+    def add_thumbnail(self, thumbnail):
+        self._thumbnail = thumbnail
 
-        draw = ImageDraw.Draw(img)
-        draw.ellipse((25, 25, 75, 75), fill=(255, 0, 0))
+    def generate_thumbnail(self):
         b = BytesIO()
-        img.save(b, 'png')
+        self._thumbnail.save(b, 'png')
         image_bytes = b.getvalue()
         return image_bytes
 
@@ -229,11 +241,10 @@ class SvgeditorFactory(object):
         boolen = True if isinstance(image, BitmapImage) else False
         return boolen
 
-    def _gen_svg_walk_path(self, image, strength, shading):
+    def _gen_svg_walk_path(self, image, strength):
         pwm = (255 / 100) * strength
         svg_data = ET.tostring(image)
         paths = get_all_points(svg_data)
-        print(paths)
         for path in paths:
             for dist_xy in path:
                 dist_x, dist_y = dist_xy
@@ -250,7 +261,7 @@ class SvgeditorFactory(object):
         val = 255 if val >= threshold else 0
         return val
 
-    def _gen_bitmap_walk_path(self, image, strength, shading):
+    def _gen_bitmap_walk_path(self, image, strength):
         def different_val(val):
             nonlocal current_val
             if val != current_val:
@@ -258,37 +269,37 @@ class SvgeditorFactory(object):
                 return True
             return False
 
-        factory = BitmapFactory(pixel_per_mm=20)
+        factory = BitmapFactory(pixel_per_mm=self.pixel_per_mm)
         factory.add_image(image)
 
+        current_val = 0
         for y, enum in factory.walk_spath():
-            current_val = 0
             for x, val in enum:
-                if not val and current_val != 0:
-                    current_val = 0
-                    yield val, (x, y)
-
-                elif not val:
-                    continue
+                if not val:
+                    if current_val != 0:
+                        current_val = 0
+                        yield val, (x, y)
+                    else:
+                        continue
                 #===============
                 # x = x - 300
                 #===============
-                if not shading:
+                if not image.shading:
                     val = self._filter_threshold(val, image.threshold)
 
                 val = (val / 100) * strength
                 if different_val(val):
                     yield val, (x, y)
-            yield 0, 'line'
+            #yield 0, 'line'
 
-    def _gen_walk_paths(self, group, strength, speed, shading, progress_callback):
+    def _gen_walk_paths(self, group, strength, speed, progress_callback):
         for image in group:
             if self._is_bitmapImage(image):
                 walk_path_method = self._gen_bitmap_walk_path
             else:
                 walk_path_method = self._gen_svg_walk_path
 
-            for stren, dist_xy in walk_path_method(image, strength, shading):
+            for stren, dist_xy in walk_path_method(image, strength):
                 yield stren, speed, dist_xy
 
             yield 0.0, speed, 'done'
@@ -297,11 +308,11 @@ class SvgeditorFactory(object):
         self.groups.reverse()
 
         for params, group in self.groups:
-            strength, speed, shading = params
+            strength, speed = params
             group.reverse()
             for strength, speed, dist_xy in self._gen_walk_paths(
-                            group, strength, speed, shading, progress_callback):
-                yield strength, speed, shading, dist_xy
+                            group, strength, speed, progress_callback):
+                yield strength, speed, dist_xy
 
     def walk_cal(self):
         ratio = 1 / 20
@@ -325,6 +336,8 @@ class BitmapImage(object):
         for key, value in image.items():
             if key == "data-threshold":
                 self.threshold = int(value)
+            elif key == "data-shading":
+                self.shading = False if value == 'false' else True
 
             self.__setattr__(key, value)
 
@@ -416,14 +429,20 @@ class BitmapFactory(object):
         self._workspace = workspace
         return workspace
 
-
     def walk_spath(self):
         fromLeft = True
+        def find_the_bbox(box, workspace):
+            left, upper, right, lower = box
+            left = 0 if left < 0 else left
+            upper = 0 if upper < 0 else upper
+            right = workspace.width - 1 if right > workspace.width else right
+            lower = workspace.height - 1 if lower > workspace.height else lower
+            return (left, upper, right, lower)
+
         def x_enum(row):
             nonlocal fromLeft
             if not fromLeft:
                 fromLeft = True
-                #for pixelX in range(workspace.width - 1 , -1, -1 ):
                 for pixelX in range(right , left, -1 ):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
@@ -431,7 +450,6 @@ class BitmapFactory(object):
 
             else:
                 fromLeft = False
-                #for pixelX in range(workspace.width):
                 for pixelX in range(left, right):
                     x = round(pixelX * ratio, 2)
                     val = 255 - workspace.getpixel((pixelX, row))
@@ -439,7 +457,10 @@ class BitmapFactory(object):
 
         ratio = 1 / self.pixel_per_mm
         workspace = self._get_workspace().convert("L")
+        #workspace = self._get_workspace().convert("1")
         left, upper, right, lower = self._get_workspace().imgbbox
+        left, upper, right, lower = find_the_bbox(
+                                        (left, upper, right, lower), workspace)
         workspace.save("workspaceL.jpg", "JPEG")
 
         for ptr_y in range(upper, lower):
