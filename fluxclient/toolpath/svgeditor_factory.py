@@ -131,8 +131,23 @@ class SvgeditorImage(object):
     def _gen_thumbnail(self, thumbnail):
         mimetype, data = thumbnail.split(b',')
         self._thumbnail = Image.open(BytesIO(base64.b64decode(data)))
-        #output = cairosvg.svg2png(bytestring=thumbnail)
-        #self._thumbnail = Image.open(BytesIO(output))
+        self._thumbnail.save('test.png')
+
+    #    empty = Image.new("RGBA", (4000, 4000), "white")
+#
+    #    output = cairosvg.svg2png(bytestring=thumbnail)
+    #    #self._thumbnail = Image.open(BytesIO(output))
+    #    img = Image.open(BytesIO(output))
+#
+    #    draw = ImageDraw.Draw(empty)
+    #    line = [0, 100, 4000, 0]
+    #    draw.line(line , fill=(128,128,128), width=3)
+#
+    #    empty.paste(img, box=(0,0))
+    #    self._thumbnail = empty
+#
+    #    import ipdb; ipdb.set_trace()
+    #    self._thumbnail.show()
 
     def _gen_definitions_from_defs(self, tree):
         defs_group = tree.findall(".//{%s}defs" % self.name_space)
@@ -290,7 +305,7 @@ class SvgeditorFactory(object):
                 val = (val / 100) * strength
                 if different_val(val):
                     yield val, (x, y)
-            #yield 0, 'line'
+            yield val, (x,y)
 
     def _gen_walk_paths(self, group, strength, speed, progress_callback):
         for image in group:
