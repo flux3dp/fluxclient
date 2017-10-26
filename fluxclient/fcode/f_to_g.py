@@ -60,16 +60,26 @@ class FcodeToGcode(FcodeBase):
             self.data = buf
             if self.full_check():
                 md = self.get_metadata()
-                if float(md.get('MAX_X', 0)) > HW_PROFILE[model]['radius']:
-                    return 'out_of_bound'
-                elif float(md.get('MAX_Y', 0)) > HW_PROFILE[model]['radius']:
-                    return 'out_of_bound'
-                elif float(md.get('MAX_R', 0)) > HW_PROFILE[model]['radius']:
-                    return 'out_of_bound'
-                elif float(md.get('MAX_Z', 0)) > HW_PROFILE[model]['height'] or float(md.get('MAX_Z', 0)) < 0:
-                    return 'out_of_bound'
+                if model == 'beambox':
+                    if float(md.get('MAX_X', 0)) > HW_PROFILE[model]['width']:
+                        return 'out_of_bound'
+                    elif float(md.get('MAX_Y', 0)) > HW_PROFILE[model]['length']:
+                        return 'out_of_bound'
+                    elif float(md.get('MAX_Z', 0)) > HW_PROFILE[model]['height'] or float(md.get('MAX_Z', 0)) < 0:
+                        return 'out_of_bound'
+                    else:
+                        return 'ok'
                 else:
-                    return 'ok'
+                    if float(md.get('MAX_X', 0)) > HW_PROFILE[model]['radius']:
+                        return 'out_of_bound'
+                    elif float(md.get('MAX_Y', 0)) > HW_PROFILE[model]['radius']:
+                        return 'out_of_bound'
+                    elif float(md.get('MAX_R', 0)) > HW_PROFILE[model]['radius']:
+                        return 'out_of_bound'
+                    elif float(md.get('MAX_Z', 0)) > HW_PROFILE[model]['height'] or float(md.get('MAX_Z', 0)) < 0:
+                        return 'out_of_bound'
+                    else:
+                        return 'ok'
             else:
                 self.data = tmp_data
                 return 'broken'
