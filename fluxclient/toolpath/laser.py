@@ -33,7 +33,7 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
     def cal_pwm(strength):
         def cal():
             #pwm = engraving_strength * pow(strength / 255.0, 0.7)
-            pwm = engraving_strength * pow(strength / 255.0, 0.4)
+            pwm = engraving_strength * strength / 100.0
             return pwm
         pwm = 0 if strength is 0 else cal()
         return pwm

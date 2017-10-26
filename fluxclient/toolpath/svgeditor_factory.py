@@ -302,7 +302,7 @@ class SvgeditorFactory(object):
                 if not image.shading:
                     val = self._filter_threshold(val, image.threshold)
 
-                val = (val / 100) * strength
+                val = pow((val / 255.0), 0.4) * strength
                 if different_val(val):
                     yield val, (x, y)
             yield val, (x,y)
