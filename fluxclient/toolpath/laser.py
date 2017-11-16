@@ -30,43 +30,33 @@ def svg2laser(proc, svg_factory, z_height, travel_speed=2400,
 def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
                     engraving_strength=1.0, focal_length=6.4,
                     progress_callback=lambda p: None):
-    def cal_pwm(strength):
-        def cal():
-            #pwm = engraving_strength * pow(strength / 255.0, 0.7)
-            pwm = engraving_strength * strength / 100.0
-            return pwm
-        pwm = 0 if strength is 0 else cal()
-        return pwm
-
-    def change_pwm_if_needed(pwm):
-        nonlocal current_pwm
-        if current_pwm == pwm:
-            return False
-        else:
-            current_pwm = pwm
-            return True
 
     proc.append_comment("FLUX Laser Svgeditor Tool")
     proc.set_toolhead_pwm(0)
     #proc.moveto(feedrate=12000, x=0, y=0, z=z_height + focal_length)
     current_pwm = 0
 
-    for strength, speed, dist_xy in svg_factory.walk(progress_callback):
-        pwm = cal_pwm(strength)
+    for strength, speed, dist_xy, power_limit in svg_factory.walk(progress_callback):
+        
         speed = speed * 60
         speed = travel_speed if current_pwm == 0 else speed
-        need_to_change = change_pwm_if_needed(pwm)
+        pwm = strength / 100.0
+        need_to_change = False
 
-        print('result :', pwm, strength, speed, dist_xy)
+        if current_pwm != pwm:
+            current_pwm = pwm
+            need_to_change = True
+
+        # print('result :', pwm, strength, speed, dist_xy, power_limit)
 
         if dist_xy == 'done' or dist_xy == 'line':
             proc.set_toolhead_pwm(0)
-
         else:
             dist_x, dist_y = dist_xy
             proc.moveto(feedrate=speed, x=dist_x, y=dist_y)
             if need_to_change:
                 proc.set_toolhead_pwm(pwm)
+                proc.set_toolhead_pwm(-power_limit)
 #================for testing============================================
 #    pwm = 0
 #    for dist_x, dist_y in svg_factory.walk_cal():

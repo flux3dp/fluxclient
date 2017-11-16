@@ -10,7 +10,7 @@ from fluxclient.parser._parser import get_all_points
 from fluxclient.hw_profile import HardwareData
 
 class SvgeditorImage(object):
-    def __init__(self, thumbnail, svg_data, pixel_per_mm=10, hardware='beambox'):
+    def __init__(self, thumbnail, svg_data, pixel_per_mm=25, hardware='beambox'):
         self.hardware = HardwareData(hardware)
         self.pixel_per_mm = pixel_per_mm
 
@@ -256,8 +256,8 @@ class SvgeditorFactory(object):
         boolen = True if isinstance(image, BitmapImage) else False
         return boolen
 
-    def _gen_svg_walk_path(self, image, strength):
-        pwm = (255 / 100) * strength
+    def _gen_svg_walk_path(self, image):
+        pwm = 100
         svg_data = ET.tostring(image)
         paths = get_all_points(svg_data)
         for path in paths:
@@ -276,14 +276,7 @@ class SvgeditorFactory(object):
         val = 255 if val >= threshold else 0
         return val
 
-    def _gen_bitmap_walk_path(self, image, strength):
-        def different_val(val):
-            nonlocal current_val
-            if val != current_val:
-                current_val = val
-                return True
-            return False
-
+    def _gen_bitmap_walk_path(self, image):
         factory = BitmapFactory(pixel_per_mm=self.pixel_per_mm)
         factory.add_image(image)
 
@@ -302,19 +295,22 @@ class SvgeditorFactory(object):
                 if not image.shading:
                     val = self._filter_threshold(val, image.threshold)
 
-                val = pow((val / 255.0), 0.4) * strength
-                if different_val(val):
+                val = (val / 255.0) * 100
+
+                if val != current_val:
+                    current_val = val
                     yield val, (x, y)
+
             yield val, (x,y)
 
-    def _gen_walk_paths(self, group, strength, speed, progress_callback):
+    def _gen_walk_paths(self, group, speed, progress_callback):
         for image in group:
             if self._is_bitmapImage(image):
                 walk_path_method = self._gen_bitmap_walk_path
             else:
                 walk_path_method = self._gen_svg_walk_path
 
-            for stren, dist_xy in walk_path_method(image, strength):
+            for stren, dist_xy in walk_path_method(image):
                 yield stren, speed, dist_xy
 
             yield 0.0, speed, 'done'
@@ -323,11 +319,12 @@ class SvgeditorFactory(object):
         self.groups.reverse()
 
         for params, group in self.groups:
-            strength, speed = params
+            power_limit, speed = params
+            power_limit = power_limit / 100.0
             group.reverse()
-            for strength, speed, dist_xy in self._gen_walk_paths(
-                            group, strength, speed, progress_callback):
-                yield strength, speed, dist_xy
+            for pwm, speed, dist_xy in self._gen_walk_paths(
+                            group, speed, progress_callback):
+                yield pwm, speed, dist_xy, power_limit
 
     def walk_cal(self):
         ratio = 1 / 20
@@ -436,10 +433,11 @@ class BitmapFactory(object):
         img = self._image
 
         resized_img = img.pil_image.resize((img.width, img.height))
+        print("Resizing image ", img.width, img.height);
         rotated_img = self._rotate_img(resized_img, -img.rotate)
         workspace.imgbbox = self._cal_corner(img, rotated_img)
         workspace.paste(rotated_img, box=workspace.imgbbox[:2])
-        workspace.save('workspace.png', 'JPEG')
+       # workspace.save('workspace.png', 'JPEG')
 
         self._workspace = workspace
         return workspace
