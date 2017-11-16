@@ -35,6 +35,9 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
     proc.set_toolhead_pwm(0)
     #proc.moveto(feedrate=12000, x=0, y=0, z=z_height + focal_length)
     current_pwm = 0
+    current_y = -999
+    current_speed = 0
+    current_power_limit = 0
 
     for strength, speed, dist_xy, power_limit in svg_factory.walk(progress_callback):
         
@@ -53,9 +56,20 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
             proc.set_toolhead_pwm(0)
         else:
             dist_x, dist_y = dist_xy
-            proc.moveto(feedrate=speed, x=dist_x, y=dist_y)
+            movement_args = dict(x=dist_x)
+            if current_y != dist_y:
+                current_y = dist_y
+                movement_args['y'] = dist_y
+            if current_speed != speed:
+                current_speed = speed
+                movement_args['feedrate'] = speed
+            
+            proc.moveto(**movement_args)
+
             if need_to_change:
                 proc.set_toolhead_pwm(pwm)
+            if current_power_limit != power_limit:
+                current_power_limit = power_limit
                 proc.set_toolhead_pwm(-power_limit)
 #================for testing============================================
 #    pwm = 0
