@@ -104,7 +104,7 @@ cpdef get_all_points(char* svg_data):
             for i in range(0,path.npts-1,3):
                 p = path.pts + i*2
                 #point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 1.5, 0))
-                point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.1, 0))
+                point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.001, 0))
             #if path.closed:
                 #point_lst.append((path.pts[0],path.pts[1]))
             path_lst.append(point_lst)
