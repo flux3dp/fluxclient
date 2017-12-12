@@ -200,10 +200,10 @@ has been found or the computer recived a new status from a device.
         if uuid in self.devices:
             device = self.devices[uuid]
             if device.master_key != master_key:
-                raise Exception("Device %s got vart master keys" % device,
+                raise Exception("Device %s got conflict master keys" % device,
                                 device.master_key, master_key)
             if device.serial != serial:
-                raise Exception("Device %s got vart master keys" % device,
+                raise Exception("Device %s got conflict master keys" % device,
                                 device.serial, serial)
             return device
         else:

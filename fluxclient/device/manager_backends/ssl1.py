@@ -14,7 +14,7 @@ from .base import (ManagerAbstractBackend, AuthError,
 __all__ = ["SSL1Backend"]
 
 SHORT_PACKER = Struct("<H")
-SUPPORT_VERSION = (StrictVersion("1.1a1"), StrictVersion("2.0a1"))
+SUPPORT_VERSION = (StrictVersion("1.1.0"), StrictVersion("2.0a1"))
 
 
 def raise_error(ret, **ref):

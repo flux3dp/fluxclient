@@ -870,8 +870,8 @@ static const char __pyx_k_cubicBez[] = "cubicBez";
 static const char __pyx_k_distPtSeg[] = "distPtSeg";
 static const char __pyx_k_point_lst[] = "point_lst";
 static const char __pyx_k_fluxclient_parser__parser[] = "fluxclient.parser._parser";
-static const char __pyx_k_Users_blesscat_MEGA_flux_fluxcl[] = "/Users/blesscat/MEGA/flux/fluxclient-dev/src/svg_parser/svg_parser.pyx";
-static PyObject *__pyx_kp_s_Users_blesscat_MEGA_flux_fluxcl;
+static const char __pyx_k_Users_simon_Dev_fluxclient_dev[] = "/Users/simon/Dev/fluxclient-dev/src/svg_parser/svg_parser.pyx";
+static PyObject *__pyx_kp_s_Users_simon_Dev_fluxclient_dev;
 static PyObject *__pyx_n_s_a;
 static PyObject *__pyx_n_s_b;
 static PyObject *__pyx_n_s_cubicBez;
@@ -2354,14 +2354,14 @@ static PyObject *__pyx_f_10fluxclient_6parser_7_parser_get_all_points(char *__py
  *             for i in range(0,path.npts-1,3):
  *                 p = path.pts + i*2             # <<<<<<<<<<<<<<
  *                 #point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 1.5, 0))
- *                 point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.1, 0))
+ *                 point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.001, 0))
  */
         __pyx_v_p = (__pyx_v_path->pts + (__pyx_v_i * 2));
 
         /* "src/svg_parser/svg_parser.pyx":107
  *                 p = path.pts + i*2
  *                 #point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 1.5, 0))
- *                 point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.1, 0))             # <<<<<<<<<<<<<<
+ *                 point_lst.extend(cubicBez(p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], px * 0.001, 0))             # <<<<<<<<<<<<<<
  *             #if path.closed:
  *                 #point_lst.append((path.pts[0],path.pts[1]))
  */
@@ -2383,7 +2383,7 @@ static PyObject *__pyx_f_10fluxclient_6parser_7_parser_get_all_points(char *__py
         __Pyx_GOTREF(__pyx_t_17);
         __pyx_t_18 = PyFloat_FromDouble((__pyx_v_p[7])); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 107, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_18);
-        __pyx_t_19 = PyFloat_FromDouble((__pyx_v_px * 0.1)); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_19 = PyFloat_FromDouble((__pyx_v_px * 0.001)); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 107, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_19);
         __pyx_t_20 = NULL;
         __pyx_t_21 = 0;
@@ -2619,7 +2619,7 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
-  {&__pyx_kp_s_Users_blesscat_MEGA_flux_fluxcl, __pyx_k_Users_blesscat_MEGA_flux_fluxcl, sizeof(__pyx_k_Users_blesscat_MEGA_flux_fluxcl), 0, 0, 1, 0},
+  {&__pyx_kp_s_Users_simon_Dev_fluxclient_dev, __pyx_k_Users_simon_Dev_fluxclient_dev, sizeof(__pyx_k_Users_simon_Dev_fluxclient_dev), 0, 0, 1, 0},
   {&__pyx_n_s_a, __pyx_k_a, sizeof(__pyx_k_a), 0, 0, 1, 1},
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
   {&__pyx_n_s_cubicBez, __pyx_k_cubicBez, sizeof(__pyx_k_cubicBez), 0, 0, 1, 1},
@@ -2686,7 +2686,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple_ = PyTuple_Pack(12, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_px, __pyx_n_s_py, __pyx_n_s_qx, __pyx_n_s_qy, __pyx_n_s_pqx, __pyx_n_s_pqy, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_d, __pyx_n_s_t); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(6, 0, 12, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_blesscat_MEGA_flux_fluxcl, __pyx_n_s_distPtSeg, 20, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(6, 0, 12, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_simon_Dev_fluxclient_dev, __pyx_n_s_distPtSeg, 20, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 20, __pyx_L1_error)
 
   /* "src/svg_parser/svg_parser.pyx":38
  *     return dx*dx + dy*dy
@@ -2698,7 +2698,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__3 = PyTuple_Pack(26, __pyx_n_s_x1, __pyx_n_s_y1, __pyx_n_s_x2, __pyx_n_s_y2, __pyx_n_s_x3, __pyx_n_s_y3, __pyx_n_s_x4, __pyx_n_s_y4, __pyx_n_s_tol, __pyx_n_s_level, __pyx_n_s_x12, __pyx_n_s_y12, __pyx_n_s_x23, __pyx_n_s_y23, __pyx_n_s_x34, __pyx_n_s_y34, __pyx_n_s_x123, __pyx_n_s_y123, __pyx_n_s_x234, __pyx_n_s_y234, __pyx_n_s_x1234, __pyx_n_s_y1234, __pyx_n_s_d, __pyx_n_s_point_lst, __pyx_n_s_a, __pyx_n_s_b); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(10, 0, 26, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_blesscat_MEGA_flux_fluxcl, __pyx_n_s_cubicBez, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(10, 0, 26, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_simon_Dev_fluxclient_dev, __pyx_n_s_cubicBez, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
