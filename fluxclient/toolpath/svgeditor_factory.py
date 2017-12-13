@@ -156,7 +156,10 @@ class SvgeditorImage(object):
                 tag = self._tag_check(element)
                 if tag is 'symbol':
                     self._put_into_definitions_space(element)
-            tree.remove(defs)
+            try:
+                tree.remove(defs)
+            except:
+                pass
         return tree
 
     def run(self):
@@ -240,6 +243,7 @@ class SvgeditorImage(object):
 class SvgeditorFactory(object):
     def __init__ (self, pixel_per_mm=10):
         self.pixel_per_mm =pixel_per_mm
+
     def add_image(self, images, params):
         self.groups = list(zip(params, images))
 
