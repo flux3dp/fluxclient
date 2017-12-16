@@ -5,6 +5,7 @@ import re
 from PIL import Image, ImageDraw, ImageEnhance
 from lxml import etree as ET
 from io import BytesIO
+from math import floor
 
 from fluxclient.parser._parser import get_all_points
 from fluxclient.hw_profile import HardwareData
@@ -280,16 +281,20 @@ class SvgeditorFactory(object):
         val = 255 if val >= threshold else 0
         return val
 
-    def _gen_bitmap_walk_path(self, image):
+    def _gen_bitmap_walk_path(self, image, progress_callback):
         factory = BitmapFactory(pixel_per_mm=self.pixel_per_mm)
         factory.add_image(image)
 
         current_val = 0
-        for y, enum in factory.walk_spath():
+        current_from_left = False
+        for from_left, y, enum in factory.walk_spath(progress_callback):
             for x, val in enum:
                 if not val:
                     if current_val != 0:
                         current_val = 0
+                        if current_from_left != from_left:
+                            current_from_left = from_left
+                            yield -1, dict(from_left=from_left)
                         yield val, (x, y)
                     else:
                         continue
@@ -303,19 +308,29 @@ class SvgeditorFactory(object):
 
                 if val != current_val:
                     current_val = val
+                    if current_from_left != from_left:
+                        current_from_left = from_left
+                        yield -1, dict(from_left=from_left)
                     yield val, (x, y)
 
+            if current_from_left != from_left:
+                current_from_left = from_left
+                yield -1, dict(from_left=from_left)
             yield val, (x,y)
 
     def _gen_walk_paths(self, group, speed, progress_callback):
-        for image in group:
-            if self._is_bitmapImage(image):
-                walk_path_method = self._gen_bitmap_walk_path
+        for item in group:
+            if self._is_bitmapImage(item):
+                yield -1, dict(is_bitmap = True, shading = item.shading), 0
+                for strength, args in self._gen_bitmap_walk_path(item, progress_callback):
+                    if strength < 0:
+                        yield -1, args, 0
+                    else:
+                        yield strength, speed, args
             else:
-                walk_path_method = self._gen_svg_walk_path
-
-            for stren, dist_xy in walk_path_method(image):
-                yield stren, speed, dist_xy
+                yield -1, dict(is_bitmap = False, shading = False), 0
+                for strength, dist_xy in self._gen_svg_walk_path(item):
+                    yield strength, speed, dist_xy
 
             yield 0.0, speed, 'done'
 
@@ -323,12 +338,13 @@ class SvgeditorFactory(object):
         self.groups.reverse()
 
         for params, group in self.groups:
-            power_limit, speed = params
-            power_limit = power_limit / 100.0
+            layer_power, speed = params
+            layer_power = layer_power / 100.0
             group.reverse()
-            for pwm, speed, dist_xy in self._gen_walk_paths(
+            yield -1, dict(power_limit=layer_power), 0
+            for pwm, args, dist_xy in self._gen_walk_paths(
                             group, speed, progress_callback):
-                yield pwm, speed, dist_xy, power_limit
+                yield pwm, args, dist_xy
 
     def walk_cal(self):
         ratio = 1 / 20
@@ -343,6 +359,7 @@ class BitmapImage(object):
     def __init__(self, image, pixel_per_mm=10):
         self.pixel_per_mm = pixel_per_mm
         self.ratio = self.pixel_per_mm / 10
+        self.shading = False
         self._setAttrs(image)
         self._convertToInt()
         self.pil_image = Image.open(BytesIO(base64.b64decode(image['buf'])))
@@ -402,7 +419,7 @@ class BitmapFactory(object):
         self._clear_workspace()
         self._image = bitmap_image
 
-    def _get_witdh_length(self, hardware):
+    def _get_width_length(self, hardware):
         if hardware.plate_shape is 'rectangular':
             width = round(hardware.width * self.pixel_per_mm)
             length = round(hardware.length * self.pixel_per_mm)
@@ -412,7 +429,7 @@ class BitmapFactory(object):
 
     def _gen_empty_workspace(self):
         hardware = HardwareData('beambox')
-        width, length = self._get_witdh_length(hardware)
+        width, length = self._get_width_length(hardware)
         workspace = Image.new("RGBA", (width, length), "white")
         return workspace
 
@@ -428,8 +445,56 @@ class BitmapFactory(object):
         bbox = (round(img_center[0] - center[0]), round(img_center[1] - center[1]))
         bbox += (round(img_center[0] + center[0]), round(img_center[1] + center[1]))
         return bbox
+    
+    def _floyd_steinberg_dither(self, new_img, progress_callback = lambda p: None):
+        """
+        https://en.wikipedia.org/wiki/Floyd–Steinberg_dithering
+        Pseudocode:
+        for each y from top to bottom
+           for each x from left to right
+              oldpixel  := pixel[x][y]
+              newpixel  := find_closest_palette_color(oldpixel)
+              pixel[x][y]  := newpixel
+              quant_error  := oldpixel - newpixel
+              pixel[x+1][y  ] := pixel[x+1][y  ] + quant_error * 7/16
+              pixel[x-1][y+1] := pixel[x-1][y+1] + quant_error * 3/16
+              pixel[x  ][y+1] := pixel[x  ][y+1] + quant_error * 5/16
+              pixel[x+1][y+1] := pixel[x+1][y+1] + quant_error * 1/16
+        find_closest_palette_color(oldpixel) = floor(oldpixel / 256)
+        """
 
-    def _get_workspace(self):
+        pixel = new_img.load()
+
+        x_lim, y_lim = new_img.size
+
+        for y in range(1, y_lim):
+            progress_callback("Dithering - " + str(round(y * 100/y_lim)) + "%", y/y_lim)
+            for x in range(1, x_lim):
+                old_pixel = pixel[x, y][0] * 0.0722 + pixel[x, y][1] * 0.7152 + pixel[x, y][2] * 0.216
+
+                new_pix = 255 * floor(old_pixel/128)
+                pixel[x, y] = (new_pix, new_pix, new_pix, pixel[x, y][3])
+                red_error = old_pixel - new_pix
+
+                if x < x_lim - 1:
+                    v = pixel[x+1, y][0] + round(red_error * 7/16)
+                    pixel[x+1, y] = (v, v, v, pixel[x+1, y][3])
+
+                if x > 1 and y < y_lim - 1:
+                    v = pixel[x-1, y+1][0] + round(red_error * 3/16)
+                    pixel[x-1, y+1] = (v, v, v, pixel[x-1, y+1][3])
+
+                if y < y_lim - 1:
+                    v = pixel[x, y+1][0] + round(red_error * 5/16)
+                    pixel[x, y+1] = (v, v, v, pixel[x, y+1][3])
+
+                if x < x_lim - 1 and y < y_lim - 1:
+                    v = pixel[x+1, y+1][0] + round(red_error * 1/16)
+                    pixel[x+1, y+1] = (v, v, v, pixel[x+1, y+1][3])
+
+        return new_img
+
+    def _get_workspace(self, progress_callback = lambda p: None):
         if self._workspace:
             return self._workspace
 
@@ -437,8 +502,12 @@ class BitmapFactory(object):
         img = self._image
 
         resized_img = img.pil_image.resize((img.width, img.height))
-        print("Resizing image ", img.width, img.height);
+        print("Resizing image - ", img.width, img.height)
         rotated_img = self._rotate_img(resized_img, -img.rotate)
+        if img.shading:
+            print("Dithering image - ", img.width, img.height)
+            rotated_img = self._floyd_steinberg_dither(rotated_img, progress_callback)
+        print("Calculating Image - ", img.width, img.height)
         workspace.imgbbox = self._cal_corner(img, rotated_img)
         workspace.paste(rotated_img, box=workspace.imgbbox[:2])
        # workspace.save('workspace.png', 'JPEG')
@@ -446,7 +515,7 @@ class BitmapFactory(object):
         self._workspace = workspace
         return workspace
 
-    def walk_spath(self):
+    def walk_spath(self, progress_callback):
         fromLeft = True
         def find_the_bbox(box, workspace):
             left, upper, right, lower = box
@@ -473,18 +542,19 @@ class BitmapFactory(object):
                     yield x, val
 
         ratio = 1 / self.pixel_per_mm
-        workspace = self._get_workspace().convert("L")
+        workspace = self._get_workspace(progress_callback).convert("L")
         #workspace = self._get_workspace().convert("1")
         left, upper, right, lower = self._get_workspace().imgbbox
         left, upper, right, lower = find_the_bbox(
                                         (left, upper, right, lower), workspace)
-        workspace.save("workspaceL.jpg", "JPEG")
+        workspace.save("/Users/simon/Dev/fluxclient-dev/workspace.png", "PNG")
 
         for ptr_y in range(upper, lower):
+            progress_callback("Calculating Toolpath - " + str(round( (upper - ptr_y) * 100 / (upper - lower) )) + "%", (upper - ptr_y) / (upper - lower))
             #progress = ptr_y / workspace.height
             y = round(ptr_y * ratio, 2)
             #yield progress, y, x_enum(ptr_y)
-            yield y, x_enum(ptr_y)
+            yield fromLeft, y, x_enum(ptr_y)
 
     def walk_horizon(self):
         def x_enum(row):
