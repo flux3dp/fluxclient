@@ -38,33 +38,74 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
     current_y = -999
     current_speed = 0
     current_power_limit = 0
+    ending_x = -1
+    ACCELERATION_BUFFER_LENGTH = 5 # millimeter
+    from_left = False
+    power_limit = 1000
+    is_bitmap = False
+    shading = False
 
-    for strength, speed, dist_xy, power_limit in svg_factory.walk(progress_callback):
+    for strength, args, dist_xy in svg_factory.walk(progress_callback):
+        if strength < 0:
+            from_left = args.get("from_left", from_left)
+            power_limit = args.get("power_limit", power_limit)
+            is_bitmap = args.get("is_bitmap", is_bitmap)
+            shading = args.get("shading", shading)
+            if "shading" in args:
+                if shading:
+                    print("Enable shading")
+                    proc.set_toolhead_fan_speed(-1)
+                else:
+                    print("Disable shading")
+                    proc.set_toolhead_fan_speed(1)
+            continue
+        else:
+            speed = args
         
         speed = speed * 60
         speed = travel_speed if current_pwm == 0 else speed
         pwm = strength / 100.0
         need_to_change = False
+        current_line_start_engraving_pts = 0
 
         if current_pwm != pwm:
             current_pwm = pwm
             need_to_change = True
 
-        # print('result :', pwm, strength, speed, dist_xy, power_limit)
+        # Pass for non-engraving route
+        if current_pwm == 0 and not need_to_change:
+            continue
 
         if dist_xy == 'done' or dist_xy == 'line':
             proc.set_toolhead_pwm(0)
         else:
             dist_x, dist_y = dist_xy
             movement_args = dict(x=dist_x)
+            
             if current_y != dist_y:
+                # Do x-acceleration buffer
+                if current_pwm > 0 and is_bitmap and ending_x > -1:
+                    proc.set_toolhead_pwm(0)
+                    if from_left:
+                        buffer_current = dict(x = min(400, ending_x - ACCELERATION_BUFFER_LENGTH), y = current_y, feedrate = travel_speed)
+                        buffer_next = dict(x = max(0, dist_x - ACCELERATION_BUFFER_LENGTH), y = dist_y)
+                    else:
+                        buffer_current = dict(x = min(400, ending_x + ACCELERATION_BUFFER_LENGTH), y = current_y, feedrate = travel_speed)
+                        buffer_next = dict(x = max(0, dist_x + ACCELERATION_BUFFER_LENGTH), y = dist_y)
+                    proc.moveto(**buffer_current)
+                    proc.moveto(**buffer_next)
+                    current_speed = travel_speed
+
                 current_y = dist_y
                 movement_args['y'] = dist_y
+                
+                    
             if current_speed != speed:
                 current_speed = speed
                 movement_args['feedrate'] = speed
-            
+
             proc.moveto(**movement_args)
+            ending_x = dist_x
 
             if need_to_change:
                 proc.set_toolhead_pwm(pwm)
