@@ -77,8 +77,8 @@ cpdef get_all_points(char* svg_data):
 
     cx = g_image.width * 0.5
     cy = g_image.height * 0.5
-    hw = g_image.width*0.5
-    hh = g_image.height*0.5
+    hw = g_image.width * 0.5
+    hh = g_image.height * 0.5
     width = 1880.0
     height = 955.0
     if width/hw < height/hh:
