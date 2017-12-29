@@ -162,6 +162,13 @@ class MaintainTaskMixIn(object):
         if ret != "ok":
             raise_error(ret)
 
+    def calibrate_beambox_camera(self, *ignore, **commands):
+        ret = self.make_cmd('calibrate_beambox_camera'.encode())
+        logger.info("calibrate_beambox_camera!!")
+        if ret != "ok":
+            logger.info("Return", ret)
+            raise_error(ret)
+
     def __load_filament(self, instance, cmd, process_callback):
         ret = self.make_cmd(cmd)
 
