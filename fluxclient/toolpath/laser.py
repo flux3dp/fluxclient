@@ -93,8 +93,10 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
                     else:
                         buffer_current = dict(x = min(400, ending_x + ACCELERATION_BUFFER_LENGTH), y = current_y, feedrate = travel_speed)
                         buffer_next = dict(x = max(0, dist_x + ACCELERATION_BUFFER_LENGTH), y = dist_y)
-                    if ( buffer_next['x'] < 0 ) buffer_next['x'] = 0
-                    if ( buffer_next['x'] > 400 ) buffer_next['x'] = 400
+                    if buffer_next['x'] < 0:
+                        buffer_next['x'] = 0
+                    if buffer_next['x'] > 400:
+                        buffer_next['x'] = 400
                     proc.d(**buffer_current)
                     proc.d(**buffer_next)
                     current_speed = travel_speed
