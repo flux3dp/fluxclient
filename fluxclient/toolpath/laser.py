@@ -97,8 +97,8 @@ def svgeditor2laser(proc, svg_factory, z_height, travel_speed=12000,
                         buffer_next['x'] = 0
                     if buffer_next['x'] > 400:
                         buffer_next['x'] = 400
-                    proc.d(**buffer_current)
-                    proc.d(**buffer_next)
+                    proc.moveto(**buffer_current)
+                    proc.moveto(**buffer_next)
                     current_speed = travel_speed
 
                 current_y = dist_y
