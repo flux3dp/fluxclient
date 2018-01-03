@@ -200,20 +200,20 @@ cdef class GCodeParser:
 
 cdef class DitheringProcessor:
     cdef dither_c(self, np.ndarray[NP_CHAR, ndim=3] data):
-        cdef int xmax = data.shape[0]
-        cdef int ymax = data.shape[1]
-        cdef int x, y
+        cdef int xmax = data.shape[0], ymax = data.shape[1], x, y
         cdef float old_pixel, lumin_error
         cdef NP_CHAR new_pix
-        cdef NP_CHAR v
+        # Default luminance formula
         cdef float MB = 0.0722, MG = 0.7152, MR = 0.216
-        cdef float q1 = 0.4375, q2 = 0.1875, q3 = 0.3125, q4 = 0.0625 # Define float as C constant 7/16, 3/16, 5/16, 1/16
+        # Define float as C constant 7/16, 3/16, 5/16, 1/16
+        cdef float q1 = 0.4375, q2 = 0.1875, q3 = 0.3125, q4 = 0.0625 
         cdef np.ndarray[np.float32_t, ndim=2] temp_data = np.zeros([xmax, ymax], dtype=np.float32)
-        # Convert data into float 3d array
+        # Convert data into float 3d array, the data type must be able to store negative numbers
         for y in range(1, ymax):
             for x in range(1, xmax):
                 temp_data[x, y] = data[x, y, 0] * MB  + data[x, y, 1] * MG + data[x, y, 2] * MR
 
+        # Floyd-Steinberg dithering (https://en.wikipedia.org/wiki/Floyd%E2%80%93Steinberg_dithering)
         for y in range(1, ymax):
             for x in range(1, xmax):
                 old_pixel = temp_data[x, y]
