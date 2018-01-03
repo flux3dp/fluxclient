@@ -2,6 +2,8 @@
 import base64
 import re
 
+import numpy as np
+
 from PIL import Image, ImageDraw, ImageEnhance
 from lxml import etree as ET
 from io import BytesIO
@@ -9,6 +11,7 @@ from math import floor
 
 from fluxclient.parser._parser import get_all_points
 from fluxclient.hw_profile import HardwareData
+from fluxclient.toolpath import DitheringProcessor
 
 class SvgeditorImage(object):
     def __init__(self, thumbnail, svg_data, pixel_per_mm=25, hardware='beambox'):
@@ -411,6 +414,7 @@ class BitmapFactory(object):
     def __init__(self, pixel_per_mm=10):
         self._image = None
         self.pixel_per_mm = pixel_per_mm
+        self.dithering_processor = DitheringProcessor()
 
     def _clear_workspace(self):
         self._workspace = None
@@ -446,7 +450,7 @@ class BitmapFactory(object):
         bbox += (round(img_center[0] + center[0]), round(img_center[1] + center[1]))
         return bbox
     
-    def _floyd_steinberg_dither(self, new_img, progress_callback = lambda p: None):
+    def _floyd_steinberg_dither(self, image, progress_callback = lambda p: None):
         """
         https://en.wikipedia.org/wiki/Floyd–Steinberg_dithering
         Pseudocode:
@@ -463,36 +467,13 @@ class BitmapFactory(object):
         find_closest_palette_color(oldpixel) = floor(oldpixel / 256)
         """
 
-        pixel = new_img.load()
+        data = np.array(image)
 
-        x_lim, y_lim = new_img.size
+        progress_callback("Dithering", 0.5)
 
-        for y in range(1, y_lim):
-            progress_callback("Dithering - " + str(round(y * 100/y_lim)) + "%", y/y_lim)
-            for x in range(1, x_lim):
-                old_pixel = pixel[x, y][0] * 0.0722 + pixel[x, y][1] * 0.7152 + pixel[x, y][2] * 0.216
+        self.dithering_processor.dither(data)
 
-                new_pix = 255 * floor(old_pixel/128)
-                pixel[x, y] = (new_pix, new_pix, new_pix, pixel[x, y][3])
-                red_error = old_pixel - new_pix
-
-                if x < x_lim - 1:
-                    v = pixel[x+1, y][0] + round(red_error * 7/16)
-                    pixel[x+1, y] = (v, v, v, pixel[x+1, y][3])
-
-                if x > 1 and y < y_lim - 1:
-                    v = pixel[x-1, y+1][0] + round(red_error * 3/16)
-                    pixel[x-1, y+1] = (v, v, v, pixel[x-1, y+1][3])
-
-                if y < y_lim - 1:
-                    v = pixel[x, y+1][0] + round(red_error * 5/16)
-                    pixel[x, y+1] = (v, v, v, pixel[x, y+1][3])
-
-                if x < x_lim - 1 and y < y_lim - 1:
-                    v = pixel[x+1, y+1][0] + round(red_error * 1/16)
-                    pixel[x+1, y+1] = (v, v, v, pixel[x+1, y+1][3])
-
-        return new_img
+        return Image.fromarray(data, 'RGBA')
 
     def _get_workspace(self, progress_callback = lambda p: None):
         if self._workspace:
@@ -547,7 +528,7 @@ class BitmapFactory(object):
         left, upper, right, lower = self._get_workspace().imgbbox
         left, upper, right, lower = find_the_bbox(
                                         (left, upper, right, lower), workspace)
-        workspace.save("/Users/simon/Dev/fluxclient-dev/workspace.png", "PNG")
+        workspace.save("workspace.jpg", "JPEG")
 
         for ptr_y in range(upper, lower):
             progress_callback("Calculating Toolpath - " + str(round( (upper - ptr_y) * 100 / (upper - lower) )) + "%", (upper - ptr_y) / (upper - lower))
