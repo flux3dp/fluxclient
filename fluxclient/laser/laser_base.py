@@ -33,7 +33,7 @@ class LaserBase(object):
         # self.obj_height = 0.0  # plate
 
         self.pixel_per_mm = 10  # sample rate for each point
-        self.radius = 85  # laser max radius = 85mm
+        self.radius = 150  # laser max radius = 85mm
 
         # list holding current image
         self.reset_image()
@@ -250,7 +250,8 @@ class LaserBase(object):
         # 2 3
         ox2, oy2 = ox1, oy3
         ox4, oy4 = ox3, oy1
-        pix = pix.resize(tuple(map(lambda x: int(x * self.pixel_per_mm), ((ox3 - ox1), (oy1 - oy3)))))
+
+        pix = pix.resize(tuple(map(lambda x: int(x * self.pixel_per_mm), ((ox3 - ox1), (oy3 - oy1)))))
 
         # rotate four corner
         ox1, oy1 = rotate(ox1, oy1, rotation, cx, cy)

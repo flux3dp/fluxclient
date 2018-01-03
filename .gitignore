@@ -18,6 +18,7 @@ lib64/
 parts/
 sdist/
 var/
+.idea/
 *.egg-info/
 *.eggs/
 .installed.cfg
@@ -83,3 +84,8 @@ __vm/
 *.sln
 *.vcxproj
 *.vcxproj.filters
+old-workspace.jpg
+
+workspace.png
+
+workspace.jpg

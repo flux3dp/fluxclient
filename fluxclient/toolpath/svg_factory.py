@@ -1,9 +1,11 @@
 
+from PIL import Image, ImageDraw
+from io import BytesIO
 from lxml import etree as ET  # noqa
 
 from fluxclient.laser.laser_base import LaserBase
 from fluxclient.utils.svg_parser import SVGParser
-
+from fluxclient.parser._parser import get_all_points
 
 class SvgImage(object):
     _preview_buf = None
@@ -36,7 +38,7 @@ class SvgImage(object):
 
 
 class SvgFactory(object):
-    def __init__(self, radius=85):
+    def __init__(self, radius=150):
         self._magic = LaserBase()
         self._magic.pixel_per_mm = 10
         self._magic.radius = radius
@@ -52,13 +54,22 @@ class SvgFactory(object):
         self._svg_images.append(svg_image)
 
     def generate_preview(self):
-        for img in self._svg_images:
-            if img._preview_buf:
-                self._magic.add_image(img._preview_buf,
-                                      img._preview_width, img._preview_height,
-                                      img.x1, img.y1, img.x2, img.y2,
-                                      img.rotation, 100)
-        return self._magic.dump(mode="preview")
+        img = Image.new('RGBA', (100,100))
+
+        draw = ImageDraw.Draw(img)
+        draw.ellipse((25, 25, 75, 75), fill=(255, 0, 0))
+        b = BytesIO()
+        img.save(b, 'png')
+        image_bytes = b.getvalue()
+        return image_bytes
+
+        #for img in self._svg_images:
+        #    if img._preview_buf:
+        #        self._magic.add_image(img._preview_buf,
+        #                              img._preview_width, img._preview_height,
+        #                              img.x1, img.y1, img.x2, img.y2,
+        #                              img.rotation, 100)
+        #return self._magic.dump(mode="preview")
 
     def walk(self, progress_callback=lambda p: None):
         images_length = len(self._svg_images)
@@ -72,10 +83,33 @@ class SvgFactory(object):
                 map(float, root.attrib['viewBox'].replace(',', ' ').split())
             )
 
-            path_data = SVGParser.elements_to_list(root)
+        #    keys = root.attrib.keys()
+        #    print('keys', keys)
+#
+        #    for key in keys:
+        #        root.attrib.pop(key)
+        #    print('after root', root.attrib)
+        #    modify_svg_data = ET.tostring(root)
+#
+        #    print('modify_svg_data', modify_svg_data)
+
+
+
+
+            svg_byte_data = str.encode(svg_data)
+
+            path_lst = get_all_points(svg_byte_data)
+
+
+
+
+
+        #    path_data = SVGParser.elements_to_list(root)
+        #    print('path_data', len(path_data), path_data)
+
             progress_callback(index / images_length)
 
-            for each_path in SVGParser.process(path_data, (None, None,
+            for each_path in SVGParser.process(path_lst, (None, None,
                                                            image.x1, image.y1,
                                                            image.x2, image.y2,
                                                            image.rotation),
@@ -88,9 +122,21 @@ class SvgFactory(object):
                         move_to = True
                     else:
                         if move_to:
-                            src_xy = (x, y)
+                            #src_xy = (x, y)
+                            src_xy = (x - 300, y)
                             move_to = False
                         else:
-                            next_xy = (x, y)
+                            #next_xy = (x, y)
+                            next_xy = (x - 300, y)
+                            # print("points")
                             yield src_xy, next_xy
                             src_xy = next_xy
+
+
+            '''for each_path in path_lst:
+
+                for index in range(len(each_path)-1):
+                    src_xy = each_path[index]
+                    next_xy = each_path[index+1]
+                    print ((src_xy,next_xy))
+                    yield src_xy, next_xy'''

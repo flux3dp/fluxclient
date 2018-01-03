@@ -5,6 +5,7 @@ import subprocess
 import platform
 import sys
 import os
+import numpy
 
 try:
     from Cython.Distutils import build_ext  # noqa
@@ -129,7 +130,8 @@ def create_utils_extentions():
                 "src/toolpath/_toolpath.pyx"
             ],
             language="c++",
-            extra_compile_args=get_default_extra_compile_args()),
+            extra_compile_args=get_default_extra_compile_args(),
+            include_dirs=[numpy.get_include()]),
         Extension(
             'fluxclient.utils._utils',
             sources=[
@@ -282,6 +284,15 @@ def create_pcl_extentions():
         library_dirs=library_dirs,
         extra_objects=[],
         include_dirs=["src/printer/"]
+    ))
+
+    extensions.append(Extension(
+        'fluxclient.parser._parser',
+        sources = [
+            "src/svg_parser/nanosvg.c",
+            "src/svg_parser/svg_parser.pyx"
+        ]
+
     ))
 
     return extensions

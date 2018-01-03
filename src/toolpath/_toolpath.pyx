@@ -12,6 +12,13 @@ from _toolpathlib cimport (ToolpathProcessor as _ToolpathProcessor,
                            FCodeV1FileWriter as _FCodeV1FileWriter,
                            PythonToolpathProcessor)
 
+from libc.math cimport floor, ceil, round
+
+import numpy as np
+cimport numpy as np
+
+DTYPE = np.uint8
+ctypedef np.uint8_t NP_CHAR
 
 cdef class ToolpathProcessor:
     cdef _ToolpathProcessor *_proc
@@ -190,3 +197,60 @@ cdef class GCodeParser:
 
     cpdef parse_from_file(self, filename):
         self._parser.parse_from_file(filename.encode())
+
+cdef class DitheringProcessor:
+    cdef dither_c(self, np.ndarray[NP_CHAR, ndim=3] data):
+        cdef int xmax = data.shape[0], ymax = data.shape[1], x, y
+        cdef float old_pixel, lumin_error
+        cdef NP_CHAR new_pix
+        # Default luminance formula
+        cdef float MB = 0.0722, MG = 0.7152, MR = 0.216
+        # Define float as C constant 7/16, 3/16, 5/16, 1/16
+        cdef float q1 = 0.4375, q2 = 0.1875, q3 = 0.3125, q4 = 0.0625 
+        cdef np.ndarray[np.float32_t, ndim=2] temp_data = np.zeros([xmax, ymax], dtype=np.float32)
+        # Convert data into float 3d array, the data type must be able to store negative numbers
+        for y in range(1, ymax):
+            for x in range(1, xmax):
+                temp_data[x, y] = data[x, y, 0] * MB  + data[x, y, 1] * MG + data[x, y, 2] * MR
+
+        # Floyd-Steinberg dithering (https://en.wikipedia.org/wiki/Floyd%E2%80%93Steinberg_dithering)
+        for y in range(1, ymax):
+            for x in range(1, xmax):
+                old_pixel = temp_data[x, y]
+
+                if old_pixel > 128:
+                    new_pix = 255
+                else:
+                    new_pix = 0
+
+                temp_data[x, y] = new_pix
+                
+                lumin_error = old_pixel - new_pix
+
+                if x < xmax - 1:
+                    temp_data[x+1, y] += lumin_error * q1
+
+                if x > 1 and y < ymax - 1:
+                    temp_data[x-1, y+1] += lumin_error * q2
+
+                if y < ymax - 1:
+                    temp_data[x, y+1] += lumin_error * q3
+
+                if x < xmax - 1 and y < ymax - 1:
+                    temp_data[x+1, y+1] += lumin_error * q4
+
+        for y in range(1, ymax):
+            for x in range(1, xmax):
+                if temp_data[x, y] > 128:
+                    data[x, y, 0] = 255
+                    data[x, y, 1] = 255
+                    data[x, y, 2] = 255
+                else:
+                    data[x, y, 0] = 0
+                    data[x, y, 1] = 0
+                    data[x, y, 2] = 0
+                
+        return data
+
+    def dither(self, np.ndarray[NP_CHAR, ndim=3] data):
+        return self.dither_c(data)

@@ -25,7 +25,7 @@ CODE_RESPONSE_CHANGE_PWD = 0xa1
 CODE_SET_NETWORK = 0xa2
 CODE_RESPONSE_SET_NETWORK = 0xa3
 
-SUPPORT_VERSION = (StrictVersion("1.0b12"), StrictVersion("1.1b1"))
+SUPPORT_VERSION = (StrictVersion("1.1.0"), StrictVersion("1.1b1"))
 
 
 class Udp1Backend(ManagerAbstractBackend):

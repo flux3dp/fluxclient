@@ -1,11 +1,12 @@
 
-from ._toolpath import (ToolpathProcessor,
+from fluxclient.toolpath._toolpath import (ToolpathProcessor,
                         PyToolpathProcessor,
                         GCodeMemoryWriter,
                         GCodeFileWriter,
                         FCodeV1FileWriter,
                         FCodeV1MemoryWriter,
-                        GCodeParser)
+                        GCodeParser,
+                        DitheringProcessor)
 from ._fcode_parser import FCodeParser
 
 __all__ = ["ToolpathProcessor",
@@ -15,4 +16,5 @@ __all__ = ["ToolpathProcessor",
            "FCodeV1FileWriter",
            "FCodeV1MemoryWriter",
            "FCodeParser",
-           "GCodeParser"]
+           "GCodeParser",
+           "DitheringProcessor"]

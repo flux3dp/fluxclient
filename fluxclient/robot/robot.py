@@ -486,6 +486,10 @@ class MaintainTasks(SubTasks):
         return self._backend.maintain_move(**commands)
 
     @invalied_validator
+    def calibrate_beambox_camera(self):
+        return self._backend.calibrate_beambox_camera()
+
+    @invalied_validator
     def load_filament(self, index=0, temperature=210.0,
                       process_callback=None):
         """Loads the filament"""
