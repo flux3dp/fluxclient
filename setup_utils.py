@@ -2,6 +2,7 @@
 from pkgutil import walk_packages
 from setuptools import Extension
 import subprocess
+import pathlib
 import platform
 import sys
 import os
@@ -83,8 +84,21 @@ def get_version():
 
 
 def get_install_requires():
-    return ['setuptools', 'pycrypto', 'pyserial', 'pillow', 'numpy', 'scipy',
-            'ecdsa', 'lxml', 'pyasn1==0.1.9']
+    """
+    Parses centralized dependencies from the requirements.txt file.
+
+    Because the requirements file is now the sole source of project
+    dependencies, OSError exceptions resulting from file access failure are
+    allowed halt execution.
+
+    Returns
+    -------
+    sequence
+        Strings containing dependencies and their version specifiers.
+
+    """
+    reqs_file_path = pathlib.Path('.', 'requirements.txt')
+    return reqs_file_path.read_text().split()
 
 
 def get_packages():

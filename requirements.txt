@@ -1,0 +1,10 @@
+cython~=0.29
+ecdsa~=0.16
+lxml~=4.6
+numpy~=1.20
+pillow~=8.2
+pyasn1==0.1.9
+pycrypto~=2.6
+pyserial~=3.5
+scipy~=1.6
+setuptools~=56.0
