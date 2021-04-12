@@ -167,9 +167,6 @@ cdef class GcodeToFcodeCpp:
         """
         return b'FC' + b'x0001' + b'\n'
 
-    cpdef extract_vector(self, obj):
-        cdef PathVector v = <PathVector> obj
-
     cpdef sub_convert_path(self):
         # self.path_js = FcodeBase.path_to_js(self.path)
         cdef FCode* fc = self.fc
