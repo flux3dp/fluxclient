@@ -89,7 +89,7 @@ def get_install_requires():
 
 def get_packages():
     return [name
-            for _, name, ispkg in walk_packages(".")
+            for _, name, ispkg in walk_packages(["."])
             if name.startswith("fluxclient") and ispkg]
 
 
@@ -238,12 +238,12 @@ def create_pcl_extentions():
         import traceback
         sys.stderr.write("\033[93m")
         traceback.print_exc(file=sys.stderr)
-        sys.stderr("""\033[93m
+        sys.stderr.write("""\033[93m
 *****************************************************************************
 * Can not find pcl libraries, `fluxclient.scanner` and `fluxclient.printer` *
 * will not work properly.                                                   *
 *****************************************************************************
-\033[0m""", file=sys.stderr)
+\033[0m""")
         return []
 
     extensions = []
